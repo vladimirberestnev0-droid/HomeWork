@@ -51,90 +51,67 @@
     }
 
     // Загрузка данных мастера
-    async function loadMasterData(state) {
-        const userData = state.userData;
-        
-        document.getElementById('masterName').innerText = userData?.name || 'Мастер';
-        document.getElementById('masterEmail').innerText = userData?.email || '';
-        document.getElementById('masterPhone').innerText = userData?.phone || 'Телефон не указан';
-        document.getElementById('masterCategories').innerHTML = userData?.categories || 'Ремонт и отделка';
-        
-        if (userData?.createdAt) {
-            const date = userData.createdAt.toDate();
-            document.getElementById('masterSince').innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
-        }
-        
-        const rating = userData?.rating || 0;
-        const reviews = userData?.reviews || 0;
-        document.getElementById('masterRating').innerHTML = rating.toFixed(1);
-        document.getElementById('masterReviews').innerHTML = `${reviews} ${Helpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
-        
-        updateRatingStars(rating);
+async function loadMasterData(state) {
+    const userData = state.userData;
+    
+    // Проверяем каждый элемент перед установкой значения
+    const masterNameEl = document.getElementById('masterName');
+    if (masterNameEl) {
+        masterNameEl.innerText = userData?.name || 'Мастер';
+    } else {
+        console.error('❌ Элемент masterName не найден!');
     }
-
-    // Обновление звезд рейтинга
-    function updateRatingStars(rating) {
-        const starsElement = document.getElementById('ratingStars');
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating - fullStars >= 0.5;
-        let stars = '';
-        
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) stars += '★';
-            else if (i === fullStars && hasHalfStar) stars += '½';
-            else stars += '☆';
-        }
-        starsElement.innerHTML = stars;
+    
+    const masterEmailEl = document.getElementById('masterEmail');
+    if (masterEmailEl) {
+        masterEmailEl.innerText = userData?.email || '';
+    } else {
+        console.error('❌ Элемент masterEmail не найден!');
     }
-
-    // Загрузка откликов
-    async function loadMasterResponses(filter = 'all') {
-        const responsesList = document.getElementById('responsesList');
-        if (!responsesList) return;
-        
-        responsesList.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
-        
-        try {
-            const user = Auth.getUser();
-            if (!user) return;
-            
-            const responses = await Orders.getMasterResponses(user.uid);
-            
-            // Фильтрация
-            let filtered = responses;
-            if (filter === 'pending') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.OPEN);
-            } else if (filter === 'accepted') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS);
-            } else if (filter === 'completed') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.COMPLETED);
-            }
-            
-            // Обновить статистику
-            updateStats(responses);
-            
-            if (filtered.length === 0) {
-                responsesList.innerHTML = `
-                    <div class="text-center p-5">
-                        <i class="fas fa-inbox fa-3x mb-3" style="color: var(--border);"></i>
-                        <h5>Нет откликов</h5>
-                        <p class="text-secondary">Вы ещё не откликались на заказы</p>
-                        <a href="index.html" class="btn">Найти заказы</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            responsesList.innerHTML = '';
-            filtered.forEach(item => {
-                responsesList.appendChild(createResponseCard(item));
-            });
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки откликов:', error);
-            responsesList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
-        }
+    
+    const masterPhoneEl = document.getElementById('masterPhone');
+    if (masterPhoneEl) {
+        masterPhoneEl.innerText = userData?.phone || 'Телефон не указан';
+    } else {
+        console.error('❌ Элемент masterPhone не найден!');
     }
+    
+    const masterCategoriesEl = document.getElementById('masterCategories');
+    if (masterCategoriesEl) {
+        masterCategoriesEl.innerHTML = userData?.categories || 'Ремонт и отделка';
+    } else {
+        console.error('❌ Элемент masterCategories не найден!');
+    }
+    
+    const masterSinceEl = document.getElementById('masterSince');
+    if (masterSinceEl && userData?.createdAt) {
+        const date = userData.createdAt.toDate();
+        masterSinceEl.innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
+    } else if (masterSinceEl) {
+        masterSinceEl.innerHTML = 'На платформе с 2025';
+    } else {
+        console.error('❌ Элемент masterSince не найден!');
+    }
+    
+    const rating = userData?.rating || 0;
+    const reviews = userData?.reviews || 0;
+    
+    const masterRatingEl = document.getElementById('masterRating');
+    if (masterRatingEl) {
+        masterRatingEl.innerHTML = rating.toFixed(1);
+    } else {
+        console.error('❌ Элемент masterRating не найден!');
+    }
+    
+    const masterReviewsEl = document.getElementById('masterReviews');
+    if (masterReviewsEl) {
+        masterReviewsEl.innerHTML = `${reviews} ${Helpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
+    } else {
+        console.error('❌ Элемент masterReviews не найден!');
+    }
+    
+    updateRatingStars(rating);
+}
 
     // Создание карточки отклика
     function createResponseCard(item) {
