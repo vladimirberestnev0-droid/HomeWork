@@ -32,7 +32,7 @@
                 
             } else if (state.isAuthenticated && !state.isClient) {
                 // Если пользователь не клиент
-                Utils.showNotification('Эта страница только для клиентов', 'warning');
+                Helpers.showNotification('Эта страница только для клиентов', 'warning');
                 setTimeout(() => window.location.href = 'index.html', 2000);
                 
             } else {
@@ -190,14 +190,14 @@
                     <div class="card mb-3 p-4">
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <div>
-                                <span class="fw-bold">${Utils.escapeHtml(resp.masterName || 'Мастер')}</span>
+                                <span class="fw-bold">${Helpers.escapeHtml(resp.masterName || 'Мастер')}</span>
                                 <span class="badge badge-info ms-2">
                                     ⭐ ${(resp.masterRating || 0).toFixed(1)} (${resp.masterReviews || 0})
                                 </span>
                             </div>
                             <span class="fw-bold" style="color: var(--accent);">${resp.price || 0} ₽</span>
                         </div>
-                        <p class="text-secondary mb-3">${Utils.escapeHtml(resp.comment || '')}</p>
+                        <p class="text-secondary mb-3">${Helpers.escapeHtml(resp.comment || '')}</p>
                         <div class="d-flex gap-2 flex-wrap">
                             <button onclick="window.openChat('${order.id}', '${resp.masterId}')" class="btn btn-outline-secondary">
                                 <i class="fas fa-comment me-2"></i>Чат
@@ -210,7 +210,7 @@
                             ` : ''}
                             
                             ${order.status === 'completed' && !hasReview ? `
-                                <button onclick="window.openReview('${order.id}', '${resp.masterId}', '${Utils.escapeHtml(resp.masterName || 'Мастер')}')" class="btn btn-outline-secondary">
+                                <button onclick="window.openReview('${order.id}', '${resp.masterId}', '${Helpers.escapeHtml(resp.masterName || 'Мастер')}')" class="btn btn-outline-secondary">
                                     <i class="fas fa-star me-2"></i>Оценить
                                 </button>
                             ` : ''}
@@ -228,21 +228,21 @@
         div.innerHTML = `
             <div class="order-header">
                 <div>
-                    <h4 class="order-title d-inline">${Utils.escapeHtml(order.title || 'Заказ')}</h4>
+                    <h4 class="order-title d-inline">${Helpers.escapeHtml(order.title || 'Заказ')}</h4>
                     <span class="badge ${status.class} ms-2">${status.text}</span>
                 </div>
                 <span class="order-price">${order.price || 0} ₽</span>
             </div>
-            <p class="text-secondary mb-3">${Utils.escapeHtml(order.description || '')}</p>
+            <p class="text-secondary mb-3">${Helpers.escapeHtml(order.description || '')}</p>
             ${photosHtml}
             <div class="order-meta mb-3">
                 <span>
-                    <i class="fas ${Utils.getCategoryIcon(order.category)}"></i>
+                    <i class="fas ${Helpers.getCategoryIcon(order.category)}"></i>
                     ${order.category || 'Без категории'}
                 </span>
                 <span>
                     <i class="fas fa-map-marker-alt"></i>
-                    ${Utils.escapeHtml(order.address || 'Адрес не указан')}
+                    ${Helpers.escapeHtml(order.address || 'Адрес не указан')}
                 </span>
             </div>
             ${responsesHtml}
@@ -279,8 +279,8 @@
                     <div class="master-card mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h5 class="mb-1">${Utils.escapeHtml(master.name || 'Мастер')}</h5>
-                                <p class="text-secondary mb-2">${Utils.escapeHtml(master.categories || 'Специалист')}</p>
+                                <h5 class="mb-1">${Helpers.escapeHtml(master.name || 'Мастер')}</h5>
+                                <p class="text-secondary mb-2">${Helpers.escapeHtml(master.categories || 'Специалист')}</p>
                                 <div class="mb-2">
                                     <span class="rating-stars">${stars}</span>
                                     <span class="text-secondary ms-2">${master.reviews || 0} отзывов</span>
@@ -341,7 +341,7 @@
                         <div class="card p-3 mb-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-1">${Utils.escapeHtml(order.title || 'Заказ')}</h6>
+                                    <h6 class="mb-1">${Helpers.escapeHtml(order.title || 'Заказ')}</h6>
                                     <small class="text-secondary">${order.price || 0} ₽ · ${order.category || ''}</small>
                                 </div>
                                 <small class="text-secondary">${new Date(view.viewedAt).toLocaleDateString()}</small>
@@ -378,7 +378,7 @@
         currentMasterId = masterId;
         currentRating = 0;
         
-        document.getElementById('reviewMasterInfo').innerHTML = `<p class="fw-bold mb-0">Мастер: ${Utils.escapeHtml(masterName)}</p>`;
+        document.getElementById('reviewMasterInfo').innerHTML = `<p class="fw-bold mb-0">Мастер: ${Helpers.escapeHtml(masterName)}</p>`;
         document.getElementById('reviewText').value = '';
         
         document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
@@ -418,14 +418,14 @@
             }
 
             reviewModal?.hide();
-            Utils.showNotification('✅ Отзыв отправлен!', 'success');
+            Helpers.showNotification('✅ Отзыв отправлен!', 'success');
             
             const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
             await loadClientOrders(activeFilter);
             
         } catch (error) {
             console.error('❌ Ошибка при отправке отзыва:', error);
-            Utils.showNotification('❌ Ошибка при отправке отзыва', 'error');
+            Helpers.showNotification('❌ Ошибка при отправке отзыва', 'error');
         }
     }
 })();

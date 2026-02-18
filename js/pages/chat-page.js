@@ -208,11 +208,11 @@
             filesHtml += '</div>';
         }
         
-        const time = Utils.formatDate(message.timestamp);
+        const time = Helpers.formatDate(message.timestamp);
         
         div.innerHTML = `
             <div class="message-bubble">
-                ${Utils.escapeHtml(message.text) || ''}
+                ${Helpers.escapeHtml(message.text) || ''}
                 ${filesHtml}
             </div>
             <div class="message-time">${time}</div>
@@ -232,7 +232,7 @@
         if (text) {
             const modResult = Moderation.check(text, 'chat_message');
             if (!modResult.isValid) {
-                Utils.showNotification(`❌ ${modResult.reason}`, 'warning');
+                Helpers.showNotification(`❌ ${modResult.reason}`, 'warning');
                 return;
             }
         }
@@ -289,7 +289,7 @@
     function handleFileSelect(files) {
         for (let file of files) {
             if (file.size > 10 * 1024 * 1024) {
-                Utils.showNotification('Файл слишком большой (макс 10MB)', 'warning');
+                Helpers.showNotification('Файл слишком большой (макс 10MB)', 'warning');
                 continue;
             }
             selectedFiles.push(file);
@@ -371,7 +371,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка доступа к микрофону:', error);
-            Utils.showNotification('Не удалось получить доступ к микрофону', 'error');
+            Helpers.showNotification('Не удалось получить доступ к микрофону', 'error');
         }
     }
 

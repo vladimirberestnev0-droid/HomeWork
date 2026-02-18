@@ -193,13 +193,13 @@ async function loadTopMasters() {
                     <div class="master-avatar">
                         <i class="fas fa-user-tie"></i>
                     </div>
-                    <h6 class="fw-bold mb-1">${Utils.escapeHtml(master.name || 'Мастер')}</h6>
+                    <h6 class="fw-bold mb-1">${Helpers.escapeHtml(master.name || 'Мастер')}</h6>
                     <div class="rating-stars mb-2">${stars}</div>
                     <div class="mb-2">
                         <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
                         <span class="badge badge-success ms-1">📦 ${master.completedJobs || 0}</span>
                     </div>
-                    <p class="small text-secondary mb-2">${master.categories || 'Специалист'}</p>
+                    <p class="small text-secondary mb-2">${Helpers.escapeHtml(master.categories || 'Специалист')}</p>
                     <button class="btn btn-sm w-100" onclick="viewMaster('${doc.id}')">
                         Смотреть профиль
                     </button>
@@ -225,7 +225,7 @@ async function loadOrders() {
             // Ждём загрузки данных мастера
             let attempts = 0;
             while (!Auth.getUserData() && attempts < 20) {
-                await Utils.delay(100);
+                await Helpers.delay(100);
                 attempts++;
             }
             
@@ -301,19 +301,19 @@ function createOrderCard(order) {
     
     div.innerHTML = `
         <div class="order-header">
-            <h5 class="order-title mb-0">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
+            <h5 class="order-title mb-0">${Helpers.escapeHtml(order.title || 'Заказ')}</h5>
             <span class="order-price">${order.price || 0} ₽</span>
         </div>
-        <p class="text-secondary mb-3">${Utils.escapeHtml(order.description || 'Нет описания')}</p>
+        <p class="text-secondary mb-3">${Helpers.escapeHtml(order.description || 'Нет описания')}</p>
         ${photosHtml}
         <div class="order-meta">
             <span>
-                <i class="fas ${Utils.getCategoryIcon(order.category)}"></i>
+                <i class="fas ${Helpers.getCategoryIcon(order.category)}"></i>
                 ${order.category || 'Без категории'}
             </span>
             <span>
                 <i class="fas fa-map-marker-alt"></i>
-                ${Utils.escapeHtml(order.address || 'Адрес не указан')}
+                ${Helpers.escapeHtml(order.address || 'Адрес не указан')}
             </span>
         </div>
         ${actionsHtml}
@@ -330,12 +330,12 @@ function createOrderCard(order) {
 async function searchOrders(query) {
     console.log('🔍 Поиск:', query);
     if (!query || query.length < 3) {
-        Utils.showNotification('Введите минимум 3 символа', 'warning');
+        Helpers.showNotification('Введите минимум 3 символа', 'warning');
         return;
     }
     
     // TODO: реализовать полноценный поиск
-    Utils.showNotification(`Ищем: ${query}`, 'info');
+    Helpers.showNotification(`Ищем: ${query}`, 'info');
 }
 
 // Фильтр по категории
@@ -361,12 +361,12 @@ function setupCategoryFilter() {
 // Отклик на заказ
 async function respondToOrder(orderId) {
     if (!Auth.isAuthenticated()) {
-        Utils.showNotification('❌ Сначала войдите в систему', 'warning');
+        Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
         return;
     }
     
     if (!Auth.isMaster()) {
-        Utils.showNotification('❌ Только мастера могут откликаться', 'warning');
+        Helpers.showNotification('❌ Только мастера могут откликаться', 'warning');
         return;
     }
 
@@ -393,7 +393,7 @@ function viewMaster(masterId) {
 // Обработка файлов
 async function handleFiles(files) {
     if (uploadedPhotos.length + files.length > 5) {
-        Utils.showNotification('Максимум 5 фото', 'warning');
+        Helpers.showNotification('Максимум 5 фото', 'warning');
         return;
     }
     
@@ -499,12 +499,12 @@ function initEventListeners() {
         e.preventDefault();
         
         if (!Auth.isAuthenticated()) {
-            Utils.showNotification('Пожалуйста, войдите в систему', 'warning');
+            Helpers.showNotification('Пожалуйста, войдите в систему', 'warning');
             return;
         }
         
         if (Auth.isMaster()) {
-            Utils.showNotification('Мастера не могут создавать заказы', 'warning');
+            Helpers.showNotification('Мастера не могут создавать заказы', 'warning');
             return;
         }
 

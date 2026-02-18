@@ -32,7 +32,7 @@
                 await displayBadges(state.user.uid);
                 
             } else if (state.isAuthenticated && !state.isMaster) {
-                Utils.showNotification('Эта страница только для мастеров', 'warning');
+                Helpers.showNotification('Эта страница только для мастеров', 'warning');
                 setTimeout(() => window.location.href = 'index.html', 2000);
             }
         });
@@ -67,7 +67,7 @@
         const rating = userData?.rating || 0;
         const reviews = userData?.reviews || 0;
         document.getElementById('masterRating').innerHTML = rating.toFixed(1);
-        document.getElementById('masterReviews').innerHTML = `${reviews} ${Utils.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
+        document.getElementById('masterReviews').innerHTML = `${reviews} ${Helpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
         
         updateRatingStars(rating);
     }
@@ -145,7 +145,7 @@
         const response = item.response;
         
         const responseDate = response.createdAt ? 
-            Utils.formatDate(response.createdAt) : 'сегодня';
+            Helpers.formatDate(response.createdAt) : 'сегодня';
         
         let statusClass = '';
         let statusText = '';
@@ -175,7 +175,7 @@
         div.innerHTML = `
             <div class="order-header">
                 <div>
-                    <span class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</span>
+                    <span class="order-title">${Helpers.escapeHtml(order.title || 'Заказ')}</span>
                     <span class="badge badge-info ms-2">${order.category || 'Без категории'}</span>
                 </div>
                 <span class="order-price">${response.price} ₽</span>
@@ -186,8 +186,8 @@
             ${photosHtml}
             
             <div class="order-meta my-3">
-                <span><i class="fas fa-user"></i> ${Utils.escapeHtml(order.clientName || 'Клиент')}</span>
-                <span><i class="fas fa-map-marker-alt"></i> ${Utils.escapeHtml(order.address || 'Адрес не указан')}</span>
+                <span><i class="fas fa-user"></i> ${Helpers.escapeHtml(order.clientName || 'Клиент')}</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${Helpers.escapeHtml(order.address || 'Адрес не указан')}</span>
                 <span><i class="fas fa-tag"></i> Бюджет: ${order.price} ₽</span>
                 <span><i class="fas fa-calendar"></i> Отклик: ${responseDate}</span>
             </div>
@@ -195,7 +195,7 @@
             <div class="card p-3 mb-3 bg-light">
                 <p class="mb-0">
                     <i class="fas fa-comment me-2" style="color: var(--accent);"></i>
-                    ${Utils.escapeHtml(response.comment || 'Без комментария')}
+                    ${Helpers.escapeHtml(response.comment || 'Без комментария')}
                 </p>
             </div>
             
@@ -245,13 +245,13 @@
     window.openChat = (orderId, clientId) => {
         const user = Auth.getUser();
         if (!user) {
-            Utils.showNotification('❌ Сначала войдите в систему', 'warning');
+            Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
             return;
         }
         
         if (!orderId || !clientId) {
             console.error('❌ Ошибка: orderId или clientId не определены', { orderId, clientId });
-            Utils.showNotification('❌ Ошибка открытия чата', 'error');
+            Helpers.showNotification('❌ Ошибка открытия чата', 'error');
             return;
         }
         
@@ -293,7 +293,7 @@
                 div.innerHTML = `
                     <img src="${work.imageUrl}" class="portfolio-image">
                     <div class="portfolio-info p-3">
-                        <h6 class="mb-1">${Utils.escapeHtml(work.title)}</h6>
+                        <h6 class="mb-1">${Helpers.escapeHtml(work.title)}</h6>
                         <small class="text-secondary">${work.category}</small>
                     </div>
                 `;
@@ -512,11 +512,11 @@
                 
                 bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
                 await loadPortfolio();
-                Utils.showNotification('✅ Работа добавлена', 'success');
+                Helpers.showNotification('✅ Работа добавлена', 'success');
                 
             } catch (error) {
                 console.error('❌ Ошибка:', error);
-                Utils.showNotification('❌ Ошибка при добавлении', 'error');
+                Helpers.showNotification('❌ Ошибка при добавлении', 'error');
             }
         });
 
@@ -584,11 +584,11 @@
                 });
                 
                 bootstrap.Modal.getInstance(document.getElementById('verifyModal')).hide();
-                Utils.showNotification('✅ Заявка отправлена!', 'success');
+                Helpers.showNotification('✅ Заявка отправлена!', 'success');
                 
             } catch (error) {
                 console.error('❌ Ошибка:', error);
-                Utils.showNotification('❌ Ошибка при отправке', 'error');
+                Helpers.showNotification('❌ Ошибка при отправке', 'error');
             }
         });
 

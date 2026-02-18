@@ -298,7 +298,7 @@
                         </div>
                         <span class="badge badge-${complaint.status || 'pending'}">${complaint.status || 'pending'}</span>
                     </div>
-                    <p class="mb-3">${Utils.escapeHtml(complaint.text || 'Нет текста')}</p>
+                    <p class="mb-3">${Helpers.escapeHtml(complaint.text || 'Нет текста')}</p>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <small class="text-secondary">От: ${complaint.fromUserId || 'Аноним'}</small>
                         <small class="text-secondary">${date}</small>
@@ -346,7 +346,7 @@
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h5>${Utils.escapeHtml(req.userName || 'Мастер')}</h5>
+                            <h5>${Helpers.escapeHtml(req.userName || 'Мастер')}</h5>
                             <small class="text-secondary">ID: ${req.userId}</small>
                         </div>
                         <span class="badge badge-${req.status || 'pending'}">${req.status || 'pending'}</span>
@@ -398,7 +398,7 @@
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <h5>${Utils.escapeHtml(user.name || 'Без имени')}</h5>
+                            <h5>${Helpers.escapeHtml(user.name || 'Без имени')}</h5>
                             <p class="mb-1">${user.email || 'Нет email'}</p>
                             <p class="mb-1">${user.phone || 'Нет телефона'}</p>
                             <p class="mb-1">Роль: ${user.role || 'Не указана'}</p>
@@ -464,12 +464,12 @@
                 card.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <h5>${Utils.escapeHtml(order.title || 'Заказ')}</h5>
-                            <p class="mb-1">${Utils.escapeHtml(order.description || 'Нет описания')}</p>
+                            <h5>${Helpers.escapeHtml(order.title || 'Заказ')}</h5>
+                            <p class="mb-1">${Helpers.escapeHtml(order.description || 'Нет описания')}</p>
                             <p class="mb-1">💰 ${order.price || 0} ₽</p>
                             <p class="mb-1">📌 ${order.category || 'Без категории'}</p>
-                            <p class="mb-1">📍 ${Utils.escapeHtml(order.address || 'Нет адреса')}</p>
-                            <p class="mb-1">👤 Клиент: ${Utils.escapeHtml(order.clientName || 'Неизвестно')}</p>
+                            <p class="mb-1">📍 ${Helpers.escapeHtml(order.address || 'Нет адреса')}</p>
+                            <p class="mb-1">👤 Клиент: ${Helpers.escapeHtml(order.clientName || 'Неизвестно')}</p>
                             <p class="mb-1">📞 ${order.clientPhone || 'Нет телефона'}</p>
                             <p class="text-secondary">${date}</p>
                         </div>
@@ -493,10 +493,10 @@
                 resolvedAt: new Date().toISOString()
             });
             await loadComplaints(document.getElementById('complaintFilter').value);
-            Utils.showNotification('✅ Жалоба отмечена как решённая', 'success');
+            Helpers.showNotification('✅ Жалоба отмечена как решённая', 'success');
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -512,10 +512,10 @@
                 loadComplaints(document.getElementById('complaintFilter').value),
                 loadAllUsers()
             ]);
-            Utils.showNotification('✅ Пользователь заблокирован', 'success');
+            Helpers.showNotification('✅ Пользователь заблокирован', 'success');
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -525,10 +525,10 @@
         try {
             await db.collection('users').doc(userId).update({ banned: false });
             await loadAllUsers();
-            Utils.showNotification('✅ Пользователь разблокирован', 'success');
+            Helpers.showNotification('✅ Пользователь разблокирован', 'success');
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -540,10 +540,10 @@
                 resolvedAt: new Date().toISOString()
             });
             await loadVerifications();
-            Utils.showNotification('✅ Мастер верифицирован', 'success');
+            Helpers.showNotification('✅ Мастер верифицирован', 'success');
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -554,10 +554,10 @@
                 resolvedAt: new Date().toISOString()
             });
             await loadVerifications();
-            Utils.showNotification('⚠️ Заявка отклонена', 'warning');
+            Helpers.showNotification('⚠️ Заявка отклонена', 'warning');
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -568,10 +568,10 @@
 
     // Сохранение настроек
     async function saveSettings() {
-        Utils.showNotification('✅ Настройки сохранены', 'success');
+        Helpers.showNotification('✅ Настройки сохранены', 'success');
     }
 
     async function saveModerationSettings() {
-        Utils.showNotification('✅ Настройки модерации сохранены', 'success');
+        Helpers.showNotification('✅ Настройки модерации сохранены', 'success');
     }
 })();
