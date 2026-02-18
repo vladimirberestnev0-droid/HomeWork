@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВоркХом — Чат</title>
+    
+    <!-- Библиотеки -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Шапка -->
+        <div class="chat-header">
+            <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            
+            <div class="chat-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            
+            <div class="chat-info">
+                <h2 id="chatPartnerName">Загрузка...</h2>
+                <p id="chatPartnerRole">
+                    Клиент
+                    <span class="online-status"></span>
+                </p>
+            </div>
+
+            <div class="order-badge" id="orderInfo" onclick="showOrderDetails()">
+                📋 Заказ #...
+            </div>
+        </div>
+
+        <!-- Закрепленный заказ -->
+        <div id="pinnedOrder" class="pinned-order hidden">
+            <div class="pinned-order-content">
+                <span><i class="fas fa-clipboard-list"></i> <span id="pinnedTitle"></span></span>
+                <span><i class="fas fa-tag"></i> <span id="pinnedPrice"></span> ₽</span>
+                <span><i class="fas fa-map-marker-alt"></i> <span id="pinnedAddress"></span></span>
+            </div>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messagesArea" class="messages-area">
+            <div class="empty-chat">
+                <i class="fas fa-comments"></i>
+                <h3>Начните диалог</h3>
+                <p>Напишите первое сообщение</p>
+            </div>
+        </div>
+
+        <!-- Индикатор печати -->
+        <div id="typingIndicator" class="typing-indicator hidden">
+            собеседник печатает...
+        </div>
+
+        <!-- Быстрые ответы -->
+        <div id="quickReplies" class="quick-replies hidden">
+            <div class="quick-replies-buttons">
+                <button class="quick-reply-btn" data-text="✅ Принято! Приступаю">
+                    <i class="fas fa-check-circle me-2"></i>Принято
+                </button>
+                <button class="quick-reply-btn" data-text="🚗 Выезжаю, буду через час">
+                    <i class="fas fa-truck me-2"></i>Выезжаю
+                </button>
+                <button class="quick-reply-btn" data-text="❓ Уточните детали">
+                    <i class="fas fa-question-circle me-2"></i>Уточнить
+                </button>
+                <button class="quick-reply-btn" data-text="💰 Цена: [цена] ₽">
+                    <i class="fas fa-tag me-2"></i>Цена
+                </button>
+                <button class="quick-reply-btn" data-text="📸 Отправьте фото">
+                    <i class="fas fa-camera me-2"></i>Фото
+                </button>
+                <button class="quick-reply-btn" data-text="🕐 Во сколько будете?">
+                    <i class="fas fa-clock me-2"></i>Время
+                </button>
+            </div>
+        </div>
+
+        <!-- Поле ввода -->
+        <div class="chat-input">
+            <button id="attachButton" class="attach-btn">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" id="fileInput" style="display: none;" multiple>
+            
+            <button id="voiceButton" class="voice-btn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            
+            <button id="emojiButton" class="emoji-btn">
+                <i class="fas fa-smile"></i>
+            </button>
+            
+            <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
+            
+            <button id="sendButton" class="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <!-- Превью файлов -->
+        <div id="filePreview" class="file-preview-area hidden"></div>
+    </div>
+
+    <!-- Запись голоса -->
+    <div id="voiceRecording" class="voice-recording hidden">
+        <div class="recording-wave">
+            <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="recording-timer" id="recordingTimer">00:00</div>
+        <button class="btn btn-sm btn-light rounded-pill" onclick="stopRecording()">
+            <i class="fas fa-stop"></i>
+        </button>
+        <button class="btn btn-sm btn-light rounded-pill" onclick="cancelRecording()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Скрипты: библиотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+    <!-- Наши модули -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/moderation.js"></script>
+    
+    <!-- Скрипт страницы -->
+    <script src="js/chat-page.js"></script>
+</body>
+</html>

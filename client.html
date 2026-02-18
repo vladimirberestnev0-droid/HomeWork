@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВоркХом — Мои заказы</title>
+
+    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    
+    <!-- Библиотеки -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Шапка -->
+        <header>
+            <div class="logo">
+                <i class="fas fa-house"></i>
+                <span>ВоркХом</span>
+            </div>
+            <nav>
+                <a href="index.html">Главная</a>
+                <a href="client.html" class="active">Мои заказы</a>
+                <a href="masters.html">Мастерам</a>
+                <a href="#" id="favoritesLink">⭐ Избранное</a>
+                <a href="#" id="historyLink">🕐 История</a>
+                <a href="#" id="logoutLink">Выйти</a>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill ms-3" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Блок авторизации -->
+        <div id="authRequired" class="card text-center p-5">
+            <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>
+            <h3 class="mb-3">Вход в кабинет клиента</h3>
+            <p class="text-secondary mb-4">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
+            <a href="index.html" class="btn px-5 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i>Перейти на главную
+            </a>
+        </div>
+
+        <!-- Кабинет клиента -->
+        <div id="clientCabinet" class="d-none">
+            <div class="row g-4">
+                <!-- Профиль -->
+                <div class="col-md-4">
+                    <div class="profile-card">
+                        <div class="avatar avatar-lg mx-auto">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h4 id="clientName" class="profile-name">Загрузка...</h4>
+                        <div class="profile-role">👤 Клиент</div>
+                        <p id="clientEmail" class="text-secondary text-center"></p>
+                        <a href="index.html" class="btn w-100 mt-3">
+                            <i class="fas fa-plus-circle me-2"></i>Новая заявка
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Основной контент -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <!-- Навигация по табам -->
+                        <div class="tabs mb-4">
+                            <button class="tab active" data-tab="orders">📋 Мои заказы</button>
+                            <button class="tab" data-tab="favorites">⭐ Избранные мастера</button>
+                            <button class="tab" data-tab="history">🕐 История</button>
+                        </div>
+                        
+                        <!-- Таб: Мои заказы -->
+                        <div id="ordersTab" class="tab-content active">
+                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                                <h3 class="mb-0">📋 Мои заказы</h3>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-secondary filter-tab active" data-filter="all">Все</button>
+                                    <button class="btn btn-outline-secondary filter-tab" data-filter="open">Активные</button>
+                                    <button class="btn btn-outline-secondary filter-tab" data-filter="in_progress">В работе</button>
+                                    <button class="btn btn-outline-secondary filter-tab" data-filter="completed">Выполнены</button>
+                                </div>
+                            </div>
+                            <div id="ordersList"></div>
+                        </div>
+                        
+                        <!-- Таб: Избранные мастера -->
+                        <div id="favoritesTab" class="tab-content">
+                            <h3 class="mb-4">⭐ Избранные мастера</h3>
+                            <div id="favoritesList"></div>
+                        </div>
+                        
+                        <!-- Таб: История просмотров -->
+                        <div id="historyTab" class="tab-content">
+                            <h3 class="mb-4">🕐 История просмотров</h3>
+                            <div id="historyList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка отзыва -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">⭐ Оцените мастера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="reviewMasterInfo" class="mb-3"></div>
+                    <div class="d-flex gap-2 mb-3 justify-content-center">
+                        <span class="rating-star" data-rating="1">★</span>
+                        <span class="rating-star" data-rating="2">★</span>
+                        <span class="rating-star" data-rating="3">★</span>
+                        <span class="rating-star" data-rating="4">★</span>
+                        <span class="rating-star" data-rating="5">★</span>
+                    </div>
+                    <textarea id="reviewText" class="form-control" rows="4" placeholder="Напишите отзыв..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn" style="background: var(--accent); color: white;" id="submitReview">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты: библиотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+    <!-- Наши модули -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/badges.js"></script>
+    
+    <!-- Скрипт страницы -->
+    <script src="js/client.js"></script>
+</body>
+</html>

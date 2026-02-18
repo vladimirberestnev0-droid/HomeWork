@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВоркХом — Кабинет мастера</title>
+
+    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    
+    <!-- Библиотеки -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Шапка -->
+        <header>
+            <div class="logo">
+                <i class="fas fa-house"></i>
+                <span>ВоркХом</span>
+            </div>
+            <nav>
+                <a href="index.html"><i class="fas fa-home"></i> Главная</a>
+                <a href="masters.html" class="active"><i class="fas fa-tachometer-alt"></i> Кабинет</a>
+                <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill ms-3" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Блок авторизации -->
+        <div id="authRequired" class="card text-center p-5">
+            <i class="fas fa-user-tie fa-4x mb-3" style="color: var(--accent);"></i>
+            <h2 class="mb-3">Вход в кабинет мастера</h2>
+            <p class="text-secondary mb-4">Пожалуйста, войдите как мастер</p>
+            <a href="index.html" class="btn px-5 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i>Перейти на главную
+            </a>
+        </div>
+
+        <!-- Кабинет мастера -->
+        <div id="masterCabinet" class="d-none">
+            <div class="dashboard">
+                <!-- Профиль -->
+                <div class="profile-card">
+                    <div class="avatar avatar-lg mx-auto">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="profile-name" id="masterName">Загрузка...</div>
+                    <div class="profile-role" id="masterRole">Мастер</div>
+                    
+                    <div class="profile-info">
+                        <div class="info-row">
+                            <i class="fas fa-envelope"></i>
+                            <span id="masterEmail">email@example.com</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-phone"></i>
+                            <span id="masterPhone">+7 (999) 123-45-67</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-calendar"></i>
+                            <span id="masterSince">На платформе с 2025</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-tag"></i>
+                            <span id="masterCategories">Ремонт и отделка</span>
+                        </div>
+                    </div>
+
+                    <!-- Бейджи -->
+                    <div id="badgesContainer" class="d-flex flex-wrap gap-2 mt-3 justify-content-center"></div>
+
+                    <div class="rating-badge">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-star" style="color: #FFD700; font-size: 24px;"></i>
+                            <div>
+                                <div style="font-weight: 700; font-size: 24px;" id="masterRating">0.0</div>
+                                <div style="font-size: 13px; color: var(--text-soft);" id="masterReviews">0 отзывов</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="rating-stars" id="ratingStars">☆☆☆☆☆</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button id="editProfileBtn" class="btn flex-grow-1">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </button>
+                        <button id="verifyMasterBtn" class="btn btn-outline">
+                            <i class="fas fa-id-card"></i> Верификация
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="stats-card card">
+                    <h3 class="mb-4"><i class="fas fa-chart-line me-2" style="color: var(--accent);"></i>Моя статистика</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="fas fa-reply"></i></div>
+                            <div class="stat-value" id="statResponses">0</div>
+                            <div class="stat-label">Откликов</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-value" id="statAccepted">0</div>
+                            <div class="stat-label">Принято</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                            <div class="stat-value" id="statCompleted">0</div>
+                            <div class="stat-label">Выполнено</div>
+                        </div>
+                    </div>
+                    
+                    <div class="conversion-box">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-bullseye"></i> Конверсия</span>
+                            <span style="color: var(--accent); font-weight: 700;" id="conversionRate">0%</span>
+                        </div>
+                        <div class="conversion-bar">
+                            <div class="conversion-fill" id="conversionBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Табы -->
+            <div class="card mt-4">
+                <div class="tabs">
+                    <button class="tab active" data-tab="responses">
+                        <i class="fas fa-inbox me-2"></i>Отклики
+                    </button>
+                    <button class="tab" data-tab="portfolio">
+                        <i class="fas fa-images me-2"></i>Портфолио
+                    </button>
+                    <button class="tab" data-tab="calendar">
+                        <i class="fas fa-calendar me-2"></i>Календарь
+                    </button>
+                    <button class="tab" data-tab="price">
+                        <i class="fas fa-tag me-2"></i>Мои цены
+                    </button>
+                </div>
+
+                <!-- Вкладка Отклики -->
+                <div id="responsesTab" class="tab-content active">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4>Мои отклики на заказы</h4>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary filter-tab active" data-filter="all">Все</button>
+                            <button class="btn btn-outline-secondary filter-tab" data-filter="pending">Ожидают</button>
+                            <button class="btn btn-outline-secondary filter-tab" data-filter="accepted">Приняты</button>
+                            <button class="btn btn-outline-secondary filter-tab" data-filter="completed">Выполнены</button>
+                        </div>
+                    </div>
+                    <div id="responsesList"></div>
+                </div>
+
+                <!-- Вкладка Портфолио -->
+                <div id="portfolioTab" class="tab-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4>Мои работы</h4>
+                        <button class="btn" id="addPortfolioBtn">
+                            <i class="fas fa-plus me-2"></i>Добавить работу
+                        </button>
+                    </div>
+                    <div id="portfolioGrid" class="portfolio-grid"></div>
+                </div>
+
+                <!-- Вкладка Календарь -->
+                <div id="calendarTab" class="tab-content">
+                    <h4 class="mb-4">Мой график работы</h4>
+                    <div id="calendar"></div>
+                </div>
+
+                <!-- Вкладка Мои цены -->
+                <div id="priceTab" class="tab-content">
+                    <h4 class="mb-4">Мои цены на услуги</h4>
+                    <div id="priceList" class="row g-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка редактирования профиля -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2" style="color: var(--accent);"></i>Редактировать профиль</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Имя</label>
+                        <input type="text" id="editName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" id="editPhone" class="form-control" placeholder="+7 (999) 123-45-67">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Специализация (через запятую)</label>
+                        <input type="text" id="editCategories" class="form-control" placeholder="Сантехника, Электрика">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">О себе</label>
+                        <textarea id="editBio" class="form-control" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn" id="saveProfileBtn">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка добавления работы -->
+    <div class="modal fade" id="addPortfolioModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-image me-2" style="color: var(--accent);"></i>Добавить работу</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название работы</label>
+                        <input type="text" id="portfolioTitle" class="form-control" placeholder="Например: Ремонт ванной">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea id="portfolioDesc" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <select id="portfolioCategory" class="form-select">
+                            <option value="Сантехника">Сантехника</option>
+                            <option value="Электрика">Электрика</option>
+                            <option value="Отделочные работы">Отделочные работы</option>
+                            <option value="Мебель">Мебель</option>
+                            <option value="Другое">Другое</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Фото работы</label>
+                        <div class="upload-area" id="portfolioUploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--accent);"></i>
+                            <p>Нажмите для загрузки</p>
+                            <input type="file" id="portfolioPhotoInput" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="portfolioPhotoPreview" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn" id="savePortfolioBtn">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка верификации -->
+    <div class="modal fade" id="verifyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-id-card me-2" style="color: var(--accent);"></i>Верификация мастера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Загрузите фото паспорта (размыто разрешено)</p>
+                    <div class="upload-area mb-3" id="verifyUploadArea">
+                        <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--accent);"></i>
+                        <p>Нажмите для загрузки</p>
+                        <input type="file" id="verifyPhotoInput" accept="image/*" style="display: none;">
+                    </div>
+                    <div id="verifyPreview" class="text-center mb-3"></div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="agreeTerms">
+                        <label class="form-check-label">Я согласен на обработку данных</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn" id="submitVerification" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка просмотра портфолио -->
+    <div class="modal fade" id="viewPortfolioModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewPortfolioTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="viewPortfolioImage" src="" class="img-fluid rounded-4 mb-3">
+                    <p id="viewPortfolioDesc" class="text-secondary"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты: библиотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+    <!-- Наши модули -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/badges.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/moderation.js"></script>
+    
+    <!-- Скрипт страницы -->
+    <script src="js/masters.js"></script>
+</body>
+</html>

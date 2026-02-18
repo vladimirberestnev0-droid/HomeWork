@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВоркХом — Групповой чат</title>
+
+    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    
+    <!-- Библиотеки -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Шапка -->
+        <div class="chat-header">
+            <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            
+            <div class="chat-info">
+                <h2 id="chatTitle">Групповой чат</h2>
+                <p id="chatSubtitle">Загрузка...</p>
+            </div>
+
+            <div class="participants-badge" id="participantsBtn">
+                <i class="fas fa-users"></i> <span id="participantsCount">0</span>
+            </div>
+        </div>
+
+        <!-- Закрепленный заказ -->
+        <div id="pinnedOrder" class="pinned-order hidden">
+            <div class="pinned-order-content">
+                <span><i class="fas fa-clipboard-list"></i> <span id="pinnedTitle"></span></span>
+                <span><i class="fas fa-tag"></i> <span id="pinnedPrice"></span> ₽</span>
+                <span><i class="fas fa-map-marker-alt"></i> <span id="pinnedAddress"></span></span>
+            </div>
+        </div>
+
+        <!-- Закрепленное сообщение -->
+        <div id="pinnedMessage" class="pinned-message hidden">
+            <span class="pinned-message-text" id="pinnedMessageText"></span>
+            <span class="unpin-btn" onclick="unpinMessage()"><i class="fas fa-times"></i></span>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messagesArea" class="messages-area">
+            <div class="empty-chat">
+                <i class="fas fa-comments"></i>
+                <h3>Начните диалог</h3>
+                <p>Напишите первое сообщение</p>
+            </div>
+        </div>
+
+        <!-- Индикатор печати -->
+        <div id="typingIndicator" class="typing-indicator hidden">
+            кто-то печатает...
+        </div>
+
+        <!-- Групповой таймер -->
+        <div id="groupTimer" class="group-timer hidden"></div>
+
+        <!-- Поле ввода -->
+        <div class="chat-input">
+            <button id="attachButton" class="attach-btn">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <button id="pollButton" class="poll-btn">
+                <i class="fas fa-poll"></i>
+            </button>
+            <input type="file" id="fileInput" style="display: none;" multiple>
+            <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
+            <button id="sendButton" class="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <!-- Превью файлов -->
+        <div id="filePreview" class="file-preview-area hidden"></div>
+    </div>
+
+    <!-- Модальное окно участников -->
+    <div id="participantsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Участники чата</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div id="participantsList"></div>
+            <button class="add-participant-btn btn w-100 mt-3" id="addParticipantBtn">
+                <i class="fas fa-user-plus"></i> Добавить участника
+            </button>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания опроса -->
+    <div id="pollModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="mb-4"><i class="fas fa-poll me-2" style="color: var(--accent);"></i>Создать опрос</h3>
+            
+            <input type="text" id="pollQuestion" placeholder="Вопрос" class="form-control mb-3">
+            
+            <div id="pollOptions">
+                <div class="poll-option-input mb-2">
+                    <input type="text" class="form-control poll-option" placeholder="Вариант 1">
+                    <button class="remove-option btn btn-danger btn-sm" onclick="this.parentElement.remove()">×</button>
+                </div>
+                <div class="poll-option-input mb-2">
+                    <input type="text" class="form-control poll-option" placeholder="Вариант 2">
+                    <button class="remove-option btn btn-danger btn-sm" onclick="this.parentElement.remove()">×</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-outline-secondary mb-3" onclick="addPollOption()">
+                <i class="fas fa-plus"></i> Добавить вариант
+            </button>
+            
+            <div class="mb-3">
+                <label class="form-label">Длительность (часов)</label>
+                <input type="number" id="pollDuration" class="form-control" value="24" min="1" max="168">
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button class="btn flex-grow-1" style="background: var(--accent); color: white;" onclick="createPoll()">
+                    Создать опрос
+                </button>
+                <button class="btn btn-outline-secondary" onclick="closePollModal()">
+                    Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты: библиотеки -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+    <!-- Наши модули -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/moderation.js"></script>
+    
+    <!-- Скрипт страницы -->
+    <script src="js/group-chat.js"></script>
+</body>
+</html>
