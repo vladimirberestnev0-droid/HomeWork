@@ -27,7 +27,7 @@ const Orders = (function() {
                 throw new Error('Выберите категорию');
             }
 
-            if (!Utils.validatePrice(orderData.price)) {
+            if (!Helpers.validatePrice(orderData.price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
@@ -60,13 +60,13 @@ const Orders = (function() {
             // Отправляем уведомления мастерам
             await notifyMastersAboutNewOrder(docRef.id, order);
             
-            Utils.showNotification('✅ Заказ создан! Мастера увидят его в течение 5 минут', 'success');
+            Helpers.showNotification('✅ Заказ создан! Мастера увидят его в течение 5 минут', 'success');
             
             return { success: true, orderId: docRef.id };
             
         } catch (error) {
             console.error('Ошибка создания заказа:', error);
-            Utils.showNotification(`❌ ${error.message}`, 'error');
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -157,7 +157,7 @@ const Orders = (function() {
             
         } catch (error) {
             console.error('Ошибка загрузки заказов:', error);
-            Utils.showNotification('❌ Ошибка загрузки заказов', 'error');
+            Helpers.showNotification('❌ Ошибка загрузки заказов', 'error');
             return [];
         }
     }
@@ -248,7 +248,7 @@ const Orders = (function() {
                 throw new Error('Только мастера могут откликаться');
             }
 
-            if (!Utils.validatePrice(price)) {
+            if (!Helpers.validatePrice(price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
@@ -293,13 +293,13 @@ const Orders = (function() {
                 totalResponses: firebase.firestore.FieldValue.increment(1)
             });
 
-            Utils.showNotification('✅ Отклик отправлен! Чат с клиентом доступен', 'success');
+            Helpers.showNotification('✅ Отклик отправлен! Чат с клиентом доступен', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка отклика:', error);
-            Utils.showNotification(`❌ ${error.message}`, 'error');
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -335,13 +335,13 @@ const Orders = (function() {
                 console.log('Чат уже существует или ошибка:', chatError);
             }
 
-            Utils.showNotification('✅ Мастер выбран!', 'success');
+            Helpers.showNotification('✅ Мастер выбран!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка выбора мастера:', error);
-            Utils.showNotification(`❌ ${error.message}`, 'error');
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -380,13 +380,13 @@ const Orders = (function() {
                 });
             }
 
-            Utils.showNotification('✅ Заказ завершен!', 'success');
+            Helpers.showNotification('✅ Заказ завершен!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка завершения заказа:', error);
-            Utils.showNotification(`❌ ${error.message}`, 'error');
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
