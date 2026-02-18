@@ -51,7 +51,7 @@ const Chats = (function() {
             if (!user) throw new Error('Необходимо авторизоваться');
 
             const messageData = {
-                text: Utils.escapeHtml(text || ''),
+                text: Helpers.escapeHtml(text || ''),
                 senderId: user.uid,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 read: false
@@ -101,7 +101,7 @@ const Chats = (function() {
             
         } catch (error) {
             console.error('Ошибка отправки сообщения:', error);
-            Utils.showNotification(`❌ ${error.message}`, 'error');
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
