@@ -338,6 +338,49 @@
 
 <!-- Скрипт страницы -->
 <script src="js/pages/masters.js" defer></script>
-    
+   
+<!-- Модалка завершения заказа -->
+<div class="modal fade" id="completeOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
+                    Заказ выполнен
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-star fa-3x mb-3" style="color: #FFD700;"></i>
+                    <h6>Оцените заказчика</h6>
+                </div>
+                
+                <!-- Звезды рейтинга -->
+                <div class="d-flex gap-2 mb-4 justify-content-center">
+                    <span class="rating-star" data-rating="1" onclick="setCustomerRating(1)">★</span>
+                    <span class="rating-star" data-rating="2" onclick="setCustomerRating(2)">★</span>
+                    <span class="rating-star" data-rating="3" onclick="setCustomerRating(3)">★</span>
+                    <span class="rating-star" data-rating="4" onclick="setCustomerRating(4)">★</span>
+                    <span class="rating-star" data-rating="5" onclick="setCustomerRating(5)">★</span>
+                </div>
+                
+                <!-- Комментарий -->
+                <div class="mb-3">
+                    <label class="form-label">Комментарий (необязательно)</label>
+                    <textarea id="completeComment" class="form-control" rows="3" 
+                              placeholder="Напишите отзыв о заказчике..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" id="confirmCompleteBtn">
+                    <i class="fas fa-check"></i> Подтвердить выполнение
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
