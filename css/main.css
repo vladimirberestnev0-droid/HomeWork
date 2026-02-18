@@ -1878,3 +1878,24 @@ html, body {
         max-height: 50vh;
     }
 }
+
+/* ===== ЗВЕЗДЫ РЕЙТИНГА ===== */
+.rating-star {
+    font-size: 40px;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rating-star:hover {
+    transform: scale(1.2);
+    color: #FFD700;
+}
+
+.rating-star.active {
+    color: #FFD700;
+}
+
+.rating-star[onclick] {
+    user-select: none;
+}
