@@ -85,6 +85,10 @@ const AuthUI = (function() {
             document.getElementById('tabRegister').style.color = '#6c757d';
             document.getElementById('loginForm').classList.remove('d-none');
             document.getElementById('registerForm').classList.add('d-none');
+            
+            // Скрываем ошибки при переключении
+            document.getElementById('loginError')?.classList.add('d-none');
+            document.getElementById('registerError')?.classList.add('d-none');
         });
         
         document.getElementById('tabRegister')?.addEventListener('click', () => {
@@ -96,6 +100,10 @@ const AuthUI = (function() {
             document.getElementById('tabLogin').style.color = '#6c757d';
             document.getElementById('registerForm').classList.remove('d-none');
             document.getElementById('loginForm').classList.add('d-none');
+            
+            // Скрываем ошибки при переключении
+            document.getElementById('loginError')?.classList.add('d-none');
+            document.getElementById('registerError')?.classList.add('d-none');
         });
     }
 
@@ -103,27 +111,88 @@ const AuthUI = (function() {
     function setupAuthButtons() {
         // Регистрация
         document.getElementById('registerBtn')?.addEventListener('click', async () => {
-            const email = document.getElementById('regEmail').value;
+            const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
-            const name = document.getElementById('regName').value;
-            const phone = document.getElementById('regPhone').value;
-            const role = document.querySelector('input[name="role"]:checked').value;
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const role = document.querySelector('input[name="role"]:checked')?.value || 'client';
+            
+            // Простая валидация
+            if (!email || !password || !name) {
+                showError('registerError', 'Заполните все обязательные поля');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('registerError', 'Пароль должен быть минимум 6 символов');
+                return;
+            }
 
             const result = await Auth.register(email, password, { name, phone, role });
+            
             if (result.success) {
+                // Очищаем поля
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+                document.getElementById('regName').value = '';
+                document.getElementById('regPhone').value = '';
+                
+                // Переключаемся на форму входа
                 document.getElementById('registerForm').classList.add('d-none');
                 document.getElementById('loginForm').classList.remove('d-none');
                 document.getElementById('tabLogin').click();
+                
+                // Показываем сообщение об успехе
+                showError('loginError', 'Регистрация успешна! Войдите в систему', 'text-success');
+            } else {
+                showError('registerError', result.error || 'Ошибка регистрации');
             }
         });
 
         // Вход
         document.getElementById('loginBtn')?.addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             
-            await Auth.login(email, password);
+            if (!email || !password) {
+                showError('loginError', 'Введите email и пароль');
+                return;
+            }
+            
+            const result = await Auth.login(email, password);
+            
+            if (!result.success) {
+                showError('loginError', result.error || 'Ошибка входа');
+            }
         });
+        
+        // Добавляем обработку Enter
+        document.getElementById('loginPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn')?.click();
+            }
+        });
+        
+        document.getElementById('regPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('registerBtn')?.click();
+            }
+        });
+    }
+    
+    // Вспомогательная функция для показа ошибок
+    function showError(elementId, message, className = 'text-danger') {
+        const errorElement = document.getElementById(elementId);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.className = `mt-3 ${className}`;
+            errorElement.classList.remove('d-none');
+            
+            // Автоматически скрываем через 5 секунд
+            setTimeout(() => {
+                errorElement.classList.add('d-none');
+            }, 5000);
+        }
     }
 
     // Публичное API
@@ -133,4 +202,8 @@ const AuthUI = (function() {
 })();
 
 // Экспортируем
-window.AuthUI = AuthUI;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AuthUI;
+} else {
+    window.AuthUI = AuthUI;
+}
