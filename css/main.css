@@ -1819,3 +1819,35 @@ textarea.form-control {
 .hidden {
     display: none !important;
 }
+
+/* ===== ЦЕНТРИРОВАНИЕ ЧАТА ===== */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-light);
+}
+
+.chat-container {
+    max-width: 1200px;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0 auto;
+    position: relative;
+    background: var(--bg-white);
+    box-shadow: 0 0 50px rgba(0,0,0,0.1);
+}
+
+/* Если нужны отступы по бокам на мобилках */
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+    }
+    .chat-container {
+        border-radius: 0;
+    }
+}
