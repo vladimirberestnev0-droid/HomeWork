@@ -1851,3 +1851,30 @@ html, body {
         border-radius: 0;
     }
 }
+
+/* ===== ИСПРАВЛЕНИЕ ПРОКРУТКИ ===== */
+html, body {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    position: relative;
+}
+
+.chat-container {
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    overflow-y: visible;
+}
+
+.messages-area {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Для мобилок */
+@media (max-width: 768px) {
+    .messages-area {
+        max-height: 50vh;
+    }
+}
