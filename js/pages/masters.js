@@ -1,4 +1,5 @@
 // ===== MASTERS.JS — Логика кабинета мастера =====
+// ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 (function() {
     // Состояние
@@ -369,109 +370,137 @@
     }
 
     // ============================================
-    // ГЛОБАЛЬНЫЕ ФУНКЦИИ (ДЛЯ ONCLICK)
+    // ГЛОБАЛЬНЫЕ ФУНКЦИИ (ДЛЯ ONCLICK) — ИСПРАВЛЕНО!
     // ============================================
 
     // Переменные для хранения данных
-let currentCompleteOrderId = null;
-let customerRating = 0;
+    let currentCompleteOrderId = null;
+    let customerRating = 0;
 
-// Установка рейтинга
-window.setCustomerRating = function(rating) {
-    customerRating = rating;
-    document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
-        const starRating = parseInt(star.dataset.rating);
-        if (starRating <= rating) {
-            star.classList.add('active');
-        } else {
+    // Установка рейтинга
+    window.setCustomerRating = function(rating) {
+        customerRating = rating;
+        document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            if (starRating <= rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    };
+
+    // Открытие модалки завершения
+    window.completeOrder = async (orderId) => {
+        console.log('📝 Открытие модалки завершения для заказа:', orderId);
+        currentCompleteOrderId = orderId;
+        customerRating = 0;
+        
+        // Сброс звезд
+        document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
             star.classList.remove('active');
+        });
+        
+        // Очистка комментария
+        const commentEl = document.getElementById('completeComment');
+        if (commentEl) commentEl.value = '';
+        
+        // Показ модалки
+        const modalEl = document.getElementById('completeOrderModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        } else {
+            console.error('❌ Модалка completeOrderModal не найдена в DOM');
+            Helpers.showNotification('❌ Ошибка открытия формы', 'error');
         }
-    });
-};
+    };
 
-// Открытие модалки завершения
-window.completeOrder = async (orderId) => {
-    currentCompleteOrderId = orderId;
-    customerRating = 0;
-    
-    // Сброс звезд
-    document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
-        star.classList.remove('active');
-    });
-    
-    // Очистка комментария
-    document.getElementById('completeComment').value = '';
-    
-    // Показ модалки
-    const modal = new bootstrap.Modal(document.getElementById('completeOrderModal'));
-    modal.show();
-};
-
-// Подтверждение завершения с отзывом
-document.getElementById('confirmCompleteBtn')?.addEventListener('click', async () => {
-    if (!currentCompleteOrderId) return;
-    
-    // Если рейтинг не выбран - спросим
-    if (customerRating === 0) {
-        if (!confirm('Вы не поставили оценку. Продолжить без оценки?')) {
+    // Подтверждение завершения с отзывом
+    document.getElementById('confirmCompleteBtn')?.addEventListener('click', async () => {
+        console.log('🔄 Нажата кнопка подтверждения завершения');
+        
+        if (!currentCompleteOrderId) {
+            Helpers.showNotification('❌ Ошибка: заказ не выбран', 'error');
             return;
         }
-    }
-    
-    try {
-        // Получаем данные заказа
-        const orderDoc = await db.collection('orders').doc(currentCompleteOrderId).get();
-        const orderData = orderDoc.data();
-        const clientId = orderData.clientId;
         
-        // Создаем отзыв о заказчике
-        if (customerRating > 0) {
-            const review = {
-                masterId: Auth.getUser().uid,
-                masterName: Auth.getUserData()?.name || 'Мастер',
-                rating: customerRating,
-                text: document.getElementById('completeComment')?.value || '',
-                createdAt: new Date().toISOString()
-            };
-            
-            // Добавляем отзыв в документ заказа
-            await db.collection('orders').doc(currentCompleteOrderId).update({
-                customerReviews: firebase.firestore.FieldValue.arrayUnion(review)
-            });
-            
-            // Обновляем рейтинг заказчика (если нужно)
-            const clientDoc = await db.collection('users').doc(clientId).get();
-            if (clientDoc.exists) {
-                const clientData = clientDoc.data();
-                const newRating = ((clientData.rating || 0) * (clientData.reviews || 0) + customerRating) / ((clientData.reviews || 0) + 1);
-                
-                await db.collection('users').doc(clientId).update({
-                    rating: newRating,
-                    reviews: (clientData.reviews || 0) + 1
-                });
+        // Если рейтинг не выбран - спросим
+        if (customerRating === 0) {
+            if (!confirm('Вы не поставили оценку. Продолжить без оценки?')) {
+                return;
             }
         }
         
-        // Завершаем заказ
-        const result = await Orders.completeOrder(currentCompleteOrderId);
-        
-        if (result.success) {
-            // Закрываем модалку
-            bootstrap.Modal.getInstance(document.getElementById('completeOrderModal')).hide();
+        try {
+            // Получаем данные заказа
+            console.log('📦 Загружаем данные заказа:', currentCompleteOrderId);
+            const orderDoc = await db.collection('orders').doc(currentCompleteOrderId).get();
             
-            // Показываем успех
-            Helpers.showNotification('✅ Заказ выполнен!', 'success');
+            if (!orderDoc.exists) {
+                throw new Error('Заказ не найден');
+            }
             
-            // Перезагружаем список откликов
-            const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
-            await loadMasterResponses(activeFilter);
+            const orderData = orderDoc.data();
+            const clientId = orderData.clientId;
+            
+            // Создаем отзыв о заказчике
+            if (customerRating > 0) {
+                console.log('⭐ Сохраняем отзыв с рейтингом:', customerRating);
+                
+                const review = {
+                    masterId: Auth.getUser().uid,
+                    masterName: Auth.getUserData()?.name || 'Мастер',
+                    rating: customerRating,
+                    text: document.getElementById('completeComment')?.value || '',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Добавляем отзыв в документ заказа
+                await db.collection('orders').doc(currentCompleteOrderId).update({
+                    customerReviews: firebase.firestore.FieldValue.arrayUnion(review)
+                });
+                
+                // Обновляем рейтинг заказчика (если нужно)
+                const clientDoc = await db.collection('users').doc(clientId).get();
+                if (clientDoc.exists) {
+                    const clientData = clientDoc.data();
+                    const newRating = ((clientData.rating || 0) * (clientData.reviews || 0) + customerRating) / ((clientData.reviews || 0) + 1);
+                    
+                    await db.collection('users').doc(clientId).update({
+                        rating: newRating,
+                        reviews: (clientData.reviews || 0) + 1
+                    });
+                }
+            }
+            
+            // Завершаем заказ через Orders.completeOrder
+            console.log('🔄 Вызываем Orders.completeOrder для заказа:', currentCompleteOrderId);
+            const result = await Orders.completeOrder(currentCompleteOrderId);
+            console.log('📊 Результат completeOrder:', result);
+            
+            if (result && result.success === true) {
+                // Закрываем модалку
+                const modal = bootstrap.Modal.getInstance(document.getElementById('completeOrderModal'));
+                if (modal) modal.hide();
+                
+                // Показываем успех
+                Helpers.showNotification('✅ Заказ выполнен!', 'success');
+                
+                // Перезагружаем список откликов
+                const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
+                await loadMasterResponses(activeFilter);
+            } else {
+                // Если ошибка в результате
+                throw new Error(result?.error || 'Неизвестная ошибка при завершении заказа');
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка при завершении заказа:', error);
+            Helpers.showNotification(`❌ ${error.message}`, 'error');
+            // Не закрываем модалку при ошибке
         }
-        
-    } catch (error) {
-        console.error('❌ Ошибка при завершении заказа:', error);
-        Helpers.showNotification('❌ Ошибка', 'error');
-    }
-});
+    });
 
     // Открыть чат
     window.openChat = (orderId, clientId) => {
