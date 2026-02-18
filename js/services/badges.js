@@ -295,7 +295,7 @@ const Badges = (function() {
                 
                 // Небольшая задержка, чтобы не превысить лимиты Firestore
                 if (updated % 10 === 0) {
-                    await Utils.delay(1000);
+                    await Helpers.delay(1000);
                 }
             }
 
