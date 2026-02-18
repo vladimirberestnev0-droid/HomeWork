@@ -5,41 +5,9 @@
     let calendar = null;
     let portfolioPhotos = [];
 
-    // Инициализация
-    document.addEventListener('DOMContentLoaded', () => {
-        Auth.onAuthChange(async (state) => {
-            const authRequired = document.getElementById('authRequired');
-            const masterCabinet = document.getElementById('masterCabinet');
-            
-            if (state.isAuthenticated && state.isMaster) {
-                // Показать кабинет
-                authRequired?.classList.add('d-none');
-                masterCabinet?.classList.remove('d-none');
-                
-                // Загрузить данные
-                await Promise.all([
-                    loadMasterData(state),
-                    loadMasterResponses('all'),
-                    loadPortfolio(),
-                    loadPriceList()
-                ]);
-                
-                // Инициализировать календарь
-                initCalendar();
-                
-                // Обновить бейджи
-                await Badges.updateMasterBadges(state.user.uid);
-                await displayBadges(state.user.uid);
-                
-            } else if (state.isAuthenticated && !state.isMaster) {
-                Helpers.showNotification('Эта страница только для мастеров', 'warning');
-                setTimeout(() => window.location.href = 'index.html', 2000);
-            }
-        });
-
-        // Инициализация обработчиков
-        initEventListeners();
-    });
+    // ============================================
+    // ФУНКЦИИ ОТОБРАЖЕНИЯ
+    // ============================================
 
     // Отображение бейджей
     async function displayBadges(masterId) {
@@ -50,68 +18,74 @@
         }
     }
 
+    // Обновление звезд рейтинга
+    function updateRatingStars(rating) {
+        const starsElement = document.getElementById('ratingStars');
+        if (!starsElement) return;
+        
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        let stars = '';
+        
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) stars += '★';
+            else if (i === fullStars && hasHalfStar) stars += '½';
+            else stars += '☆';
+        }
+        starsElement.innerHTML = stars;
+    }
+
     // Загрузка данных мастера
-async function loadMasterData(state) {
-    const userData = state.userData;
-    
-    // Проверяем каждый элемент перед установкой значения
-    const masterNameEl = document.getElementById('masterName');
-    if (masterNameEl) {
-        masterNameEl.innerText = userData?.name || 'Мастер';
-    } else {
-        console.error('❌ Элемент masterName не найден!');
+    async function loadMasterData(state) {
+        const userData = state.userData;
+        
+        const masterNameEl = document.getElementById('masterName');
+        if (masterNameEl) {
+            masterNameEl.innerText = userData?.name || 'Мастер';
+        }
+        
+        const masterEmailEl = document.getElementById('masterEmail');
+        if (masterEmailEl) {
+            masterEmailEl.innerText = userData?.email || '';
+        }
+        
+        const masterPhoneEl = document.getElementById('masterPhone');
+        if (masterPhoneEl) {
+            masterPhoneEl.innerText = userData?.phone || 'Телефон не указан';
+        }
+        
+        const masterCategoriesEl = document.getElementById('masterCategories');
+        if (masterCategoriesEl) {
+            masterCategoriesEl.innerHTML = userData?.categories || 'Ремонт и отделка';
+        }
+        
+        const masterSinceEl = document.getElementById('masterSince');
+        if (masterSinceEl && userData?.createdAt) {
+            const date = userData.createdAt.toDate();
+            masterSinceEl.innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
+        } else if (masterSinceEl) {
+            masterSinceEl.innerHTML = 'На платформе с 2025';
+        }
+        
+        const rating = userData?.rating || 0;
+        const reviews = userData?.reviews || 0;
+        
+        const masterRatingEl = document.getElementById('masterRating');
+        if (masterRatingEl) {
+            masterRatingEl.innerHTML = rating.toFixed(1);
+        }
+        
+        const masterReviewsEl = document.getElementById('masterReviews');
+        if (masterReviewsEl) {
+            masterReviewsEl.innerHTML = `${reviews} ${Helpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
+        }
+        
+        updateRatingStars(rating);
     }
-    
-    const masterEmailEl = document.getElementById('masterEmail');
-    if (masterEmailEl) {
-        masterEmailEl.innerText = userData?.email || '';
-    } else {
-        console.error('❌ Элемент masterEmail не найден!');
-    }
-    
-    const masterPhoneEl = document.getElementById('masterPhone');
-    if (masterPhoneEl) {
-        masterPhoneEl.innerText = userData?.phone || 'Телефон не указан';
-    } else {
-        console.error('❌ Элемент masterPhone не найден!');
-    }
-    
-    const masterCategoriesEl = document.getElementById('masterCategories');
-    if (masterCategoriesEl) {
-        masterCategoriesEl.innerHTML = userData?.categories || 'Ремонт и отделка';
-    } else {
-        console.error('❌ Элемент masterCategories не найден!');
-    }
-    
-    const masterSinceEl = document.getElementById('masterSince');
-    if (masterSinceEl && userData?.createdAt) {
-        const date = userData.createdAt.toDate();
-        masterSinceEl.innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
-    } else if (masterSinceEl) {
-        masterSinceEl.innerHTML = 'На платформе с 2025';
-    } else {
-        console.error('❌ Элемент masterSince не найден!');
-    }
-    
-    const rating = userData?.rating || 0;
-    const reviews = userData?.reviews || 0;
-    
-    const masterRatingEl = document.getElementById('masterRating');
-    if (masterRatingEl) {
-        masterRatingEl.innerHTML = rating.toFixed(1);
-    } else {
-        console.error('❌ Элемент masterRating не найден!');
-    }
-    
-    const masterReviewsEl = document.getElementById('masterReviews');
-    if (masterReviewsEl) {
-        masterReviewsEl.innerHTML = `${reviews} ${Helpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
-    } else {
-        console.error('❌ Элемент masterReviews не найден!');
-    }
-    
-    updateRatingStars(rating);
-}
+
+    // ============================================
+    // ФУНКЦИИ РАБОТЫ С ОТКЛИКАМИ
+    // ============================================
 
     // Создание карточки отклика
     function createResponseCard(item) {
@@ -198,43 +172,76 @@ async function loadMasterData(state) {
         const accepted = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS || r.status === ORDER_STATUS.COMPLETED).length;
         const completed = responses.filter(r => r.status === ORDER_STATUS.COMPLETED).length;
         
-        document.getElementById('statResponses').innerText = total;
-        document.getElementById('statAccepted').innerText = accepted;
-        document.getElementById('statCompleted').innerText = completed;
+        const statResponses = document.getElementById('statResponses');
+        if (statResponses) statResponses.innerText = total;
+        
+        const statAccepted = document.getElementById('statAccepted');
+        if (statAccepted) statAccepted.innerText = accepted;
+        
+        const statCompleted = document.getElementById('statCompleted');
+        if (statCompleted) statCompleted.innerText = completed;
         
         const conversion = total > 0 ? Math.round((accepted / total) * 100) : 0;
-        document.getElementById('conversionRate').innerText = `${conversion}%`;
-        document.getElementById('conversionBar').style.width = `${conversion}%`;
+        
+        const conversionRate = document.getElementById('conversionRate');
+        if (conversionRate) conversionRate.innerText = `${conversion}%`;
+        
+        const conversionBar = document.getElementById('conversionBar');
+        if (conversionBar) conversionBar.style.width = `${conversion}%`;
     }
 
-    // Завершить заказ
-    window.completeOrder = async (orderId) => {
-        if (!confirm('Подтвердите, что заказ выполнен')) return;
+    // Загрузка откликов
+    async function loadMasterResponses(filter = 'all') {
+        const responsesList = document.getElementById('responsesList');
+        if (!responsesList) return;
         
-        const result = await Orders.completeOrder(orderId);
-        if (result.success) {
-            const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
-            await loadMasterResponses(activeFilter);
+        responsesList.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
+        
+        try {
+            const user = Auth.getUser();
+            if (!user) return;
+            
+            const responses = await Orders.getMasterResponses(user.uid);
+            
+            // Фильтрация
+            let filtered = responses;
+            if (filter === 'pending') {
+                filtered = responses.filter(r => r.status === ORDER_STATUS.OPEN);
+            } else if (filter === 'accepted') {
+                filtered = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS);
+            } else if (filter === 'completed') {
+                filtered = responses.filter(r => r.status === ORDER_STATUS.COMPLETED);
+            }
+            
+            // Обновить статистику
+            updateStats(responses);
+            
+            if (filtered.length === 0) {
+                responsesList.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-inbox fa-3x mb-3" style="color: var(--border);"></i>
+                        <h5>Нет откликов</h5>
+                        <p class="text-secondary">Вы ещё не откликались на заказы</p>
+                        <a href="index.html" class="btn">Найти заказы</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            responsesList.innerHTML = '';
+            filtered.forEach(item => {
+                responsesList.appendChild(createResponseCard(item));
+            });
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки откликов:', error);
+            responsesList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
         }
-    };
+    }
 
-    // Открыть чат
-    window.openChat = (orderId, clientId) => {
-        const user = Auth.getUser();
-        if (!user) {
-            Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
-            return;
-        }
-        
-        if (!orderId || !clientId) {
-            console.error('❌ Ошибка: orderId или clientId не определены', { orderId, clientId });
-            Helpers.showNotification('❌ Ошибка открытия чата', 'error');
-            return;
-        }
-        
-        console.log('📨 Открываем чат:', { orderId, clientId, masterId: user.uid });
-        window.location.href = `chat.html?orderId=${orderId}&masterId=${user.uid}`;
-    };
+    // ============================================
+    // ФУНКЦИИ РАБОТЫ С ПОРТФОЛИО
+    // ============================================
 
     // Загрузка портфолио
     async function loadPortfolio() {
@@ -281,13 +288,9 @@ async function loadMasterData(state) {
         }
     }
 
-    // Просмотр портфолио
-    window.viewPortfolio = (imageUrl, title, description) => {
-        document.getElementById('viewPortfolioImage').src = imageUrl;
-        document.getElementById('viewPortfolioTitle').innerText = title;
-        document.getElementById('viewPortfolioDesc').innerText = description;
-        new bootstrap.Modal(document.getElementById('viewPortfolioModal')).show();
-    };
+    // ============================================
+    // ФУНКЦИИ КАЛЕНДАРЯ
+    // ============================================
 
     // Инициализация календаря
     function initCalendar() {
@@ -333,6 +336,10 @@ async function loadMasterData(state) {
         calendar.render();
     }
 
+    // ============================================
+    // ФУНКЦИИ ПРАЙС-ЛИСТА
+    // ============================================
+
     // Загрузка прайс-листа
     async function loadPriceList() {
         const container = document.getElementById('priceList');
@@ -361,7 +368,58 @@ async function loadMasterData(state) {
         `).join('');
     }
 
-    // Инициализация обработчиков
+    // ============================================
+    // ГЛОБАЛЬНЫЕ ФУНКЦИИ (ДЛЯ ONCLICK)
+    // ============================================
+
+    // Завершить заказ
+    window.completeOrder = async (orderId) => {
+        if (!confirm('Подтвердите, что заказ выполнен')) return;
+        
+        const result = await Orders.completeOrder(orderId);
+        if (result.success) {
+            const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
+            await loadMasterResponses(activeFilter);
+        }
+    };
+
+    // Открыть чат
+    window.openChat = (orderId, clientId) => {
+        const user = Auth.getUser();
+        if (!user) {
+            Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
+            return;
+        }
+        
+        if (!orderId || !clientId) {
+            console.error('❌ Ошибка: orderId или clientId не определены', { orderId, clientId });
+            Helpers.showNotification('❌ Ошибка открытия чата', 'error');
+            return;
+        }
+        
+        console.log('📨 Открываем чат:', { orderId, clientId, masterId: user.uid });
+        window.location.href = `chat.html?orderId=${orderId}&masterId=${user.uid}`;
+    };
+
+    // Просмотр портфолио
+    window.viewPortfolio = (imageUrl, title, description) => {
+        const imgEl = document.getElementById('viewPortfolioImage');
+        if (imgEl) imgEl.src = imageUrl;
+        
+        const titleEl = document.getElementById('viewPortfolioTitle');
+        if (titleEl) titleEl.innerText = title;
+        
+        const descEl = document.getElementById('viewPortfolioDesc');
+        if (descEl) descEl.innerText = description;
+        
+        const modalEl = document.getElementById('viewPortfolioModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    };
+
+    // ============================================
+    // ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ
+    // ============================================
+
     function initEventListeners() {
         // Табы
         document.querySelectorAll('.tab').forEach(tab => {
@@ -391,25 +449,35 @@ async function loadMasterData(state) {
         // Редактирование профиля
         document.getElementById('editProfileBtn')?.addEventListener('click', () => {
             const userData = Auth.getUserData();
-            document.getElementById('editName').value = userData?.name || '';
-            document.getElementById('editPhone').value = userData?.phone || '';
-            document.getElementById('editCategories').value = userData?.categories || '';
-            document.getElementById('editBio').value = userData?.bio || '';
-            new bootstrap.Modal(document.getElementById('editProfileModal')).show();
+            const nameEl = document.getElementById('editName');
+            if (nameEl) nameEl.value = userData?.name || '';
+            
+            const phoneEl = document.getElementById('editPhone');
+            if (phoneEl) phoneEl.value = userData?.phone || '';
+            
+            const categoriesEl = document.getElementById('editCategories');
+            if (categoriesEl) categoriesEl.value = userData?.categories || '';
+            
+            const bioEl = document.getElementById('editBio');
+            if (bioEl) bioEl.value = userData?.bio || '';
+            
+            const modalEl = document.getElementById('editProfileModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
         });
 
         document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
             const user = Auth.getUser();
             if (!user) return;
             
-            const name = document.getElementById('editName').value;
-            const phone = document.getElementById('editPhone').value;
-            const categories = document.getElementById('editCategories').value;
-            const bio = document.getElementById('editBio').value;
+            const name = document.getElementById('editName')?.value;
+            const phone = document.getElementById('editPhone')?.value;
+            const categories = document.getElementById('editCategories')?.value;
+            const bio = document.getElementById('editBio')?.value;
             
             const result = await Auth.updateProfile(user.uid, { name, phone, categories, bio });
             if (result.success) {
-                bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
+                if (modal) modal.hide();
                 await loadMasterData({ userData: Auth.getUserData() });
             }
         });
@@ -417,8 +485,11 @@ async function loadMasterData(state) {
         // Добавление в портфолио
         document.getElementById('addPortfolioBtn')?.addEventListener('click', () => {
             portfolioPhotos = [];
-            document.getElementById('portfolioPhotoPreview').innerHTML = '';
-            new bootstrap.Modal(document.getElementById('addPortfolioModal')).show();
+            const previewEl = document.getElementById('portfolioPhotoPreview');
+            if (previewEl) previewEl.innerHTML = '';
+            
+            const modalEl = document.getElementById('addPortfolioModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
         });
 
         const portfolioUploadArea = document.getElementById('portfolioUploadArea');
@@ -443,7 +514,9 @@ async function loadMasterData(state) {
             });
 
             portfolioPhotoInput.addEventListener('change', (e) => {
-                handlePortfolioFile(e.target.files[0]);
+                if (e.target.files.length > 0) {
+                    handlePortfolioFile(e.target.files[0]);
+                }
             });
         }
 
@@ -452,9 +525,12 @@ async function loadMasterData(state) {
             
             const reader = new FileReader();
             reader.onload = (e) => {
-                document.getElementById('portfolioPhotoPreview').innerHTML = `
-                    <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md);">
-                `;
+                const previewEl = document.getElementById('portfolioPhotoPreview');
+                if (previewEl) {
+                    previewEl.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md);">
+                    `;
+                }
                 portfolioPhotos = [file];
             };
             reader.readAsDataURL(file);
@@ -480,14 +556,16 @@ async function loadMasterData(state) {
                 await db.collection('portfolio').add({
                     masterId: user.uid,
                     masterName: userData.name,
-                    title: document.getElementById('portfolioTitle').value,
-                    description: document.getElementById('portfolioDesc').value,
-                    category: document.getElementById('portfolioCategory').value,
+                    title: document.getElementById('portfolioTitle')?.value || '',
+                    description: document.getElementById('portfolioDesc')?.value || '',
+                    category: document.getElementById('portfolioCategory')?.value || 'Другое',
                     imageUrl: imageUrl,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal')).hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addPortfolioModal'));
+                if (modal) modal.hide();
+                
                 await loadPortfolio();
                 Helpers.showNotification('✅ Работа добавлена', 'success');
                 
@@ -499,7 +577,8 @@ async function loadMasterData(state) {
 
         // Верификация
         document.getElementById('verifyMasterBtn')?.addEventListener('click', () => {
-            new bootstrap.Modal(document.getElementById('verifyModal')).show();
+            const modalEl = document.getElementById('verifyModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
         });
 
         const verifyUploadArea = document.getElementById('verifyUploadArea');
@@ -523,7 +602,9 @@ async function loadMasterData(state) {
             });
 
             verifyPhotoInput.addEventListener('change', (e) => {
-                handleVerificationFile(e.target.files[0]);
+                if (e.target.files.length > 0) {
+                    handleVerificationFile(e.target.files[0]);
+                }
             });
         }
 
@@ -532,9 +613,12 @@ async function loadMasterData(state) {
             
             const reader = new FileReader();
             reader.onload = (e) => {
-                document.getElementById('verifyPreview').innerHTML = `
-                    <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md);">
-                `;
+                const previewEl = document.getElementById('verifyPreview');
+                if (previewEl) {
+                    previewEl.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md);">
+                    `;
+                }
                 verificationPhoto = file;
                 if (agreeTerms) agreeTerms.disabled = false;
                 if (submitVerification) submitVerification.disabled = false;
@@ -560,7 +644,9 @@ async function loadMasterData(state) {
                     createdAt: new Date().toISOString()
                 });
                 
-                bootstrap.Modal.getInstance(document.getElementById('verifyModal')).hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('verifyModal'));
+                if (modal) modal.hide();
+                
                 Helpers.showNotification('✅ Заявка отправлена!', 'success');
                 
             } catch (error) {
@@ -580,4 +666,38 @@ async function loadMasterData(state) {
         // Темная тема
         document.getElementById('themeToggle')?.addEventListener('click', Auth.toggleTheme);
     }
+
+    // ============================================
+    // ИНИЦИАЛИЗАЦИЯ СТРАНИЦЫ
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Auth.onAuthChange(async (state) => {
+            const authRequired = document.getElementById('authRequired');
+            const masterCabinet = document.getElementById('masterCabinet');
+            
+            if (state.isAuthenticated && state.isMaster) {
+                authRequired?.classList.add('d-none');
+                masterCabinet?.classList.remove('d-none');
+                
+                await Promise.all([
+                    loadMasterData(state),
+                    loadMasterResponses('all'),
+                    loadPortfolio(),
+                    loadPriceList()
+                ]);
+                
+                initCalendar();
+                await Badges.updateMasterBadges(state.user.uid);
+                await displayBadges(state.user.uid);
+                
+            } else if (state.isAuthenticated && !state.isMaster) {
+                Helpers.showNotification('Эта страница только для мастеров', 'warning');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            }
+        });
+
+        initEventListeners();
+    });
+
 })();
