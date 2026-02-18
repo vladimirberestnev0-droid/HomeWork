@@ -208,13 +208,11 @@ const Orders = (function() {
             
             snapshot.forEach(doc => {
                 const order = doc.data();
-                console.log('📋 Проверяем заказ:', doc.id, 'статус:', order.status);
                 
                 // Проверяем, есть ли отклик этого мастера
                 if (order.responses && Array.isArray(order.responses)) {
                     const myResponse = order.responses.find(r => r.masterId === masterId);
                     if (myResponse) {
-                        console.log('✅ Найден отклик для заказа:', doc.id);
                         responses.push({
                             orderId: doc.id,
                             order: order,
@@ -347,10 +345,12 @@ const Orders = (function() {
     }
 
     /**
-     * Завершение заказа
+     * Завершение заказа (ИСПРАВЛЕНО!)
      */
     async function completeOrder(orderId) {
         try {
+            console.log('🔄 Начинаем завершение заказа:', orderId);
+            
             const order = await db.collection('orders').doc(orderId).get();
             
             if (!order.exists) {
@@ -361,8 +361,12 @@ const Orders = (function() {
             
             // Проверяем права (клиент или выбранный мастер)
             const user = Auth.getUser();
-            const isClient = orderData.clientId === user?.uid;
-            const isMaster = orderData.selectedMasterId === user?.uid;
+            if (!user) {
+                throw new Error('Необходимо авторизоваться');
+            }
+            
+            const isClient = orderData.clientId === user.uid;
+            const isMaster = orderData.selectedMasterId === user.uid;
 
             if (!isClient && !isMaster) {
                 throw new Error('У вас нет прав для завершения этого заказа');
@@ -380,12 +384,13 @@ const Orders = (function() {
                 });
             }
 
+            console.log('✅ Заказ успешно завершен:', orderId);
             Helpers.showNotification('✅ Заказ завершен!', 'success');
             
             return { success: true };
             
         } catch (error) {
-            console.error('Ошибка завершения заказа:', error);
+            console.error('❌ Ошибка завершения заказа:', error);
             Helpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
@@ -488,7 +493,7 @@ const Orders = (function() {
         getMasterResponses,
         respondToOrder,
         selectMaster,
-        completeOrder,
+        completeOrder,      // ✅ ИСПРАВЛЕНО!
         searchOrders,
         addView,
         getMasterStats,
