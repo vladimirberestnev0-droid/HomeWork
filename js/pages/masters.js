@@ -372,16 +372,106 @@
     // ГЛОБАЛЬНЫЕ ФУНКЦИИ (ДЛЯ ONCLICK)
     // ============================================
 
-    // Завершить заказ
-    window.completeOrder = async (orderId) => {
-        if (!confirm('Подтвердите, что заказ выполнен')) return;
+    // Переменные для хранения данных
+let currentCompleteOrderId = null;
+let customerRating = 0;
+
+// Установка рейтинга
+window.setCustomerRating = function(rating) {
+    customerRating = rating;
+    document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
+        const starRating = parseInt(star.dataset.rating);
+        if (starRating <= rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+};
+
+// Открытие модалки завершения
+window.completeOrder = async (orderId) => {
+    currentCompleteOrderId = orderId;
+    customerRating = 0;
+    
+    // Сброс звезд
+    document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
+        star.classList.remove('active');
+    });
+    
+    // Очистка комментария
+    document.getElementById('completeComment').value = '';
+    
+    // Показ модалки
+    const modal = new bootstrap.Modal(document.getElementById('completeOrderModal'));
+    modal.show();
+};
+
+// Подтверждение завершения с отзывом
+document.getElementById('confirmCompleteBtn')?.addEventListener('click', async () => {
+    if (!currentCompleteOrderId) return;
+    
+    // Если рейтинг не выбран - спросим
+    if (customerRating === 0) {
+        if (!confirm('Вы не поставили оценку. Продолжить без оценки?')) {
+            return;
+        }
+    }
+    
+    try {
+        // Получаем данные заказа
+        const orderDoc = await db.collection('orders').doc(currentCompleteOrderId).get();
+        const orderData = orderDoc.data();
+        const clientId = orderData.clientId;
         
-        const result = await Orders.completeOrder(orderId);
+        // Создаем отзыв о заказчике
+        if (customerRating > 0) {
+            const review = {
+                masterId: Auth.getUser().uid,
+                masterName: Auth.getUserData()?.name || 'Мастер',
+                rating: customerRating,
+                text: document.getElementById('completeComment')?.value || '',
+                createdAt: new Date().toISOString()
+            };
+            
+            // Добавляем отзыв в документ заказа
+            await db.collection('orders').doc(currentCompleteOrderId).update({
+                customerReviews: firebase.firestore.FieldValue.arrayUnion(review)
+            });
+            
+            // Обновляем рейтинг заказчика (если нужно)
+            const clientDoc = await db.collection('users').doc(clientId).get();
+            if (clientDoc.exists) {
+                const clientData = clientDoc.data();
+                const newRating = ((clientData.rating || 0) * (clientData.reviews || 0) + customerRating) / ((clientData.reviews || 0) + 1);
+                
+                await db.collection('users').doc(clientId).update({
+                    rating: newRating,
+                    reviews: (clientData.reviews || 0) + 1
+                });
+            }
+        }
+        
+        // Завершаем заказ
+        const result = await Orders.completeOrder(currentCompleteOrderId);
+        
         if (result.success) {
+            // Закрываем модалку
+            bootstrap.Modal.getInstance(document.getElementById('completeOrderModal')).hide();
+            
+            // Показываем успех
+            Helpers.showNotification('✅ Заказ выполнен!', 'success');
+            
+            // Перезагружаем список откликов
             const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
             await loadMasterResponses(activeFilter);
         }
-    };
+        
+    } catch (error) {
+        console.error('❌ Ошибка при завершении заказа:', error);
+        Helpers.showNotification('❌ Ошибка', 'error');
+    }
+});
 
     // Открыть чат
     window.openChat = (orderId, clientId) => {
