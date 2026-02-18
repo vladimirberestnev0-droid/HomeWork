@@ -1398,3 +1398,424 @@ textarea.form-control {
 .modal-backdrop.show {
     display: none !important;
 }
+
+/* ===== ИСПРАВЛЕНИЯ ДЛЯ ЧАТА ===== */
+
+/* Ограничение ширины чата */
+.chat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-white);
+    box-shadow: 0 0 50px rgba(0,0,0,0.05);
+}
+
+/* Шапка чата */
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 30px;
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.chat-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.chat-info h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.order-badge {
+    background: var(--bg-light);
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Область сообщений */
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--bg-light);
+}
+
+/* Сообщения */
+.message {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+    animation: slideUp 0.3s ease-out;
+}
+
+.message.sent {
+    align-self: flex-end;
+}
+
+.message.received {
+    align-self: flex-start;
+}
+
+.message-bubble {
+    padding: 12px 18px;
+    border-radius: 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.message.sent .message-bubble {
+    background: var(--accent);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .message-bubble {
+    background: var(--bg-white);
+    color: var(--text-dark);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.message-time {
+    font-size: 11px;
+    color: var(--text-soft);
+    margin-top: 4px;
+    margin-left: 8px;
+}
+
+.message.sent .message-time {
+    text-align: right;
+}
+
+/* Файлы в сообщениях */
+.message-files {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.message-image {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.message-image:hover {
+    transform: scale(1.05);
+}
+
+.message-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    font-size: 13px;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Быстрые ответы */
+.quick-replies {
+    padding: 10px 30px;
+    background: var(--bg-white);
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+}
+
+.quick-replies-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-reply-btn {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+
+.quick-reply-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* Поле ввода */
+.chat-input-area {
+    background: var(--bg-white);
+    padding: 20px 30px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.attach-btn, .voice-btn, .emoji-btn {
+    background: none;
+    border: none;
+    color: var(--text-soft);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.attach-btn:hover, .voice-btn:hover, .emoji-btn:hover {
+    color: var(--accent);
+    background: var(--bg-light);
+    transform: scale(1.1);
+}
+
+#messageInput {
+    flex: 1;
+    min-width: 200px;
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 15px;
+    background: var(--bg-light);
+}
+
+#messageInput:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-white);
+    box-shadow: 0 0 0 4px rgba(230,122,75,0.1);
+}
+
+.send-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: 0.2s;
+}
+
+.send-btn:hover {
+    background: var(--accent-dark);
+    transform: scale(1.1) rotate(15deg);
+}
+
+/* Превью файлов */
+.file-preview-area {
+    padding: 10px 30px;
+    background: var(--bg-light);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.file-preview-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    font-size: 13px;
+}
+
+.file-preview-item i {
+    color: var(--accent);
+}
+
+.remove-file {
+    cursor: pointer;
+    color: var(--text-soft);
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.remove-file:hover {
+    color: #dc3545;
+    transform: scale(1.2);
+}
+
+/* Индикатор печати */
+.typing-indicator {
+    font-size: 12px;
+    color: var(--text-soft);
+    padding: 4px 16px;
+    font-style: italic;
+}
+
+/* Пустой чат */
+.empty-chat {
+    text-align: center;
+    color: var(--text-soft);
+    padding: 60px 20px;
+}
+
+.empty-chat i {
+    font-size: 64px;
+    color: var(--border);
+    margin-bottom: 16px;
+}
+
+/* Закрепленный заказ */
+.pinned-order {
+    background: var(--bg-light);
+    padding: 12px 30px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.pinned-order-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Запись голоса */
+.voice-recording {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    padding: 16px 32px;
+    border-radius: 60px;
+    box-shadow: 0 10px 40px rgba(230,122,75,0.4);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 1000;
+}
+
+.recording-wave {
+    display: flex;
+    gap: 3px;
+    height: 30px;
+    align-items: center;
+}
+
+.recording-wave span {
+    width: 4px;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    animation: wave 1s ease-in-out infinite;
+}
+
+.recording-wave span:nth-child(2) { animation-delay: 0.2s; }
+.recording-wave span:nth-child(3) { animation-delay: 0.4s; }
+.recording-wave span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes wave {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .chat-header {
+        padding: 16px;
+    }
+    
+    .messages-area {
+        padding: 20px;
+    }
+    
+    .message {
+        max-width: 85%;
+    }
+    
+    .quick-replies-buttons {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-bottom: 8px;
+    }
+    
+    .quick-reply-btn {
+        flex-shrink: 0;
+    }
+    
+    .chat-input-area {
+        padding: 16px;
+    }
+    
+    .pinned-order-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-header {
+        flex-wrap: wrap;
+    }
+    
+    .order-badge {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .chat-info {
+        min-width: 150px;
+    }
+}
+
+/* Скрытые элементы */
+.hidden {
+    display: none !important;
+}
