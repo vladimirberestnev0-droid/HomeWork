@@ -5,21 +5,30 @@ const CACHE_NAME = 'workhom-v3';
 const API_CACHE_NAME = 'workhom-api-v1';
 
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/masters.html',
-    '/client.html',
-    '/chat.html',
-    '/offline.html',
-    '/css/main.css',
-    '/js/core/constants.js',
-    '/js/core/helpers.js',
-    '/js/core/firebase.js',
-    '/js/services/auth.js',
-    '/js/services/orders.js',
-    '/manifest.json',
+    '/HomeWork/',
+    '/HomeWork/index.html',
+    '/HomeWork/masters.html',
+    '/HomeWork/client.html',
+    '/HomeWork/chat.html',
+    '/HomeWork/group-chat.html',
+    '/HomeWork/admin.html',
+    '/HomeWork/offline.html',
+    '/HomeWork/404.html',
+    '/HomeWork/payment-success.html',
+    '/HomeWork/css/main.css',
+    '/HomeWork/css/animations.css',
+    '/HomeWork/css/theme.css',
+    '/HomeWork/js/core/constants.js',
+    '/HomeWork/js/core/helpers.js',
+    '/HomeWork/js/core/firebase.js',
+    '/HomeWork/js/core/error-handler.js',
+    '/HomeWork/js/services/auth.js',
+    '/HomeWork/js/services/orders.js',
+    '/HomeWork/js/services/chat.js',
+    '/HomeWork/manifest.json',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
 ];
 
 // Установка
@@ -27,8 +36,18 @@ self.addEventListener('install', event => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(STATIC_ASSETS))
-            .then(() => console.log('✅ Кэш загружен'))
+            .then(cache => {
+                console.log('✅ Кэширование статики');
+                // Используем allSettled, чтобы не проваливать весь кэш из-за одной ошибки
+                return Promise.allSettled(
+                    STATIC_ASSETS.map(url => 
+                        cache.add(url).catch(err => 
+                            console.warn(`⚠️ Не удалось закэшировать ${url}:`, err)
+                        )
+                    )
+                );
+            })
+            .then(() => console.log('✅ Кэширование завершено'))
     );
 });
 
@@ -38,9 +57,15 @@ self.addEventListener('activate', event => {
         caches.keys().then(keys => {
             return Promise.all(
                 keys.filter(key => key !== CACHE_NAME && key !== API_CACHE_NAME)
-                    .map(key => caches.delete(key))
+                    .map(key => {
+                        console.log('🗑️ Удаление старого кэша:', key);
+                        return caches.delete(key);
+                    })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => {
+            console.log('✅ Service Worker активирован');
+            return self.clients.claim();
+        })
     );
 });
 
@@ -49,6 +74,15 @@ self.addEventListener('activate', event => {
 // Cache First для изображений
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
+
+    // Игнорируем запросы к Chrome и Firebase
+    if (event.request.url.startsWith('chrome-extension://') ||
+        event.request.url.includes('firestore.googleapis.com') ||
+        event.request.url.includes('firebase') ||
+        event.request.url.includes('yandex')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
 
     // API запросы - сначала сеть, потом кэш
     if (url.pathname.startsWith('/api/') || 
@@ -70,7 +104,7 @@ self.addEventListener('fetch', event => {
     }
 
     // Изображения - сначала кэш, потом сеть
-    if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg|webp)$/)) {
+    if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/)) {
         event.respondWith(
             caches.match(event.request).then(response => {
                 return response || fetch(event.request).then(networkResponse => {
@@ -79,6 +113,11 @@ self.addEventListener('fetch', event => {
                         cache.put(event.request, clone);
                     });
                     return networkResponse;
+                }).catch(() => {
+                    // Возвращаем заглушку для иконок, если они не найдены
+                    if (event.request.url.includes('favicon.ico')) {
+                        return new Response('', { status: 204 });
+                    }
                 });
             })
         );
@@ -90,7 +129,7 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(event.request)
                 .catch(() => {
-                    return caches.match('/offline.html');
+                    return caches.match('/HomeWork/offline.html');
                 })
         );
         return;
@@ -110,7 +149,7 @@ self.addEventListener('fetch', event => {
                     return networkResponse;
                 })
                 .catch(() => {
-                    console.log('Офлайн режим для:', event.request.url);
+                    console.log('🌐 Офлайн режим для:', event.request.url);
                 });
 
             return cached || fetchPromise;
@@ -130,12 +169,17 @@ self.addEventListener('sync', event => {
 
 // Push уведомления
 self.addEventListener('push', event => {
-    const data = event.data.json();
+    let data = {};
+    try {
+        data = event.data.json();
+    } catch (e) {
+        data = { title: 'ВоркХом', body: event.data.text() };
+    }
     
     const options = {
-        body: data.body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge.png',
+        body: data.body || 'Новое уведомление',
+        icon: '/HomeWork/icons/icon-192x192.png',
+        badge: '/HomeWork/icons/badge.png',
         vibrate: [200, 100, 200],
         data: data,
         actions: [
@@ -154,7 +198,7 @@ self.addEventListener('notificationclick', event => {
     event.notification.close();
     
     if (event.action === 'open') {
-        const url = event.notification.data.url || '/';
+        const url = event.notification.data.url || '/HomeWork/';
         event.waitUntil(
             clients.openWindow(url)
         );
@@ -163,45 +207,53 @@ self.addEventListener('notificationclick', event => {
 
 // Синхронизация заказов в офлайне
 async function syncOrders() {
-    const db = await openIndexedDB();
-    const offlineOrders = await db.getAll('offlineOrders');
-    
-    for (const order of offlineOrders) {
-        try {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(order)
-            });
-            
-            if (response.ok) {
-                await db.delete('offlineOrders', order.id);
+    try {
+        const db = await openIndexedDB();
+        const offlineOrders = await db.getAll('offlineOrders');
+        
+        for (const order of offlineOrders) {
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(order)
+                });
+                
+                if (response.ok) {
+                    await db.delete('offlineOrders', order.id);
+                }
+            } catch (error) {
+                console.error('Ошибка синхронизации заказа:', error);
             }
-        } catch (error) {
-            console.error('Ошибка синхронизации заказа:', error);
         }
+    } catch (error) {
+        console.error('Ошибка в syncOrders:', error);
     }
 }
 
 // Синхронизация сообщений
 async function syncMessages() {
-    const db = await openIndexedDB();
-    const offlineMessages = await db.getAll('offlineMessages');
-    
-    for (const msg of offlineMessages) {
-        try {
-            const response = await fetch(`/api/chats/${msg.chatId}/messages`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(msg)
-            });
-            
-            if (response.ok) {
-                await db.delete('offlineMessages', msg.id);
+    try {
+        const db = await openIndexedDB();
+        const offlineMessages = await db.getAll('offlineMessages');
+        
+        for (const msg of offlineMessages) {
+            try {
+                const response = await fetch(`/api/chats/${msg.chatId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(msg)
+                });
+                
+                if (response.ok) {
+                    await db.delete('offlineMessages', msg.id);
+                }
+            } catch (error) {
+                console.error('Ошибка синхронизации сообщения:', error);
             }
-        } catch (error) {
-            console.error('Ошибка синхронизации сообщения:', error);
         }
+    } catch (error) {
+        console.error('Ошибка в syncMessages:', error);
     }
 }
 
@@ -212,8 +264,12 @@ function openIndexedDB() {
         
         request.onupgradeneeded = event => {
             const db = event.target.result;
-            db.createObjectStore('offlineOrders', { keyPath: 'id' });
-            db.createObjectStore('offlineMessages', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('offlineOrders')) {
+                db.createObjectStore('offlineOrders', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('offlineMessages')) {
+                db.createObjectStore('offlineMessages', { keyPath: 'id' });
+            }
         };
         
         request.onsuccess = () => resolve(request.result);
