@@ -9,44 +9,56 @@
 
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', () => {
+        // Проверяем наличие модалки
+        const modalElement = document.getElementById('reviewModal');
+        if (modalElement && typeof bootstrap !== 'undefined') {
+            reviewModal = new bootstrap.Modal(modalElement);
+        }
+
         // Подписываемся на изменения авторизации
         Auth.onAuthChange(async (state) => {
+            console.log('🔄 Статус авторизации в клиентском кабинете:', state);
+            
             const authRequired = document.getElementById('authRequired');
             const clientCabinet = document.getElementById('clientCabinet');
             
             if (state.isAuthenticated && state.isClient) {
                 // Показать кабинет клиента
-                authRequired?.classList.add('d-none');
-                clientCabinet?.classList.remove('d-none');
+                if (authRequired) authRequired?.classList.add('d-none');
+                if (clientCabinet) clientCabinet?.classList.remove('d-none');
                 
-                // Заполнить профиль
-                document.getElementById('clientName').innerText = state.userData?.name || 'Клиент';
-                document.getElementById('clientEmail').innerText = state.user?.email || '';
+                // Заполнить профиль (с проверками)
+                const nameEl = document.getElementById('clientName');
+                if (nameEl) nameEl.innerText = state.userData?.name || 'Клиент';
+                
+                const emailEl = document.getElementById('clientEmail');
+                if (emailEl) emailEl.innerText = state.user?.email || '';
+                
+                const balanceEl = document.getElementById('clientBalance');
+                if (balanceEl) balanceEl.innerText = state.userData?.balance || '0 ₽';
                 
                 // Загрузить данные
-                await Promise.all([
-                    loadClientOrders('all'),
-                    loadFavorites(),
-                    loadHistory()
-                ]);
+                try {
+                    await Promise.all([
+                        loadClientOrders('all'),
+                        loadFavorites(),
+                        loadHistory()
+                    ]);
+                } catch (error) {
+                    console.error('❌ Ошибка загрузки данных:', error);
+                    Helpers.showNotification('Ошибка загрузки данных', 'error');
+                }
                 
             } else if (state.isAuthenticated && !state.isClient) {
-                // Если пользователь не клиент
                 Helpers.showNotification('Эта страница только для клиентов', 'warning');
                 setTimeout(() => window.location.href = 'index.html', 2000);
                 
             } else {
                 // Показать блок авторизации
-                authRequired?.classList.remove('d-none');
-                clientCabinet?.classList.add('d-none');
+                if (authRequired) authRequired?.classList.remove('d-none');
+                if (clientCabinet) clientCabinet?.classList.add('d-none');
             }
         });
-
-        // Инициализация модалки
-        const modalElement = document.getElementById('reviewModal');
-        if (modalElement) {
-            reviewModal = new bootstrap.Modal(modalElement);
-        }
 
         // Инициализация обработчиков
         initEventListeners();
@@ -64,7 +76,8 @@
                 
                 document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                 const tabId = this.dataset.tab + 'Tab';
-                document.getElementById(tabId)?.classList.add('active');
+                const tabElement = document.getElementById(tabId);
+                if (tabElement) tabElement.classList.add('active');
             });
         });
 
@@ -105,7 +118,8 @@
                 currentRating = parseInt(this.dataset.rating);
                 document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
                 for (let i = 0; i < currentRating; i++) {
-                    document.querySelectorAll('.rating-star')[i].classList.add('active');
+                    const starEl = document.querySelectorAll('.rating-star')[i];
+                    if (starEl) starEl.classList.add('active');
                 }
             });
         });
@@ -170,7 +184,7 @@
             photosHtml = `
                 <div class="d-flex gap-2 mb-3 flex-wrap">
                     ${order.photos.slice(0, 3).map(url => 
-                        `<img src="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer;" onclick="window.open('${url}')">`
+                        `<img src="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer;" onclick="window.open('${url}')" loading="lazy">`
                     ).join('')}
                     ${order.photos.length > 3 ? `<span class="text-secondary">+${order.photos.length-3}</span>` : ''}
                 </div>
@@ -378,12 +392,17 @@
         currentMasterId = masterId;
         currentRating = 0;
         
-        document.getElementById('reviewMasterInfo').innerHTML = `<p class="fw-bold mb-0">Мастер: ${Helpers.escapeHtml(masterName)}</p>`;
-        document.getElementById('reviewText').value = '';
+        const reviewMasterInfo = document.getElementById('reviewMasterInfo');
+        if (reviewMasterInfo) {
+            reviewMasterInfo.innerHTML = `<p class="fw-bold mb-0">Мастер: ${Helpers.escapeHtml(masterName)}</p>`;
+        }
+        
+        const reviewText = document.getElementById('reviewText');
+        if (reviewText) reviewText.value = '';
         
         document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
         
-        reviewModal?.show();
+        if (reviewModal) reviewModal?.show();
     };
 
     // Отправка отзыва
@@ -397,7 +416,7 @@
             const review = {
                 masterId: currentMasterId,
                 rating: currentRating,
-                text: document.getElementById('reviewText').value || '',
+                text: document.getElementById('reviewText')?.value || '',
                 createdAt: new Date().toISOString()
             };
 
@@ -417,7 +436,7 @@
                 });
             }
 
-            reviewModal?.hide();
+            if (reviewModal) reviewModal?.hide();
             Helpers.showNotification('✅ Отзыв отправлен!', 'success');
             
             const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
