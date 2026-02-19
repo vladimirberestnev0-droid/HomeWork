@@ -87,10 +87,17 @@ if (typeof Auth !== 'undefined') {
 // ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
 // ============================================
 
+// ============================================
+// ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
+// ============================================
+
 function initFilters() {
+    console.log('🔧 Инициализация фильтров...');
+    
     // Отрисовка фильтра городов
     const cityFilter = document.getElementById('cityFilter');
     if (cityFilter && window.CITIES) {
+        console.log('🏙️ Города загружены:', window.CITIES.length);
         cityFilter.innerHTML = window.CITIES.map(city => `
             <button class="filter-btn city-filter-btn ${city.id === 'all' ? 'active' : ''}" 
                     data-city="${city.id}" 
@@ -99,11 +106,14 @@ function initFilters() {
                 ${city.name}
             </button>
         `).join('');
+    } else {
+        console.error('❌ Города не найдены в window.CITIES');
     }
     
     // Отрисовка фильтра категорий
     const categoryFilter = document.getElementById('categoryFilter');
     if (categoryFilter && window.ORDER_CATEGORIES) {
+        console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
         categoryFilter.innerHTML = window.ORDER_CATEGORIES.map(cat => `
             <button class="filter-btn category-filter-btn ${cat.id === 'all' ? 'active' : ''}" 
                     data-category="${cat.id}" 
@@ -112,7 +122,38 @@ function initFilters() {
                 ${cat.name}
             </button>
         `).join('');
+    } else {
+        console.error('❌ Категории не найдены в window.ORDER_CATEGORIES');
     }
+    
+    // Добавляем обработчики после отрисовки
+    attachFilterListeners();
+}
+
+function attachFilterListeners() {
+    // Фильтр по городам
+    document.querySelectorAll('.city-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.city-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            filters.city = this.dataset.city;
+            console.log('🏙️ Выбран город:', filters.city);
+            applyFilters(true);
+        });
+    });
+
+    // Фильтр по категориям
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            filters.category = this.dataset.category;
+            console.log('📋 Выбрана категория:', filters.category);
+            applyFilters(true);
+        });
+    });
 }
 
 // ============================================
