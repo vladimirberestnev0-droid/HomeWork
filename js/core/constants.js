@@ -289,23 +289,81 @@ const CITIES_BY_DISTRICT = {
     ]
 };
 
-// Создаем плоский список для обратной совместимости
+// ========== НОВЫЙ КОД: СОРТИРОВКА И ГРУППИРОВКА ==========
+
+// 1. Создаем ОТСОРТИРОВАННЫЙ массив всех городов (для обратной совместимости)
+const ALL_CITIES_SORTED = [];
+
+// Собираем все города (кроме 'Все города')
+Object.keys(CITIES_BY_DISTRICT).forEach(district => {
+    if (district !== 'Все города') {
+        CITIES_BY_DISTRICT[district].forEach(city => {
+            if (city.id !== 'all') {
+                ALL_CITIES_SORTED.push({
+                    id: city.id,
+                    name: city.name,
+                    district: district,
+                    icon: city.icon || 'fa-map-marker-alt'
+                });
+            }
+        });
+    }
+});
+
+// Сортируем все города по алфавиту (для быстрого поиска)
+ALL_CITIES_SORTED.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+// 2. Создаем плоский массив CITIES с "Все города" в начале и отсортированными остальными
 const CITIES = [
     { id: 'all', name: 'Все города', icon: 'fa-map-marker-alt' },
-    ...CITIES_BY_DISTRICT['🏙️ ГОРОДА ОКРУЖНОГО ПОДЧИНЕНИЯ'],
-    ...CITIES_BY_DISTRICT['🏘️ ПОСЕЛКИ ГОРОДСКОГО ТИПА'],
-    ...CITIES_BY_DISTRICT['📍 БЕЛОЯРСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 БЕРЁЗОВСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 КОНДИНСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 НЕФТЕЮГАНСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 НИЖНЕВАРТОВСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 ОКТЯБРЬСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 СОВЕТСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 СУРГУТСКИЙ РАЙОН'],
-    ...CITIES_BY_DISTRICT['📍 ХАНТЫ-МАНСИЙСКИЙ РАЙОН']
+    ...ALL_CITIES_SORTED.map(c => ({ id: c.id, name: c.name, icon: c.icon }))
 ];
 
-// Экспортируем всё в глобальную область
+// 3. Создаем ОТСОРТИРОВАННУЮ версию CITIES_BY_DISTRICT (для группировки в UI)
+const SORTED_CITIES_BY_DISTRICT = {};
+
+// Порядок районов для отображения
+const DISTRICT_ORDER = [
+    'Все города',
+    '🏙️ ГОРОДА ОКРУЖНОГО ПОДЧИНЕНИЯ',
+    '🏘️ ПОСЕЛКИ ГОРОДСКОГО ТИПА',
+    '📍 БЕЛОЯРСКИЙ РАЙОН',
+    '📍 БЕРЁЗОВСКИЙ РАЙОН',
+    '📍 КОНДИНСКИЙ РАЙОН',
+    '📍 НЕФТЕЮГАНСКИЙ РАЙОН',
+    '📍 НИЖНЕВАРТОВСКИЙ РАЙОН',
+    '📍 ОКТЯБРЬСКИЙ РАЙОН',
+    '📍 СОВЕТСКИЙ РАЙОН',
+    '📍 СУРГУТСКИЙ РАЙОН',
+    '📍 ХАНТЫ-МАНСИЙСКИЙ РАЙОН'
+];
+
+// Сортируем города внутри каждого района
+DISTRICT_ORDER.forEach(district => {
+    if (CITIES_BY_DISTRICT[district]) {
+        // Копируем массив городов района
+        const districtCities = [...CITIES_BY_DISTRICT[district]];
+        
+        // Сортируем города внутри района (кроме 'Все города')
+        if (district !== 'Все города') {
+            districtCities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+        }
+        
+        SORTED_CITIES_BY_DISTRICT[district] = districtCities;
+    }
+});
+
+// Добавляем оставшиеся районы (на всякий случай)
+Object.keys(CITIES_BY_DISTRICT).forEach(district => {
+    if (!DISTRICT_ORDER.includes(district) && district !== 'Все города') {
+        const districtCities = [...CITIES_BY_DISTRICT[district]];
+        districtCities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+        SORTED_CITIES_BY_DISTRICT[district] = districtCities;
+    }
+});
+
+// ========== ЭКСПОРТ ==========
+
 window.USER_ROLE = USER_ROLE;
 window.ORDER_STATUS = ORDER_STATUS;
 window.PAGINATION = PAGINATION;
@@ -313,9 +371,11 @@ window.ADMIN_UID = ADMIN_UID;
 window.COLORS = COLORS;
 window.ORDER_CATEGORIES = ORDER_CATEGORIES;
 window.CATEGORY_ICONS = CATEGORY_ICONS;
-window.CITIES = CITIES;
-window.CITIES_BY_DISTRICT = CITIES_BY_DISTRICT;
+window.CITIES = CITIES;                          // плоский отсортированный массив
+window.CITIES_BY_DISTRICT = CITIES_BY_DISTRICT;  // оригинал (без сортировки)
+window.SORTED_CITIES_BY_DISTRICT = SORTED_CITIES_BY_DISTRICT; // отсортированный по районам
 
 console.log('✅ Constants loaded');
-console.log(`🏙️ Загружено ${CITIES.length - 1} населенных пунктов ХМАО`);
+console.log(`🏙️ Загружено ${ALL_CITIES_SORTED.length} населенных пунктов ХМАО`);
 console.log(`📍 Количество районов: ${Object.keys(CITIES_BY_DISTRICT).length}`);
+console.log('✅ Города отсортированы по алфавиту (глобально и по районам)');
