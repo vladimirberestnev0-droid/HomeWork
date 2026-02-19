@@ -8,6 +8,14 @@ let uploadedPhotos = [];
 let searchTimeout = null;
 let currentCategory = 'all';
 
+// Проверяем наличие глобальных объектов
+const USER_ROLE = window.USER_ROLE || { CLIENT: 'client', MASTER: 'master' };
+const ORDER_STATUS = window.ORDER_STATUS || { OPEN: 'open' };
+const Helpers = window.Helpers || { 
+    showNotification: (msg) => alert(msg),
+    delay: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+};
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 index.js загружен и готов к работе!');
@@ -45,43 +53,45 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Подписка на изменения авторизации
-Auth.onAuthChange((state) => {
-    console.log('🔄 Статус авторизации изменился:', state);
-    
-    // Перерисовываем блок авторизации
-    if (typeof AuthUI !== 'undefined') {
-        AuthUI.renderAuthBlock();
-    }
-    
-    // Скрываем ссылку "Мои заказы" для мастеров
-    const clientLink = document.getElementById('clientLink');
-    if (clientLink) {
-        clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
-    }
-    
-    // Показываем/скрываем кнопку выхода
-    const headerLogoutBtn = document.getElementById('headerLogoutBtn');
-    if (headerLogoutBtn) {
-        headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
-    }
-    
-    // Показываем/скрываем форму создания заказа
-    const orderFormColumn = document.getElementById('orderFormColumn');
-    if (orderFormColumn) {
-        if (state.isMaster) {
-            orderFormColumn.style.display = 'none';
-            document.getElementById('ordersColumn').className = 'col-md-12';
-        } else {
-            orderFormColumn.style.display = 'block';
-            document.getElementById('ordersColumn').className = 'col-md-6';
+if (typeof Auth !== 'undefined') {
+    Auth.onAuthChange((state) => {
+        console.log('🔄 Статус авторизации изменился:', state);
+        
+        // Перерисовываем блок авторизации
+        if (typeof AuthUI !== 'undefined') {
+            AuthUI.renderAuthBlock();
         }
-    }
-    
-    if (state.isMaster) {
-        console.log('✅ Мастер авторизован, перезагружаем заказы');
-        loadOrders();
-    }
-});
+        
+        // Скрываем ссылку "Мои заказы" для мастеров
+        const clientLink = document.getElementById('clientLink');
+        if (clientLink) {
+            clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
+        }
+        
+        // Показываем/скрываем кнопку выхода
+        const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+        if (headerLogoutBtn) {
+            headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
+        }
+        
+        // Показываем/скрываем форму создания заказа
+        const orderFormColumn = document.getElementById('orderFormColumn');
+        if (orderFormColumn) {
+            if (state.isMaster) {
+                orderFormColumn.style.display = 'none';
+                document.getElementById('ordersColumn').className = 'col-md-12';
+            } else {
+                orderFormColumn.style.display = 'block';
+                document.getElementById('ordersColumn').className = 'col-md-6';
+            }
+        }
+        
+        if (state.isMaster) {
+            console.log('✅ Мастер авторизован, перезагружаем заказы');
+            loadOrders();
+        }
+    });
+}
 
 // ============================================
 // ФУНКЦИИ РАБОТЫ С КАРТАМИ
@@ -90,7 +100,7 @@ Auth.onAuthChange((state) => {
 // Инициализация карт
 function initMaps() {
     try {
-        if (document.getElementById('map')) {
+        if (document.getElementById('map') && typeof ymaps !== 'undefined') {
             map = new ymaps.Map('map', {
                 center: [55.7558, 37.6173],
                 zoom: 10
@@ -110,7 +120,7 @@ function initMaps() {
             });
         }
         
-        if (document.getElementById('ordersMap')) {
+        if (document.getElementById('ordersMap') && typeof ymaps !== 'undefined') {
             ordersMap = new ymaps.Map('ordersMap', {
                 center: [55.7558, 37.6173],
                 zoom: 10
@@ -124,7 +134,7 @@ function initMaps() {
 
 // Загрузка карты заказов
 async function loadOrdersMap() {
-    if (!ymapsReady || !ordersMap) return;
+    if (!ymapsReady || !ordersMap || !window.db) return;
     
     try {
         ordersMap.geoObjects.removeAll();
@@ -169,6 +179,10 @@ async function loadTopMasters() {
     if (!container) return;
     
     try {
+        if (!window.db) {
+            throw new Error('db не определен');
+        }
+        
         const snapshot = await db.collection('users')
             .where('role', '==', USER_ROLE.MASTER)
             .orderBy('rating', 'desc')
@@ -193,13 +207,13 @@ async function loadTopMasters() {
                     <div class="master-avatar">
                         <i class="fas fa-user-tie"></i>
                     </div>
-                    <h6 class="fw-bold mb-1">${Helpers.escapeHtml(master.name || 'Мастер')}</h6>
+                    <h6 class="fw-bold mb-1">${Helpers.escapeHtml?.(master.name) || master.name || 'Мастер'}</h6>
                     <div class="rating-stars mb-2">${stars}</div>
                     <div class="mb-2">
                         <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
                         <span class="badge badge-success ms-1">📦 ${master.completedJobs || 0}</span>
                     </div>
-                    <p class="small text-secondary mb-2">${Helpers.escapeHtml(master.categories || 'Специалист')}</p>
+                    <p class="small text-secondary mb-2">${Helpers.escapeHtml?.(master.categories) || master.categories || 'Специалист'}</p>
                     <button class="btn btn-sm w-100" onclick="viewMaster('${doc.id}')">
                         Смотреть профиль
                     </button>
@@ -210,6 +224,7 @@ async function loadTopMasters() {
         
     } catch (error) {
         console.error('❌ Ошибка загрузки мастеров:', error);
+        container.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
     }
 }
 
@@ -219,17 +234,14 @@ async function loadOrders() {
     if (!ordersList) return;
     
     try {
+        if (!window.db) {
+            throw new Error('db не определен');
+        }
+        
         let orders = [];
         
-        if (Auth.isMaster()) {
-            // Ждём загрузки данных мастера
-            let attempts = 0;
-            while (!Auth.getUserData() && attempts < 20) {
-                await Helpers.delay(100);
-                attempts++;
-            }
-            
-            orders = await Orders.getOpenOrders();
+        if (typeof Auth !== 'undefined' && Auth.isMaster && Auth.isMaster()) {
+            orders = await getOpenOrders();
             
             if (currentCategory !== 'all') {
                 orders = orders.filter(order => order.category === currentCategory);
@@ -268,6 +280,27 @@ async function loadOrders() {
     }
 }
 
+// Получение открытых заказов
+async function getOpenOrders() {
+    try {
+        const snapshot = await db.collection('orders')
+            .where('status', '==', ORDER_STATUS.OPEN)
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+        
+        const orders = [];
+        snapshot.forEach(doc => {
+            orders.push({ id: doc.id, ...doc.data() });
+        });
+        
+        return orders;
+    } catch (error) {
+        console.error('Ошибка загрузки заказов:', error);
+        return [];
+    }
+}
+
 // Создание карточки заказа
 function createOrderCard(order) {
     const div = document.createElement('div');
@@ -287,7 +320,7 @@ function createOrderCard(order) {
     }
     
     let actionsHtml = '';
-    const showButton = Auth.isAuthenticated() && Auth.isMaster() && order.status === ORDER_STATUS.OPEN;
+    const showButton = typeof Auth !== 'undefined' && Auth.isAuthenticated && Auth.isAuthenticated() && Auth.isMaster && Auth.isMaster() && order.status === ORDER_STATUS.OPEN;
     
     if (showButton) {
         actionsHtml = `
@@ -301,19 +334,19 @@ function createOrderCard(order) {
     
     div.innerHTML = `
         <div class="order-header">
-            <h5 class="order-title mb-0">${Helpers.escapeHtml(order.title || 'Заказ')}</h5>
+            <h5 class="order-title mb-0">${Helpers.escapeHtml?.(order.title) || order.title || 'Заказ'}</h5>
             <span class="order-price">${order.price || 0} ₽</span>
         </div>
-        <p class="text-secondary mb-3">${Helpers.escapeHtml(order.description || 'Нет описания')}</p>
+        <p class="text-secondary mb-3">${Helpers.escapeHtml?.(order.description) || order.description || 'Нет описания'}</p>
         ${photosHtml}
         <div class="order-meta">
             <span>
-                <i class="fas ${Helpers.getCategoryIcon(order.category)}"></i>
+                <i class="fas ${window.CATEGORY_ICONS?.[order.category] || 'fa-tag'}"></i>
                 ${order.category || 'Без категории'}
             </span>
             <span>
                 <i class="fas fa-map-marker-alt"></i>
-                ${Helpers.escapeHtml(order.address || 'Адрес не указан')}
+                ${Helpers.escapeHtml?.(order.address) || order.address || 'Адрес не указан'}
             </span>
         </div>
         ${actionsHtml}
@@ -334,7 +367,6 @@ async function searchOrders(query) {
         return;
     }
     
-    // TODO: реализовать полноценный поиск
     Helpers.showNotification(`Ищем: ${query}`, 'info');
 }
 
@@ -360,12 +392,12 @@ function setupCategoryFilter() {
 
 // Отклик на заказ
 async function respondToOrder(orderId) {
-    if (!Auth.isAuthenticated()) {
+    if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
         Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
         return;
     }
     
-    if (!Auth.isMaster()) {
+    if (typeof Auth === 'undefined' || !Auth.isMaster || !Auth.isMaster()) {
         Helpers.showNotification('❌ Только мастера могут откликаться', 'warning');
         return;
     }
@@ -375,15 +407,19 @@ async function respondToOrder(orderId) {
     
     const comment = prompt('Краткий комментарий:', '');
     
-    const result = await Orders.respondToOrder(orderId, price, comment);
-    if (result.success) {
-        loadOrders();
+    if (typeof Orders !== 'undefined' && Orders.respondToOrder) {
+        const result = await Orders.respondToOrder(orderId, price, comment);
+        if (result && result.success) {
+            loadOrders();
+        }
+    } else {
+        Helpers.showNotification('❌ Функция отклика временно недоступна', 'error');
     }
 }
 
 // Просмотр мастера
 function viewMaster(masterId) {
-    window.location.href = `masters.html?master=${masterId}`;
+    window.location.href = `/HomeWork/masters.html?master=${masterId}`;
 }
 
 // ============================================
@@ -419,6 +455,11 @@ async function handleFiles(files) {
         reader.readAsDataURL(file);
         
         try {
+            if (!window.storage) {
+                console.warn('storage не определен');
+                continue;
+            }
+            
             const storageRef = storage.ref(`orders/${Date.now()}_${file.name}`);
             await storageRef.put(file);
             const url = await storageRef.getDownloadURL();
@@ -448,7 +489,11 @@ function removePhoto(fileName) {
 
 function initEventListeners() {
     // Выход
-    const logoutHandler = () => Auth.logout();
+    const logoutHandler = () => {
+        if (typeof Auth !== 'undefined' && Auth.logout) {
+            Auth.logout();
+        }
+    };
     document.getElementById('logoutBtn')?.addEventListener('click', logoutHandler);
     document.getElementById('headerLogoutBtn')?.addEventListener('click', logoutHandler);
 
@@ -465,7 +510,11 @@ function initEventListeners() {
     });
 
     // Темная тема
-    document.getElementById('themeToggle')?.addEventListener('click', Auth.toggleTheme);
+    document.getElementById('themeToggle')?.addEventListener('click', () => {
+        if (typeof Auth !== 'undefined' && Auth.toggleTheme) {
+            Auth.toggleTheme();
+        }
+    });
 
     // Загрузка фото
     const uploadArea = document.getElementById('uploadArea');
@@ -498,12 +547,12 @@ function initEventListeners() {
     document.getElementById('orderForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        if (!Auth.isAuthenticated()) {
+        if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
             Helpers.showNotification('Пожалуйста, войдите в систему', 'warning');
             return;
         }
         
-        if (Auth.isMaster()) {
+        if (typeof Auth !== 'undefined' && Auth.isMaster && Auth.isMaster()) {
             Helpers.showNotification('Мастера не могут создавать заказы', 'warning');
             return;
         }
@@ -521,24 +570,28 @@ function initEventListeners() {
             clientPhone: document.getElementById('phone').value
         };
 
-        const result = await Orders.create(orderData);
-        if (result.success) {
-            document.getElementById('orderForm').reset();
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-            uploadedPhotos = [];
-            if (document.getElementById('photoPreview')) {
-                document.getElementById('photoPreview').innerHTML = '';
+        if (typeof Orders !== 'undefined' && Orders.create) {
+            const result = await Orders.create(orderData);
+            if (result && result.success) {
+                document.getElementById('orderForm').reset();
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                uploadedPhotos = [];
+                if (document.getElementById('photoPreview')) {
+                    document.getElementById('photoPreview').innerHTML = '';
+                }
+                if (map) map.geoObjects.removeAll();
+                
+                document.getElementById('successMessage').classList.remove('d-none');
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.add('d-none');
+                }, 5000);
+                
+                loadOrders();
+                loadOrdersMap();
             }
-            if (map) map.geoObjects.removeAll();
-            
-            document.getElementById('successMessage').classList.remove('d-none');
-            setTimeout(() => {
-                document.getElementById('successMessage').classList.add('d-none');
-            }, 5000);
-            
-            loadOrders();
-            loadOrdersMap();
+        } else {
+            Helpers.showNotification('❌ Функция создания заказа временно недоступна', 'error');
         }
     });
 
@@ -620,7 +673,6 @@ function initEventListeners() {
 // ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
 // ============================================
 
-// Делаем функции доступными из HTML (onclick и т.д.)
 window.initMaps = initMaps;
 window.loadOrders = loadOrders;
 window.loadOrdersMap = loadOrdersMap;

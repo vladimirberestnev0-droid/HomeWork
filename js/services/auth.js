@@ -1,17 +1,37 @@
-// ===== AUTH.JS — ВСЯ АВТОРИЗАЦИЯ В ОДНОМ МЕСТЕ =====
+// ===== js/services/auth.js =====
+// УЛУЧШЕННАЯ АВТОРИЗАЦИЯ
+
+// Проверяем наличие глобальных объектов
+const USER_ROLE = window.USER_ROLE || {
+    CLIENT: 'client',
+    MASTER: 'master',
+    ADMIN: 'admin'
+};
+
+const Helpers = window.Helpers || {
+    showNotification: (msg, type) => {
+        console.log(`${type}: ${msg}`);
+        alert(msg);
+    },
+    validateEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    validatePhone: (phone) => /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/.test(phone)
+};
 
 const Auth = (function() {
     // Приватные переменные
     let currentUser = null;
     let currentUserData = null;
     let authListeners = [];
+    let unsubscribe = null;
 
-    /**
-     * Инициализация модуля авторизации
-     */
-    async function init() {
-        // Слушаем изменения статуса аутентификации
-        auth.onAuthStateChanged(async (user) => {
+    // Инициализация
+    function init() {
+        if (!window.auth) {
+            console.error('❌ auth не определен! Проверь порядок подключения скриптов');
+            return;
+        }
+        
+        unsubscribe = auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
             if (user) {
@@ -26,73 +46,55 @@ const Auth = (function() {
                 currentUserData = null;
             }
             
-            // Уведомляем всех подписчиков
+            // Уведомляем подписчиков
             notifyListeners();
             
             // Обновляем UI
             updateUI();
         });
         
-        // Восстанавливаем тему
         initTheme();
+        
+        console.log('✅ Auth инициализирован');
     }
 
-    /**
-     * Получить текущего пользователя
-     */
+    // Получить пользователя
     function getUser() {
         return currentUser;
     }
 
-    /**
-     * Получить данные текущего пользователя
-     */
+    // Получить данные пользователя
     function getUserData() {
         return currentUserData;
     }
 
-    /**
-     * Проверить, авторизован ли пользователь
-     */
+    // Проверка авторизации
     function isAuthenticated() {
         return !!currentUser;
     }
 
-    /**
-     * Проверить роль пользователя
-     */
+    // Проверка роли
     function hasRole(role) {
         return currentUserData?.role === role;
     }
 
-    /**
-     * Проверить, является ли пользователь мастером
-     */
     function isMaster() {
         return currentUserData?.role === USER_ROLE.MASTER;
     }
 
-    /**
-     * Проверить, является ли пользователь клиентом
-     */
     function isClient() {
         return currentUserData?.role === USER_ROLE.CLIENT;
     }
 
-    /**
-     * Проверить, является ли пользователь админом
-     */
     function isAdmin() {
         return currentUser?.uid === ADMIN_UID;
     }
 
-    /**
-     * Регистрация нового пользователя
-     */
+    // Регистрация
     async function register(email, password, userData) {
         try {
             // Валидация
-            if (!Utils.validateEmail(email)) {
+            if (!Helpers.validateEmail(email)) {
                 throw new Error('Некорректный email');
             }
             
@@ -100,15 +102,15 @@ const Auth = (function() {
                 throw new Error('Пароль должен быть не менее 6 символов');
             }
             
-            if (userData.role === 'master' && userData.phone && !Utils.validatePhone(userData.phone)) {
+            if (userData.role === 'master' && userData.phone && !Helpers.validatePhone(userData.phone)) {
                 throw new Error('Некорректный формат телефона');
             }
             
-            // Создаем пользователя в Firebase Auth
+            // Создаем пользователя
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Подготавливаем данные для Firestore
+            // Подготавливаем данные
             const firestoreData = {
                 name: userData.name || '',
                 email: email,
@@ -128,7 +130,7 @@ const Auth = (function() {
             // Сохраняем в Firestore
             await db.collection('users').doc(user.uid).set(firestoreData);
             
-            Utils.showNotification('✅ Регистрация прошла успешно!', 'success');
+            Helpers.showNotification('✅ Регистрация прошла успешно!', 'success');
             return { success: true, user };
             
         } catch (error) {
@@ -145,24 +147,28 @@ const Auth = (function() {
                 errorMessage = error.message;
             }
             
-            Utils.showNotification(`❌ ${errorMessage}`, 'error');
+            Helpers.showNotification(`❌ ${errorMessage}`, 'error');
             return { success: false, error: errorMessage };
         }
     }
 
-    /**
-     * Вход в систему
-     */
+    // Вход
     async function login(email, password) {
         try {
-            // Валидация
             if (!email || !password) {
                 throw new Error('Введите email и пароль');
             }
             
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             
-            Utils.showNotification('✅ Вход выполнен успешно!', 'success');
+            // Проверяем бан
+            const userData = await db.collection('users').doc(userCredential.user.uid).get();
+            if (userData.exists && userData.data().banned) {
+                await auth.signOut();
+                throw new Error('Ваш аккаунт заблокирован');
+            }
+            
+            Helpers.showNotification('✅ Вход выполнен успешно!', 'success');
             return { success: true, user: userCredential.user };
             
         } catch (error) {
@@ -181,29 +187,29 @@ const Auth = (function() {
                 errorMessage = error.message;
             }
             
-            Utils.showNotification(`❌ ${errorMessage}`, 'error');
+            Helpers.showNotification(`❌ ${errorMessage}`, 'error');
             return { success: false, error: errorMessage };
         }
     }
 
-    /**
-     * Выход из системы
-     */
+    // Выход
     async function logout() {
         try {
             await auth.signOut();
-            Utils.showNotification('👋 До свидания!', 'info');
+            // Очищаем кэш
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            Helpers.showNotification('👋 До свидания!', 'info');
             return { success: true };
         } catch (error) {
             console.error('Ошибка выхода:', error);
-            Utils.showNotification('❌ Ошибка при выходе', 'error');
+            Helpers.showNotification('❌ Ошибка при выходе', 'error');
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Обновление профиля
-     */
+    // Обновление профиля
     async function updateProfile(userId, data) {
         try {
             if (!userId) throw new Error('ID пользователя не указан');
@@ -218,19 +224,17 @@ const Auth = (function() {
                 currentUserData = { ...currentUserData, ...data };
             }
             
-            Utils.showNotification('✅ Профиль обновлен', 'success');
+            Helpers.showNotification('✅ Профиль обновлен', 'success');
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка обновления профиля:', error);
-            Utils.showNotification('❌ Ошибка обновления профиля', 'error');
+            Helpers.showNotification('❌ Ошибка обновления профиля', 'error');
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Добавление в избранное
-     */
+    // Добавление в избранное
     async function addToFavorites(masterId) {
         try {
             if (!currentUser) throw new Error('Необходимо авторизоваться');
@@ -239,19 +243,16 @@ const Auth = (function() {
                 favorites: firebase.firestore.FieldValue.arrayUnion(masterId)
             });
             
-            Utils.showNotification('✅ Мастер добавлен в избранное', 'success');
+            Helpers.showNotification('✅ Мастер добавлен в избранное', 'success');
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка добавления в избранное:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Удаление из избранного
-     */
     async function removeFromFavorites(masterId) {
         try {
             if (!currentUser) throw new Error('Необходимо авторизоваться');
@@ -260,19 +261,16 @@ const Auth = (function() {
                 favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
             });
             
-            Utils.showNotification('❌ Мастер удален из избранного', 'info');
+            Helpers.showNotification('❌ Мастер удален из избранного', 'info');
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка удаления из избранного:', error);
-            Utils.showNotification('❌ Ошибка', 'error');
+            Helpers.showNotification('❌ Ошибка', 'error');
             return { success: false, error: error.message };
         }
     }
 
-    /**
-     * Получение избранных мастеров
-     */
     async function getFavorites() {
         try {
             if (!currentUser) return [];
@@ -299,9 +297,7 @@ const Auth = (function() {
         }
     }
 
-    /**
-     * Добавление просмотренного заказа
-     */
+    // Добавление просмотренного заказа
     async function addViewedOrder(orderId) {
         try {
             if (!currentUser) return;
@@ -311,8 +307,7 @@ const Auth = (function() {
             await userRef.update({
                 viewedOrders: firebase.firestore.FieldValue.arrayUnion({
                     orderId,
-                    viewedAt: new Date().toISOString(),
-                    notified: false
+                    viewedAt: new Date().toISOString()
                 })
             });
             
@@ -321,9 +316,7 @@ const Auth = (function() {
         }
     }
 
-    /**
-     * Подписка на изменения авторизации
-     */
+    // Подписка на изменения авторизации
     function onAuthChange(callback) {
         if (typeof callback === 'function') {
             authListeners.push(callback);
@@ -340,9 +333,6 @@ const Auth = (function() {
         }
     }
 
-    /**
-     * Уведомление всех подписчиков
-     */
     function notifyListeners() {
         const state = {
             user: currentUser,
@@ -362,9 +352,7 @@ const Auth = (function() {
         });
     }
 
-    /**
-     * Обновление UI на основе статуса авторизации
-     */
+    // Обновление UI на основе статуса авторизации
     function updateUI() {
         // Скрываем/показываем блоки авторизации
         document.querySelectorAll('.auth-required').forEach(el => {
@@ -401,55 +389,57 @@ const Auth = (function() {
         // Обновляем ссылки
         const clientLink = document.getElementById('clientLink');
         if (clientLink) {
-            clientLink.href = isAuthenticated() ? 'client.html' : '#';
+            clientLink.href = isAuthenticated() ? '/HomeWork/client.html' : '#';
             clientLink.onclick = (e) => {
                 if (!isAuthenticated()) {
                     e.preventDefault();
-                    Utils.showNotification('Войдите в систему', 'warning');
+                    Helpers.showNotification('Войдите в систему', 'warning');
                 }
             };
         }
         
         const masterLink = document.getElementById('masterLink');
         if (masterLink) {
-            masterLink.href = isAuthenticated() ? 'masters.html' : '#';
+            masterLink.href = isAuthenticated() ? '/HomeWork/masters.html' : '#';
             masterLink.onclick = (e) => {
                 if (!isAuthenticated()) {
                     e.preventDefault();
-                    Utils.showNotification('Войдите в систему', 'warning');
+                    Helpers.showNotification('Войдите в систему', 'warning');
                 }
             };
         }
     }
 
-    /**
-     * Инициализация темы
-     */
+    // Инициализация темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             document.body.classList.add('dark-theme');
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) {
-                themeToggle.querySelector('i').className = 'fas fa-sun';
+            updateThemeIcon(true);
+        }
+    }
+
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeIcon(isDark);
+    }
+
+    function updateThemeIcon(isDark) {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
     }
 
-    /**
-     * Переключение темы
-     */
-    function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        const isDark = document.body.classList.contains('dark-theme');
-        
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {
-            const icon = themeToggle.querySelector('i');
-            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    // Очистка при выходе
+    function cleanup() {
+        if (unsubscribe) {
+            unsubscribe();
         }
-        
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
 
     // Публичное API
@@ -471,14 +461,27 @@ const Auth = (function() {
         getFavorites,
         addViewedOrder,
         onAuthChange,
-        toggleTheme
+        toggleTheme,
+        cleanup
     };
 })();
 
-// Автоматическая инициализация при загрузке страницы
+// Автоинициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-    Auth.init();
+    // Проверяем наличие auth перед инициализацией
+    if (window.auth) {
+        Auth.init();
+    } else {
+        console.warn('⏳ Ожидание инициализации Firebase...');
+        // Пробуем еще раз через секунду
+        setTimeout(() => {
+            if (window.auth) {
+                Auth.init();
+            } else {
+                console.error('❌ Firebase auth не загрузился');
+            }
+        }, 1000);
+    }
 });
 
-// Экспортируем в глобальную область
 window.Auth = Auth;

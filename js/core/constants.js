@@ -47,13 +47,6 @@ const ORDER_CATEGORIES = [
     'Ремонт техники'
 ];
 
-// Настройки файлов
-const FILE_LIMITS = {
-    MAX_SIZE: 10 * 1024 * 1024, // 10MB
-    MAX_PHOTOS_PER_ORDER: 5,
-    ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-};
-
 // Иконки для категорий
 const CATEGORY_ICONS = {
     'Сантехника': 'fa-wrench',
@@ -66,20 +59,6 @@ const CATEGORY_ICONS = {
     'Ремонт техники': 'fa-gear'
 };
 
-// Цвета для бейджей статусов
-const STATUS_COLORS = {
-    'open': { bg: '#F9E2D9', text: '#E67A4B' },
-    'in_progress': { bg: '#E3F2FD', text: '#0984e3' },
-    'completed': { bg: '#E3F2E9', text: '#00A86B' }
-};
-
-// Настройки кэширования
-const CACHE_CONFIG = {
-    ORDERS_TTL: 5 * 60 * 1000, // 5 минут
-    USERS_TTL: 10 * 60 * 1000, // 10 минут
-    CHATS_TTL: 30 * 1000 // 30 секунд
-};
-
 // Экспортируем всё в глобальную область
 window.USER_ROLE = USER_ROLE;
 window.ORDER_STATUS = ORDER_STATUS;
@@ -87,7 +66,6 @@ window.PAGINATION = PAGINATION;
 window.ADMIN_UID = ADMIN_UID;
 window.COLORS = COLORS;
 window.ORDER_CATEGORIES = ORDER_CATEGORIES;
-window.FILE_LIMITS = FILE_LIMITS;
 window.CATEGORY_ICONS = CATEGORY_ICONS;
-window.STATUS_COLORS = STATUS_COLORS;
-window.CACHE_CONFIG = CACHE_CONFIG;
+
+console.log('✅ Constants loaded');

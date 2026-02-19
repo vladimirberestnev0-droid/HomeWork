@@ -1,17 +1,17 @@
 // ===== js/core/firebase.js =====
 // Firebase Configuration
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
-    authDomain: "homework-6a562.firebaseapp.com",
-    projectId: "homework-6a562",
-    storageBucket: "homework-6a562.firebasestorage.app",
-    messagingSenderId: "3651366285",
-    appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
-};
-
-// Инициализация Firebase
+// Проверяем, не инициализирован ли уже Firebase
 if (!firebase.apps.length) {
+    const firebaseConfig = {
+        apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
+        authDomain: "homework-6a562.firebaseapp.com",
+        projectId: "homework-6a562",
+        storageBucket: "homework-6a562.firebasestorage.app",
+        messagingSenderId: "3651366285",
+        appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
+    };
+    
     firebase.initializeApp(firebaseConfig);
 }
 

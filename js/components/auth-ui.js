@@ -1,201 +1,487 @@
-// ===== js/components/auth-ui.js =====
-// ОТРИСОВКА ИНТЕРФЕЙСА АВТОРИЗАЦИИ (УЛУЧШЕННАЯ ВЕРСИЯ)
+// ===== js/services/auth.js =====
+// УЛУЧШЕННАЯ АВТОРИЗАЦИЯ
 
-const AuthUI = (function() {
-    
-    function renderAuthBlock() {
-        const container = document.getElementById('authBlockContainer');
-        if (!container) return;
-        
-        if (Auth.isAuthenticated()) {
-            container.innerHTML = '';
+// Проверяем наличие глобальных объектов
+const USER_ROLE = window.USER_ROLE || {
+    CLIENT: 'client',
+    MASTER: 'master',
+    ADMIN: 'admin'
+};
+
+const Helpers = window.Helpers || {
+    showNotification: (msg, type) => {
+        console.log(`${type}: ${msg}`);
+        alert(msg);
+    },
+    validateEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    validatePhone: (phone) => /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/.test(phone)
+};
+
+const Auth = (function() {
+    // Приватные переменные
+    let currentUser = null;
+    let currentUserData = null;
+    let authListeners = [];
+    let unsubscribe = null;
+
+    // Инициализация
+    function init() {
+        if (!window.auth) {
+            console.error('❌ auth не определен! Проверь порядок подключения скриптов');
             return;
         }
         
-        container.innerHTML = `
-            <div id="authBlock" class="bg-white rounded-5 p-4 mb-4 shadow-sm animate-slide-down">
-                <div class="d-flex gap-3 mb-4">
-                    <button id="tabLogin" class="btn px-4 py-2 rounded-pill active" style="background: var(--accent); color: white;">Вход</button>
-                    <button id="tabRegister" class="btn btn-outline-secondary px-4 py-2 rounded-pill">Регистрация</button>
-                </div>
-                
-                <!-- Форма входа -->
-                <div id="loginForm">
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Email</label>
-                        <input type="email" id="loginEmail" class="form-control rounded-pill" placeholder="example@mail.com">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Пароль</label>
-                        <input type="password" id="loginPassword" class="form-control rounded-pill" placeholder="••••••••">
-                    </div>
-                    <button id="loginBtn" class="btn w-100 rounded-pill py-2" style="background: var(--accent); color: white;">
-                        <i class="fas fa-sign-in-alt me-2"></i>Войти
-                    </button>
-                    <p id="loginError" class="text-danger mt-3 d-none"></p>
-                </div>
-                
-                <!-- Форма регистрации -->
-                <div id="registerForm" class="d-none">
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Имя</label>
-                        <input type="text" id="regName" class="form-control rounded-pill" placeholder="Имя">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Email</label>
-                        <input type="email" id="regEmail" class="form-control rounded-pill" placeholder="example@mail.com">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Телефон</label>
-                        <input type="tel" id="regPhone" class="form-control rounded-pill" placeholder="+7 (999) 123-45-67">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Пароль</label>
-                        <input type="password" id="regPassword" class="form-control rounded-pill" placeholder="минимум 6 символов">
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="role" id="roleClient" value="client" checked>
-                            <label class="form-check-label" for="roleClient">Я — клиент</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="role" id="roleMaster" value="master">
-                            <label class="form-check-label" for="roleMaster">Я — мастер</label>
-                        </div>
-                    </div>
-                    <button id="registerBtn" class="btn w-100 rounded-pill py-2" style="background: var(--accent); color: white;">
-                        <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
-                    </button>
-                    <p id="registerError" class="text-danger mt-3 d-none"></p>
-                </div>
-            </div>
-        `;
-        
-        setupAuthTabs();
-        setupAuthButtons();
-    }
-
-    function setupAuthTabs() {
-        const tabLogin = document.getElementById('tabLogin');
-        const tabRegister = document.getElementById('tabRegister');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const loginError = document.getElementById('loginError');
-        const registerError = document.getElementById('registerError');
-
-        tabLogin?.addEventListener('click', () => {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            tabLogin.style.background = 'var(--accent)';
-            tabLogin.style.color = 'white';
-            tabRegister.style.background = 'transparent';
-            tabRegister.style.color = '#6c757d';
-            loginForm?.classList.remove('d-none');
-            registerForm?.classList.add('d-none');
+        unsubscribe = auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
             
-            loginError?.classList.add('d-none');
-            registerError?.classList.add('d-none');
+            if (user) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    currentUserData = userDoc.exists ? userDoc.data() : null;
+                } catch (error) {
+                    console.error('Ошибка загрузки данных пользователя:', error);
+                    currentUserData = null;
+                }
+            } else {
+                currentUserData = null;
+            }
+            
+            // Уведомляем подписчиков
+            notifyListeners();
+            
+            // Обновляем UI
+            updateUI();
         });
         
-        tabRegister?.addEventListener('click', () => {
-            tabRegister.classList.add('active');
-            tabLogin.classList.remove('active');
-            tabRegister.style.background = 'var(--accent)';
-            tabRegister.style.color = 'white';
-            tabLogin.style.background = 'transparent';
-            tabLogin.style.color = '#6c757d';
-            registerForm?.classList.remove('d-none');
-            loginForm?.classList.add('d-none');
-            
-            loginError?.classList.add('d-none');
-            registerError?.classList.add('d-none');
-        });
+        initTheme();
+        
+        console.log('✅ Auth инициализирован');
     }
 
-    function setupAuthButtons() {
-        // Регистрация
-        document.getElementById('registerBtn')?.addEventListener('click', async () => {
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const name = document.getElementById('regName').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
-            const role = document.querySelector('input[name="role"]:checked')?.value || 'client';
-            
-            if (!email || !password || !name) {
-                showError('registerError', 'Заполните все обязательные поля');
-                return;
+    // Получить пользователя
+    function getUser() {
+        return currentUser;
+    }
+
+    // Получить данные пользователя
+    function getUserData() {
+        return currentUserData;
+    }
+
+    // Проверка авторизации
+    function isAuthenticated() {
+        return !!currentUser;
+    }
+
+    // Проверка роли
+    function hasRole(role) {
+        return currentUserData?.role === role;
+    }
+
+    function isMaster() {
+        return currentUserData?.role === USER_ROLE.MASTER;
+    }
+
+    function isClient() {
+        return currentUserData?.role === USER_ROLE.CLIENT;
+    }
+
+    function isAdmin() {
+        return currentUser?.uid === ADMIN_UID;
+    }
+
+    // Регистрация
+    async function register(email, password, userData) {
+        try {
+            // Валидация
+            if (!Helpers.validateEmail(email)) {
+                throw new Error('Некорректный email');
             }
             
             if (password.length < 6) {
-                showError('registerError', 'Пароль должен быть минимум 6 символов');
-                return;
+                throw new Error('Пароль должен быть не менее 6 символов');
             }
-
-            const result = await Auth.register(email, password, { name, phone, role });
             
-            if (result.success) {
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-                document.getElementById('regName').value = '';
-                document.getElementById('regPhone').value = '';
-                
-                document.getElementById('registerForm').classList.add('d-none');
-                document.getElementById('loginForm').classList.remove('d-none');
-                document.getElementById('tabLogin').click();
-                
-                showError('loginError', 'Регистрация успешна! Войдите в систему', 'text-success');
+            if (userData.role === 'master' && userData.phone && !Helpers.validatePhone(userData.phone)) {
+                throw new Error('Некорректный формат телефона');
+            }
+            
+            // Создаем пользователя
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Подготавливаем данные
+            const firestoreData = {
+                name: userData.name || '',
+                email: email,
+                phone: userData.phone || '',
+                role: userData.role || USER_ROLE.CLIENT,
+                rating: 0,
+                reviews: 0,
+                categories: userData.role === USER_ROLE.MASTER ? (userData.categories || '') : '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                favorites: [],
+                viewedOrders: [],
+                verified: false,
+                banned: false,
+                badges: []
+            };
+            
+            // Сохраняем в Firestore
+            await db.collection('users').doc(user.uid).set(firestoreData);
+            
+            Helpers.showNotification('✅ Регистрация прошла успешно!', 'success');
+            return { success: true, user };
+            
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            
+            let errorMessage = 'Ошибка регистрации';
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'Этот email уже используется';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Некорректный email';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'Слишком простой пароль';
             } else {
-                showError('registerError', result.error || 'Ошибка регистрации');
-            }
-        });
-
-        // Вход
-        document.getElementById('loginBtn')?.addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                showError('loginError', 'Введите email и пароль');
-                return;
+                errorMessage = error.message;
             }
             
-            const result = await Auth.login(email, password);
-            
-            if (!result.success) {
-                showError('loginError', result.error || 'Ошибка входа');
-            }
-        });
-        
-        // Enter
-        document.getElementById('loginPassword')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('loginBtn')?.click();
-            }
-        });
-        
-        document.getElementById('regPassword')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('registerBtn')?.click();
-            }
-        });
-    }
-    
-    function showError(elementId, message, className = 'text-danger') {
-        const errorElement = document.getElementById(elementId);
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.className = `mt-3 ${className}`;
-            errorElement.classList.remove('d-none');
-            
-            setTimeout(() => {
-                errorElement.classList.add('d-none');
-            }, 5000);
+            Helpers.showNotification(`❌ ${errorMessage}`, 'error');
+            return { success: false, error: errorMessage };
         }
     }
 
+    // Вход
+    async function login(email, password) {
+        try {
+            if (!email || !password) {
+                throw new Error('Введите email и пароль');
+            }
+            
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            
+            // Проверяем бан
+            const userData = await db.collection('users').doc(userCredential.user.uid).get();
+            if (userData.exists && userData.data().banned) {
+                await auth.signOut();
+                throw new Error('Ваш аккаунт заблокирован');
+            }
+            
+            Helpers.showNotification('✅ Вход выполнен успешно!', 'success');
+            return { success: true, user: userCredential.user };
+            
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            
+            let errorMessage = 'Ошибка входа';
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = 'Пользователь не найден';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Неверный пароль';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Некорректный email';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Слишком много попыток. Попробуйте позже';
+            } else {
+                errorMessage = error.message;
+            }
+            
+            Helpers.showNotification(`❌ ${errorMessage}`, 'error');
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    // Выход
+    async function logout() {
+        try {
+            await auth.signOut();
+            // Очищаем кэш
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            Helpers.showNotification('👋 До свидания!', 'info');
+            return { success: true };
+        } catch (error) {
+            console.error('Ошибка выхода:', error);
+            Helpers.showNotification('❌ Ошибка при выходе', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Обновление профиля
+    async function updateProfile(userId, data) {
+        try {
+            if (!userId) throw new Error('ID пользователя не указан');
+            
+            await db.collection('users').doc(userId).update({
+                ...data,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Обновляем локальные данные
+            if (userId === currentUser?.uid) {
+                currentUserData = { ...currentUserData, ...data };
+            }
+            
+            Helpers.showNotification('✅ Профиль обновлен', 'success');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка обновления профиля:', error);
+            Helpers.showNotification('❌ Ошибка обновления профиля', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Добавление в избранное
+    async function addToFavorites(masterId) {
+        try {
+            if (!currentUser) throw new Error('Необходимо авторизоваться');
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                favorites: firebase.firestore.FieldValue.arrayUnion(masterId)
+            });
+            
+            Helpers.showNotification('✅ Мастер добавлен в избранное', 'success');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка добавления в избранное:', error);
+            Helpers.showNotification('❌ Ошибка', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function removeFromFavorites(masterId) {
+        try {
+            if (!currentUser) throw new Error('Необходимо авторизоваться');
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
+            });
+            
+            Helpers.showNotification('❌ Мастер удален из избранного', 'info');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка удаления из избранного:', error);
+            Helpers.showNotification('❌ Ошибка', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function getFavorites() {
+        try {
+            if (!currentUser) return [];
+            
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const favorites = userDoc.data()?.favorites || [];
+            
+            const masters = [];
+            for (const masterId of favorites) {
+                const masterDoc = await db.collection('users').doc(masterId).get();
+                if (masterDoc.exists) {
+                    masters.push({
+                        id: masterDoc.id,
+                        ...masterDoc.data()
+                    });
+                }
+            }
+            
+            return masters;
+            
+        } catch (error) {
+            console.error('Ошибка загрузки избранного:', error);
+            return [];
+        }
+    }
+
+    // Добавление просмотренного заказа
+    async function addViewedOrder(orderId) {
+        try {
+            if (!currentUser) return;
+            
+            const userRef = db.collection('users').doc(currentUser.uid);
+            
+            await userRef.update({
+                viewedOrders: firebase.firestore.FieldValue.arrayUnion({
+                    orderId,
+                    viewedAt: new Date().toISOString()
+                })
+            });
+            
+        } catch (error) {
+            console.error('Ошибка добавления просмотра:', error);
+        }
+    }
+
+    // Подписка на изменения авторизации
+    function onAuthChange(callback) {
+        if (typeof callback === 'function') {
+            authListeners.push(callback);
+            
+            // Сразу вызываем с текущим состоянием
+            callback({
+                user: currentUser,
+                userData: currentUserData,
+                isAuthenticated: !!currentUser,
+                isMaster: isMaster(),
+                isClient: isClient(),
+                isAdmin: isAdmin()
+            });
+        }
+    }
+
+    function notifyListeners() {
+        const state = {
+            user: currentUser,
+            userData: currentUserData,
+            isAuthenticated: !!currentUser,
+            isMaster: isMaster(),
+            isClient: isClient(),
+            isAdmin: isAdmin()
+        };
+        
+        authListeners.forEach(listener => {
+            try {
+                listener(state);
+            } catch (error) {
+                console.error('Ошибка в listener авторизации:', error);
+            }
+        });
+    }
+
+    // Обновление UI на основе статуса авторизации
+    function updateUI() {
+        // Скрываем/показываем блоки авторизации
+        document.querySelectorAll('.auth-required').forEach(el => {
+            el.classList.toggle('d-none', !currentUser);
+        });
+        
+        document.querySelectorAll('.no-auth-required').forEach(el => {
+            el.classList.toggle('d-none', !!currentUser);
+        });
+        
+        document.querySelectorAll('.client-only').forEach(el => {
+            el.classList.toggle('d-none', !isClient());
+        });
+        
+        document.querySelectorAll('.master-only').forEach(el => {
+            el.classList.toggle('d-none', !isMaster());
+        });
+        
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.classList.toggle('d-none', !isAdmin());
+        });
+        
+        // Обновляем информацию о пользователе
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        if (userEmailDisplay && currentUser) {
+            userEmailDisplay.innerText = currentUser.email || '';
+        }
+        
+        const userRoleDisplay = document.getElementById('userRoleDisplay');
+        if (userRoleDisplay && currentUserData) {
+            userRoleDisplay.innerText = currentUserData.role === USER_ROLE.MASTER ? 'Мастер' : 'Клиент';
+        }
+        
+        // Обновляем ссылки
+        const clientLink = document.getElementById('clientLink');
+        if (clientLink) {
+            clientLink.href = isAuthenticated() ? '/HomeWork/client.html' : '#';
+            clientLink.onclick = (e) => {
+                if (!isAuthenticated()) {
+                    e.preventDefault();
+                    Helpers.showNotification('Войдите в систему', 'warning');
+                }
+            };
+        }
+        
+        const masterLink = document.getElementById('masterLink');
+        if (masterLink) {
+            masterLink.href = isAuthenticated() ? '/HomeWork/masters.html' : '#';
+            masterLink.onclick = (e) => {
+                if (!isAuthenticated()) {
+                    e.preventDefault();
+                    Helpers.showNotification('Войдите в систему', 'warning');
+                }
+            };
+        }
+    }
+
+    // Инициализация темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            updateThemeIcon(true);
+        }
+    }
+
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeIcon(isDark);
+    }
+
+    function updateThemeIcon(isDark) {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+    }
+
+    // Очистка при выходе
+    function cleanup() {
+        if (unsubscribe) {
+            unsubscribe();
+        }
+    }
+
+    // Публичное API
     return {
-        renderAuthBlock
+        init,
+        getUser,
+        getUserData,
+        isAuthenticated,
+        hasRole,
+        isMaster,
+        isClient,
+        isAdmin,
+        register,
+        login,
+        logout,
+        updateProfile,
+        addToFavorites,
+        removeFromFavorites,
+        getFavorites,
+        addViewedOrder,
+        onAuthChange,
+        toggleTheme,
+        cleanup
     };
 })();
 
-window.AuthUI = AuthUI;
+// Автоинициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем наличие auth перед инициализацией
+    if (window.auth) {
+        Auth.init();
+    } else {
+        console.warn('⏳ Ожидание инициализации Firebase...');
+        // Пробуем еще раз через секунду
+        setTimeout(() => {
+            if (window.auth) {
+                Auth.init();
+            } else {
+                console.error('❌ Firebase auth не загрузился');
+            }
+        }, 1000);
+    }
+});
+
+window.Auth = Auth;
