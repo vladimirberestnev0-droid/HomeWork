@@ -15,30 +15,29 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Глобальные ссылки
-const db = firebase.firestore();
-const auth = firebase.auth();
-const storage = firebase.storage();
+// Глобальные ссылки - проверяем, не объявлены ли уже
+if (typeof window.db === 'undefined') {
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.storage = firebase.storage();
 
-// Настройки Firestore
-db.settings({
-    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-    ignoreUndefinedProperties: true
-});
-
-// Включаем persistence для offline режима
-db.enablePersistence({ synchronizeTabs: true })
-    .catch(err => {
-        if (err.code === 'failed-precondition') {
-            console.warn('⚠️ Множественные вкладки, persistence отключен');
-        } else if (err.code === 'unimplemented') {
-            console.warn('⚠️ Браузер не поддерживает persistence');
-        }
+    // Настройки Firestore
+    window.db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+        ignoreUndefinedProperties: true
     });
 
-// Экспортируем в глобальную область
-window.db = db;
-window.auth = auth;
-window.storage = storage;
+    // Включаем persistence для offline режима
+    window.db.enablePersistence({ synchronizeTabs: true })
+        .catch(err => {
+            if (err.code === 'failed-precondition') {
+                console.warn('⚠️ Множественные вкладки, persistence отключен');
+            } else if (err.code === 'unimplemented') {
+                console.warn('⚠️ Браузер не поддерживает persistence');
+            }
+        });
+} else {
+    console.log('⚠️ Firebase уже инициализирован');
+}
 
 console.log('✅ Firebase инициализирован');

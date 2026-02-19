@@ -2,12 +2,6 @@
 // УЛУЧШЕННАЯ АВТОРИЗАЦИЯ
 
 // Проверяем наличие глобальных объектов
-const USER_ROLE = window.USER_ROLE || {
-    CLIENT: 'client',
-    MASTER: 'master',
-    ADMIN: 'admin'
-};
-
 const Helpers = window.Helpers || {
     showNotification: (msg, type) => {
         console.log(`${type}: ${msg}`);

@@ -8,14 +8,6 @@ let uploadedPhotos = [];
 let searchTimeout = null;
 let currentCategory = 'all';
 
-// Проверяем наличие глобальных объектов
-const USER_ROLE = window.USER_ROLE || { CLIENT: 'client', MASTER: 'master' };
-const ORDER_STATUS = window.ORDER_STATUS || { OPEN: 'open' };
-const Helpers = window.Helpers || { 
-    showNotification: (msg) => alert(msg),
-    delay: (ms) => new Promise(resolve => setTimeout(resolve, ms))
-};
-
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 index.js загружен и готов к работе!');
@@ -51,6 +43,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
 });
+
+// Подписка на изменения авторизации
+if (typeof Auth !== 'undefined') {
+    Auth.onAuthChange((state) => {
+        console.log('🔄 Статус авторизации изменился:', state);
+        
+        // Перерисовываем блок авторизации
+        if (typeof AuthUI !== 'undefined') {
+            AuthUI.renderAuthBlock();
+        }
+        
+        // Скрываем ссылку "Мои заказы" для мастеров
+        const clientLink = document.getElementById('clientLink');
+        if (clientLink) {
+            clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
+        }
+        
+        // Показываем/скрываем кнопку выхода
+        const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+        if (headerLogoutBtn) {
+            headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
+        }
+        
+        // Показываем/скрываем форму создания заказа
+        const orderFormColumn = document.getElementById('orderFormColumn');
+        if (orderFormColumn) {
+            if (state.isMaster) {
+                orderFormColumn.style.display = 'none';
+                document.getElementById('ordersColumn').className = 'col-md-12';
+            } else {
+                orderFormColumn.style.display = 'block';
+                document.getElementById('ordersColumn').className = 'col-md-6';
+            }
+        }
+        
+        if (state.isMaster) {
+            console.log('✅ Мастер авторизован, перезагружаем заказы');
+            loadOrders();
+        }
+    });
+}
 
 // Подписка на изменения авторизации
 if (typeof Auth !== 'undefined') {

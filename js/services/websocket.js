@@ -1,6 +1,16 @@
 // ===== js/services/websocket.js =====
 // WEBSOCKET РЕАЛЬНОГО ВРЕМЕНИ
 
+// Проверяем наличие Auth и создаем фолбэк, если его нет
+const Auth = window.Auth || {
+    getUser: () => null,
+    onAuthChange: (callback) => {
+        console.warn('⚠️ Auth не загружен, WebSocket не будет работать');
+        callback({ isAuthenticated: false });
+        return () => {}; // Пустая функция отписки
+    }
+};
+
 const WebSocketService = (function() {
     let ws = null;
     let reconnectAttempts = 0;
@@ -15,6 +25,11 @@ const WebSocketService = (function() {
      */
     function getWebSocketUrl() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // Для GitHub Pages используем wss://echo.websocket.org как заглушку
+        // В реальном проекте здесь должен быть ваш WebSocket сервер
+        if (window.location.hostname.includes('github.io')) {
+            return 'wss://echo.websocket.org'; // Тестовый WebSocket
+        }
         const host = window.location.hostname === 'localhost' 
             ? 'localhost:8080'
             : 'api.workhom.ru';
@@ -240,8 +255,8 @@ const WebSocketService = (function() {
         if (Notification.permission === 'granted') {
             new Notification(data.title || 'ВоркХом', {
                 body: data.body,
-                icon: '/icons/icon-192x192.png',
-                badge: '/icons/badge.png',
+                icon: '/HomeWork/icons/icon-192x192.png',
+                badge: '/HomeWork/icons/badge.png',
                 data: data
             });
         } else if (Notification.permission !== 'denied') {
@@ -339,21 +354,26 @@ const WebSocketService = (function() {
     }
 
     // Автоподключение при авторизации
-    Auth.onAuthChange((state) => {
-        if (state.isAuthenticated) {
-            connect();
-            requestNotificationPermission();
-            
-            // Отправляем онлайн статус при подключении
-            setTimeout(() => {
-                if (isConnected()) {
-                    sendOnlineStatus(true);
-                }
-            }, 1000);
-        } else {
-            disconnect();
-        }
-    });
+    // Проверяем, что Auth существует и у него есть метод onAuthChange
+    if (typeof Auth !== 'undefined' && Auth.onAuthChange) {
+        Auth.onAuthChange((state) => {
+            if (state.isAuthenticated) {
+                connect();
+                requestNotificationPermission();
+                
+                // Отправляем онлайн статус при подключении
+                setTimeout(() => {
+                    if (isConnected()) {
+                        sendOnlineStatus(true);
+                    }
+                }, 1000);
+            } else {
+                disconnect();
+            }
+        });
+    } else {
+        console.warn('⚠️ Auth.onAuthChange не доступен, WebSocket не будет автоматически подключаться');
+    }
 
     // Публичное API
     return {
