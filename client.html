@@ -29,7 +29,9 @@
             <nav>
                 <a href="/HomeWork/">Главная</a>
                 <a href="/HomeWork/client.html" class="active">Мои заказы</a>
-                <a href="/HomeWork/masters.html">Мастерам</a>
+                
+                <!-- Скрываем "Мастерам" для клиентов, но оставляем в DOM для возможного показа админам -->
+                <a href="/HomeWork/masters.html" id="masterLink" style="display: none;">Мастерам</a>
                 
                 <!-- Кнопки -->
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="trackOrderBtn" title="Отследить мастера">
@@ -298,10 +300,17 @@
     <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
     <script src="/HomeWork/js/services/websocket.js"></script>
     
-    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM (НЕ СЕРВЕРНЫЙ!) ===== -->
+    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM ===== -->
     <script src="/HomeWork/js/services/telegram-client.js"></script>
     
     <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
     <script src="/HomeWork/js/pages/client.js"></script>
+
+    <!-- Отладка -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 Проверка Bootstrap:', typeof bootstrap !== 'undefined' ? '✅' : '❌');
+    });
+    </script>
 </body>
 </html>
