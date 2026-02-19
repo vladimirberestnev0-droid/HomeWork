@@ -127,7 +127,7 @@ const Orders = (function() {
             // Проверяем кэш
             if (cache.has(cacheKey)) {
                 const cached = cache.get(cacheKey);
-                if (Date.now() - cached.timestamp < CACHE_CONFIG.ORDERS_TTL) {
+                if (Date.now() - cached.timestamp < 300000) { // 5 минут
                     console.log('📦 Загружено из кэша:', cacheKey);
                     return cached.data;
                 }
@@ -238,7 +238,7 @@ const Orders = (function() {
         }
     }
 
-    // Отклик на заказ
+    // ✅ ИСПРАВЛЕННЫЙ ОТКЛИК НА ЗАКАЗ
     async function respondToOrder(orderId, price, comment) {
         try {
             if (!Auth.isAuthenticated()) {
@@ -271,6 +271,7 @@ const Orders = (function() {
             const orderData = orderDoc.data();
             const clientId = orderData.clientId;
 
+            // ✅ ИСПРАВЛЕНО: используем обычную дату вместо serverTimestamp()
             const response = {
                 masterId: user.uid,
                 masterName: userData?.name || 'Мастер',
@@ -279,7 +280,7 @@ const Orders = (function() {
                 masterReviews: userData?.reviews || 0,
                 price: parseInt(price),
                 comment: comment || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: new Date().toISOString() // ✅ Обычная дата, строка
             };
 
             await db.collection('orders').doc(orderId).update({
@@ -454,11 +455,13 @@ const Orders = (function() {
 
             if (Auth.isAuthenticated()) {
                 const user = Auth.getUser();
+                const viewedOrder = {
+                    orderId: orderId,
+                    viewedAt: new Date().toISOString() // ✅ Исправлено на обычную дату
+                };
+                
                 await db.collection('users').doc(user.uid).update({
-                    viewedOrders: firebase.firestore.FieldValue.arrayUnion({
-                        orderId,
-                        viewedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    })
+                    viewedOrders: firebase.firestore.FieldValue.arrayUnion(viewedOrder)
                 });
             }
             
