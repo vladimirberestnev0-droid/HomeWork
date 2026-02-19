@@ -27,8 +27,94 @@ document.addEventListener('DOMContentLoaded', () => {
         AuthUI.renderAuthBlock();
     }
     
-    // Инициализация фильтров
-    initFilters();
+    // ============================================
+// ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
+// ============================================
+
+function initFilters() {
+    console.log('🔧 Инициализация фильтров...');
+    
+    // ПРОВЕРКА: есть ли города в window
+    console.log('🏙️ window.CITIES:', window.CITIES ? 'загружен' : 'не загружен');
+    if (window.CITIES) {
+        console.log(`🏙️ Всего городов в списке: ${window.CITIES.length}`);
+        console.log('🏙️ Первый город:', window.CITIES[0]);
+    }
+    
+    // Отрисовка выпадающего списка городов
+    const citySelect = document.getElementById('citySelect');
+    if (!citySelect) {
+        console.error('❌ Элемент citySelect не найден в DOM');
+        return;
+    }
+    
+    if (!window.CITIES) {
+        console.error('❌ window.CITIES не определен! Проверь constants.js');
+        citySelect.innerHTML = '<option value="all">🏠 Ошибка загрузки городов</option>';
+        return;
+    }
+    
+    console.log(`🏙️ Загружено ${window.CITIES.length - 1} населенных пунктов`);
+    
+    // Очищаем select
+    citySelect.innerHTML = '<option value="all">🏠 Все города</option>';
+    
+    // Добавляем все города (пропускаем первый, т.к. это "Все города")
+    let addedCount = 0;
+    window.CITIES.slice(1).forEach(city => {
+        if (city && city.name) {
+            const option = document.createElement('option');
+            option.value = city.id;
+            option.textContent = city.name;
+            citySelect.appendChild(option);
+            addedCount++;
+        }
+    });
+    
+    console.log(`✅ Добавлено ${addedCount} городов в выпадающий список`);
+    
+    // Добавляем обработчик изменения
+    citySelect.addEventListener('change', function() {
+        filters.city = this.value;
+        console.log('🏙️ Выбран город:', filters.city);
+        applyFilters(true);
+    });
+    
+    // Отрисовка фильтра категорий (кнопками)
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) {
+        console.error('❌ Элемент categoryFilter не найден');
+        return;
+    }
+    
+    if (!window.ORDER_CATEGORIES) {
+        console.error('❌ window.ORDER_CATEGORIES не определен!');
+        return;
+    }
+    
+    console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
+    
+    categoryFilter.innerHTML = window.ORDER_CATEGORIES.map(cat => `
+        <button class="filter-btn category-filter-btn ${cat.id === 'all' ? 'active' : ''}" 
+                data-category="${cat.id}" 
+                title="${cat.name}">
+            <i class="fas ${cat.icon} me-1"></i>
+            ${cat.name}
+        </button>
+    `).join('');
+    
+    // Добавляем обработчики для категорий
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            filters.category = this.dataset.category;
+            console.log('📋 Выбрана категория:', filters.category);
+            applyFilters(true);
+        });
+    });
+}
     
     // Инициализация карт
     if (typeof ymaps !== 'undefined') {
