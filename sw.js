@@ -73,6 +73,12 @@ self.addEventListener('activate', event => {
 // Network First для API
 // Cache First для изображений
 self.addEventListener('fetch', event => {
+    // ✅ ВАЖНО: Игнорируем все НЕ-GET запросы
+    if (event.request.method !== 'GET') {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     const url = new URL(event.request.url);
 
     // Игнорируем запросы к Chrome и Firebase
