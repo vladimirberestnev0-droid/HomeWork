@@ -1,13 +1,13 @@
 // api/deepseek.js
 export default async function handler(req, res) {
-  // Разрешаем запросы с твоего сайта (CORS)
+  // Разрешаем запросы с GitHub Pages
   res.setHeader('Access-Control-Allow-Origin', 'https://vladimirberestnev0-droid.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Обрабатываем preflight запрос
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
@@ -16,7 +16,6 @@ export default async function handler(req, res) {
 
   const { messages } = req.body;
 
-  // Ключ берётся из переменных окружения Vercel (не светится в коде!)
   const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
   if (!DEEPSEEK_API_KEY) {
