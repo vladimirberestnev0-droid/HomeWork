@@ -17,6 +17,9 @@
     let audioChunks = [];
     let recordingInterval = null;
     let recordingSeconds = 0;
+    
+    // Кэш для данных пользователей
+    const userCache = new Map();
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', () => {
@@ -47,6 +50,7 @@
             }
             
             if (state.isAuthenticated) {
+                const startTime = Date.now();
                 await loadOrderData();
                 await initializeChat();
                 
@@ -65,15 +69,56 @@
                 });
                 
                 checkOnlineStatus();
+                
+                const endTime = Date.now();
+                console.log(`✅ Чат полностью загружен за ${endTime - startTime}мс`);
             }
         });
 
         initEventListeners();
     });
 
-    // Загрузка данных заказа
+    // Функция загрузки пользователя с кэшем
+    async function getUserWithCache(userId) {
+        if (!userId) return null;
+        
+        // Проверяем кэш
+        if (userCache.has(userId)) {
+            const cached = userCache.get(userId);
+            // Кэш живёт 5 минут
+            if (Date.now() - cached.timestamp < 300000) {
+                console.log('📦 Данные пользователя из кэша:', userId);
+                return cached.data;
+            }
+        }
+        
+        // Грузим из Firebase
+        try {
+            const doc = await db.collection('users').doc(userId).get();
+            const data = doc.exists ? doc.data() : null;
+            
+            // Сохраняем в кэш
+            userCache.set(userId, {
+                data: data,
+                timestamp: Date.now()
+            });
+            
+            console.log('📥 Загружено из Firebase:', userId);
+            return data;
+        } catch (error) {
+            console.error('❌ Ошибка загрузки пользователя:', error);
+            return null;
+        }
+    }
+
+    // Загрузка данных заказа (ОПТИМИЗИРОВАННАЯ)
     async function loadOrderData() {
         try {
+            console.log('📦 Загрузка данных чата...');
+            
+            const user = Auth.getUser();
+            
+            // Загружаем заказ
             const orderDoc = await db.collection('orders').doc(orderId).get();
             if (!orderDoc.exists) {
                 alert('Заказ не найден');
@@ -84,15 +129,17 @@
             orderData = { id: orderDoc.id, ...orderDoc.data() };
             
             // Определяем собеседника
-            const user = Auth.getUser();
             if (orderData.clientId === user.uid) {
+                // Мы клиент - собеседник мастер
                 partnerId = masterId;
                 partnerRole = 'Мастер';
                 
-                const masterDoc = await db.collection('users').doc(masterId).get();
-                partnerName = masterDoc.exists ? (masterDoc.data().name || 'Мастер') : 'Мастер';
+                // Используем кэш для загрузки мастера
+                const masterData = await getUserWithCache(masterId);
+                partnerName = masterData?.name || 'Мастер';
                 chatId = `chat_${orderId}_${partnerId}`;
             } else {
+                // Мы мастер - собеседник клиент
                 partnerId = orderData.clientId;
                 partnerRole = 'Клиент';
                 partnerName = orderData.clientName || 'Клиент';
@@ -147,11 +194,18 @@
             const status = doc.data();
             const onlineDot = document.querySelector('.online-status');
             
-            if (status && status.online && (Date.now() - status.lastSeen.toDate() < 60000)) {
-                onlineDot.style.background = 'var(--success)';
+            if (status && status.online && status.lastSeen) {
+                const lastSeen = status.lastSeen.toDate ? status.lastSeen.toDate() : new Date(status.lastSeen);
+                if (Date.now() - lastSeen.getTime() < 60000) {
+                    onlineDot.style.background = 'var(--success)';
+                } else {
+                    onlineDot.style.background = 'var(--text-soft)';
+                }
             } else {
                 onlineDot.style.background = 'var(--text-soft)';
             }
+        }, (error) => {
+            console.error('❌ Ошибка отслеживания статуса:', error);
         });
     }
 
@@ -175,8 +229,12 @@
             messagesArea.appendChild(createMessageElement(msg));
         });
         
+        // Плавный скролл вниз
         setTimeout(() => {
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            messagesArea.scrollTo({
+                top: messagesArea.scrollHeight,
+                behavior: 'smooth'
+            });
         }, 100);
     }
 
@@ -191,10 +249,10 @@
             filesHtml = '<div class="message-files">';
             message.files.forEach(file => {
                 if (file.type?.startsWith('image/')) {
-                    filesHtml += `<img src="${file.url}" class="message-image" onclick="window.open('${file.url}')" title="${file.name}">`;
+                    filesHtml += `<img src="${file.url}" class="message-image" onclick="window.open('${file.url}')" title="${file.name}" loading="lazy">`;
                 } else if (file.type?.startsWith('audio/')) {
                     filesHtml += `
-                        <audio controls style="max-width: 200px;">
+                        <audio controls style="max-width: 200px;" preload="none">
                             <source src="${file.url}" type="${file.type}">
                         </audio>
                     `;
@@ -221,10 +279,17 @@
         return div;
     }
 
-    // Отправка сообщения
+    // Отправка сообщения (с проверкой chatId)
     async function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
+        
+        // Проверяем chatId
+        if (!chatId) {
+            console.error('❌ chatId не определен!');
+            Helpers.showNotification('Ошибка: чат не инициализирован', 'error');
+            return;
+        }
         
         if ((!text || text === '') && selectedFiles.length === 0) return;
         
@@ -237,12 +302,14 @@
             }
         }
         
-        await Chats.sendMessage(chatId, text, selectedFiles);
+        const result = await Chats.sendMessage(chatId, text, selectedFiles);
         
-        // Очищаем
-        input.value = '';
-        selectedFiles = [];
-        updateFilePreview();
+        if (result && result.success) {
+            // Очищаем
+            input.value = '';
+            selectedFiles = [];
+            updateFilePreview();
+        }
     }
 
     // Инициализация обработчиков
@@ -397,16 +464,18 @@
     // Показать детали заказа
     window.showOrderDetails = function() {
         alert(`
-            Заказ: ${orderData.title}
-            Описание: ${orderData.description || 'Нет'}
-            Цена: ${orderData.price} ₽
-            Адрес: ${orderData.address}
-            Категория: ${orderData.category}
+            Заказ: ${orderData?.title || 'Неизвестно'}
+            Описание: ${orderData?.description || 'Нет'}
+            Цена: ${orderData?.price || 0} ₽
+            Адрес: ${orderData?.address || 'Не указан'}
+            Категория: ${orderData?.category || 'Не указана'}
         `);
     };
 
     // Очистка при выходе
     window.addEventListener('beforeunload', () => {
-        Chats.unsubscribeAll();
+        if (typeof Chats !== 'undefined' && Chats.unsubscribeAll) {
+            Chats.unsubscribeAll();
+        }
     });
 })();
