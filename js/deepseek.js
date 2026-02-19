@@ -20,7 +20,6 @@ async function sendToDeepSeek() {
     showTypingIndicator();
 
     try {
-        // ✅ ТВОЙ РЕАЛЬНЫЙ URL ПОСЛЕ ДЕПЛОЯ НА VERCEL
         const API_URL = 'https://home-work.vercel.app/api/deepseek';
         
         const response = await fetch(API_URL, {
@@ -71,7 +70,7 @@ function hideTypingIndicator() {
     if (typing) typing.remove();
 }
 
-// Закрытие по клику вне окна (опционально)
+// Закрытие по клику вне окна
 window.addEventListener('click', function(e) {
     const chat = document.getElementById('deepseek-chat-window');
     const button = document.getElementById('deepseek-bro-button');
