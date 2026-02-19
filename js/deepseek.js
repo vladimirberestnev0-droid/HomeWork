@@ -1,5 +1,7 @@
 // Состояние чата
 let deepSeekVisible = false;
+let failedAttempts = 0;
+const MAX_FAILED_ATTEMPTS = 3;
 
 function toggleDeepSeekChat() {
     const chat = document.getElementById('deepseek-chat-window');
@@ -19,16 +21,29 @@ async function sendToDeepSeek() {
     // Показываем "печатает..."
     showTypingIndicator();
 
+    // Проверяем, не превышен ли лимит ошибок
+    if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+        hideTypingIndicator();
+        addMessage('⛔ Бот временно недоступен. Загляни позже!', 'bro');
+        return;
+    }
+
     try {
         const API_URL = 'https://home-work-deep.vercel.app/api/deepseek';
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Таймаут 5 секунд
 
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 messages: [{ role: 'user', content: message }]
-            })
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error('Ошибка сети');
@@ -39,11 +54,21 @@ async function sendToDeepSeek() {
 
         hideTypingIndicator();
         addMessage(reply, 'bro');
+        
+        // Сброс счётчика при успехе
+        failedAttempts = 0;
 
     } catch (error) {
         console.error('DeepSeek error:', error);
+        failedAttempts++;
+        
         hideTypingIndicator();
-        addMessage('Ой, бро, что-то сломалось... Давай позже? 😅', 'bro');
+        
+        if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+            addMessage('⛔ Бот не отвечает. Попробуй позже.', 'bro');
+        } else {
+            addMessage('Ой, бро, что-то сломалось... Давай позже? 😅', 'bro');
+        }
     }
 }
 
