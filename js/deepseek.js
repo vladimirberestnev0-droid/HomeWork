@@ -20,8 +20,8 @@ async function sendToDeepSeek() {
     showTypingIndicator();
 
     try {
-        // Замени URL на свой после деплоя на Vercel
-        const API_URL = 'https://твой-проект.vercel.app/api/deepseek';
+        // ✅ ТВОЙ РЕАЛЬНЫЙ URL ПОСЛЕ ДЕПЛОЯ НА VERCEL
+        const API_URL = 'https://home-work.vercel.app/api/deepseek';
         
         const response = await fetch(API_URL, {
             method: 'POST',
