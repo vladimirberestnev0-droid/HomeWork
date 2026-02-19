@@ -2686,6 +2686,87 @@ textarea.form-control {
     }
 }
 
+/* ===== ИСПРАВЛЕНИЕ МОДАЛОК НА ТЕЛЕФОНЕ ===== */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-width: none;
+    }
+    
+    .modal-content {
+        padding: 15px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Сама форма регистрации */
+    #registerModal .modal-body,
+    #loginModal .modal-body {
+        padding: 10px;
+    }
+    
+    /* Поля ввода на всю ширину */
+    #registerModal input,
+    #loginModal input,
+    #registerModal select,
+    #loginModal select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Кнопки */
+    #registerModal .btn,
+    #loginModal .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    /* Исправляем выравнивание */
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - 20px);
+    }
+}
+
+/* Для совсем маленьких экранов */
+@media (max-width: 400px) {
+    .modal-content {
+        padding: 10px;
+    }
+    
+    #registerModal .form-label,
+    #loginModal .form-label {
+        font-size: 14px;
+    }
+    
+    #registerModal input,
+    #loginModal input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Плавное появление */
+.modal.fade .modal-dialog {
+    transform: scale(0.9) translateY(-30px);
+    transition: transform 0.3s ease-out, opacity 0.3s;
+    opacity: 0;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Затемнение фона */
+.modal-backdrop {
+    backdrop-filter: blur(3px);
+    background-color: rgba(0,0,0,0.5);
+}
+
 @media (max-width: 480px) {
     .container { padding: 10px; }
     
