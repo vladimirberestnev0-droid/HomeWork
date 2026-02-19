@@ -5,34 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Кабинет мастера</title>
 
-    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#E67A4B">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
-    
-    <!-- Шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Наши стили -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <div class="container py-4">
         <!-- Шапка -->
         <header>
-            <div class="logo">
+            <a href="/" class="logo-link">
                 <i class="fas fa-house"></i>
                 <span>ВоркХом</span>
-            </div>
+            </a>
             <nav>
-                <a href="index.html"><i class="fas fa-home"></i> Главная</a>
-                <a href="masters.html" class="active"><i class="fas fa-tachometer-alt"></i> Кабинет</a>
-                <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Выйти</a>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill ms-3" id="themeToggle">
+                <a href="/"><i class="fas fa-home me-1"></i> Главная</a>
+                <a href="/masters.html" class="active"><i class="fas fa-tachometer-alt me-1"></i> Кабинет</a>
+                
+                <!-- Блок геймификации -->
+                <div class="d-flex align-items-center gap-2 ms-3">
+                    <div class="level-badge level-1" id="headerLevel" title="Уровень">
+                        <span id="headerLevelValue">1</span>
+                    </div>
+                    <div class="badge badge-primary" id="headerXP" title="Опыт">
+                        <i class="fas fa-star me-1"></i>
+                        <span id="headerXPValue">0</span>
+                    </div>
+                </div>
+                
+                <!-- Кнопки -->
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="telegramConnectBtn" title="Подключить Telegram">
+                    <i class="fab fa-telegram"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="videoConsultBtn" title="Видео-консультация">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="trackingStartBtn" title="Начать отслеживание">
+                    <i class="fas fa-location-dot"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="notificationsBtn" title="Уведомления">
+                    <i class="fas fa-bell"></i>
+                    <span class="nav-badge" id="notificationsBadge">0</span>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
+                <a href="#" id="logoutLink" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i class="fas fa-sign-out-alt me-1"></i> Выйти
+                </a>
             </nav>
         </header>
 
@@ -41,13 +70,14 @@
             <i class="fas fa-user-tie fa-4x mb-3" style="color: var(--accent);"></i>
             <h2 class="mb-3">Вход в кабинет мастера</h2>
             <p class="text-secondary mb-4">Пожалуйста, войдите как мастер</p>
-            <a href="index.html" class="btn px-5 py-2">
-                <i class="fas fa-sign-in-alt me-2"></i>Перейти на главную
+            <a href="/" class="btn px-5 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i> Перейти на главную
             </a>
         </div>
 
         <!-- Кабинет мастера -->
         <div id="masterCabinet" class="d-none">
+            <!-- Дашборд -->
             <div class="dashboard">
                 <!-- Профиль -->
                 <div class="profile-card">
@@ -55,56 +85,72 @@
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="profile-name" id="masterName">Загрузка...</div>
-                    <div class="profile-role" id="masterRole">Мастер</div>
                     
-                    <div class="profile-info">
-                        <div class="info-row">
-                            <i class="fas fa-envelope"></i>
-                            <span id="masterEmail">email@example.com</span>
+                    <!-- Уровень -->
+                    <div class="level-progress-container mb-3">
+                        <div class="level-header">
+                            <div class="level-icon">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="level-info">
+                                <h3 id="masterLevel">Уровень 1</h3>
+                                <p id="masterLevelName">Новичок</p>
+                            </div>
                         </div>
-                        <div class="info-row">
-                            <i class="fas fa-phone"></i>
-                            <span id="masterPhone">+7 (999) 123-45-67</span>
+                        <div class="xp-bar">
+                            <div class="xp-progress" id="masterXPProgress" style="width: 0%;"></div>
                         </div>
-                        <div class="info-row">
-                            <i class="fas fa-calendar"></i>
-                            <span id="masterSince">На платформе с 2025</span>
-                        </div>
-                        <div class="info-row">
-                            <i class="fas fa-tag"></i>
-                            <span id="masterCategories">Ремонт и отделка</span>
+                        <div class="xp-text">
+                            <span id="masterXP">0 XP</span>
+                            <span id="masterNextLevel">до уровня 2</span>
                         </div>
                     </div>
-
+                    
+                    <div class="profile-role" id="masterRole">Мастер</div>
+                    
                     <!-- Бейджи -->
                     <div id="badgesContainer" class="d-flex flex-wrap gap-2 mt-3 justify-content-center"></div>
-
+                    
+                    <!-- Рейтинг -->
                     <div class="rating-badge">
-                        <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="d-flex align-items-center gap-3">
                             <i class="fas fa-star" style="color: #FFD700; font-size: 24px;"></i>
                             <div>
-                                <div style="font-weight: 700; font-size: 24px;" id="masterRating">0.0</div>
-                                <div style="font-size: 13px; color: var(--text-soft);" id="masterReviews">0 отзывов</div>
+                                <div class="fw-bold fs-3" id="masterRating">0.0</div>
+                                <div class="small text-secondary" id="masterReviews">0 отзывов</div>
                             </div>
                         </div>
                         <div>
                             <div class="rating-stars" id="ratingStars">☆☆☆☆☆</div>
                         </div>
                     </div>
-
+                    
+                    <!-- Кнопки действий -->
                     <div class="d-flex gap-2 mt-4">
                         <button id="editProfileBtn" class="btn flex-grow-1">
-                            <i class="fas fa-edit"></i> Редактировать
+                            <i class="fas fa-edit me-2"></i> Редактировать
                         </button>
-                        <button id="verifyMasterBtn" class="btn btn-outline">
-                            <i class="fas fa-id-card"></i> Верификация
+                        <button id="verifyMasterBtn" class="btn btn-outline-secondary">
+                            <i class="fas fa-id-card me-2"></i> Верификация
+                        </button>
+                        <button id="achievementsBtn" class="btn btn-outline-secondary">
+                            <i class="fas fa-medal"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Статистика -->
                 <div class="stats-card card">
-                    <h3 class="mb-4"><i class="fas fa-chart-line me-2" style="color: var(--accent);"></i>Моя статистика</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-chart-line me-2" style="color: var(--accent);"></i>
+                            Моя статистика
+                        </h3>
+                        <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn">
+                            <i class="fas fa-chart-pie me-1"></i> Детально
+                        </button>
+                    </div>
+                    
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-icon"><i class="fas fa-reply"></i></div>
@@ -121,15 +167,21 @@
                             <div class="stat-value" id="statCompleted">0</div>
                             <div class="stat-label">Выполнено</div>
                         </div>
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="fas fa-star"></i></div>
+                            <div class="stat-value" id="statXP">0</div>
+                            <div class="stat-label">XP</div>
+                        </div>
                     </div>
                     
-                    <div class="conversion-box">
+                    <!-- Конверсия -->
+                    <div class="conversion-box mt-4">
                         <div class="d-flex justify-content-between mb-2">
-                            <span><i class="fas fa-bullseye"></i> Конверсия</span>
-                            <span style="color: var(--accent); font-weight: 700;" id="conversionRate">0%</span>
+                            <span><i class="fas fa-bullseye me-1"></i> Конверсия</span>
+                            <span class="fw-bold" style="color: var(--accent);" id="conversionRate">0%</span>
                         </div>
-                        <div class="conversion-bar">
-                            <div class="conversion-fill" id="conversionBar" style="width: 0%;"></div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" id="conversionBar" style="width: 0%; background: var(--accent);"></div>
                         </div>
                     </div>
                 </div>
@@ -147,6 +199,12 @@
                     <button class="tab" data-tab="calendar">
                         <i class="fas fa-calendar me-2"></i>Календарь
                     </button>
+                    <button class="tab" data-tab="schedule">
+                        <i class="fas fa-clock me-2"></i>Расписание
+                    </button>
+                    <button class="tab" data-tab="crm">
+                        <i class="fas fa-database me-2"></i>CRM
+                    </button>
                     <button class="tab" data-tab="price">
                         <i class="fas fa-tag me-2"></i>Мои цены
                     </button>
@@ -163,7 +221,12 @@
                             <button class="btn btn-outline-secondary filter-tab" data-filter="completed">Выполнены</button>
                         </div>
                     </div>
-                    <div id="responsesList"></div>
+                    <div id="responsesList">
+                        <div class="text-center p-5">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-secondary">Загрузка откликов...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Вкладка Портфолио -->
@@ -174,7 +237,12 @@
                             <i class="fas fa-plus me-2"></i>Добавить работу
                         </button>
                     </div>
-                    <div id="portfolioGrid" class="portfolio-grid"></div>
+                    <div id="portfolioGrid" class="portfolio-grid">
+                        <div class="text-center p-5">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-secondary">Загрузка портфолио...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Вкладка Календарь -->
@@ -183,10 +251,54 @@
                     <div id="calendar"></div>
                 </div>
 
+                <!-- Вкладка Расписание -->
+                <div id="scheduleTab" class="tab-content">
+                    <h4 class="mb-4">Умное расписание</h4>
+                    
+                    <div class="optimal-slots mb-4">
+                        <h6 class="mb-3">Рекомендуемые слоты</h6>
+                        <div id="recommendedSlots" class="d-flex gap-2 flex-wrap"></div>
+                    </div>
+                    
+                    <div id="scheduleCalendar" style="height: 400px;"></div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-secondary" id="syncGoogleCalendar">
+                            <i class="fab fa-google me-2"></i> Синхронизировать с Google Calendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Вкладка CRM -->
+                <div id="crmTab" class="tab-content">
+                    <h4 class="mb-4">Клиентская база</h4>
+                    
+                    <input type="text" class="form-control mb-3" id="clientSearch" 
+                           placeholder="🔍 Поиск клиентов...">
+                    
+                    <div id="clientsList" class="clients-list">
+                        <div class="text-center p-5">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-secondary">Загрузка клиентов...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn" id="exportClientsBtn">
+                            <i class="fas fa-download me-2"></i> Экспорт
+                        </button>
+                        <button class="btn btn-outline-secondary" id="createContractBtn">
+                            <i class="fas fa-file-signature me-2"></i> Договор
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Вкладка Мои цены -->
                 <div id="priceTab" class="tab-content">
                     <h4 class="mb-4">Мои цены на услуги</h4>
-                    <div id="priceList" class="row g-4"></div>
+                    <div id="priceList" class="row g-4">
+                        <!-- Заполняется JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -197,7 +309,10 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2" style="color: var(--accent);"></i>Редактировать профиль</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2" style="color: var(--accent);"></i>
+                        Редактировать профиль
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -231,7 +346,10 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-image me-2" style="color: var(--accent);"></i>Добавить работу</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-image me-2" style="color: var(--accent);"></i>
+                        Добавить работу
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -256,7 +374,7 @@
                     <div class="mb-3">
                         <label class="form-label">Фото работы</label>
                         <div class="upload-area" id="portfolioUploadArea">
-                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--accent);"></i>
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                             <p>Нажмите для загрузки</p>
                             <input type="file" id="portfolioPhotoInput" accept="image/*" style="display: none;">
                         </div>
@@ -276,13 +394,16 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-id-card me-2" style="color: var(--accent);"></i>Верификация мастера</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-id-card me-2" style="color: var(--accent);"></i>
+                        Верификация мастера
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-3">Загрузите фото паспорта (размыто разрешено)</p>
                     <div class="upload-area mb-3" id="verifyUploadArea">
-                        <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--accent);"></i>
+                        <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                         <p>Нажмите для загрузки</p>
                         <input type="file" id="verifyPhotoInput" accept="image/*" style="display: none;">
                     </div>
@@ -316,71 +437,162 @@
         </div>
     </div>
 
-    <!-- Скрипты: библиотеки -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" defer></script>
-
-    <!-- Наши модули -->
-<script src="js/utils/constants.js" defer></script>
-<script src="js/utils/helpers.js" defer></script>
-<script src="js/services/firebase.js" defer></script>
-<script src="js/services/auth.js" defer></script>
-<script src="js/services/orders.js" defer></script>
-<script src="js/services/chat.js" defer></script>
-<script src="js/services/badges.js" defer></script>
-<script src="js/services/moderation.js" defer></script>
-<script src="js/components/auth-ui.js" defer></script>
-<!-- НЕ НАДО masters.js здесь! -->
-
-<!-- Скрипт страницы -->
-<script src="js/pages/masters.js" defer></script>
-   
-<!-- Модалка завершения заказа -->
-<div class="modal fade" id="completeOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
-                    Заказ выполнен
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-4">
-                    <i class="fas fa-star fa-3x mb-3" style="color: #FFD700;"></i>
-                    <h6>Оцените заказчика</h6>
+    <!-- Модалка завершения заказа -->
+    <div class="modal fade" id="completeOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
+                        Заказ выполнен
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
-                <!-- Звезды рейтинга -->
-                <div class="d-flex gap-2 mb-4 justify-content-center">
-                    <span class="rating-star" data-rating="1" onclick="setCustomerRating(1)">★</span>
-                    <span class="rating-star" data-rating="2" onclick="setCustomerRating(2)">★</span>
-                    <span class="rating-star" data-rating="3" onclick="setCustomerRating(3)">★</span>
-                    <span class="rating-star" data-rating="4" onclick="setCustomerRating(4)">★</span>
-                    <span class="rating-star" data-rating="5" onclick="setCustomerRating(5)">★</span>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-star fa-3x mb-3" style="color: #FFD700;"></i>
+                        <h6>Оцените заказчика</h6>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mb-4 justify-content-center">
+                        <span class="rating-star" data-rating="1" onclick="setCustomerRating(1)">★</span>
+                        <span class="rating-star" data-rating="2" onclick="setCustomerRating(2)">★</span>
+                        <span class="rating-star" data-rating="3" onclick="setCustomerRating(3)">★</span>
+                        <span class="rating-star" data-rating="4" onclick="setCustomerRating(4)">★</span>
+                        <span class="rating-star" data-rating="5" onclick="setCustomerRating(5)">★</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий (необязательно)</label>
+                        <textarea id="completeComment" class="form-control" rows="3" 
+                                  placeholder="Напишите отзыв о заказчике..."></textarea>
+                    </div>
                 </div>
-                
-                <!-- Комментарий -->
-                <div class="mb-3">
-                    <label class="form-label">Комментарий (необязательно)</label>
-                    <textarea id="completeComment" class="form-control" rows="3" 
-                              placeholder="Напишите отзыв о заказчике..."></textarea>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" id="confirmCompleteBtn">
+                        <i class="fas fa-check me-2"></i> Подтвердить выполнение
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-success" id="confirmCompleteBtn">
-                    <i class="fas fa-check"></i> Подтвердить выполнение
-                </button>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Модалка видео-консультации -->
+    <div class="modal fade" id="videoConsultModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-video me-2" style="color: var(--accent);"></i>
+                        Видео-консультация
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="video-box">
+                                <video id="localPreview" style="width: 100%; border-radius: 15px;" muted autoplay></video>
+                                <div class="video-label">Вы</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="video-box">
+                                <video id="remotePreview" style="width: 100%; border-radius: 15px;" autoplay></video>
+                                <div class="video-label">Клиент</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="video-controls mt-3">
+                        <button class="video-control-btn" id="startCallBtn" title="Начать звонок">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="video-control-btn" id="muteCallBtn" title="Выключить микрофон">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="video-control-btn" id="videoToggleBtn" title="Выключить камеру">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="video-control-btn" id="recordCallBtn" title="Запись">
+                            <i class="fas fa-circle"></i>
+                        </button>
+                        <button class="video-control-btn" id="snapshotBtn" title="Скриншот">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <button class="video-control-btn danger" id="endCallBtn" title="Завершить">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка создания договора -->
+    <div class="modal fade" id="contractModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-signature me-2" style="color: var(--accent);"></i>
+                        Договор на выполнение работ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="contractPreview" class="contract-preview p-4 bg-light rounded-4" style="white-space: pre-line;">
+                        <!-- Договор генерируется JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button class="btn" id="sendContractBtn">
+                        <i class="fas fa-paper-plane me-2"></i> Отправить клиенту
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" defer></script>
+
+    <!-- Core модули -->
+    <script src="/js/core/constants.js" async></script>
+    <script src="/js/core/helpers.js" async></script>
+    <script src="/js/core/firebase.js" async></script>
+    <script src="/js/core/error-handler.js" async></script>
+
+    <!-- Сервисы -->
+    <script src="/js/services/auth.js" defer></script>
+    <script src="/js/services/orders.js" defer></script>
+    <script src="/js/services/chat.js" defer></script>
+    <script src="/js/services/badges.js" defer></script>
+    <script src="/js/services/moderation.js" defer></script>
+    <script src="/js/services/payments.js" defer></script>
+    <script src="/js/services/ai-assistant.js" defer></script>
+    <script src="/js/services/telegram-bot.js" defer></script>
+    <script src="/js/services/crm.js" defer></script>
+    <script src="/js/services/tracking.js" defer></script>
+    <script src="/js/services/smart-schedule.js" defer></script>
+    <script src="/js/services/video-chat.js" defer></script>
+    <script src="/js/services/gamification.js" defer></script>
+    <script src="/js/services/analytics.js" defer></script>
+    <script src="/js/services/websocket.js" defer></script>
+    <script src="/js/services/redis-cache.js" defer></script>
+    <script src="/js/services/cdn.js" defer></script>
+    <script src="/js/services/microservices.js" defer></script>
+
+    <!-- Компоненты -->
+    <script src="/js/components/auth-ui.js" defer></script>
+
+    <!-- Скрипт страницы -->
+    <script src="/js/pages/masters.js" defer></script>
 </body>
 </html>

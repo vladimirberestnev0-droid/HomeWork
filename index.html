@@ -3,35 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — вы хотите мы делаем</title>
+    <title>ВоркХом — Главная</title>
 
-    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#E67A4B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Наши стили -->
-    <!-- В HEAD, после main.css -->
-<link rel="stylesheet" href="css/main.css">
-<link rel="stylesheet" href="css/theme.css">
-<link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <div class="container py-4">
-        <!-- Шапка с кликабельным домиком -->
+        <!-- Шапка -->
         <header>
-            <a href="index.html" class="logo-link">
+            <a href="/" class="logo-link">
                 <i class="fas fa-house"></i>
                 <span>ВоркХом</span>
             </a>
+            
             <nav>
-                <a href="index.html" class="active">Главная</a>
-                <a href="client.html" id="clientLink">Мои заказы</a>
-                <a href="masters.html" id="masterLink">Мастерам</a>
+                <a href="/" class="active">Главная</a>
+                <a href="/client.html">Мои заказы</a>
+                <a href="/masters.html">Мастерам</a>
+                
+                <!-- Блок геймификации в шапке -->
+                <div class="d-flex align-items-center gap-2 ms-3">
+                    <div class="level-badge level-1" id="headerLevel" title="Уровень" style="display: none;">
+                        <span id="headerLevelValue">1</span>
+                    </div>
+                    <div class="badge badge-primary" id="headerXP" title="Опыт" style="display: none;">
+                        <i class="fas fa-star me-1"></i>
+                        <span id="headerXPValue">0</span>
+                    </div>
+                </div>
+                
+                <!-- Кнопки действий -->
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="aiAssistantBtn" title="ИИ помощник">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="telegramBtn" title="Telegram бот">
+                    <i class="fab fa-telegram"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="notificationsBtn" title="Уведомления">
+                    <i class="fas fa-bell"></i>
+                    <span class="nav-badge" id="notificationsBadge" style="display: none;">0</span>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -44,19 +68,34 @@
         <!-- Блок авторизации -->
         <div id="authBlockContainer"></div>
 
-        <!-- Информация о пользователе -->
-        <div id="userInfoBlock" class="bg-white rounded-5 p-4 mb-4 shadow-sm d-none">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5>👤 Вы вошли как <span id="userEmailDisplay"></span></h5>
-                    <p id="userRoleDisplay" class="mb-0" style="color: var(--accent);"></p>
-                    <div id="masterBadges" class="d-flex gap-2 mt-2"></div>
+        <!-- Блок прогресса пользователя -->
+        <div id="userProgress" class="card mb-4" style="display: none;">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <div class="level-badge level-1 mx-auto" id="userLevelBadge">1</div>
                 </div>
-                <button id="logoutBtn" class="btn btn-outline-secondary">Выйти</button>
+                <div class="col-md-6">
+                    <h5 id="userLevelName">Новичок</h5>
+                    <div class="xp-bar">
+                        <div class="xp-progress" id="userXPProgress" style="width: 0%;"></div>
+                    </div>
+                    <div class="xp-text">
+                        <span id="userXPText">0 XP</span>
+                        <span id="userNextLevel">до уровня 2</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-outline-secondary btn-sm" id="achievementsBtn">
+                        <i class="fas fa-medal"></i> Достижения
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm ms-2" id="leaderboardBtn">
+                        <i class="fas fa-crown"></i> Топ мастеров
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Умный поиск -->
+        <!-- Умный поиск с ИИ -->
         <div class="search-section mb-5">
             <div class="row g-2">
                 <div class="col-md-10">
@@ -72,11 +111,25 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- ИИ подсказка -->
+            <div id="aiSuggestion" class="ai-suggestion mt-2 p-3 rounded-4 d-none">
+                <i class="fas fa-robot me-2" style="color: var(--accent);"></i>
+                <span id="aiSuggestionText"></span>
+            </div>
         </div>
 
         <!-- Фильтр по категориям -->
         <div class="filter-section">
-            <h5 class="mb-3"><i class="fas fa-filter" style="color: var(--accent);"></i>Фильтр по категориям</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2" style="color: var(--accent);"></i>
+                    Фильтр по категориям
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" id="aiRecommendBtn">
+                    <i class="fas fa-magic"></i> ИИ рекомендует
+                </button>
+            </div>
             <div class="category-filter" id="categoryFilter">
                 <button class="category-filter-btn active" data-category="all">Все</button>
                 <button class="category-filter-btn" data-category="Сантехника">🚰 Сантехника</button>
@@ -94,10 +147,16 @@
         <div class="row g-4 mb-5" id="orderFormRow">
             <div class="col-md-6" id="orderFormColumn">
                 <div class="card">
-                    <h3 class="mb-4 d-flex align-items-center gap-2">
-                        <i class="fas fa-plus-circle" style="color: var(--accent);"></i>
-                        Оставить заявку
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-plus-circle me-2" style="color: var(--accent);"></i>
+                            Оставить заявку
+                        </h3>
+                        <button class="btn btn-sm btn-outline-secondary" id="aiPriceHintBtn">
+                            <i class="fas fa-calculator"></i> Рассчитать цену
+                        </button>
+                    </div>
+                    
                     <form id="orderForm">
                         <div class="mb-3">
                             <label class="form-label">Категория</label>
@@ -121,7 +180,7 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Подробное описание</label>
-                            <textarea id="description" class="form-control" rows="3"></textarea>
+                            <textarea id="description" class="form-control" rows="3" placeholder="Опишите проблему подробнее..."></textarea>
                         </div>
                         
                         <div class="mb-3">
@@ -157,22 +216,43 @@
                             <div id="map" class="mt-2" style="height: 250px;"></div>
                         </div>
                         
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ваше имя</label>
+                                <input type="text" id="clientName" class="form-control" placeholder="Имя" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Телефон</label>
+                                <input type="tel" id="phone" class="form-control" placeholder="+7 (999) 123-45-67" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Новые опции -->
                         <div class="mb-3">
-                            <label class="form-label">Ваше имя</label>
-                            <input type="text" id="clientName" class="form-control" placeholder="Имя" required>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="telegramNotify">
+                                <label class="form-check-label" for="telegramNotify">
+                                    <i class="fab fa-telegram me-1"></i> Получать уведомления в Telegram
+                                </label>
+                            </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Телефон</label>
-                            <input type="tel" id="phone" class="form-control" placeholder="+7 (999) 123-45-67" required>
+                            <label class="form-label">Способ оплаты</label>
+                            <select class="form-select" id="paymentMethod">
+                                <option value="cash">💵 Наличные</option>
+                                <option value="card">💳 Карта онлайн</option>
+                                <option value="hold">🔒 Безопасная сделка</option>
+                            </select>
                         </div>
                         
                         <button type="submit" class="btn w-100 py-3">
-                            <i class="fas fa-paper-plane"></i> Опубликовать заявку
+                            <i class="fas fa-paper-plane me-2"></i> Опубликовать заявку
                         </button>
                     </form>
                     
                     <div id="successMessage" class="alert alert-success mt-3 d-none">
+                        <i class="fas fa-check-circle me-2"></i>
                         ✅ Заявка создана! Мастера увидят её в течение 5 минут.
                     </div>
                 </div>
@@ -181,14 +261,26 @@
             <!-- Список заказов -->
             <div class="col-md-6" id="ordersColumn">
                 <div class="card">
-                    <h3 class="mb-4 d-flex align-items-center gap-2">
-                        <i class="fas fa-list" style="color: var(--accent);"></i>
-                        Свежие заявки
-                    </h3>
-                    <div id="ordersList"></div>
-                    <button id="refreshBtn" class="btn btn-outline-secondary w-100 mt-3">
-                        <i class="fas fa-sync-alt"></i> Обновить
-                    </button>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-list me-2" style="color: var(--accent);"></i>
+                            Свежие заявки
+                        </h3>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn" title="Аналитика">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ordersList">
+                        <div class="text-center p-5">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-secondary">Загрузка заказов...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -197,12 +289,30 @@
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card">
-                    <h3 class="mb-4 d-flex align-items-center gap-2">
-                        <i class="fas fa-trophy" style="color: var(--accent);"></i>
-                        Рейтинг мастеров
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">
+                            <i class="fas fa-trophy me-2" style="color: var(--accent);"></i>
+                            Рейтинг мастеров
+                        </h3>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardDaily">
+                                <i class="fas fa-sun"></i> День
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary active" id="leaderboardWeekly">
+                                <i class="fas fa-calendar-week"></i> Неделя
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardMonthly">
+                                <i class="fas fa-calendar-alt"></i> Месяц
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardAll">
+                                <i class="fas fa-infinity"></i> Все
+                            </button>
+                        </div>
+                    </div>
                     
-                    <div id="topMastersList" class="row g-4"></div>
+                    <div id="topMastersList" class="row g-4">
+                        <!-- Заполняется JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,11 +320,98 @@
         <!-- Карта заказов -->
         <div class="col-12 mb-5">
             <div class="card">
-                <h3 class="mb-4 d-flex align-items-center gap-2">
-                    <i class="fas fa-map-marked-alt" style="color: var(--accent);"></i>
-                    Заявки на карте
-                </h3>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-map-marked-alt me-2" style="color: var(--accent);"></i>
+                        Заявки на карте
+                    </h3>
+                    <button class="btn btn-sm btn-outline-secondary" id="trackingToggle">
+                        <i class="fas fa-location-dot me-1"></i> Показать мастеров онлайн
+                    </button>
+                </div>
                 <div id="ordersMap" style="width: 100%; height: 450px;"></div>
+                
+                <!-- Панель трекинга -->
+                <div id="trackingPanel" class="mt-3 d-none">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="trackingMasterSelect">
+                                <option value="">Выберите мастера для отслеживания</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="masterEta" class="tracking-info-item p-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка ИИ помощника -->
+    <div class="modal fade" id="aiAssistantModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-robot me-2" style="color: var(--accent);"></i>
+                        ИИ помощник
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ai-chat" id="aiChat" style="height: 300px; overflow-y: auto;">
+                        <div class="message received mb-3">
+                            <div class="message-bubble">
+                                <i class="fas fa-robot me-2"></i>
+                                Привет! Я помогу подобрать мастера, рассчитать цену или ответить на вопросы
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mt-3">
+                        <input type="text" class="form-control" id="aiQuestion" 
+                               placeholder="Задайте вопрос...">
+                        <button class="btn btn-primary" id="askAiBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка достижений -->
+    <div class="modal fade" id="achievementsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-medal me-2" style="color: var(--accent);"></i>
+                        Достижения
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3" id="achievementsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка топа мастеров -->
+    <div class="modal fade" id="leaderboardModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-crown me-2" style="color: var(--accent);"></i>
+                        Топ мастеров
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="leaderboard" id="leaderboardList"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -224,7 +421,7 @@
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-qrcode"></i> QR-код заказа</h5>
+                    <h5 class="modal-title"><i class="fas fa-qrcode me-2"></i> QR-код заказа</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
@@ -236,36 +433,55 @@
     </div>
 
     <!-- Скрипты: библиотеки -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU" type="text/javascript" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" defer></script>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" async></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 
-       <!-- Наши модули -->
-   <!-- Наши модули -->
-<script src="js/utils/constants.js" defer></script>
-<script src="js/utils/helpers.js" defer></script>
-<script src="js/services/firebase.js" defer></script>
-<script src="js/services/auth.js" defer></script>
-<script src="js/services/orders.js" defer></script>
-<script src="js/services/chat.js" defer></script>
-<script src="js/services/badges.js" defer></script>
-<script src="js/services/moderation.js" defer></script>
-<script src="js/components/auth-ui.js" defer></script>
-<!-- НЕ НАДО masters.js! -->
+    <!-- Core модули -->
+    <script src="/js/core/constants.js" async></script>
+    <script src="/js/core/helpers.js" async></script>
+    <script src="/js/core/firebase.js" async></script>
+    <script src="/js/core/error-handler.js" async></script>
 
-<!-- Скрипт страницы -->
-<script src="js/pages/index.js" defer></script>
-    <!-- Подключение Service Worker -->
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js')
-    .then(reg => console.log('✅ Service Worker зарегистрирован'))
-    .catch(err => console.log('❌ Ошибка Service Worker:', err));
-}
-</script>
+    <!-- Сервисы -->
+    <script src="/js/services/auth.js" defer></script>
+    <script src="/js/services/orders.js" defer></script>
+    <script src="/js/services/chat.js" defer></script>
+    <script src="/js/services/badges.js" defer></script>
+    <script src="/js/services/moderation.js" defer></script>
+    <script src="/js/services/payments.js" defer></script>
+    <script src="/js/services/ai-assistant.js" defer></script>
+    <script src="/js/services/telegram-bot.js" defer></script>
+    <script src="/js/services/crm.js" defer></script>
+    <script src="/js/services/tracking.js" defer></script>
+    <script src="/js/services/smart-schedule.js" defer></script>
+    <script src="/js/services/video-chat.js" defer></script>
+    <script src="/js/services/gamification.js" defer></script>
+    <script src="/js/services/analytics.js" defer></script>
+    <script src="/js/services/websocket.js" defer></script>
+    <script src="/js/services/redis-cache.js" defer></script>
+    <script src="/js/services/cdn.js" defer></script>
+    <script src="/js/services/microservices.js" defer></script>
+
+    <!-- Компоненты -->
+    <script src="/js/components/auth-ui.js" defer></script>
+
+    <!-- Скрипт страницы -->
+    <script src="/js/pages/index.js" defer></script>
+
+    <!-- Service Worker -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker зарегистрирован'))
+                .catch(err => console.log('❌ Ошибка Service Worker:', err));
+        });
+    }
+    </script>
 </body>
 </html>

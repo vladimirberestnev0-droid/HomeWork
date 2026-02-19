@@ -5,36 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Мои заказы</title>
 
-    <meta http-equiv="Content-Security-Policy" content="default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;">
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#E67A4B">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Наши стили -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <div class="container py-4">
         <!-- Шапка -->
         <header>
-            <div class="logo">
+            <a href="/" class="logo-link">
                 <i class="fas fa-house"></i>
                 <span>ВоркХом</span>
-            </div>
+            </a>
             <nav>
-                <a href="index.html">Главная</a>
-                <a href="client.html" class="active">Мои заказы</a>
-                <a href="masters.html">Мастерам</a>
-                <a href="#" id="favoritesLink">⭐ Избранное</a>
-                <a href="#" id="historyLink">🕐 История</a>
-                <a href="#" id="logoutLink">Выйти</a>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill ms-3" id="themeToggle">
+                <a href="/">Главная</a>
+                <a href="/client.html" class="active">Мои заказы</a>
+                <a href="/masters.html">Мастерам</a>
+                
+                <!-- Кнопки -->
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="trackOrderBtn" title="Отследить мастера">
+                    <i class="fas fa-location-dot"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="paymentsBtn" title="Платежи">
+                    <i class="fas fa-credit-card"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="notificationsBtn" title="Уведомления">
+                    <i class="fas fa-bell"></i>
+                    <span class="nav-badge" id="notificationsBadge">0</span>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
+                <a href="#" id="logoutLink" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i class="fas fa-sign-out-alt me-1"></i> Выйти
+                </a>
             </nav>
         </header>
 
@@ -43,8 +56,8 @@
             <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>
             <h3 class="mb-3">Вход в кабинет клиента</h3>
             <p class="text-secondary mb-4">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
-            <a href="index.html" class="btn px-5 py-2">
-                <i class="fas fa-sign-in-alt me-2"></i>Перейти на главную
+            <a href="/" class="btn px-5 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i> Перейти на главную
             </a>
         </div>
 
@@ -58,28 +71,46 @@
                             <i class="fas fa-user"></i>
                         </div>
                         <h4 id="clientName" class="profile-name">Загрузка...</h4>
-                        <div class="profile-role">👤 Клиент</div>
-                        <p id="clientEmail" class="text-secondary text-center"></p>
-                        <a href="index.html" class="btn w-100 mt-3">
-                            <i class="fas fa-plus-circle me-2"></i>Новая заявка
+                        
+                        <!-- Баланс -->
+                        <div class="balance-card p-3 bg-light rounded-4 mb-3">
+                            <small class="text-secondary">Баланс</small>
+                            <h3 id="clientBalance" class="mb-0">0 ₽</h3>
+                        </div>
+                        
+                        <a href="/" class="btn w-100 mt-3">
+                            <i class="fas fa-plus-circle me-2"></i> Новая заявка
                         </a>
+                        
+                        <button class="btn btn-outline-secondary w-100 mt-2" id="topupBalanceBtn">
+                            <i class="fas fa-credit-card me-2"></i> Пополнить
+                        </button>
                     </div>
                 </div>
 
                 <!-- Основной контент -->
                 <div class="col-md-8">
                     <div class="card">
-                        <!-- Навигация по табам -->
+                        <!-- Табы -->
                         <div class="tabs mb-4">
-                            <button class="tab active" data-tab="orders">📋 Мои заказы</button>
-                            <button class="tab" data-tab="favorites">⭐ Избранные мастера</button>
-                            <button class="tab" data-tab="history">🕐 История</button>
+                            <button class="tab active" data-tab="orders">
+                                <i class="fas fa-clipboard-list me-2"></i>Мои заказы
+                            </button>
+                            <button class="tab" data-tab="tracking">
+                                <i class="fas fa-location-dot me-2"></i>Отслеживание
+                            </button>
+                            <button class="tab" data-tab="payments">
+                                <i class="fas fa-credit-card me-2"></i>Платежи
+                            </button>
+                            <button class="tab" data-tab="favorites">
+                                <i class="fas fa-star me-2"></i>Избранное
+                            </button>
                         </div>
                         
                         <!-- Таб: Мои заказы -->
                         <div id="ordersTab" class="tab-content active">
                             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                                <h3 class="mb-0">📋 Мои заказы</h3>
+                                <h4 class="mb-0">📋 Мои заказы</h4>
                                 <div class="btn-group">
                                     <button class="btn btn-outline-secondary filter-tab active" data-filter="all">Все</button>
                                     <button class="btn btn-outline-secondary filter-tab" data-filter="open">Активные</button>
@@ -87,21 +118,111 @@
                                     <button class="btn btn-outline-secondary filter-tab" data-filter="completed">Выполнены</button>
                                 </div>
                             </div>
-                            <div id="ordersList"></div>
+                            <div id="ordersList">
+                                <div class="text-center p-5">
+                                    <div class="spinner mb-3"></div>
+                                    <p class="text-secondary">Загрузка заказов...</p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <!-- Таб: Избранные мастера -->
+                        <!-- Таб: Отслеживание -->
+                        <div id="trackingTab" class="tab-content">
+                            <h4 class="mb-4">📍 Отслеживание мастера</h4>
+                            
+                            <select class="form-select mb-3" id="trackingOrderSelect">
+                                <option value="">Выберите заказ в работе</option>
+                            </select>
+                            
+                            <div id="trackingMap" style="height: 300px; border-radius: 15px;"></div>
+                            
+                            <div id="trackingInfo" class="tracking-card mt-3">
+                                <div class="tracking-info">
+                                    <div class="tracking-info-item">
+                                        <div class="tracking-info-label">Мастер</div>
+                                        <div class="tracking-info-value" id="trackingMasterName">-</div>
+                                    </div>
+                                    <div class="tracking-info-item">
+                                        <div class="tracking-info-label">Расстояние</div>
+                                        <div class="tracking-info-value" id="trackingDistance">-</div>
+                                    </div>
+                                    <div class="tracking-info-item">
+                                        <div class="tracking-info-label">Время прибытия</div>
+                                        <div class="tracking-info-value tracking-eta" id="trackingETA">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Таб: Платежи -->
+                        <div id="paymentsTab" class="tab-content">
+                            <h4 class="mb-4">💳 История платежей</h4>
+                            
+                            <div class="balance-info p-3 bg-light rounded-4 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small>Текущий баланс</small>
+                                        <h3 id="balanceAmount" class="mb-0">0 ₽</h3>
+                                    </div>
+                                    <button class="btn btn-outline-secondary" id="withdrawBtn">
+                                        <i class="fas fa-arrow-right me-2"></i> Вывести
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="paymentsList">
+                                <div class="text-center p-5">
+                                    <div class="spinner mb-3"></div>
+                                    <p class="text-secondary">Загрузка платежей...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Таб: Избранное -->
                         <div id="favoritesTab" class="tab-content">
-                            <h3 class="mb-4">⭐ Избранные мастера</h3>
-                            <div id="favoritesList"></div>
-                        </div>
-                        
-                        <!-- Таб: История просмотров -->
-                        <div id="historyTab" class="tab-content">
-                            <h3 class="mb-4">🕐 История просмотров</h3>
-                            <div id="historyList"></div>
+                            <h4 class="mb-4">⭐ Избранные мастера</h4>
+                            <div id="favoritesList">
+                                <div class="text-center p-5">
+                                    <div class="spinner mb-3"></div>
+                                    <p class="text-secondary">Загрузка избранного...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка пополнения баланса -->
+    <div class="modal fade" id="topupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-credit-card me-2" style="color: var(--accent);"></i>
+                        Пополнение баланса
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Сумма</label>
+                        <input type="number" class="form-control" id="topupAmount" value="1000" min="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Способ оплаты</label>
+                        <select class="form-select" id="topupMethod">
+                            <option value="card">💳 Банковская карта</option>
+                            <option value="sbp">🏦 СБП</option>
+                            <option value="yoomoney">📱 ЮMoney</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn w-100" id="processTopupBtn">
+                        <i class="fas fa-credit-card me-2"></i> Оплатить
+                    </button>
                 </div>
             </div>
         </div>
@@ -112,7 +233,10 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">⭐ Оцените мастера</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-star me-2" style="color: gold;"></i>
+                        Оцените мастера
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -128,32 +252,51 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn" style="background: var(--accent); color: white;" id="submitReview">Отправить</button>
+                    <button type="button" class="btn" style="background: var(--accent); color: white;" id="submitReview">
+                        <i class="fas fa-paper-plane me-2"></i> Отправить
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Скрипты: библиотеки -->
+    <!-- Скрипты -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU" async></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" async></script>
 
-    <!-- Наши модули -->
-<script src="js/utils/constants.js" defer></script>
-<script src="js/utils/helpers.js" defer></script>
-<script src="js/services/firebase.js" defer></script>
-<script src="js/services/auth.js" defer></script>
-<script src="js/services/orders.js" defer></script>
-<script src="js/services/chat.js" defer></script>
-<script src="js/services/badges.js" defer></script>
-<script src="js/services/moderation.js" defer></script>
-<script src="js/components/auth-ui.js" defer></script>
-<!-- НЕ НАДО masters.js! -->
+    <!-- Core модули -->
+    <script src="/js/core/constants.js" async></script>
+    <script src="/js/core/helpers.js" async></script>
+    <script src="/js/core/firebase.js" async></script>
+    <script src="/js/core/error-handler.js" async></script>
 
-<!-- Скрипт страницы -->
-<script src="js/pages/client.js" defer ></script>
+    <!-- Сервисы -->
+    <script src="/js/services/auth.js" defer></script>
+    <script src="/js/services/orders.js" defer></script>
+    <script src="/js/services/chat.js" defer></script>
+    <script src="/js/services/badges.js" defer></script>
+    <script src="/js/services/moderation.js" defer></script>
+    <script src="/js/services/payments.js" defer></script>
+    <script src="/js/services/ai-assistant.js" defer></script>
+    <script src="/js/services/telegram-bot.js" defer></script>
+    <script src="/js/services/tracking.js" defer></script>
+    <script src="/js/services/smart-schedule.js" defer></script>
+    <script src="/js/services/video-chat.js" defer></script>
+    <script src="/js/services/gamification.js" defer></script>
+    <script src="/js/services/analytics.js" defer></script>
+    <script src="/js/services/websocket.js" defer></script>
+    <script src="/js/services/redis-cache.js" defer></script>
+    <script src="/js/services/cdn.js" defer></script>
+    <script src="/js/services/microservices.js" defer></script>
+
+    <!-- Компоненты -->
+    <script src="/js/components/auth-ui.js" defer></script>
+
+    <!-- Скрипт страницы -->
+    <script src="/js/pages/client.js" defer></script>
 </body>
 </html>

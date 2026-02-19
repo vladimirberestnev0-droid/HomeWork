@@ -1,13 +1,12 @@
-// ===== CHAT.JS — ВСЯ ЛОГИКА ЧАТОВ =====
+// ===== js/services/chat.js =====
+// ЛОГИКА ЧАТОВ (УЛУЧШЕННАЯ ВЕРСИЯ)
 
 const Chats = (function() {
     // Приватные переменные
     let activeListeners = new Map();
     let typingTimeouts = {};
 
-    /**
-     * Создание нового чата (доступно сразу после отклика)
-     */
+    // Создание чата
     async function create(orderId, masterId, clientId) {
         try {
             const chatId = `chat_${orderId}_${masterId}`;
@@ -20,6 +19,7 @@ const Chats = (function() {
                     orderId: orderId,
                     masterId: masterId,
                     clientId: clientId,
+                    participants: [masterId, clientId],
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastMessage: '',
@@ -30,8 +30,6 @@ const Chats = (function() {
                     }
                 });
                 console.log('✅ Чат создан:', chatId);
-            } else {
-                console.log('📝 Чат уже существует:', chatId);
             }
             
             return chatId;
@@ -42,13 +40,19 @@ const Chats = (function() {
         }
     }
 
-    /**
-     * Отправка сообщения
-     */
+    // Отправка сообщения
     async function sendMessage(chatId, text, files = []) {
         try {
             const user = Auth.getUser();
             if (!user) throw new Error('Необходимо авторизоваться');
+
+            // Проверка модерации
+            if (text) {
+                const modResult = Moderation.check(text, 'chat_message');
+                if (!modResult.isValid) {
+                    throw new Error(modResult.reason || 'Сообщение не прошло модерацию');
+                }
+            }
 
             const messageData = {
                 text: Helpers.escapeHtml(text || ''),
@@ -57,12 +61,12 @@ const Chats = (function() {
                 read: false
             };
 
-            // Если есть файлы, загружаем их
+            // Загрузка файлов
             if (files.length > 0) {
                 const fileUrls = [];
                 
                 for (const file of files) {
-                    if (file.size > 10 * 1024 * 1024) {
+                    if (file.size > FILE_LIMITS.MAX_SIZE) {
                         throw new Error('Файл слишком большой (макс 10MB)');
                     }
                     
@@ -89,7 +93,10 @@ const Chats = (function() {
                 .add(messageData);
 
             // Обновляем информацию о чате
-            const partnerId = await getPartnerId(chatId);
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            const chat = chatDoc.data();
+            const partnerId = chat.masterId === user.uid ? chat.clientId : chat.masterId;
+
             await db.collection('chats').doc(chatId).update({
                 lastMessage: text || '[Файл]',
                 lastSenderId: user.uid,
@@ -106,39 +113,14 @@ const Chats = (function() {
         }
     }
 
-    /**
-     * Получение ID собеседника
-     */
-    async function getPartnerId(chatId) {
-        try {
-            const chatDoc = await db.collection('chats').doc(chatId).get();
-            if (!chatDoc.exists) return null;
-            
-            const chat = chatDoc.data();
-            const user = Auth.getUser();
-            
-            if (!user) return null;
-            
-            return chat.masterId === user.uid ? chat.clientId : chat.masterId;
-            
-        } catch (error) {
-            console.error('Ошибка получения ID собеседника:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Подписка на сообщения чата
-     */
+    // Подписка на сообщения
     function listenToMessages(chatId, callback) {
         if (!chatId || typeof callback !== 'function') return;
 
-        // Отписываемся от предыдущего слушателя
         if (activeListeners.has(chatId)) {
             activeListeners.get(chatId)();
         }
 
-        // Создаем новый слушатель
         const unsubscribe = db.collection('chats').doc(chatId)
             .collection('messages')
             .orderBy('timestamp', 'asc')
@@ -153,7 +135,6 @@ const Chats = (function() {
                 
                 callback(messages);
                 
-                // Отмечаем сообщения как прочитанные
                 markAsRead(chatId, messages);
             }, (error) => {
                 console.error('Ошибка слушателя сообщений:', error);
@@ -163,9 +144,7 @@ const Chats = (function() {
         return unsubscribe;
     }
 
-    /**
-     * Отметка сообщений как прочитанных
-     */
+    // Отметка прочитанных
     async function markAsRead(chatId, messages) {
         try {
             const user = Auth.getUser();
@@ -185,8 +164,6 @@ const Chats = (function() {
 
             if (hasUnread) {
                 await batch.commit();
-                
-                // Сбрасываем счетчик непрочитанных
                 await db.collection('chats').doc(chatId).update({
                     [`unreadCount.${user.uid}`]: 0
                 });
@@ -197,9 +174,7 @@ const Chats = (function() {
         }
     }
 
-    /**
-     * Индикатор печати
-     */
+    // Индикатор печати
     function setupTypingIndicator(chatId) {
         const user = Auth.getUser();
         if (!user) return;
@@ -223,35 +198,28 @@ const Chats = (function() {
         });
     }
 
-    /**
-     * Слушатель индикатора печати собеседника
-     */
+    // Слушатель печати
     function listenToTyping(chatId, callback) {
         const user = Auth.getUser();
         if (!user) return;
 
-        // Получаем ID собеседника
-        getPartnerId(chatId).then(partnerId => {
-            if (!partnerId) return;
+        db.collection('chats').doc(chatId).get().then(chatDoc => {
+            if (!chatDoc.exists) return;
+            
+            const chat = chatDoc.data();
+            const partnerId = chat.masterId === user.uid ? chat.clientId : chat.masterId;
 
-            // Слушаем только документ собеседника
-            return db.collection('chats').doc(chatId)
+            db.collection('chats').doc(chatId)
                 .collection('typing').doc(partnerId)
                 .onSnapshot((doc) => {
-                    if (doc.exists && doc.data().isTyping) {
-                        callback(true);
-                    } else {
-                        callback(false);
-                    }
+                    callback(doc.exists && doc.data().isTyping);
                 });
         }).catch(error => {
             console.error('Ошибка в listenToTyping:', error);
         });
     }
 
-    /**
-     * Получение списка чатов пользователя
-     */
+    // Получение чатов пользователя
     async function getUserChats() {
         try {
             const user = Auth.getUser();
@@ -268,14 +236,23 @@ const Chats = (function() {
                 const chat = doc.data();
                 const partnerId = chat.masterId === user.uid ? chat.clientId : chat.masterId;
                 
-                // Получаем информацию о собеседнике
                 const partnerDoc = await db.collection('users').doc(partnerId).get();
                 const partner = partnerDoc.exists ? partnerDoc.data() : null;
+                
+                // Получаем последнее сообщение
+                const lastMsgSnapshot = await db.collection('chats').doc(doc.id)
+                    .collection('messages')
+                    .orderBy('timestamp', 'desc')
+                    .limit(1)
+                    .get();
+                
+                const lastMessage = lastMsgSnapshot.empty ? null : lastMsgSnapshot.docs[0].data();
                 
                 chats.push({
                     id: doc.id,
                     ...chat,
-                    partner: partner
+                    partner: partner,
+                    lastMessage: lastMessage
                 });
             }
 
@@ -287,9 +264,31 @@ const Chats = (function() {
         }
     }
 
-    /**
-     * Отписка от всех слушателей
-     */
+    // Количество непрочитанных
+    async function getUnreadCount() {
+        try {
+            const user = Auth.getUser();
+            if (!user) return 0;
+
+            const snapshot = await db.collection('chats')
+                .where('participants', 'array-contains', user.uid)
+                .get();
+
+            let total = 0;
+            snapshot.forEach(doc => {
+                const chat = doc.data();
+                total += chat.unreadCount?.[user.uid] || 0;
+            });
+
+            return total;
+            
+        } catch (error) {
+            console.error('Ошибка получения непрочитанных:', error);
+            return 0;
+        }
+    }
+
+    // Отписка от всех
     function unsubscribeAll() {
         activeListeners.forEach(unsubscribe => unsubscribe());
         activeListeners.clear();
@@ -299,9 +298,9 @@ const Chats = (function() {
     return {
         create,
         sendMessage,
-        getPartnerId,
         listenToMessages,
         getUserChats,
+        getUnreadCount,
         setupTypingIndicator,
         listenToTyping,
         unsubscribeAll

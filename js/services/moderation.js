@@ -1,7 +1,8 @@
-// ===== MODERATION.JS — РАСШИРЕННАЯ СИСТЕМА МОДЕРАЦИИ =====
+// ===== js/services/moderation.js =====
+// СИСТЕМА МОДЕРАЦИИ (УЛУЧШЕННАЯ ВЕРСИЯ)
 
 const Moderation = (function() {
-    // Стоп-слова (расширенный список)
+    // Стоп-слова
     const STOP_WORDS = [
         'спам', 'реклама', 'сайт', 'перейдите', 'ссылк',
         'чат', 'telegram', 'ватсап', 'whatsapp', 'телеграм',
@@ -10,12 +11,10 @@ const Moderation = (function() {
         'мошенник', 'обман', 'кидалово', 'лохотрон', 'пирамида',
         'кредит', 'займ', 'микрозайм', 'деньги быстро',
         'работа на дому', 'заработок', 'пассивный доход',
-        'криптовалюта', 'биткоин', 'инвестиции', 'прибыль',
-        'сайт', 'онлайн', 'заработок в интернете', 'easy money',
-        'обменник', 'обмен валют', 'fast profit', 'double your money'
+        'криптовалюта', 'биткоин', 'инвестиции', 'прибыль'
     ];
 
-    // Паттерны для проверки
+    // Паттерны
     const PATTERNS = {
         url: /(https?:\/\/[^\s]+)|(www\.[^\s]+)|(t\.me\/[^\s]+)|(@[a-zA-Z0-9_]+)|(vk\.com\/[^\s]+)|(instagram\.com\/[^\s]+)/gi,
         phone: /(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})/g,
@@ -26,7 +25,7 @@ const Moderation = (function() {
         profanity: /(бля|хуй|пизд|еба|нах|сук|пидор|гандон|шлюх|мудак|долбо|придур|дебил|идиот|козел|осел|сволоч|тварь)/gi
     };
 
-    // Контексты проверки (разные правила для разных мест)
+    // Контексты
     const CONTEXT_RULES = {
         'order_title': {
             minLength: 5,
@@ -70,24 +69,17 @@ const Moderation = (function() {
         }
     };
 
-    /**
-     * Проверка текста на спам
-     */
+    // Проверка текста
     function check(text, context = 'general') {
         if (!text || text.trim() === '') {
-            return { 
-                isValid: true, 
-                reason: null, 
-                score: 0,
-                violations: []
-            };
+            return { isValid: true, reason: null, score: 0, violations: [] };
         }
 
         const lowerText = text.toLowerCase();
         let violations = [];
         let score = 0;
 
-        // Проверка на стоп-слова
+        // Стоп-слова
         for (let word of STOP_WORDS) {
             if (lowerText.includes(word)) {
                 violations.push({
@@ -99,7 +91,7 @@ const Moderation = (function() {
             }
         }
 
-        // Проверка на ссылки
+        // Ссылки
         const urlMatches = text.match(PATTERNS.url);
         if (urlMatches) {
             violations.push({
@@ -110,7 +102,7 @@ const Moderation = (function() {
             score += 0.5;
         }
 
-        // Проверка на телефоны
+        // Телефоны
         const phoneMatches = text.match(PATTERNS.phone);
         if (phoneMatches) {
             violations.push({
@@ -121,7 +113,7 @@ const Moderation = (function() {
             score += 0.5;
         }
 
-        // Проверка на email
+        // Email
         const emailMatches = text.match(PATTERNS.email);
         if (emailMatches) {
             violations.push({
@@ -132,7 +124,7 @@ const Moderation = (function() {
             score += 0.4;
         }
 
-        // Проверка на капслок
+        // Капслок
         const capsMatches = text.match(PATTERNS.caps);
         const capsCount = capsMatches ? capsMatches.length : 0;
         if (capsCount > 2) {
@@ -144,7 +136,7 @@ const Moderation = (function() {
             score += 0.2;
         }
 
-        // Проверка на повторяющиеся символы
+        // Повторы
         const repeatedMatches = text.match(PATTERNS.repeated);
         if (repeatedMatches) {
             violations.push({
@@ -155,7 +147,7 @@ const Moderation = (function() {
             score += 0.2;
         }
 
-        // Проверка на нецензурную лексику
+        // Мат
         const profanityMatches = text.match(PATTERNS.profanity);
         if (profanityMatches) {
             violations.push({
@@ -166,7 +158,7 @@ const Moderation = (function() {
             score += 0.8;
         }
 
-        // Проверка длины для конкретного контекста
+        // Проверка длины
         if (context !== 'general' && CONTEXT_RULES[context]) {
             const rules = CONTEXT_RULES[context];
             
@@ -191,7 +183,7 @@ const Moderation = (function() {
             }
         }
 
-        // Проверка на спам-паттерны (повторяющиеся сообщения)
+        // Повторяющиеся слова
         const words = text.split(/\s+/);
         const uniqueWords = new Set(words);
         if (words.length > 10 && uniqueWords.size < words.length * 0.3) {
@@ -202,7 +194,7 @@ const Moderation = (function() {
             score += 0.3;
         }
 
-        // Проверка на подозрительную пунктуацию
+        // Пунктуация
         const punctuationCount = (text.match(/[!?.,;:]{2,}/g) || []).length;
         if (punctuationCount > 3) {
             violations.push({
@@ -212,7 +204,7 @@ const Moderation = (function() {
             score += 0.2;
         }
 
-        const isValid = score < 1.0; // Порог спама
+        const isValid = score < 1.0;
         const reason = isValid ? null : generateReason(violations);
 
         return {
@@ -220,17 +212,13 @@ const Moderation = (function() {
             reason,
             score: Math.min(score, 3.0),
             violations,
-            needsReview: score >= 0.5 && score < 1.0 // Требует ручной проверки
+            needsReview: score >= 0.5 && score < 1.0
         };
     }
 
-    /**
-     * Генерация понятного объяснения
-     */
+    // Генерация причины
     function generateReason(violations) {
         if (violations.length === 0) return null;
-        
-        const primaryViolation = violations[0];
         
         const messages = {
             'stop_word': 'Использование запрещенных слов',
@@ -246,39 +234,28 @@ const Moderation = (function() {
             'excessive_punctuation': 'Чрезмерное использование знаков препинания'
         };
 
-        return messages[primaryViolation.type] || 'Текст не прошел модерацию';
+        return messages[violations[0].type] || 'Текст не прошел модерацию';
     }
 
-    /**
-     * Очистка текста от спама
-     */
+    // Очистка текста
     function sanitize(text) {
         if (!text) return '';
 
         let cleaned = text
-            // Удаляем HTML-теги
             .replace(/<[^>]*>/g, '')
-            // Удаляем ссылки
             .replace(PATTERNS.url, '[ссылка удалена]')
-            // Удаляем телефоны
             .replace(PATTERNS.phone, '[телефон удален]')
-            // Удаляем email
             .replace(PATTERNS.email, '[email удален]')
-            // Заменяем множественные пробелы
             .replace(/\s+/g, ' ')
-            // Обрезаем края
             .trim();
 
         return cleaned;
     }
 
-    /**
-     * Автоматическая модерация заказа
-     */
+    // Модерация заказа
     async function moderateOrder(orderData) {
         const violations = [];
         
-        // Проверяем название
         const titleCheck = check(orderData.title, 'order_title');
         if (!titleCheck.isValid) {
             violations.push({
@@ -287,7 +264,6 @@ const Moderation = (function() {
             });
         }
 
-        // Проверяем описание
         if (orderData.description) {
             const descCheck = check(orderData.description, 'order_description');
             if (!descCheck.isValid) {
@@ -298,7 +274,6 @@ const Moderation = (function() {
             }
         }
 
-        // Проверяем цену (не спам, но валидация)
         if (orderData.price < 500 || orderData.price > 1000000) {
             violations.push({
                 field: 'price',
@@ -306,7 +281,6 @@ const Moderation = (function() {
             });
         }
 
-        // Проверяем адрес
         if (orderData.address && orderData.address.length < 5) {
             violations.push({
                 field: 'address',
@@ -321,15 +295,11 @@ const Moderation = (function() {
         };
     }
 
-    /**
-     * Автоматическая модерация сообщения в чате
-     */
+    // Модерация сообщения
     async function moderateMessage(messageText, senderId) {
         const checkResult = check(messageText, 'chat_message');
         
-        // Если спам, блокируем сообщение
         if (!checkResult.isValid) {
-            // Логируем нарушение
             await logViolation({
                 userId: senderId,
                 type: 'chat_spam',
@@ -338,16 +308,13 @@ const Moderation = (function() {
                 timestamp: new Date().toISOString()
             });
 
-            // Проверяем, не пора ли забанить пользователя
             await checkBanThreshold(senderId);
         }
 
         return checkResult;
     }
 
-    /**
-     * Логирование нарушений
-     */
+    // Логирование нарушений
     async function logViolation(violation) {
         try {
             await db.collection('moderation_log').add({
@@ -359,9 +326,7 @@ const Moderation = (function() {
         }
     }
 
-    /**
-     * Проверка порога для бана
-     */
+    // Проверка на бан
     async function checkBanThreshold(userId) {
         try {
             const oneDayAgo = new Date();
@@ -374,55 +339,15 @@ const Moderation = (function() {
 
             const violations = snapshot.size;
             
-            // Если больше 5 нарушений за день - бан
             if (violations >= 5) {
                 await db.collection('users').doc(userId).update({
                     banned: true,
                     bannedAt: new Date().toISOString(),
                     banReason: 'Автоматический бан за спам'
                 });
-
-                // Уведомление админу
-                await notifyAdmin('auto_ban', {
-                    userId,
-                    violations: violations
-                });
             }
         } catch (error) {
             console.error('Ошибка проверки порога бана:', error);
-        }
-    }
-
-    /**
-     * Уведомление админа
-     */
-    async function notifyAdmin(type, data) {
-        try {
-            await db.collection('admin_notifications').add({
-                type,
-                data,
-                read: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } catch (error) {
-            console.error('Ошибка уведомления админа:', error);
-        }
-    }
-
-    /**
-     * Ручная проверка контента
-     */
-    async function requestManualReview(contentType, contentId, reason) {
-        try {
-            await db.collection('moderation_queue').add({
-                contentType, // 'order', 'message', 'profile'
-                contentId,
-                reason,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } catch (error) {
-            console.error('Ошибка запроса проверки:', error);
         }
     }
 
@@ -431,10 +356,8 @@ const Moderation = (function() {
         check,
         sanitize,
         moderateOrder,
-        moderateMessage,
-        requestManualReview
+        moderateMessage
     };
 })();
 
-// Экспортируем
 window.Moderation = Moderation;

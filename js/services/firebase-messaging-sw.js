@@ -1,9 +1,7 @@
-// firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Кэширование статики
-const CACHE_NAME = 'workhom-v1';
+const CACHE_NAME = 'workhom-v2';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -12,55 +10,65 @@ const urlsToCache = [
     '/chat.html',
     '/group-chat.html',
     '/admin.html',
+    '/css/main.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
 ];
 
-// Установка Service Worker
 self.addEventListener('install', event => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Кэширование статики');
+                console.log('✅ Кэширование статики');
                 return cache.addAll(urlsToCache);
             })
     );
 });
 
-// Активация и очистка старого кэша
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
+                    .map(name => {
+                        console.log('🗑️ Удаление старого кэша:', name);
+                        return caches.delete(name);
+                    })
             );
+        }).then(() => {
+            return self.clients.claim();
         })
     );
 });
 
-// Стратегия кэширования: сначала сеть, потом кэш
 self.addEventListener('fetch', event => {
+    if (event.request.url.includes('firestore.googleapis.com') ||
+        event.request.url.includes('firebase') ||
+        event.request.url.includes('yandex')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // Кэшируем успешные ответы
-                if (response.status === 200) {
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseClone);
-                    });
-                }
-                return response;
-            })
-            .catch(() => {
-                // Если сеть недоступна, берем из кэша
-                return caches.match(event.request);
-            })
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then(cachedResponse => {
+                const fetchPromise = fetch(event.request).then(networkResponse => {
+                    if (networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch(() => {
+                    console.log('🌐 Офлайн режим для:', event.request.url);
+                });
+                
+                return cachedResponse || fetchPromise;
+            });
+        })
     );
 });
 
-// Firebase Cloud Messaging
 firebase.initializeApp({
     apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
     authDomain: "homework-6a562.firebaseapp.com",
@@ -72,15 +80,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Фоновые уведомления
 messaging.onBackgroundMessage((payload) => {
-    console.log('Получено фоновое уведомление:', payload);
+    console.log('📨 Фоновое уведомление:', payload);
     
     const notificationTitle = payload.notification?.title || 'ВоркХом';
     const notificationOptions = {
         body: payload.notification?.body || 'Новое уведомление',
-        icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
-        badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge.png',
         data: payload.data,
         actions: [
             { action: 'open', title: '🔗 Открыть' },
@@ -88,38 +95,27 @@ messaging.onBackgroundMessage((payload) => {
         ],
         vibrate: [200, 100, 200],
         requireInteraction: true,
-        silent: false
+        silent: false,
+        tag: 'workhom-notification'
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Клик по уведомлению
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     if (event.action === 'open') {
         const urlToOpen = event.notification.data?.url || '/';
-        event.waitUntil(clients.openWindow(urlToOpen));
+        event.waitUntil(
+            clients.matchAll({ type: 'window' }).then(windowClients => {
+                for (let client of windowClients) {
+                    if (client.url === urlToOpen && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+                return clients.openWindow(urlToOpen);
+            })
+        );
     }
-});
-
-// Пуш-уведомления
-self.addEventListener('push', (event) => {
-    const data = event.data.json();
-    
-    const options = {
-        body: data.body,
-        icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
-        badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
-        data: data,
-        actions: data.actions || [
-            { action: 'open', title: 'Открыть' }
-        ],
-        vibrate: [200, 100, 200]
-    };
-
-    event.waitUntil(
-        self.registration.showNotification(data.title || 'ВоркХом', options)
-    );
 });

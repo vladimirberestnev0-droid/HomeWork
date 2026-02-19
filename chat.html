@@ -4,22 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Чат</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#E67A4B">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Наши стили -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <div class="chat-container">
         <!-- Шапка -->
         <div class="chat-header">
-            <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <a href="javascript:history.back()" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
             
             <div class="chat-avatar">
                 <i class="fas fa-user"></i>
@@ -29,21 +33,29 @@
                 <h2 id="chatPartnerName">Загрузка...</h2>
                 <p id="chatPartnerRole">
                     Клиент
-                    <span class="online-status"></span>
+                    <span class="online-status" id="onlineStatus"></span>
                 </p>
             </div>
 
             <div class="order-badge" id="orderInfo" onclick="showOrderDetails()">
                 📋 Заказ #...
             </div>
+            
+            <!-- Кнопки чата -->
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="videoCallBtn" title="Видеозвонок">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="voiceCallBtn" title="Аудиозвонок">
+                <i class="fas fa-phone"></i>
+            </button>
         </div>
 
         <!-- Закрепленный заказ -->
         <div id="pinnedOrder" class="pinned-order hidden">
             <div class="pinned-order-content">
-                <span><i class="fas fa-clipboard-list"></i> <span id="pinnedTitle"></span></span>
-                <span><i class="fas fa-tag"></i> <span id="pinnedPrice"></span> ₽</span>
-                <span><i class="fas fa-map-marker-alt"></i> <span id="pinnedAddress"></span></span>
+                <span><i class="fas fa-clipboard-list me-2"></i> <span id="pinnedTitle"></span></span>
+                <span><i class="fas fa-tag me-2"></i> <span id="pinnedPrice"></span> ₽</span>
+                <span><i class="fas fa-map-marker-alt me-2"></i> <span id="pinnedAddress"></span></span>
             </div>
         </div>
 
@@ -87,22 +99,22 @@
 
         <!-- Поле ввода -->
         <div class="chat-input">
-            <button id="attachButton" class="attach-btn">
+            <button id="attachButton" class="attach-btn" title="Прикрепить файл">
                 <i class="fas fa-paperclip"></i>
             </button>
             <input type="file" id="fileInput" style="display: none;" multiple>
             
-            <button id="voiceButton" class="voice-btn">
+            <button id="voiceButton" class="voice-btn" title="Голосовое сообщение">
                 <i class="fas fa-microphone"></i>
             </button>
             
-            <button id="emojiButton" class="emoji-btn">
+            <button id="emojiButton" class="emoji-btn" title="Смайлики">
                 <i class="fas fa-smile"></i>
             </button>
             
             <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
             
-            <button id="sendButton" class="send-btn">
+            <button id="sendButton" class="send-btn" title="Отправить">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
@@ -125,26 +137,35 @@
         </button>
     </div>
 
-    <!-- Скрипты: библиотеки -->
+    <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" async></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" async></script>
 
-    <!-- Наши модули -->
-<script src="js/utils/constants.js" defer></script>
-<script src="js/utils/helpers.js" defer></script>
-<script src="js/services/firebase.js" defer ></script>
-<script src="js/services/auth.js" defer></script>
-<script src="js/services/orders.js" defer></script>
-<script src="js/services/chat.js" defer></script>
-<script src="js/services/badges.js" defer></script>
-<script src="js/services/moderation.js" defer></script>
-<script src="js/components/auth-ui.js" defer></script>
-<!-- НЕ НАДО masters.js! -->
+    <!-- Core модули -->
+    <script src="/js/core/constants.js" async></script>
+    <script src="/js/core/helpers.js" async></script>
+    <script src="/js/core/firebase.js" async></script>
+    <script src="/js/core/error-handler.js" async></script>
 
-<!-- Скрипт страницы -->
-<script src="js/pages/chat-page.js" defer></script>
+    <!-- Сервисы -->
+    <script src="/js/services/auth.js" defer></script>
+    <script src="/js/services/orders.js" defer></script>
+    <script src="/js/services/chat.js" defer></script>
+    <script src="/js/services/badges.js" defer></script>
+    <script src="/js/services/moderation.js" defer></script>
+    <script src="/js/services/ai-assistant.js" defer></script>
+    <script src="/js/services/telegram-bot.js" defer></script>
+    <script src="/js/services/tracking.js" defer></script>
+    <script src="/js/services/video-chat.js" defer></script>
+    <script src="/js/services/websocket.js" defer></script>
+    <script src="/js/services/redis-cache.js" defer></script>
+    <script src="/js/services/cdn.js" defer></script>
+    <script src="/js/services/microservices.js" defer></script>
+
+    <!-- Скрипт страницы -->
+    <script src="/js/pages/chat.js" defer></script>
 </body>
 </html>
