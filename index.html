@@ -487,5 +487,19 @@
         });
     }
     </script>
+    <script>
+// Отладка модальных окон
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Проверка Bootstrap:', typeof bootstrap !== 'undefined' ? '✅' : '❌');
+    
+    // Перехватываем клики по кнопкам
+    document.body.addEventListener('click', function(e) {
+        const target = e.target.closest('[onclick*="showLoginModal"], [onclick*="showRegisterModal"]');
+        if (target) {
+            console.log('👆 Нажата кнопка авторизации');
+        }
+    });
+});
+</script>
 </body>
 </html>
