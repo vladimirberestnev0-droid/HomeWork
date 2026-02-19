@@ -21,12 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
     
-    // Инициализация карт
+    // Инициализация карт с проверкой загрузки API
     if (typeof ymaps !== 'undefined') {
+        console.log('🗺️ API Яндекс.Карт загружен, ждём готовность...');
         ymaps.ready(() => {
+            console.log('🗺️ Яндекс.Карты готовы к работе');
             ymapsReady = true;
-            initMaps();
+            // Даём небольшую задержку, чтобы DOM точно отрисовался
+            setTimeout(() => {
+                initMaps();
+            }, 300);
         });
+    } else {
+        console.warn('⚠️ API Яндекс.Карт не загружен! Проверь подключение скрипта в index.html');
     }
     
     // Загрузка данных
@@ -44,48 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Подписка на изменения авторизации
-if (typeof Auth !== 'undefined') {
-    Auth.onAuthChange((state) => {
-        console.log('🔄 Статус авторизации изменился:', state);
-        
-        // Перерисовываем блок авторизации
-        if (typeof AuthUI !== 'undefined') {
-            AuthUI.renderAuthBlock();
-        }
-        
-        // Скрываем ссылку "Мои заказы" для мастеров
-        const clientLink = document.getElementById('clientLink');
-        if (clientLink) {
-            clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
-        }
-        
-        // Показываем/скрываем кнопку выхода
-        const headerLogoutBtn = document.getElementById('headerLogoutBtn');
-        if (headerLogoutBtn) {
-            headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
-        }
-        
-        // Показываем/скрываем форму создания заказа
-        const orderFormColumn = document.getElementById('orderFormColumn');
-        if (orderFormColumn) {
-            if (state.isMaster) {
-                orderFormColumn.style.display = 'none';
-                document.getElementById('ordersColumn').className = 'col-md-12';
-            } else {
-                orderFormColumn.style.display = 'block';
-                document.getElementById('ordersColumn').className = 'col-md-6';
-            }
-        }
-        
-        if (state.isMaster) {
-            console.log('✅ Мастер авторизован, перезагружаем заказы');
-            loadOrders();
-        }
-    });
-}
-
-// Подписка на изменения авторизации
+// Подписка на изменения авторизации (ОДИН РАЗ!)
 if (typeof Auth !== 'undefined') {
     Auth.onAuthChange((state) => {
         console.log('🔄 Статус авторизации изменился:', state);
@@ -132,8 +98,20 @@ if (typeof Auth !== 'undefined') {
 
 // Инициализация карт
 function initMaps() {
+    console.log('🗺️ Попытка инициализации карт...');
+    
     try {
-        if (document.getElementById('map') && typeof ymaps !== 'undefined') {
+        // Проверяем, загружены ли Яндекс.Карты
+        if (typeof ymaps === 'undefined') {
+            console.error('❌ Яндекс.Карты не загружены!');
+            return;
+        }
+
+        // КАРТА 1: Для выбора адреса при создании заказа
+        const mapElement = document.getElementById('map');
+        if (mapElement) {
+            console.log('🗺️ Найден элемент #map, создаём карту выбора адреса');
+            
             map = new ymaps.Map('map', {
                 center: [55.7558, 37.6173],
                 zoom: 10
@@ -151,23 +129,52 @@ function initMaps() {
                 map.geoObjects.removeAll();
                 map.geoObjects.add(new ymaps.Placemark(coords));
             });
+            
+            console.log('✅ Карта выбора адреса успешно создана');
+        } else {
+            console.warn('⚠️ Элемент #map не найден в DOM');
         }
         
-        if (document.getElementById('ordersMap') && typeof ymaps !== 'undefined') {
+        // КАРТА 2: Для отображения заказов
+        const ordersMapElement = document.getElementById('ordersMap');
+        if (ordersMapElement) {
+            console.log('🗺️ Найден элемент #ordersMap, создаём карту заказов');
+            
             ordersMap = new ymaps.Map('ordersMap', {
                 center: [55.7558, 37.6173],
                 zoom: 10
             });
+            
+            console.log('✅ Карта заказов создана, загружаем метки...');
             loadOrdersMap();
+        } else {
+            console.warn('⚠️ Элемент #ordersMap не найден в DOM');
         }
+        
     } catch (error) {
-        console.error('❌ Ошибка карт:', error);
+        console.error('❌ Ошибка при инициализации карт:', error);
     }
 }
 
 // Загрузка карты заказов
 async function loadOrdersMap() {
-    if (!ymapsReady || !ordersMap || !window.db) return;
+    // Проверяем все необходимые условия
+    if (!ymapsReady) {
+        console.warn('⚠️ Яндекс.Карты ещё не готовы');
+        return;
+    }
+    
+    if (!ordersMap) {
+        console.warn('⚠️ Карта заказов ещё не создана');
+        return;
+    }
+    
+    if (!window.db) {
+        console.warn('⚠️ База данных не инициализирована');
+        return;
+    }
+    
+    console.log('🗺️ Загружаем заказы на карту...');
     
     try {
         ordersMap.geoObjects.removeAll();
@@ -177,6 +184,7 @@ async function loadOrdersMap() {
             .limit(50)
             .get();
 
+        let markerCount = 0;
         snapshot.forEach(doc => {
             const order = doc.data();
             if (order.latitude && order.longitude) {
@@ -195,10 +203,14 @@ async function loadOrdersMap() {
                     }
                 );
                 ordersMap.geoObjects.add(placemark);
+                markerCount++;
             }
         });
+        
+        console.log(`✅ На карту загружено ${markerCount} меток заказов`);
+        
     } catch (error) {
-        console.error('❌ Ошибка карты:', error);
+        console.error('❌ Ошибка загрузки карты:', error);
     }
 }
 
