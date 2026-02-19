@@ -17,6 +17,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Яндекс.Карты -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU"></script>
+    
     <!-- Наши стили -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
@@ -31,8 +34,8 @@
             
             <nav>
                 <a href="/HomeWork/" class="active">Главная</a>
-                <a href="/HomeWork/client.html">Мои заказы</a>
-                <a href="/HomeWork/masters.html">Мастерам</a>
+                <a href="/HomeWork/client.html" id="clientLink">Мои заказы</a>
+                <a href="/HomeWork/masters.html" id="masterLink">Мастерам</a>
                 
                 <!-- Блок геймификации в шапке -->
                 <div class="d-flex align-items-center gap-2 ms-3">
@@ -95,51 +98,38 @@
             </div>
         </div>
 
-        <!-- Умный поиск с ИИ -->
-        <div class="search-section mb-5">
-            <div class="row g-2">
-                <div class="col-md-10">
-                    <div class="position-relative">
-                        <input type="text" id="smartSearch" class="search-input w-100" 
-                               placeholder="🔍 Что нужно сделать? Например: починить кран, собрать кухню, положить плитку...">
-                        <div id="searchSuggestions" class="search-suggestions d-none"></div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn w-100 pulse" id="searchBtn">
-                        <i class="fas fa-search"></i> Найти
-                    </button>
-                </div>
-            </div>
-            
-            <!-- ИИ подсказка -->
-            <div id="aiSuggestion" class="ai-suggestion mt-2 p-3 rounded-4 d-none">
-                <i class="fas fa-robot me-2" style="color: var(--accent);"></i>
-                <span id="aiSuggestionText"></span>
-            </div>
-        </div>
-
-        <!-- Фильтр по категориям -->
+        <!-- Фильтры -->
         <div class="filter-section">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0">
                     <i class="fas fa-filter me-2" style="color: var(--accent);"></i>
-                    Фильтр по категориям
+                    Фильтры
                 </h5>
-                <button class="btn btn-sm btn-outline-secondary" id="aiRecommendBtn">
-                    <i class="fas fa-magic"></i> ИИ рекомендует
+                <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn">
+                    <i class="fas fa-times me-1"></i> Сбросить
                 </button>
             </div>
-            <div class="category-filter" id="categoryFilter">
-                <button class="category-filter-btn active" data-category="all">Все</button>
-                <button class="category-filter-btn" data-category="Сантехника">🚰 Сантехника</button>
-                <button class="category-filter-btn" data-category="Электрика">⚡ Электрика</button>
-                <button class="category-filter-btn" data-category="Отделочные работы">🎨 Отделочные работы</button>
-                <button class="category-filter-btn" data-category="Мебель">🪑 Мебель</button>
-                <button class="category-filter-btn" data-category="Окна и двери">🪟 Окна и двери</button>
-                <button class="category-filter-btn" data-category="Бытовой ремонт">🔧 Бытовой ремонт</button>
-                <button class="category-filter-btn" data-category="Клининг">🧹 Клининг</button>
-                <button class="category-filter-btn" data-category="Ремонт техники">📺 Ремонт техники</button>
+            
+            <!-- Фильтр по городам -->
+            <div class="mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-city me-2" style="color: var(--accent);"></i>
+                    Город
+                </h6>
+                <div class="city-filter d-flex flex-wrap gap-2" id="cityFilter">
+                    <!-- Города будут добавлены через JS -->
+                </div>
+            </div>
+            
+            <!-- Фильтр по категориям -->
+            <div>
+                <h6 class="mb-3">
+                    <i class="fas fa-tags me-2" style="color: var(--accent);"></i>
+                    Категория
+                </h6>
+                <div class="category-filter d-flex flex-wrap gap-2" id="categoryFilter">
+                    <!-- Категории будут добавлены через JS -->
+                </div>
             </div>
         </div>
 
@@ -201,7 +191,7 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Адрес</label>
-                            <input type="text" id="address" class="form-control" placeholder="ул. Ленина, д. 10, кв. 5" required>
+                            <input type="text" id="address" class="form-control" placeholder="г. Сургут, ул. Ленина, д. 10" required>
                         </div>
                         
                         <div class="mb-3">
@@ -267,6 +257,7 @@
                             Свежие заявки
                         </h3>
                         <div>
+                            <span class="badge badge-primary me-2" id="ordersCount">0</span>
                             <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn" title="Аналитика">
                                 <i class="fas fa-chart-line"></i>
                             </button>
@@ -275,11 +266,20 @@
                             </button>
                         </div>
                     </div>
+                    
                     <div id="ordersList">
                         <div class="text-center p-5">
                             <div class="spinner mb-3"></div>
                             <p class="text-secondary">Загрузка заказов...</p>
                         </div>
+                    </div>
+                    
+                    <!-- Кнопка "Показать еще" -->
+                    <div id="loadMoreContainer" class="text-center mt-4 d-none">
+                        <button class="btn btn-outline-secondary" id="loadMoreBtn">
+                            <i class="fas fa-chevron-down me-2"></i>
+                            Показать еще <span id="remainingOrdersCount">0</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -470,7 +470,7 @@
     <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
     <script src="/HomeWork/js/services/websocket.js"></script>
     
-    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM (НЕ СЕРВЕРНЫЙ!) ===== -->
+    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM ===== -->
     <script src="/HomeWork/js/services/telegram-client.js"></script>
     
     <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
