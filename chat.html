@@ -137,35 +137,48 @@
         </button>
     </div>
 
-    <!-- Скрипты -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" async></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js" async></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js" async></script>
+     <!-- ===== 1. БИБЛИОТЕКИ (СНАЧАЛА) ===== -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ===== 2. CORE МОДУЛИ (В ПРАВИЛЬНОМ ПОРЯДКЕ) ===== -->
+    <script src="/HomeWork/js/core/constants.js"></script>
+    <script src="/HomeWork/js/core/helpers.js"></script>
+    <script src="/HomeWork/js/core/firebase.js"></script>
+    <script src="/HomeWork/js/core/error-handler.js"></script>
 
-    <!-- Core модули -->
-    <script src="/HomeWork/js/core/constants.js" async></script>
-    <script src="/HomeWork/js/core/helpers.js" async></script>
-    <script src="/HomeWork/js/core/firebase.js" async></script>
-    <script src="/HomeWork/js/core/error-handler.js" async></script>
-
-    <!-- Сервисы -->
-    <script src="/HomeWork/js/services/auth.js" defer></script>
-    <script src="/HomeWork/js/services/orders.js" defer></script>
-    <script src="/HomeWork/js/services/chat.js" defer></script>
-    <script src="/HomeWork/js/services/badges.js" defer></script>
-    <script src="/HomeWork/js/services/moderation.js" defer></script>
-    <script src="/HomeWork/js/services/ai-assistant.js" defer></script>
-    <script src="/HomeWork/js/services/telegram-bot.js" defer></script>
-    <script src="/HomeWork/js/services/tracking.js" defer></script>
-    <script src="/HomeWork/js/services/video-chat.js" defer></script>
-    <script src="/HomeWork/js/services/websocket.js" defer></script>
-    <script src="/HomeWork/js/services/redis-cache.js" defer></script>
-    <script src="/HomeWork/js/services/cdn.js" defer></script>
-    <script src="/HomeWork/js/services/microservices.js" defer></script>
-
-    <!-- Скрипт страницы -->
-    <script src="/HomeWork/js/pages/chat.js" defer></script>
+    <!-- ===== 3. ОСНОВНЫЕ СЕРВИСЫ ===== -->
+    <script src="/HomeWork/js/services/auth.js"></script>
+    <script src="/HomeWork/js/services/orders.js"></script>
+    <script src="/HomeWork/js/services/chat.js"></script>
+    
+    <!-- ===== 4. ОСТАЛЬНЫЕ СЕРВИСЫ ===== -->
+    <script src="/HomeWork/js/services/badges.js"></script>
+    <script src="/HomeWork/js/services/moderation.js"></script>
+    <script src="/HomeWork/js/services/payments.js"></script>
+    <script src="/HomeWork/js/services/ai-assistant.js"></script>
+    <script src="/HomeWork/js/services/tracking.js"></script>
+    <script src="/HomeWork/js/services/smart-schedule.js"></script>
+    <script src="/HomeWork/js/services/video-chat.js"></script>
+    <script src="/HomeWork/js/services/gamification.js"></script>
+    <script src="/HomeWork/js/services/analytics.js"></script>
+    <script src="/HomeWork/js/services/redis-cache.js"></script>
+    <script src="/HomeWork/js/services/cdn.js"></script>
+    <script src="/HomeWork/js/services/microservices.js"></script>
+    
+    <!-- ===== 5. КОМПОНЕНТЫ UI ===== -->
+    <script src="/HomeWork/js/components/auth-ui.js"></script>
+    
+    <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
+    <script src="/HomeWork/js/services/websocket.js"></script>
+    
+    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM (НЕ СЕРВЕРНЫЙ!) ===== -->
+    <script src="/HomeWork/js/services/telegram-client.js"></script>
+    
+    <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
+    <script src="/HomeWork/js/pages/chat.js"></script>
 </body>
 </html>

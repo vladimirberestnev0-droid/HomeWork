@@ -1,16 +1,6 @@
 // ===== js/services/auth.js =====
 // УЛУЧШЕННАЯ АВТОРИЗАЦИЯ
 
-// Проверяем наличие глобальных объектов
-const Helpers = window.Helpers || {
-    showNotification: (msg, type) => {
-        console.log(`${type}: ${msg}`);
-        alert(msg);
-    },
-    validateEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-    validatePhone: (phone) => /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/.test(phone)
-};
-
 const Auth = (function() {
     // Приватные переменные
     let currentUser = null;
