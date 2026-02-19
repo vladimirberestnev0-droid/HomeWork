@@ -1,21 +1,40 @@
 // ===== js/components/auth-ui.js =====
+// КОМПОНЕНТЫ UI ДЛЯ АВТОРИЗАЦИИ
 
 const AuthUI = (function() {
+    // Проверяем доступность Bootstrap
+    function isBootstrapAvailable() {
+        return typeof bootstrap !== 'undefined' && bootstrap.Modal;
+    }
+
     /**
      * Показать модалку входа
      */
     function showLoginModal() {
-        // Создаем модалку входа
+        console.log('🔓 Открытие модалки входа');
+        
+        // Проверяем Bootstrap
+        if (!isBootstrapAvailable()) {
+            console.error('❌ Bootstrap не загружен!');
+            alert('Ошибка загрузки модального окна. Обновите страницу.');
+            return;
+        }
+
+        // Удаляем старую модалку если есть
+        const oldModal = document.getElementById('loginModal');
+        if (oldModal) oldModal.remove();
+
+        // Создаем модалку
         const modalHtml = `
-            <div class="modal fade" id="loginModal" tabindex="-1">
-                <div class="modal-dialog">
+            <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
                                 <i class="fas fa-sign-in-alt me-2" style="color: var(--accent);"></i>
                                 Вход в ВоркХом
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
@@ -32,7 +51,7 @@ const AuthUI = (function() {
                         </div>
                         <div class="modal-footer">
                             <p class="text-secondary mb-0">Нет аккаунта? 
-                                <a href="#" onclick="AuthUI.showRegisterModal()">Зарегистрироваться</a>
+                                <a href="#" onclick="AuthUI.showRegisterModal(); return false;">Зарегистрироваться</a>
                             </p>
                         </div>
                     </div>
@@ -40,30 +59,45 @@ const AuthUI = (function() {
             </div>
         `;
 
-        // Удаляем старую модалку, если есть
-        const oldModal = document.getElementById('loginModal');
-        if (oldModal) oldModal.remove();
-
-        // Добавляем и показываем
+        // Добавляем в DOM
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+        
+        // Показываем модалку
+        const modalElement = document.getElementById('loginModal');
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
+        
+        // Убираем фокус с фона
+        modalElement.addEventListener('shown.bs.modal', () => {
+            document.getElementById('loginEmail')?.focus();
+        });
     }
 
     /**
      * Показать модалку регистрации
      */
     function showRegisterModal() {
+        console.log('📝 Открытие модалки регистрации');
+        
+        if (!isBootstrapAvailable()) {
+            console.error('❌ Bootstrap не загружен!');
+            alert('Ошибка загрузки модального окна. Обновите страницу.');
+            return;
+        }
+
+        const oldModal = document.getElementById('registerModal');
+        if (oldModal) oldModal.remove();
+
         const modalHtml = `
-            <div class="modal fade" id="registerModal" tabindex="-1">
-                <div class="modal-dialog">
+            <div class="modal fade" id="registerModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">
                                 <i class="fas fa-user-plus me-2" style="color: var(--accent);"></i>
                                 Регистрация
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
@@ -102,18 +136,16 @@ const AuthUI = (function() {
             </div>
         `;
 
-        const oldModal = document.getElementById('registerModal');
-        if (oldModal) oldModal.remove();
-
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        // Показываем/скрываем поле категорий при выборе роли
+        // Показываем/скрываем поле категорий
         document.getElementById('regRole').addEventListener('change', function() {
             const field = document.getElementById('masterCategoriesField');
             field.style.display = this.value === 'master' ? 'block' : 'none';
         });
         
-        const modal = new bootstrap.Modal(document.getElementById('registerModal'));
+        const modalElement = document.getElementById('registerModal');
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
     }
 
@@ -121,12 +153,18 @@ const AuthUI = (function() {
      * Отправка формы входа
      */
     async function submitLogin() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
+        const email = document.getElementById('loginEmail')?.value;
+        const password = document.getElementById('loginPassword')?.value;
+        
+        if (!email || !password) {
+            Helpers.showNotification('Заполните все поля', 'warning');
+            return;
+        }
         
         const result = await Auth.login(email, password);
         if (result.success) {
-            bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (modal) modal.hide();
         }
     }
 
@@ -135,21 +173,32 @@ const AuthUI = (function() {
      */
     async function submitRegister() {
         const userData = {
-            name: document.getElementById('regName').value,
-            phone: document.getElementById('regPhone').value,
-            role: document.getElementById('regRole').value
+            name: document.getElementById('regName')?.value,
+            phone: document.getElementById('regPhone')?.value,
+            role: document.getElementById('regRole')?.value
         };
         
-        if (userData.role === 'master') {
-            userData.categories = document.getElementById('regCategories').value;
+        if (!userData.name || !userData.phone) {
+            Helpers.showNotification('Заполните все поля', 'warning');
+            return;
         }
         
-        const email = document.getElementById('regEmail').value;
-        const password = document.getElementById('regPassword').value;
+        if (userData.role === 'master') {
+            userData.categories = document.getElementById('regCategories')?.value;
+        }
+        
+        const email = document.getElementById('regEmail')?.value;
+        const password = document.getElementById('regPassword')?.value;
+        
+        if (!email || !password) {
+            Helpers.showNotification('Заполните email и пароль', 'warning');
+            return;
+        }
         
         const result = await Auth.register(email, password, userData);
         if (result.success) {
-            bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+            if (modal) modal.hide();
         }
     }
 
