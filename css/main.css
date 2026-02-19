@@ -2802,3 +2802,26 @@ textarea.form-control {
     border-radius: var(--radius-full);
     font-weight: 600;
 }
+
+/* Стили для выпадающего списка городов */
+#citySelect option[disabled] {
+    font-weight: bold;
+    background-color: #f8f9fa;
+    color: var(--accent);
+    font-size: 0.95rem;
+    padding: 8px;
+}
+
+#citySelect option {
+    padding: 8px;
+}
+
+#citySelect option:not([disabled]) {
+    padding-left: 20px;
+}
+
+/* Темная тема */
+body.dark-theme #citySelect option[disabled] {
+    background-color: #2d2d2d;
+    color: var(--accent-light);
+}
