@@ -614,17 +614,6 @@ function initEventListeners() {
         }
     });
 
-    // Фильтр по городам
-    document.querySelectorAll('.city-filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.city-filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            filters.city = this.dataset.city;
-            applyFilters(true);
-        });
-    });
-
     // Фильтр по категориям
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
