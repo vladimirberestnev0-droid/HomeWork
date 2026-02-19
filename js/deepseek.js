@@ -20,8 +20,8 @@ async function sendToDeepSeek() {
     showTypingIndicator();
 
     try {
-        const API_URL = 'https://home-work.vercel.app/api/deepseek';
-        
+        const API_URL = 'https://home-work-deep.vercel.app/api/deepseek';
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
