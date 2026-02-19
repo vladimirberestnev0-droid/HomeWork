@@ -2825,3 +2825,48 @@ body.dark-theme #citySelect option[disabled] {
     background-color: #2d2d2d;
     color: var(--accent-light);
 }
+
+/* ===== ИСПРАВЛЕНИЕ МОДАЛЬНЫХ ОКОН ===== */
+.modal {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal-dialog {
+    z-index: 1055;
+    pointer-events: auto;
+}
+
+.modal-content {
+    pointer-events: auto;
+    position: relative;
+    z-index: 1060;
+}
+
+.modal.show {
+    display: flex !important;
+    background-color: rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+}
+
+.modal.show .modal-dialog {
+    pointer-events: auto;
+}
+
+/* Убираем возможные перекрытия */
+.navbar, header, footer, .fixed-top, .sticky-top {
+    z-index: 1030;
+}
+
+/* Анимация для модалок */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate(0, -50px);
+}
+
+.modal.show .modal-dialog {
+    transform: none;
+}
