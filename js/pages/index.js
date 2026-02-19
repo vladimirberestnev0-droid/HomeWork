@@ -34,13 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initFilters() {
     console.log('🔧 Инициализация фильтров...');
     
-    // ПРОВЕРКА: есть ли города в window
-    console.log('🏙️ window.CITIES:', window.CITIES ? 'загружен' : 'не загружен');
-    if (window.CITIES) {
-        console.log(`🏙️ Всего городов в списке: ${window.CITIES.length}`);
-        console.log('🏙️ Первый город:', window.CITIES[0]);
-    }
-    
     // Отрисовка выпадающего списка городов
     const citySelect = document.getElementById('citySelect');
     if (!citySelect) {
@@ -48,30 +41,43 @@ function initFilters() {
         return;
     }
     
-    if (!window.CITIES) {
-        console.error('❌ window.CITIES не определен! Проверь constants.js');
-        citySelect.innerHTML = '<option value="all">🏠 Ошибка загрузки городов</option>';
+    if (!window.CITIES_BY_DISTRICT) {
+        console.error('❌ window.CITIES_BY_DISTRICT не определен! Проверь constants.js');
         return;
     }
-    
-    console.log(`🏙️ Загружено ${window.CITIES.length - 1} населенных пунктов`);
     
     // Очищаем select
     citySelect.innerHTML = '<option value="all">🏠 Все города</option>';
     
-    // Добавляем все города (пропускаем первый, т.к. это "Все города")
-    let addedCount = 0;
-    window.CITIES.slice(1).forEach(city => {
-        if (city && city.name) {
-            const option = document.createElement('option');
-            option.value = city.id;
-            option.textContent = city.name;
-            citySelect.appendChild(option);
-            addedCount++;
-        }
+    // Проходим по всем районам
+    Object.keys(window.CITIES_BY_DISTRICT).forEach(districtName => {
+        if (districtName === 'Все города') return; // Пропускаем, уже добавили
+        
+        const cities = window.CITIES_BY_DISTRICT[districtName];
+        
+        // Создаем опцию для района (НЕКЛИКАБЕЛЬНАЯ)
+        const districtOption = document.createElement('option');
+        districtOption.disabled = true;
+        districtOption.style.fontWeight = 'bold';
+        districtOption.style.backgroundColor = '#f0f0f0';
+        districtOption.textContent = districtName;
+        citySelect.appendChild(districtOption);
+        
+        // Сортируем города в районе по алфавиту
+        const sortedCities = [...cities].sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Добавляем города района
+        sortedCities.forEach(city => {
+            if (city && city.name) {
+                const option = document.createElement('option');
+                option.value = city.id;
+                option.textContent = city.name;
+                citySelect.appendChild(option);
+            }
+        });
     });
     
-    console.log(`✅ Добавлено ${addedCount} городов в выпадающий список`);
+    console.log('✅ Выпадающий список городов сформирован');
     
     // Добавляем обработчик изменения
     citySelect.addEventListener('change', function() {
@@ -91,8 +97,6 @@ function initFilters() {
         console.error('❌ window.ORDER_CATEGORIES не определен!');
         return;
     }
-    
-    console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
     
     categoryFilter.innerHTML = window.ORDER_CATEGORIES.map(cat => `
         <button class="filter-btn category-filter-btn ${cat.id === 'all' ? 'active' : ''}" 
