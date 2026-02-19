@@ -261,7 +261,99 @@
             </div>
         </div>
     </div>
+    <!-- Модалка подтверждения заказа -->
+    <div class="modal fade modal-workhom" id="confirmOrderModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Подтверждение заказа
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-clipboard-check fa-4x" style="color: var(--accent);"></i>
+                    </div>
+                    <h6 class="mb-3">Вы уверены, что хотите подтвердить заказ?</h6>
+                    <p class="text-secondary mb-0">После подтверждения мастер приступит к работе</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="confirmOrderBtn">
+                        <i class="fas fa-check me-2"></i> Подтвердить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Модалка выбора мастера -->
+    <div class="modal fade modal-workhom" id="selectMasterModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-tie me-2"></i>
+                        Выбор мастера
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-star fa-4x" style="color: #FFD700;"></i>
+                    </div>
+                    <h6 class="mb-3" id="selectedMasterName">Вы выбрали мастера</h6>
+                    <p class="text-secondary mb-2">Цена: <span class="fw-bold" id="selectedMasterPrice">0 ₽</span></p>
+                    <p class="text-secondary mb-0">После подтверждения мастер приступит к работе</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="confirmSelectMasterBtn">
+                        <i class="fas fa-check me-2"></i> Подтвердить выбор
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка пополнения баланса (обновлённая) -->
+    <div class="modal fade modal-workhom" id="topupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Пополнение баланса
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Сумма</label>
+                        <input type="number" class="form-control" id="topupAmount" value="1000" min="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Способ оплаты</label>
+                        <select class="form-select" id="topupMethod">
+                            <option value="card">💳 Банковская карта</option>
+                            <option value="sbp">🏦 СБП</option>
+                            <option value="yoomoney">📱 ЮMoney</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" id="processTopupBtn">
+                        <i class="fas fa-credit-card me-2"></i> Оплатить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
      <!-- ===== 1. БИБЛИОТЕКИ (СНАЧАЛА) ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>

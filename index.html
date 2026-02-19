@@ -500,5 +500,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- DeepSeek Бро -->
+<div id="deepseek-bro-button" onclick="toggleDeepSeekChat()">
+    <img src="https://i.imgur.com/твоя_картинка.jpg" alt="Бро" onerror="this.src='https://via.placeholder.com/40'">
+    <span>Чё надо?</span>
+</div>
+
+<div id="deepseek-chat-window" class="hidden">
+    <div class="deepseek-header">
+        <span>🤖 Твой бро</span>
+        <button onclick="toggleDeepSeekChat()">×</button>
+    </div>
+    <div id="deepseek-messages" class="deepseek-messages">
+        <div class="deepseek-message bro-message">
+            Йо, бро! Чё ищешь? Мастера, цену или просто поболтать?
+        </div>
+    </div>
+    <div class="deepseek-input-area">
+        <input type="text" id="deepseek-input" placeholder="Спроси у бро...">
+        <button onclick="sendToDeepSeek()">➤</button>
+    </div>
+</div>
 </body>
 </html>
