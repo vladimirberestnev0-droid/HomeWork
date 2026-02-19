@@ -3222,3 +3222,14 @@ body.dark-theme .modal-workhom .btn-outline-secondary:hover {
     font-style: italic;
     color: var(--text-soft, #5A6B7A);
 }
+
+/* main.css */
+#citySelect optgroup {
+    font-weight: bold;
+    color: var(--accent);
+    background: var(--bg-light);
+}
+
+#citySelect option {
+    padding-left: 20px;
+}
