@@ -2739,3 +2739,66 @@ textarea.form-control {
         border: 1px solid #ddd;
     }
 }
+
+/* ===== 26. ФИЛЬТРЫ ===== */
+.filter-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    background: var(--bg-white);
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.filter-btn.active {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+}
+
+.city-filter, .category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ===== 27. КНОПКА ПОКАЗАТЬ ЕЩЕ ===== */
+#loadMoreBtn {
+    padding: 12px 30px;
+    min-width: 200px;
+    transition: var(--transition);
+}
+
+#loadMoreBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+#loadMoreBtn i {
+    transition: transform 0.3s;
+}
+
+#loadMoreBtn:hover i {
+    transform: translateY(3px);
+}
+
+/* ===== 28. СЧЕТЧИК ЗАКАЗОВ ===== */
+#ordersCount {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
