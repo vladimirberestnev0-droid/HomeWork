@@ -1,10 +1,6 @@
 // ===== js/services/websocket.js =====
 // WEBSOCKET РЕАЛЬНОГО ВРЕМЕНИ
 
-// НЕ НАДО ПОВТОРНО ОБЪЯВЛЯТЬ AUTH!
-// Просто проверяем, что он существует
-const Auth = window.Auth; // Берем из глобальной области
-
 const WebSocketService = (function() {
     let ws = null;
     let reconnectAttempts = 0;
@@ -47,7 +43,7 @@ const WebSocketService = (function() {
                     // Отправляем приветствие
                     send({
                         type: 'auth',
-                        userId: Auth?.getUser()?.uid,
+                        userId: window.Auth?.getUser()?.uid,
                         sessionId: getSessionId(),
                         timestamp: Date.now()
                     });
@@ -276,7 +272,7 @@ const WebSocketService = (function() {
             type: 'typing',
             data: {
                 chatId,
-                userId: Auth?.getUser()?.uid,
+                userId: window.Auth?.getUser()?.uid,
                 isTyping,
                 timestamp: Date.now()
             }
@@ -290,7 +286,7 @@ const WebSocketService = (function() {
         send({
             type: 'status',
             data: {
-                userId: Auth?.getUser()?.uid,
+                userId: window.Auth?.getUser()?.uid,
                 online: isOnline,
                 timestamp: Date.now()
             }
@@ -333,8 +329,8 @@ const WebSocketService = (function() {
     }
 
     // Автоподключение при авторизации
-    if (Auth && typeof Auth.onAuthChange === 'function') {
-        Auth.onAuthChange((state) => {
+    if (window.Auth && typeof window.Auth.onAuthChange === 'function') {
+        window.Auth.onAuthChange((state) => {
             if (state.isAuthenticated) {
                 connect();
                 requestNotificationPermission();
