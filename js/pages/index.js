@@ -18,74 +18,6 @@ let currentPage = 0;
 let isLoading = false;
 let hasMore = true;
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 index.js загружен и готов к работе!');
-    
-    // Отрисовываем блок авторизации
-    if (typeof AuthUI !== 'undefined') {
-        AuthUI.renderAuthBlock();
-    }
-    
-    // Инициализация фильтров
-    initFilters();
-    
-    // Инициализация карт
-    if (typeof ymaps !== 'undefined') {
-        ymaps.ready(() => {
-            ymapsReady = true;
-            initMaps();
-        });
-    }
-    
-    // Загрузка данных
-    loadAllOrders();
-    loadTopMasters('week');
-    
-    // Инициализация обработчиков
-    initEventListeners();
-    
-    // Инициализация кнопок рейтинга
-    initLeaderboardButtons();
-});
-
-// Подписка на изменения авторизации
-if (typeof Auth !== 'undefined') {
-    Auth.onAuthChange((state) => {
-        console.log('🔄 Статус авторизации изменился:', state);
-        
-        if (typeof AuthUI !== 'undefined') {
-            AuthUI.renderAuthBlock();
-        }
-        
-        const clientLink = document.getElementById('clientLink');
-        if (clientLink) {
-            clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
-        }
-        
-        const headerLogoutBtn = document.getElementById('headerLogoutBtn');
-        if (headerLogoutBtn) {
-            headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
-        }
-        
-        const orderFormColumn = document.getElementById('orderFormColumn');
-        if (orderFormColumn) {
-            if (state.isMaster) {
-                orderFormColumn.style.display = 'none';
-                document.getElementById('ordersColumn').className = 'col-md-12';
-            } else {
-                orderFormColumn.style.display = 'block';
-                document.getElementById('ordersColumn').className = 'col-md-6';
-            }
-        }
-        
-        if (state.isMaster) {
-            console.log('✅ Мастер авторизован, перезагружаем заказы');
-            loadAllOrders();
-        }
-    });
-}
-
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
 // ============================================
@@ -476,7 +408,7 @@ function showError(message) {
 }
 
 // ============================================
-// ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАм
+// ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАМ
 // ============================================
 
 let currentLeaderboardPeriod = 'week';
@@ -598,6 +530,26 @@ async function loadTopMasters(period = 'week') {
         console.error('❌ Ошибка загрузки мастеров:', error);
         container.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
     }
+}
+
+// ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
+function initLeaderboardButtons() {
+    const buttons = {
+        day: document.getElementById('leaderboardDaily'),
+        week: document.getElementById('leaderboardWeekly'),
+        month: document.getElementById('leaderboardMonthly'),
+        all: document.getElementById('leaderboardAll')
+    };
+    
+    Object.entries(buttons).forEach(([period, btn]) => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                Object.values(buttons).forEach(b => b?.classList.remove('active'));
+                btn.classList.add('active');
+                loadTopMasters(period);
+            });
+        }
+    });
 }
 
 // ===== ОБРАБОТКА КЛИКА ПО ПРОФИЛЮ МАСТЕРА =====
@@ -1024,6 +976,77 @@ function initEventListeners() {
         categoryEl.addEventListener('change', updateAI);
         descriptionEl.addEventListener('input', updateAI);
     }
+}
+
+// ============================================
+// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 index.js загружен и готов к работе!');
+    
+    // Отрисовываем блок авторизации
+    if (typeof AuthUI !== 'undefined') {
+        AuthUI.renderAuthBlock();
+    }
+    
+    // Инициализация фильтров
+    initFilters();
+    
+    // Инициализация карт
+    if (typeof ymaps !== 'undefined') {
+        ymaps.ready(() => {
+            ymapsReady = true;
+            initMaps();
+        });
+    }
+    
+    // Загрузка данных
+    loadAllOrders();
+    loadTopMasters('week');
+    
+    // Инициализация обработчиков
+    initEventListeners();
+    
+    // Инициализация кнопок рейтинга
+    initLeaderboardButtons();
+});
+
+// Подписка на изменения авторизации
+if (typeof Auth !== 'undefined') {
+    Auth.onAuthChange((state) => {
+        console.log('🔄 Статус авторизации изменился:', state);
+        
+        if (typeof AuthUI !== 'undefined') {
+            AuthUI.renderAuthBlock();
+        }
+        
+        const clientLink = document.getElementById('clientLink');
+        if (clientLink) {
+            clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
+        }
+        
+        const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+        if (headerLogoutBtn) {
+            headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
+        }
+        
+        const orderFormColumn = document.getElementById('orderFormColumn');
+        if (orderFormColumn) {
+            if (state.isMaster) {
+                orderFormColumn.style.display = 'none';
+                document.getElementById('ordersColumn').className = 'col-md-12';
+            } else {
+                orderFormColumn.style.display = 'block';
+                document.getElementById('ordersColumn').className = 'col-md-6';
+            }
+        }
+        
+        if (state.isMaster) {
+            console.log('✅ Мастер авторизован, перезагружаем заказы');
+            loadAllOrders();
+        }
+    });
 }
 
 // ============================================
