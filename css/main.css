@@ -3233,3 +3233,21 @@ body.dark-theme .modal-workhom .btn-outline-secondary:hover {
 #citySelect option {
     padding-left: 20px;
 }
+
+/* main.css — чтобы форма не прилипала */
+#orderFormColumn .card {
+    height: fit-content;
+    position: sticky;
+    top: 90px; /* чтобы скроллилась с шапкой */
+}
+
+#ordersColumn .card {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+}
+
+#loadMoreContainer {
+    margin-top: auto;  /* прижимает кнопку к низу */
+    padding-top: 20px;
+}
