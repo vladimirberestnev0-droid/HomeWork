@@ -3400,3 +3400,50 @@ body.dark-theme .dropdown-item:hover {
     box-shadow: 0 10px 20px rgba(230,122,75,0.1);  /* более мягкая тень */
     transition: all 0.2s ease;  /* ускоряем анимацию */
 }
+
+/* ===== ИСПРАВЛЕНИЕ АНИМАЦИИ ЗАКАЗОВ ===== */
+
+/* Форма заказа — всегда сверху */
+#orderFormColumn {
+    position: relative;
+    z-index: 10;  /* форма выше всех */
+}
+
+/* Контейнер заказов */
+#ordersColumn {
+    position: relative;
+    z-index: 1;  /* заказы ниже формы */
+}
+
+/* Карточки заказов — анимация НЕ вылезает за пределы */
+.order-item {
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    will-change: transform, box-shadow;  /* оптимизация анимации */
+}
+
+/* Анимация при наведении — но под формой */
+.order-item:hover {
+    transform: translateY(-5px) scale(1.02);  /* небольшое увеличение */
+    box-shadow: var(--shadow-hover);
+    z-index: 5;  /* поднимается, но всё ещё ниже формы (10 > 5) */
+}
+
+/* Чтобы тень не обрезалась */
+.order-item {
+    overflow: visible !important;
+}
+
+/* Исправляем возможные баги с перекрытием */
+.card {
+    overflow: visible !important;
+}
+
+/* Для мобилок — отключаем анимацию */
+@media (max-width: 768px) {
+    .order-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+}
