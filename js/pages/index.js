@@ -600,56 +600,12 @@ async function loadTopMasters(period = 'week') {
     }
 }
 
-// ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
-function initLeaderboardButtons() {
-    const buttons = {
-        day: document.getElementById('leaderboardDaily'),
-        week: document.getElementById('leaderboardWeekly'),
-        month: document.getElementById('leaderboardMonthly'),
-        all: document.getElementById('leaderboardAll')
-    };
-    
-    Object.entries(buttons).forEach(([period, btn]) => {
-        if (btn) {
-            btn.addEventListener('click', () => {
-                Object.values(buttons).forEach(b => b?.classList.remove('active'));
-                btn.classList.add('active');
-                loadTopMasters(period);
-            });
-        }
-    });
-}
-
 // ===== ОБРАБОТКА КЛИКА ПО ПРОФИЛЮ МАСТЕРА =====
-function showAuthRequiredModal() {
-    const modalEl = document.getElementById('authRequiredModal');
-    if (!modalEl) {
-        console.error('❌ Модалка не найдена');
-        return;
-    }
-    
-    try {
-        // Убиваем старые бэкдропы
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        
-        // Создаём новую модалку
-        const modal = new bootstrap.Modal(modalEl, {
-            backdrop: 'static',
-            keyboard: true
-        });
-        
-        modal.show();
-        
-        // Вешаем обработчик закрытия
-        modalEl.addEventListener('hidden.bs.modal', function () {
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, { once: true });
-        
-    } catch (error) {
-        console.error('❌ Ошибка модалки:', error);
+function handleViewMaster(masterId) {
+    if (Auth && Auth.isAuthenticated && Auth.isAuthenticated()) {
+        window.location.href = `/HomeWork/master-profile.html?id=${masterId}`;
+    } else {
+        showAuthRequiredModal();
     }
 }
 
@@ -663,7 +619,6 @@ function showAuthRequiredModal() {
         return;
     }
     
-    // Убеждаемся, что Bootstrap доступен
     if (typeof bootstrap === 'undefined') {
         console.error('❌ Bootstrap не загружен');
         alert('Ошибка загрузки модального окна. Обновите страницу.');
@@ -671,38 +626,32 @@ function showAuthRequiredModal() {
     }
     
     try {
-        // Если модалка уже создана, просто показываем
+        // Убиваем старые бэкдропы
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        
         if (authModal) {
             authModal.show();
             return;
         }
         
-        // Создаём новую модалку
         authModal = new bootstrap.Modal(modalEl, {
-            backdrop: 'static',  // чтобы не закрывалась по клику вне
-            keyboard: true        // закрытие по ESC
+            backdrop: 'static',
+            keyboard: true
         });
         
-        // Показываем
         authModal.show();
         
-        // Добавляем обработчик закрытия
         modalEl.addEventListener('hidden.bs.modal', function () {
-            // Очищаем фон если что-то пошло не так
             document.body.classList.remove('modal-open');
-            const backdrops = document.getElementsByClassName('modal-backdrop');
-            while(backdrops.length > 0) {
-                backdrops[0].parentNode.removeChild(backdrops[0]);
-            }
-        });
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
         
     } catch (error) {
-        console.error('❌ Ошибка при открытии модалки:', error);
-        
-        // Fallback — если модалка не работает, показываем alert
+        console.error('❌ Ошибка модалки:', error);
         alert('Для просмотра профиля необходимо войти в систему');
         
-        // Пробуем открыть модалку авторизации через AuthUI
         if (typeof AuthUI !== 'undefined' && AuthUI.showLoginModal) {
             AuthUI.showLoginModal();
         }
@@ -713,13 +662,11 @@ function closeAuthModal() {
     if (authModal) {
         authModal.hide();
         
-        // Принудительно убираем фон
         setTimeout(() => {
             document.body.classList.remove('modal-open');
-            const backdrops = document.getElementsByClassName('modal-backdrop');
-            while(backdrops.length > 0) {
-                backdrops[0].parentNode.removeChild(backdrops[0]);
-            }
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         }, 300);
     }
 }
