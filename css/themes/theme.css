@@ -1,182 +1,15 @@
-/* ===== THEME.CSS — ТЁМНАЯ И СВЕТЛАЯ ТЕМЫ ===== */
-/* Версия: 3.0 — ПРОКАЧАННАЯ */
-
-/* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
-:root {
-    /* Основные цвета */
-    --primary: #1E2B3C;
-    --primary-light: #2C3E50;
-    --accent: #E67A4B;
-    --accent-dark: #D45C2F;
-    --accent-light: #F9E2D9;
-    --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B);
-    
-    /* Фоны */
-    --bg-light: #F9F7F5;
-    --bg-white: #FFFFFF;
-    --bg-card: #FFFFFF;
-    --bg-hover: #f5f5f5;
-    
-    /* Текст */
-    --text-dark: #2D3A4A;
-    --text-soft: #5A6B7A;
-    --text-light: #FFFFFF;
-    --text-muted: #8A9BA8;
-    
-    /* Границы */
-    --border: #E2E8F0;
-    --border-light: #f0f0f0;
-    
-    /* Тени */
-    --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow: 0 12px 30px rgba(0,0,0,0.05);
-    --shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
-    --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
-    
-    /* Специальные для светлой темы */
-    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
-    --gradient-gold: linear-gradient(135deg, #FFD700, #FFA500);
-}
-
-/* ===== ПРОКАЧАННАЯ СВЕТЛАЯ ТЕМА ===== */
-body:not(.dark-theme) {
-    background: var(--bg-light);
-}
-
-/* Карточки с мягкой тенью */
-body:not(.dark-theme) .card,
-body:not(.dark-theme) .master-card,
-body:not(.dark-theme) .order-item,
-body:not(.dark-theme) .profile-card,
-body:not(.dark-theme) .stat-card,
-body:not(.dark-theme) .filter-section {
-    background: var(--bg-white);
-    box-shadow: var(--card-shadow);
-    transition: all 0.3s ease;
-    border: 1px solid rgba(230,122,75,0.1);
-}
-
-body:not(.dark-theme) .card:hover,
-body:not(.dark-theme) .master-card:hover,
-body:not(.dark-theme) .order-item:hover,
-body:not(.dark-theme) .profile-card:hover,
-body:not(.dark-theme) .stat-card:hover {
-    box-shadow: var(--card-shadow-hover);
-    border-color: rgba(230,122,75,0.3);
-    transform: translateY(-2px);
-}
-
-/* Кнопки с градиентом */
-body:not(.dark-theme) .btn-primary,
-body:not(.dark-theme) .btn:not(.btn-outline-secondary) {
-    background: var(--accent-gradient);
-    color: white;
-    border: none;
-}
-
-body:not(.dark-theme) .btn-primary:hover,
-body:not(.dark-theme) .btn:not(.btn-outline-secondary):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(230,122,75,0.4);
-}
-
-/* Кнопка "Смотреть профиль" в светлой теме */
-body:not(.dark-theme) .master-card .btn-sm {
-    background: white;
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    transition: all 0.3s;
-    font-weight: 600;
-}
-
-body:not(.dark-theme) .master-card .btn-sm:hover {
-    background: var(--accent);
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
-}
-
-/* Заголовки с градиентом */
-body:not(.dark-theme) h1,
-body:not(.dark-theme) h2,
-body:not(.dark-theme) h3,
-body:not(.dark-theme) h4,
-body:not(.dark-theme) h5,
-body:not(.dark-theme) h6 {
-    color: var(--primary);
-}
-
-/* Красивые подчеркивания для заголовков карточек */
-body:not(.dark-theme) .card h3 {
-    position: relative;
-    padding-bottom: 10px;
-}
-
-body:not(.dark-theme) .card h3::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: var(--accent-gradient);
-    border-radius: 3px;
-}
-
-/* Цены заказов */
-body:not(.dark-theme) .order-price {
-    background: linear-gradient(135deg, #fff1e6, #ffe4d6);
-    color: var(--accent);
-    font-weight: 800;
-    box-shadow: 0 2px 10px rgba(230,122,75,0.1);
-}
-
-/* Фильтры */
-body:not(.dark-theme) .filter-btn {
-    background: white;
-    border: 1px solid var(--border);
-    color: var(--text-soft);
-    transition: all 0.3s;
-}
-
-body:not(.dark-theme) .filter-btn:hover,
-body:not(.dark-theme) .filter-btn.active {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
-}
-
-/* Поля ввода */
-body:not(.dark-theme) input,
-body:not(.dark-theme) select,
-body:not(.dark-theme) textarea {
-    border: 2px solid #f0f0f0;
-    background: white;
-    transition: all 0.3s;
-}
-
-body:not(.dark-theme) input:focus,
-body:not(.dark-theme) select:focus,
-body:not(.dark-theme) textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(230,122,75,0.1);
-}
-
-/* Рейтинг */
-body:not(.dark-theme) .rating-stars {
-    color: #FFD700;
-}
+/* ===== THEME.CSS ===== */
+/* Версия: 3.1 — ТОЛЬКО ПЕРЕОПРЕДЕЛЕНИЯ ПЕРЕМЕННЫХ */
 
 /* ===== ТЁМНАЯ ТЕМА ===== */
 body.dark-theme {
     /* Основные цвета */
-    --primary: #e0e0e0;
+    --primary: #ffffff;
     --primary-light: #f0f0f0;
     --accent: #FF9F4B;
     --accent-dark: #E67A4B;
     --accent-light: #4a2a1a;
+    --accent-gradient: linear-gradient(135deg, #FF9F4B, #E67A4B);
     
     /* Фоны */
     --bg-light: #121212;
@@ -193,145 +26,42 @@ body.dark-theme {
     --border: #404040;
     --border-light: #333333;
     
+    /* Статусы (оставляем яркими) */
+    --success: #00d68f;
+    --success-light: #1a3a2a;
+    --warning: #ffb83d;
+    --warning-light: #3a2e1a;
+    --danger: #ff5c5c;
+    --danger-light: #3a1a1a;
+    --info: #4da6ff;
+    --info-light: #1a2a3a;
+    
     /* Тени */
     --shadow: 0 12px 30px rgba(0,0,0,0.5);
     --shadow-hover: 0 20px 40px rgba(230,122,75,0.3);
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.8);
+    
+    /* Карточки */
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.2);
 }
 
-/* ===== ТЁМНАЯ ТЕМА — ОСНОВНЫЕ СТИЛИ ===== */
+/* ===== БАЗОВЫЕ СТИЛИ ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
 body.dark-theme {
     background: var(--bg-light);
     color: var(--text-soft);
 }
 
-/* Карточки */
-body.dark-theme .card,
-body.dark-theme .order-item,
-body.dark-theme .profile-card,
-body.dark-theme .stat-card,
-body.dark-theme .chart-card,
-body.dark-theme .master-card,
-body.dark-theme .filter-section {
-    background: var(--bg-white);
-    border-color: var(--border);
-    color: var(--text-dark);
-}
-
-/* Заголовки */
-body.dark-theme h1,
-body.dark-theme h2,
-body.dark-theme h3,
-body.dark-theme h4,
-body.dark-theme h5,
-body.dark-theme h6 {
-    color: white;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-/* ===== ТЁМНАЯ ТЕМА — КОНТРАСТНЫЕ НАДПИСИ ===== */
-
-/* Кнопка "Смотреть профиль" — всегда видна */
-body.dark-theme .master-card .btn-sm {
-    border: 2px solid var(--accent);
-    color: var(--accent) !important;
-    background: transparent;
-    font-weight: 600;
-    opacity: 1 !important;
-    text-shadow: 0 0 5px rgba(230,122,75,0.3);
-}
-
-body.dark-theme .master-card .btn-sm:hover {
-    background: var(--accent);
-    color: white !important;
-    border-color: var(--accent);
-    box-shadow: 0 0 15px rgba(230,122,75,0.5);
-}
-
-/* Имя мастера */
-body.dark-theme .master-card h6 {
-    color: white !important;
-    font-weight: 700;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
-
-/* Категории мастера */
-body.dark-theme .master-card p {
-    color: #cccccc !important;
-    font-size: 0.9rem;
-}
-
-/* Бейджи с рейтингом */
-body.dark-theme .master-card .badge-primary {
-    background: var(--accent-gradient);
-    color: white;
-    box-shadow: 0 0 10px rgba(230,122,75,0.3);
-}
-
-body.dark-theme .master-card .badge-success {
-    background: rgba(0,168,107,0.2);
-    color: #4ade80;
-    border: 1px solid rgba(0,168,107,0.3);
-}
-
-/* Рейтинг звёздами */
-body.dark-theme .master-card .rating-stars {
-    color: #FFD700;
-    text-shadow: 0 0 10px rgba(255,215,0,0.5);
-    font-size: 1.2rem;
-}
-
-/* Цена заказа */
-body.dark-theme .order-price {
-    background: var(--accent-light);
-    color: var(--accent);
-    font-weight: 800;
-}
-
-/* Шапка */
-body.dark-theme header {
-    background: rgba(30,30,30,0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #404040;
-}
-
-body.dark-theme .logo-link {
-    color: white;
-}
-
-body.dark-theme .logo-link i {
-    color: #FF9F4B;
-}
+/* ===== СПЕЦИФИЧНЫЕ ПРАВКИ (ТОЛЬКО ГДЕ НУЖНО) ===== */
 
 /* Навигация */
-body.dark-theme nav a.active {
-    background: var(--accent-gradient);
-    color: white !important;
-    text-shadow: 0 0 10px rgba(230,122,75,0.5);
-    font-weight: 700;
-}
-
 body.dark-theme nav a:not(.active) {
-    color: #a0a0a0 !important;
+    color: var(--text-muted);
 }
 
 body.dark-theme nav a:not(.active):hover {
-    color: white !important;
-    background: rgba(230,122,75,0.2);
-}
-
-/* Поля ввода */
-body.dark-theme input,
-body.dark-theme textarea,
-body.dark-theme select {
-    background: #2d2d2d;
     color: var(--text-dark);
-    border-color: var(--border);
-}
-
-body.dark-theme input::placeholder,
-body.dark-theme textarea::placeholder {
-    color: var(--text-muted);
+    background: rgba(255,255,255,0.1);
 }
 
 /* Кнопки */
@@ -346,131 +76,46 @@ body.dark-theme .btn-outline-secondary:hover {
     border-color: var(--accent);
 }
 
-/* Мета-информация заказов */
-body.dark-theme .order-meta {
-    color: var(--text-soft);
-    border-top-color: var(--border);
-}
-
-body.dark-theme .order-meta i {
-    color: var(--accent);
-}
-
-/* Модальные окна */
-body.dark-theme .modal-content {
+/* Поля ввода */
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme select {
     background: var(--bg-white);
-    color: var(--text-dark);
-}
-
-body.dark-theme .modal-header {
-    border-bottom-color: var(--border);
-}
-
-body.dark-theme .modal-footer {
-    border-top-color: var(--border);
-}
-
-/* Табы */
-body.dark-theme .tab {
-    color: var(--text-soft);
-}
-
-body.dark-theme .tab:hover {
-    background: #2d2d2d;
-    color: var(--accent);
-}
-
-/* Фильтры */
-body.dark-theme .filter-btn {
-    background: #2d2d2d;
     color: var(--text-dark);
     border-color: var(--border);
 }
 
-body.dark-theme .filter-btn:hover,
-body.dark-theme .filter-btn.active {
-    background: var(--accent-gradient);
-    color: white;
+body.dark-theme input::placeholder {
+    color: var(--text-muted);
 }
 
-/* ===== ВЫПАДАЮЩИЙ СПИСОК ГОРОДОВ ===== */
-body.dark-theme #cityDropdown {
-    background: #2d2d2d;
-    border-color: #404040;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-body.dark-theme .dropdown-district {
-    background: #1e1e1e !important;
-    color: #FF9F4B !important;
-    font-weight: 700;
-    border-bottom: 1px solid #404040;
-}
-
-body.dark-theme .dropdown-item {
-    color: #e0e0e0 !important;
-    font-weight: 500;
-}
-
-body.dark-theme .dropdown-item:hover {
-    background: #3d3d3d !important;
-    color: white !important;
-}
-
-/* ===== СКРОЛЛБАР ===== */
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-light);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark);
-}
-
-/* Тёмная тема скроллбар */
-body.dark-theme::-webkit-scrollbar-track {
-    background: #1e1e1e;
-}
-
-body.dark-theme::-webkit-scrollbar-thumb {
-    background: var(--accent);
-}
-
-body.dark-theme::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark);
-}
-
-/* ===== УТИЛИТЫ ДЛЯ ТЕМ ===== */
-body.dark-theme .text-muted {
-    color: var(--text-muted) !important;
-}
-
-body.dark-theme .bg-light {
-    background: #2d2d2d !important;
-}
-
-/* Ссылки */
-body.dark-theme a {
+/* Карточки мастеров */
+body.dark-theme .master-card .btn-sm {
+    border-color: var(--accent);
     color: var(--accent);
 }
 
-body.dark-theme a:hover {
-    color: var(--accent-dark);
+body.dark-theme .master-card .btn-sm:hover {
+    background: var(--accent);
+    color: white;
 }
 
-/* ===== АДАПТИВ ===== */
-@media (max-width: 768px) {
-    body.dark-theme .master-card .btn-sm {
-        font-size: 0.8rem;
-        padding: 6px 12px;
-    }
+/* Дропдаун городов */
+body.dark-theme #cityDropdown {
+    background: var(--bg-white);
+    border-color: var(--border);
+}
+
+body.dark-theme .dropdown-district {
+    background: var(--bg-card);
+    color: var(--accent);
+}
+
+body.dark-theme .dropdown-item {
+    color: var(--text-dark);
+}
+
+body.dark-theme .dropdown-item:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
 }

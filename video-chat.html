@@ -16,104 +16,22 @@
     
     <!-- Наши стили -->
     <!-- БАЗОВЫЕ -->
-<link rel="stylesheet" href="/HomeWork/css/base/variables.css">
-<link rel="stylesheet" href="/HomeWork/css/base/base.css">
-<link rel="stylesheet" href="/HomeWork/css/base/animations.css">
-<link rel="stylesheet" href="/HomeWork/css/base/utils.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/variables.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/base.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/typography.css">  <!-- ДОБАВЛЕНО -->
+    <link rel="stylesheet" href="/HomeWork/css/base/animations.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/utils.css">
 
-<!-- КОМПОНЕНТЫ -->
-<link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-<link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-<link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
+    <!-- КОМПОНЕНТЫ (минимум) -->
+    <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
 
-<!-- СТРАНИЦА -->
-<link rel="stylesheet" href="/HomeWork/css/pages/video-chat.css">
+    <!-- СТРАНИЦА -->
+    <link rel="stylesheet" href="/HomeWork/css/pages/video-chat.css">
 
-<!-- ТЕМЫ И АДАПТИВ -->
-<link rel="stylesheet" href="/HomeWork/css/themes/theme.css">
-<link rel="stylesheet" href="/HomeWork/css/responsive.css">
-    
-    <style>
-        body {
-            background: #1a1a1a;
-            margin: 0;
-            padding: 20px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .video-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            flex: 1;
-            min-height: 0;
-        }
-        .video-box {
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .video-box video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .video-label {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            backdrop-filter: blur(5px);
-        }
-        .video-controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 60px;
-            backdrop-filter: blur(10px);
-        }
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .control-btn:hover {
-            transform: scale(1.1);
-            background: var(--accent);
-        }
-        .control-btn.danger {
-            background: #dc3545;
-        }
-        .control-btn.danger:hover {
-            background: #bd2130;
-        }
-        .quality-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-    </style>
+    <!-- ТЕМА И АДАПТИВ -->
+    <link rel="stylesheet" href="/HomeWork/css/themes/theme.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive.css">
 </head>
 <body>
     <div class="video-container">

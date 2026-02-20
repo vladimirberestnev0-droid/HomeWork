@@ -1,34 +1,9 @@
-/* ===== PAGES/MASTER-PROFILE.CSS ===== */
-.profile-header {
-    background: linear-gradient(135deg, #E67A4B, #FF9F4B);
-    color: white;
-    padding: 40px 0;
-    margin-bottom: 30px;
-    border-radius: 0 0 40px 40px;
-    animation: fadeInUp 0.5s ease-out;
-}
+/* ===== MASTER-PROFILE.CSS ===== */
+/* Версия: 2.0 — ПУБЛИЧНЫЙ ПРОФИЛЬ МАСТЕРА */
 
-.profile-avatar {
-    width: 150px;
-    height: 150px;
-    background: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 70px;
-    color: var(--accent);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    border: 4px solid white;
-    transition: all 0.3s ease;
-}
+/* Используем базовые стили из profile.css + добавляем специфичные */
 
-.profile-avatar:hover {
-    transform: scale(1.05);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-}
-
+/* Контакты (защищенные) */
 .contact-protected {
     background: var(--bg-light);
     border-radius: 20px;
@@ -55,6 +30,25 @@
     animation: pulse 2s infinite;
 }
 
+.btn-show-contacts {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-weight: 600;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.btn-show-contacts:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(230,122,75,0.3);
+}
+
+/* Отзывы */
 .review-card {
     background: var(--bg-white);
     border-radius: 20px;
@@ -85,6 +79,7 @@
     letter-spacing: 2px;
 }
 
+/* Портфолио */
 .portfolio-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -119,6 +114,7 @@
     transform: scale(1.1);
 }
 
+/* Бейджи */
 .profile-badge {
     display: inline-flex;
     align-items: center;
@@ -140,54 +136,31 @@
 
 .profile-badge i {
     margin-right: 5px;
-    font-size: 0.8rem;
 }
 
-.stats-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
+.profile-badge.gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
 }
 
-.stats-item:last-child {
-    border-bottom: none;
+/* ===== ТЁМНАЯ ТЕМА ===== */
+body.dark-theme .contact-protected {
+    background: #2d2d2d;
+    border-color: var(--accent);
 }
 
-.stats-label {
-    color: var(--text-soft);
+body.dark-theme .review-card {
+    background: var(--bg-white);
+    border-color: var(--border);
 }
 
-.stats-value {
-    font-weight: 700;
-    color: var(--accent);
+body.dark-theme .review-card:hover {
+    border-color: var(--accent);
 }
 
-.btn-show-contacts {
-    background: transparent;
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-weight: 600;
-    transition: all 0.3s;
-    width: 100%;
-}
-
-.btn-show-contacts:hover {
-    background: var(--accent);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(230,122,75,0.3);
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* ===== АНИМАЦИИ ===== */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }

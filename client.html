@@ -15,35 +15,34 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Наши стили -->
     <!-- БАЗОВЫЕ -->
-<link rel="stylesheet" href="/HomeWork/css/base/variables.css">
-<link rel="stylesheet" href="/HomeWork/css/base/base.css">
-<link rel="stylesheet" href="/HomeWork/css/base/typography.css">
-<link rel="stylesheet" href="/HomeWork/css/base/animations.css">
-<link rel="stylesheet" href="/HomeWork/css/base/utils.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/variables.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/base.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/typography.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/animations.css">
+    <link rel="stylesheet" href="/HomeWork/css/base/utils.css">
 
-<!-- КОМПОНЕНТЫ -->
-<link rel="stylesheet" href="/HomeWork/css/components/header.css">
-<link rel="stylesheet" href="/HomeWork/css/components/footer.css">
-<link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-<link rel="stylesheet" href="/HomeWork/css/components/cards.css">
-<link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-<link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-<link rel="stylesheet" href="/HomeWork/css/components/badges.css">
-<link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
-<link rel="stylesheet" href="/HomeWork/css/components/tabs.css">
-<link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
-<link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
-<link rel="stylesheet" href="/HomeWork/css/components/ratings.css">
-<link rel="stylesheet" href="/HomeWork/css/components/tracking.css">
+    <!-- КОМПОНЕНТЫ (все для клиента) -->
+    <link rel="stylesheet" href="/HomeWork/css/components/header.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/footer.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/badges.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/tabs.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/ratings.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/tracking.css">
 
-<!-- СТРАНИЦА -->
-<link rel="stylesheet" href="/HomeWork/css/pages/client.css">
+    <!-- СТРАНИЦА -->
+    <link rel="stylesheet" href="/HomeWork/css/pages/client.css">
 
-<!-- ТЕМЫ И АДАПТИВ -->
-<link rel="stylesheet" href="/HomeWork/css/themes/theme.css">
-<link rel="stylesheet" href="/HomeWork/css/components/responsive.css">
+    <!-- ТЕМА И АДАПТИВ -->
+    <link rel="stylesheet" href="/HomeWork/css/themes/theme.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive.css">
 </head>
 <body>
     <div class="container py-4">
@@ -218,40 +217,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка пополнения баланса -->
-    <div class="modal fade" id="topupModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-credit-card me-2" style="color: var(--accent);"></i>
-                        Пополнение баланса
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Сумма</label>
-                        <input type="number" class="form-control" id="topupAmount" value="1000" min="100">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Способ оплаты</label>
-                        <select class="form-select" id="topupMethod">
-                            <option value="card">💳 Банковская карта</option>
-                            <option value="sbp">🏦 СБП</option>
-                            <option value="yoomoney">📱 ЮMoney</option>
-                        </select>
-                    </div>
-                    
-                    <button class="btn w-100" id="processTopupBtn">
-                        <i class="fas fa-credit-card me-2"></i> Оплатить
-                    </button>
                 </div>
             </div>
         </div>

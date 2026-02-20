@@ -1,6 +1,9 @@
 /* ===== VARIABLES.CSS ===== */
+/* Версия: 2.0 — ЧИСТЫЕ ПЕРЕМЕННЫЕ, НИКАКИХ СТИЛЕЙ */
+
 :root {
-    /* Light Theme (default) */
+    /* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
+    /* Основные цвета */
     --primary: #1E2B3C;
     --primary-light: #2C3E50;
     --accent: #E67A4B;
@@ -8,7 +11,7 @@
     --accent-light: #F9E2D9;
     --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B);
     
-    /* Backgrounds */
+    /* Фоны */
     --bg-light: #F9F7F5;
     --bg-white: #FFFFFF;
     --bg-card: #FFFFFF;
@@ -16,18 +19,18 @@
     --bg-dark-card: #2d2d2d;
     --bg-hover: #f5f5f5;
     
-    /* Text */
+    /* Текст */
     --text-dark: #2D3A4A;
     --text-soft: #5A6B7A;
     --text-light: #FFFFFF;
     --text-muted: #8A9BA8;
     
-    /* Borders */
+    /* Границы */
     --border: #E2E8F0;
     --border-dark: #404040;
     --border-light: #f0f0f0;
     
-    /* Status Colors */
+    /* Статусы */
     --success: #00A86B;
     --success-light: #E3F2E9;
     --warning: #FFB020;
@@ -37,7 +40,7 @@
     --info: #0984e3;
     --info-light: #E3F2FD;
     
-    /* Gaming Colors */
+    /* Гейминг */
     --level-1: #95a5a6;
     --level-2: #3498db;
     --level-3: #9b59b6;
@@ -50,32 +53,36 @@
     --silver: #C0C0C0;
     --bronze: #cd7f32;
     
-    /* Shadows */
+    /* Тени */
     --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
     --shadow: 0 12px 30px rgba(0,0,0,0.05);
     --shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
     
-    /* Transitions */
-    --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    --transition-smooth: all 0.3s ease;
+    /* Карточки */
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
     
-    /* Border Radius */
+    /* Скругления */
     --radius-sm: 12px;
     --radius-md: 20px;
     --radius-lg: 30px;
     --radius-full: 9999px;
     
-    /* Z-index layers */
-    --z-dropdown: 100;
-    --z-sticky: 200;
+    /* Z-index */
+    --z-sticky: 100;
+    --z-dropdown: 200;
     --z-modal: 1000;
     --z-popover: 1050;
     --z-tooltip: 1100;
     --z-notification: 10000;
+    
+    /* Анимации */
+    --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-smooth: all 0.3s ease;
 }
 
-/* ===== SCROLLBAR ===== */
+/* ===== СКРОЛЛБАР (ТОЛЬКО ЗДЕСЬ!) ===== */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;

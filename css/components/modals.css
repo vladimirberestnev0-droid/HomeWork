@@ -1,46 +1,72 @@
 /* ===== MODALS.CSS ===== */
-.modal {
+/* Версия: 2.0 — ЧЕТКАЯ ИЕРАРХИЯ */
+
+/* Бекдроп (затемнение) */
+.modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(3px);
+    z-index: 9990;  /* Ниже модалки */
+    display: none;
+}
+
+.modal-backdrop.show {
+    display: block;
+}
+
+/* Контейнер модалки */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: var(--z-modal);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.3s ease;
+    z-index: 10000;  /* Выше всего */
 }
 
 .modal.show {
     display: flex;
 }
 
+/* Диалог модалки */
+.modal-dialog {
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    margin: auto;
+    z-index: 10001;  /* Самый верх */
+    pointer-events: auto;
+}
+
+.modal-dialog-lg {
+    max-width: 800px;
+}
+
+.modal-dialog-sm {
+    max-width: 300px;
+}
+
+/* Контент модалки */
 .modal-content {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 30px;
-    max-width: 500px;
-    width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    animation: scaleIn 0.3s ease;
     box-shadow: var(--shadow-dark);
     position: relative;
-    pointer-events: auto;
-    z-index: 1060;
+    animation: scaleIn 0.3s ease;
 }
 
-.modal-lg {
-    max-width: 800px;
-}
-
-.modal-sm {
-    max-width: 300px;
-}
-
+/* Хедер */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -63,13 +89,13 @@
     font-size: 24px;
     cursor: pointer;
     color: var(--text-soft);
-    transition: var(--transition);
     width: 40px;
     height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: var(--transition);
 }
 
 .modal-close:hover {
@@ -78,10 +104,12 @@
     transform: rotate(90deg);
 }
 
+/* Боди */
 .modal-body {
     margin-bottom: 20px;
 }
 
+/* Футер */
 .modal-footer {
     display: flex;
     justify-content: flex-end;
@@ -91,21 +119,11 @@
     border-top: 1px solid var(--border);
 }
 
-.modal-backdrop {
-    backdrop-filter: blur(3px);
-    background-color: rgba(0,0,0,0.5);
-    z-index: 1040;
-}
-
-.modal-dialog {
-    z-index: 1055;
-    pointer-events: auto;
-}
-
+/* Анимации */
 .modal.fade .modal-dialog {
     transform: scale(0.9) translateY(-30px);
-    transition: transform 0.3s ease-out, opacity 0.3s;
     opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s;
 }
 
 .modal.show .modal-dialog {
@@ -113,169 +131,44 @@
     opacity: 1;
 }
 
-.modal-workhom {
-    --modal-primary: var(--accent);
-    --modal-success: #00A86B;
-    --modal-warning: #FFB020;
-    --modal-danger: #DC3545;
-}
-
+/* Специальный стиль для модалок Workhom */
 .modal-workhom .modal-content {
     border-radius: 30px;
-    border: none;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
     overflow: hidden;
 }
 
 .modal-workhom .modal-header {
-    background: linear-gradient(135deg, #E67A4B, #FF9F4B);
+    background: var(--accent-gradient);
     color: white;
-    padding: 20px 25px;
     border-bottom: none;
+    padding: 20px 25px;
 }
 
 .modal-workhom .modal-header .modal-title {
-    font-weight: 700;
-    font-size: 1.3rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    color: white;
 }
 
-.modal-workhom .modal-header .btn-close {
-    filter: brightness(0) invert(1);
-    opacity: 0.8;
+.modal-workhom .modal-header .modal-close {
+    color: white;
 }
 
-.modal-workhom .modal-header .btn-close:hover {
-    opacity: 1;
-}
-
-.modal-workhom .modal-body {
-    padding: 25px;
-    background: white;
+.modal-workhom .modal-header .modal-close:hover {
+    background: rgba(255,255,255,0.2);
+    color: white;
 }
 
 .modal-workhom .modal-footer {
     padding: 15px 25px 25px;
-    border-top: 1px solid #f0f0f0;
-    background: white;
 }
 
-.modal-workhom .btn {
-    padding: 12px 30px;
-    border-radius: 60px;
-    font-weight: 600;
-    transition: all 0.3s;
-    border: none;
-}
-
-.modal-workhom .btn-primary {
-    background: var(--accent);
-    color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
-}
-
-.modal-workhom .btn-primary:hover {
-    background: var(--accent-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(230,122,75,0.4);
-}
-
-.modal-workhom .btn-success {
-    background: var(--success);
-    color: white;
-    box-shadow: 0 8px 20px rgba(0,168,107,0.3);
-}
-
-.modal-workhom .btn-success:hover {
-    background: #00875A;
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(0,168,107,0.4);
-}
-
-.modal-workhom .btn-warning {
-    background: var(--warning);
-    color: white;
-    box-shadow: 0 8px 20px rgba(255,176,32,0.3);
-}
-
-.modal-workhom .btn-warning:hover {
-    background: #e6a01d;
-    transform: translateY(-2px);
-}
-
-.modal-workhom .btn-danger {
-    background: var(--danger);
-    color: white;
-    box-shadow: 0 8px 20px rgba(220,53,69,0.3);
-}
-
-.modal-workhom .btn-danger:hover {
-    background: #bd2130;
-    transform: translateY(-2px);
-}
-
-.modal-workhom .btn-outline-secondary {
-    background: transparent;
-    border: 2px solid #e0e0e0;
-    color: var(--text-dark);
-    box-shadow: none;
-}
-
-.modal-workhom .btn-outline-secondary:hover {
-    background: #f5f5f5;
-    transform: translateY(-2px);
-}
-
-.modal-workhom.fade .modal-dialog {
-    transform: scale(0.9);
-    transition: transform 0.3s ease-out;
-}
-
-.modal-workhom.show .modal-dialog {
-    transform: scale(1);
-}
-
-/* ===== MODALS.CSS ===== */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 99999 !important;  /* ОЧЕНЬ ВЫСОКИЙ */
-}
-
-.modal.show {
-    display: flex !important;
-}
-
-.modal-backdrop {
-    z-index: 99998 !important;
-}
-
-.modal-dialog {
-    z-index: 100000 !important;
-    position: relative;
-    margin: auto;
-    max-width: 500px;
-    width: 90%;
-}
-
-/* Убираем возможные перекрытия */
-header, .sticky-top, .fixed-top {
-    z-index: 9990 !important;  /* Ниже модалки */
-}
-
-/* Принудительно показываем контент */
-.modal-content {
-    position: relative;
-    z-index: 100001 !important;
-    background: white;
-    pointer-events: auto;
+/* ===== АНИМАЦИИ ===== */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
