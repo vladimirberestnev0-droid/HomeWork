@@ -90,125 +90,8 @@ if (typeof Auth !== 'undefined') {
 function initFilters() {
     console.log('🔧 Инициализация фильтров...');
     
-    // ===== ГОРОДА: КРАСИВАЯ ГРУППИРОВКА ПО РАЙОНАМ =====
-    const citySelect = document.getElementById('citySelect');
-    if (citySelect && window.SORTED_CITIES_BY_DISTRICT) {
-        console.log('🏙️ Загружаем города с группировкой по районам');
-        
-        // Очищаем select
-        citySelect.innerHTML = '';
-        
-        // Добавляем "Все города" первой опцией
-        const allOption = document.createElement('option');
-        allOption.value = 'all';
-        allOption.textContent = '🏠 Все города';
-        allOption.className = 'fw-bold';
-        citySelect.appendChild(allOption);
-        
-        // Разделитель
-        const divider = document.createElement('option');
-        divider.disabled = true;
-        divider.textContent = '──────────';
-        citySelect.appendChild(divider);
-        
-        // Порядок районов для отображения
-        const districtOrder = [
-            '🏙️ ГОРОДА ОКРУЖНОГО ПОДЧИНЕНИЯ',
-            '🏘️ ПОСЕЛКИ ГОРОДСКОГО ТИПА',
-            '📍 БЕЛОЯРСКИЙ РАЙОН',
-            '📍 БЕРЁЗОВСКИЙ РАЙОН',
-            '📍 КОНДИНСКИЙ РАЙОН',
-            '📍 НЕФТЕЮГАНСКИЙ РАЙОН',
-            '📍 НИЖНЕВАРТОВСКИЙ РАЙОН',
-            '📍 ОКТЯБРЬСКИЙ РАЙОН',
-            '📍 СОВЕТСКИЙ РАЙОН',
-            '📍 СУРГУТСКИЙ РАЙОН',
-            '📍 ХАНТЫ-МАНСИЙСКИЙ РАЙОН'
-        ];
-        
-        // Счетчик для отладки
-        let totalCities = 0;
-        
-        // Проходим по районам в заданном порядке
-        districtOrder.forEach(district => {
-            const cities = window.SORTED_CITIES_BY_DISTRICT[district];
-            if (!cities || cities.length === 0) return;
-            
-            // Создаем optgroup для района
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = district;
-            
-            // Добавляем города района (уже отсортированы в константах)
-            cities.forEach(city => {
-                if (city.id === 'all') return; // пропускаем "Все города" внутри районов
-                
-                const option = document.createElement('option');
-                option.value = city.id;
-                option.textContent = city.name;
-                
-                // Добавляем data-атрибут с иконкой для возможного использования
-                if (city.icon) {
-                    option.dataset.icon = city.icon;
-                }
-                
-                optgroup.appendChild(option);
-                totalCities++;
-            });
-            
-            citySelect.appendChild(optgroup);
-        });
-        
-        console.log(`✅ Добавлено ${totalCities} городов в ${districtOrder.length} районах`);
-        console.log(`📊 Всего опций в select: ${citySelect.options.length}`);
-        
-        // Добавляем обработчик изменения
-        citySelect.addEventListener('change', function() {
-            filters.city = this.value;
-            
-            // Получаем название выбранного города для красивого лога
-            const selectedOption = this.options[this.selectedIndex];
-            const selectedText = selectedOption ? selectedOption.text : 'Неизвестно';
-            console.log('🏙️ Выбран город:', filters.city, `(${selectedText})`);
-            
-            applyFilters(true);
-        });
-        
-        // Добавляем поиск по городам (с задержкой для гарантии)
-        setTimeout(() => {
-            addCitySearch(citySelect);
-        }, 50);
-        
-    } else {
-        console.error('❌ SORTED_CITIES_BY_DISTRICT не найден');
-        
-        // Fallback на старый способ (если что-то пошло не так)
-        if (citySelect && window.CITIES) {
-            console.warn('⚠️ Используем запасной вариант (плоский список)');
-            
-            citySelect.innerHTML = '<option value="all">🏠 Все города</option>';
-            
-            // Сортируем города прямо здесь
-            const sortedCities = [...window.CITIES]
-                .filter(c => c.id !== 'all')
-                .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-            
-            sortedCities.forEach(city => {
-                const option = document.createElement('option');
-                option.value = city.id;
-                option.textContent = city.name;
-                citySelect.appendChild(option);
-            });
-            
-            console.log(`✅ Добавлено ${sortedCities.length} городов (запасной вариант)`);
-            
-            citySelect.addEventListener('change', function() {
-                filters.city = this.value;
-                applyFilters(true);
-            });
-        } else {
-            console.error('❌ Города не найдены в window.CITIES');
-        }
-    }
+    // ===== КОМБО-ПОИСК ПО ГОРОДАМ =====
+    initCityCombo();
     
     // ===== КАТЕГОРИИ =====
     const categoryFilter = document.getElementById('categoryFilter');
@@ -243,177 +126,147 @@ function initFilters() {
 }
 
 // ============================================
-// УМНЫЙ ПОИСК ПО ГОРОДАМ (с debounce и подсветкой)
+// КОМБО-ПОИСК ПО ГОРОДАМ
 // ============================================
 
-function addCitySearch(select) {
-    // Проверяем, есть ли уже контейнер для поиска
-    if (document.getElementById('citySearchContainer')) {
-        console.log('🔍 Поиск уже существует');
+function initCityCombo() {
+    const container = document.getElementById('citySearchCombo');
+    const input = document.getElementById('citySearchInput');
+    const dropdown = document.getElementById('cityDropdown');
+    
+    if (!container || !input || !dropdown || !window.SORTED_CITIES_BY_DISTRICT) {
+        console.error('❌ Не удалось инициализировать комбо-поиск');
         return;
     }
     
-    // Находим родительский элемент
-    let filterSection = select.closest('.filter-section');
-    
-    // Если не нашли .filter-section, ищем любой родительский контейнер
-    if (!filterSection) {
-        filterSection = select.parentElement;
-    }
-    
-    // Если все еще нет — выходим
-    if (!filterSection) {
-        console.warn('⚠️ Не удалось найти родительский контейнер для поиска городов');
-        return;
-    }
-    
-    console.log('✅ Найден контейнер для поиска:', filterSection);
-    
-    // Создаем контейнер для поиска
-    const searchContainer = document.createElement('div');
-    searchContainer.id = 'citySearchContainer';
-    searchContainer.className = 'mb-3 position-relative';
-    searchContainer.innerHTML = `
-        <div class="input-group">
-            <span class="input-group-text bg-transparent border-end-0" style="border-radius: 40px 0 0 40px;">
-                <i class="fas fa-search" style="color: var(--accent);"></i>
-            </span>
-            <input type="text" 
-                   class="form-control border-start-0 border-end-0" 
-                   id="citySearch" 
-                   placeholder="🔍 Найди свой город..." 
-                   style="border-radius: 0; box-shadow: none;">
-            <span class="input-group-text bg-transparent border-start-0" style="border-radius: 0 40px 40px 0;">
-                <i class="fas fa-times text-secondary" id="clearSearch" style="cursor: pointer; display: none;"></i>
-                <span id="searchCount" class="badge bg-accent ms-1" style="display: none;">0</span>
-            </span>
-        </div>
-    `;
-    
-    // Вставляем перед select с проверкой
-    try {
-        if (select.parentNode === filterSection) {
-            filterSection.insertBefore(searchContainer, select);
-        } else {
-            filterSection.prepend(searchContainer);
-        }
-        console.log('✅ Поле поиска добавлено');
-    } catch (error) {
-        console.error('❌ Ошибка при вставке поиска:', error);
-        filterSection.prepend(searchContainer);
-    }
-    
-    const searchInput = document.getElementById('citySearch');
-    const clearBtn = document.getElementById('clearSearch');
-    const countBadge = document.getElementById('searchCount');
-    
-    if (!searchInput) return;
-    
-    // ===== DEBOUNCE: ищем через 300мс после остановки печати =====
+    let selectedCityId = 'all';
     let searchTimeout;
     
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const searchTerm = this.value.toLowerCase().trim();
+    // ===== СТРОИМ ВЫПАДАЮЩИЙ СПИСОК =====
+    function buildDropdown(filterText = '') {
+        const filter = filterText.toLowerCase().trim();
+        let html = '';
         
-        // Показываем/скрываем кнопку очистки
-        if (searchTerm.length > 0) {
-            clearBtn.style.display = 'inline-block';
-        } else {
-            clearBtn.style.display = 'none';
+        // Всегда показываем "Все города"
+        html += `<div class="dropdown-item" data-city-id="all" style="padding: 10px 16px; cursor: pointer; border-bottom: 1px solid var(--border); font-weight: bold; background: ${selectedCityId === 'all' ? 'var(--accent-light)' : 'transparent'};">🏠 Все города</div>`;
+        
+        // Порядок районов
+        const districtOrder = [
+            '🏙️ ГОРОДА ОКРУЖНОГО ПОДЧИНЕНИЯ',
+            '🏘️ ПОСЕЛКИ ГОРОДСКОГО ТИПА',
+            '📍 БЕЛОЯРСКИЙ РАЙОН',
+            '📍 БЕРЁЗОВСКИЙ РАЙОН',
+            '📍 КОНДИНСКИЙ РАЙОН',
+            '📍 НЕФТЕЮГАНСКИЙ РАЙОН',
+            '📍 НИЖНЕВАРТОВСКИЙ РАЙОН',
+            '📍 ОКТЯБРЬСКИЙ РАЙОН',
+            '📍 СОВЕТСКИЙ РАЙОН',
+            '📍 СУРГУТСКИЙ РАЙОН',
+            '📍 ХАНТЫ-МАНСИЙСКИЙ РАЙОН'
+        ];
+        
+        districtOrder.forEach(district => {
+            const cities = window.SORTED_CITIES_BY_DISTRICT[district];
+            if (!cities || cities.length === 0) return;
+            
+            // Фильтруем города
+            const filteredCities = cities.filter(city => 
+                city.id !== 'all' && city.name.toLowerCase().includes(filter)
+            );
+            
+            if (filteredCities.length === 0) return;
+            
+            // Заголовок района
+            html += `<div class="dropdown-district" style="padding: 8px 16px; background: var(--bg-light); font-weight: 700; color: var(--accent); font-size: 0.9rem; border-bottom: 1px solid var(--border);">${district}</div>`;
+            
+            // Города района
+            filteredCities.forEach(city => {
+                const isSelected = (selectedCityId === city.id);
+                html += `
+                    <div class="dropdown-item" data-city-id="${city.id}" 
+                         style="padding: 8px 16px 8px 32px; cursor: pointer; background: ${isSelected ? 'var(--accent-light)' : 'transparent'}; transition: all 0.2s;">
+                        ${city.name}
+                    </div>
+                `;
+            });
+        });
+        
+        if (html === '') {
+            html = `<div class="dropdown-item disabled" style="padding: 16px; color: var(--text-soft); text-align: center;">❌ Городов не найдено</div>`;
         }
         
-        // Ждем пока пользователь перестанет печатать
+        dropdown.innerHTML = html;
+        
+        // Добавляем обработчики на элементы
+        dropdown.querySelectorAll('.dropdown-item[data-city-id]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const cityId = this.dataset.cityId;
+                const cityName = cityId === 'all' ? '' : this.textContent.trim();
+                
+                selectedCityId = cityId;
+                input.value = cityName;
+                dropdown.style.display = 'none';
+                
+                // Обновляем фильтр
+                filters.city = cityId;
+                applyFilters(true);
+                
+                // Подсветка выбранного
+                buildDropdown('');
+            });
+            
+            // Ховер эффект
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = 'var(--accent-light)';
+            });
+            item.addEventListener('mouseleave', function() {
+                if (this.dataset.cityId !== selectedCityId) {
+                    this.style.backgroundColor = 'transparent';
+                }
+            });
+        });
+    }
+    
+    // ===== ПОКАЗ/СКРЫТИЕ DROPDOWN =====
+    input.addEventListener('focus', () => {
+        buildDropdown(input.value);
+        dropdown.style.display = 'block';
+    });
+    
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            performSearch(searchTerm);
+            buildDropdown(this.value);
         }, 300);
     });
     
-    // ===== КНОПКА ОЧИСТКИ =====
-    clearBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        clearBtn.style.display = 'none';
-        countBadge.style.display = 'none';
-        performSearch('');
-        searchInput.focus();
+    // Закрытие по клику вне
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
     });
     
-    // ===== ФУНКЦИЯ ПОИСКА С ПОДСВЕТКОЙ =====
-    function performSearch(searchTerm) {
-        let totalVisible = 0;
-        
-        // Проходим по всем optgroup
-        Array.from(select.querySelectorAll('optgroup')).forEach(group => {
-            let visibleCount = 0;
-            
-            Array.from(group.querySelectorAll('option')).forEach(option => {
-                const cityName = option.textContent;
-                const matches = searchTerm === '' || cityName.toLowerCase().includes(searchTerm);
-                
-                if (matches) {
-                    option.style.display = '';
-                    if (searchTerm !== '') {
-                        // Подсвечиваем найденный текст
-                        option.innerHTML = highlightText(cityName, searchTerm);
-                    } else {
-                        option.innerHTML = cityName;
-                    }
-                    visibleCount++;
-                } else {
-                    option.style.display = 'none';
-                }
-            });
-            
-            // Показываем группу, если есть видимые опции
-            group.style.display = visibleCount > 0 ? '' : 'none';
-            totalVisible += visibleCount;
-        });
-        
-        // Отдельно обрабатываем "Все города" и разделитель
-        const firstOptions = Array.from(select.querySelectorAll('option:not(optgroup option)'));
-        firstOptions.forEach(opt => {
-            opt.style.display = '';
-            if (opt.value === 'all') {
-                opt.innerHTML = '🏠 Все города';
-            }
-        });
-        
-        // Показываем счетчик найденных
-        if (searchTerm !== '' && totalVisible > 0) {
-            countBadge.textContent = totalVisible;
-            countBadge.style.display = 'inline-block';
-        } else {
-            countBadge.style.display = 'none';
+    // Выбор по Enter
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstItem = dropdown.querySelector('.dropdown-item[data-city-id]');
+            if (firstItem) firstItem.click();
         }
-        
-        // Показываем сообщение если ничего не найдено
-        updateNoResultsMessage(select, totalVisible, searchTerm);
-    }
+    });
     
-    // ===== ПОДСВЕТКА ТЕКСТА =====
-    function highlightText(text, search) {
-        if (!search) return text;
-        const regex = new RegExp(`(${search})`, 'gi');
-        return text.replace(regex, '<span style="background: var(--accent-light); color: var(--accent-dark); font-weight: 600; border-radius: 4px; padding: 0 2px;">$1</span>');
-    }
+    // Сброс
+    document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+        selectedCityId = 'all';
+        input.value = '';
+        filters.city = 'all';
+        applyFilters(true);
+        buildDropdown('');
+    });
     
-    // ===== СООБЩЕНИЕ "НИЧЕГО НЕ НАЙДЕНО" =====
-    function updateNoResultsMessage(select, visibleCount, searchTerm) {
-        const oldMessage = document.getElementById('noResultsMessage');
-        if (oldMessage) oldMessage.remove();
-        
-        if (visibleCount === 0 && searchTerm !== '') {
-            const noResults = document.createElement('option');
-            noResults.id = 'noResultsMessage';
-            noResults.disabled = true;
-            noResults.textContent = '❌ Город не найден';
-            noResults.style.backgroundColor = 'var(--bg-light)';
-            noResults.style.color = 'var(--text-soft)';
-            noResults.style.fontStyle = 'italic';
-            noResults.style.padding = '10px';
-            select.appendChild(noResults);
-        }
-    }
+    console.log('✅ Комбо-поиск инициализирован');
 }
 
 // ============================================
@@ -468,7 +321,7 @@ function applyFilters(resetPage = true) {
         filtered = filtered.filter(order => order.category === filters.category);
     }
     
-    // Фильтр по городу (из выпадающего списка)
+    // Фильтр по городу
     if (filters.city !== 'all') {
         const cityName = window.CITIES.find(c => c.id === filters.city)?.name;
         if (cityName) {
@@ -884,18 +737,14 @@ function initEventListeners() {
 
     // Сброс фильтров
     document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
-        // Сбрасываем город (select)
-        const citySelect = document.getElementById('citySelect');
-        if (citySelect) {
-            citySelect.value = 'all';
-        }
+        // Сбрасываем город (уже обработано в initCityCombo)
+        filters = { category: 'all', city: 'all' };
         
         // Сбрасываем категорию
         document.querySelectorAll('.category-filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.category === 'all');
         });
         
-        filters = { category: 'all', city: 'all' };
         applyFilters(true);
     });
 
