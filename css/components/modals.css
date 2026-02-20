@@ -236,3 +236,46 @@
 .modal-workhom.show .modal-dialog {
     transform: scale(1);
 }
+
+/* ===== MODALS.CSS ===== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999 !important;  /* ОЧЕНЬ ВЫСОКИЙ */
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-backdrop {
+    z-index: 99998 !important;
+}
+
+.modal-dialog {
+    z-index: 100000 !important;
+    position: relative;
+    margin: auto;
+    max-width: 500px;
+    width: 90%;
+}
+
+/* Убираем возможные перекрытия */
+header, .sticky-top, .fixed-top {
+    z-index: 9990 !important;  /* Ниже модалки */
+}
+
+/* Принудительно показываем контент */
+.modal-content {
+    position: relative;
+    z-index: 100001 !important;
+    background: white;
+    pointer-events: auto;
+}
