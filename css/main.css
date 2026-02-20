@@ -3296,3 +3296,10 @@ optgroup option span.highlight {
     border-radius: 4px;
     padding: 0 2px;
 }
+
+/* Спрятать старые заголовки на всякий случай */
+.filter-section h5,
+.filter-section h6,
+.filter-section small {
+    display: none;
+}
