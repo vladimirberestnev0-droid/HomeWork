@@ -106,3 +106,17 @@ nav a.active {
     background: var(--danger);
     color: white;
 }
+/* ===== ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
+body.dark-theme header {
+    background: rgba(30,30,30,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #404040;
+}
+
+body.dark-theme .logo-link {
+    color: white;
+}
+
+body.dark-theme .logo-link i {
+    color: #FF9F4B;  /* ярче в тёмной */
+}
