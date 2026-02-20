@@ -3447,3 +3447,20 @@ body.dark-theme .dropdown-item:hover {
         box-shadow: var(--shadow);
     }
 }
+
+/* Плавное появление заказов */
+.order-item {
+    animation: slideUp 0.3s ease-out;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
