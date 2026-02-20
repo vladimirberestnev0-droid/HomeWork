@@ -100,21 +100,27 @@
 
                <!-- Фильтры -->
 <div class="filter-section">
-    <!-- Кнопка сброса вверху справа (можно оставить) -->
+    <!-- Кнопка сброса справа -->
     <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn">
             <i class="fas fa-times me-1"></i> Сбросить
         </button>
     </div>
     
-    <!-- Поиск появится здесь через JS -->
+    <!-- ===== КОМБО-ПОИСК ГОРОДОВ ===== -->
+    <div class="mb-4 position-relative" id="citySearchCombo">
+        <input type="text" 
+               class="form-control" 
+               id="citySearchInput" 
+               placeholder="🔍 Найди свой город..." 
+               autocomplete="off"
+               style="border-radius: 40px; padding: 10px 16px;">
+        <div id="cityDropdown" class="position-absolute w-100" 
+             style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000; background: white; border: 2px solid var(--border); border-radius: 20px; margin-top: 5px; box-shadow: var(--shadow-hover);">
+        </div>
+    </div>
     
-    <!-- Фильтр по городам (только select, без заголовка) -->
-    <select class="form-select mb-4" id="citySelect">
-        <option value="all">🏠 Все города</option>
-    </select>
-    
-    <!-- Фильтр по категориям (только кнопки, без заголовка) -->
+    <!-- Фильтр по категориям (кнопки) -->
     <div class="category-filter d-flex flex-wrap gap-2" id="categoryFilter">
         <!-- Категории будут добавлены через JS -->
     </div>
