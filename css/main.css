@@ -3371,3 +3371,18 @@ body.dark-theme .dropdown-district {
 body.dark-theme .dropdown-item:hover {
     background: #3d3d3d;
 }
+
+/* Форма заказа не двигается */
+#orderFormColumn {
+    position: sticky;
+    top: 90px; /* Отступ от шапки */
+    height: fit-content;
+    align-self: flex-start;
+}
+
+/* Чтобы форма не прыгала при фокусе */
+#orderForm input, 
+#orderForm select, 
+#orderForm textarea {
+    scroll-margin-top: 100px; /* Отступ при прокрутке к полю */
+}
