@@ -1,5 +1,5 @@
 /* ===== PAGES/INDEX.CSS ===== */
-/* Версия: 3.0 — ФИНАЛЬНАЯ */
+/* Версия: 5.0 — ФИНАЛЬНАЯ БЕЗ КОНФЛИКТОВ */
 
 /* ===== ОБЩИЕ ЭЛЕМЕНТЫ ===== */
 
@@ -16,12 +16,14 @@
 #loadMoreBtn {
     padding: 12px 30px;
     min-width: 200px;
-    transition: var(--transition);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
 }
 
 #loadMoreBtn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);
 }
 
 #loadMoreBtn i {
@@ -35,20 +37,21 @@
 #loadMoreContainer {
     margin-top: auto;
     padding-top: 20px;
+    text-align: center;
 }
 
-/* ===== КОНТЕЙНЕР ФОРМЫ И ЗАКАЗОВ ===== */
+/* ===== ОСНОВНОЙ КОНТЕЙНЕР ФОРМЫ И ЗАКАЗОВ ===== */
 #orderFormRow {
     display: flex;
     align-items: flex-start;
     gap: 20px;
     position: relative;
     min-height: 600px;
-    transform: translateZ(0);
-    will-change: transform;
+    height: auto;
+    width: 100%;
 }
 
-/* Левая колонка (форма) */
+/* ===== ЛЕВАЯ КОЛОНКА (ФОРМА) ===== */
 #orderFormColumn {
     flex: 0 0 calc(50% - 10px);
     position: sticky;
@@ -59,55 +62,75 @@
     z-index: 100;
     background: transparent;
     pointer-events: auto;
-    transform: translateZ(0);
-    backface-visibility: hidden;
 }
 
-/* Все элементы формы — без анимации */
-#orderFormColumn *,
-#orderFormColumn .card,
-#orderFormColumn .card *,
+/* Карточка формы */
+#orderFormColumn .card {
+    height: fit-content;
+    background: var(--bg-white);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+/* Все элементы формы — без единой анимации */
 #orderForm input,
 #orderForm select,
 #orderForm textarea,
 #orderForm button,
 #orderForm .btn,
 #orderForm .form-control,
-#orderForm .form-select {
+#orderForm .form-select,
+#orderForm label,
+#orderForm .form-check,
+#orderForm .form-check-input,
+#orderForm .form-check-label {
     transition: none !important;
     transform: none !important;
     animation: none !important;
     box-shadow: none !important;
+    scroll-margin-top: 100px;
 }
 
-/* Тень только у карточки формы */
-#orderFormColumn .card {
-    box-shadow: var(--shadow) !important;
-    transition: none !important;
+/* Отключаем все ховеры на форме */
+#orderForm .btn:hover,
+#orderForm button:hover,
+#orderForm .form-control:hover,
+#orderForm .form-select:hover {
+    transform: none !important;
+    background: inherit !important;
+    border-color: inherit !important;
 }
 
-/* Правая колонка (заказы) */
+/* ===== ПРАВАЯ КОЛОНКА (ЗАКАЗЫ) ===== */
 #ordersColumn {
     flex: 0 0 calc(50% - 10px);
     max-height: calc(100vh - 120px);
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 10px;
     position: relative;
     z-index: 1;
     pointer-events: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--accent) var(--bg-light);
-    transform: translateZ(0);
-    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
 }
 
+/* Контейнер карточек заказов */
 #ordersColumn .card {
     display: flex;
     flex-direction: column;
     height: fit-content;
+    padding: 20px;
+    background: transparent;
+    box-shadow: none;
+    border: none;
 }
 
-/* Стилизация скролла */
+/* Стилизация скролла для WebKit */
 #ordersColumn::-webkit-scrollbar {
     width: 6px;
 }
@@ -126,11 +149,9 @@
     background: var(--accent-dark);
 }
 
-/* Карточки заказов */
+/* ===== КАРТОЧКИ ЗАКАЗОВ ===== */
 .order-item {
     margin-bottom: 15px;
-    position: relative;
-    z-index: 1;
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 20px;
@@ -138,129 +159,105 @@
     border-left: 4px solid var(--accent);
     transition: box-shadow 0.2s ease;
     transform: none !important;
-    will-change: box-shadow;
+    position: relative;
+    z-index: 1;
+    width: 100%;
 }
 
+/* Только тень при наведении — никакого движения */
 .order-item:hover {
     transform: none !important;
     box-shadow: var(--shadow-hover);
-    z-index: 2;
+    border-left-width: 6px;
 }
 
-/* Отключаем все hover-эффекты на форме */
-.btn:hover,
-.btn:focus,
-.btn:active {
-    transform: none !important;
+/* Заголовок заказа */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-.btn::after {
-    display: none !important;
+.order-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
 }
 
-/* ===== ПРОКАЧАННЫЕ ЗАГОЛОВКИ ===== */
-.card h3 {
-    position: relative;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-}
-
-.card h3::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: var(--accent-gradient);
-    border-radius: 3px;
-}
-
-/* ===== ПРОКАЧАННЫЕ КНОПКИ РЕЙТИНГА ===== */
-.btn-group .btn-outline-secondary {
-    transition: all 0.3s ease;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-soft);
-}
-
-.btn-group .btn-outline-secondary:hover {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: transparent;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
-}
-
-.btn-group .btn-outline-secondary.active {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: transparent;
-}
-
-/* ===== ПРОКАЧАННЫЕ КАРТОЧКИ МАСТЕРОВ ===== */
-.master-card {
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    box-shadow: var(--shadow);
-}
-
-.master-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: var(--shadow-hover);
-}
-
-/* Кнопка "Смотреть профиль" */
-.master-card .btn-sm {
-    background: transparent;
-    border: 2px solid var(--accent);
+.order-price {
+    font-size: 1.4rem;
+    font-weight: 800;
     color: var(--accent);
-    transition: all 0.3s;
-    padding: 8px 16px;
-    font-weight: 600;
+    background: var(--accent-light);
+    padding: 4px 16px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
 }
 
-.master-card .btn-sm:hover {
-    background: var(--accent);
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+/* Мета-информация заказа */
+.order-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
 }
 
-/* Аватар мастера */
-.master-avatar {
-    transition: all 0.3s;
+.order-meta span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.master-card:hover .master-avatar {
-    transform: rotate(5deg) scale(1.1);
-    box-shadow: 0 10px 25px rgba(230,122,75,0.4);
+.order-meta i {
+    color: var(--accent);
+    width: 16px;
 }
 
-/* Рейтинг мастера */
-.master-card .rating-stars {
-    transition: all 0.3s;
+/* Фото в заказах */
+.order-item img {
+    border-radius: 12px;
+    object-fit: cover;
+    transition: opacity 0.2s;
+    cursor: pointer;
 }
 
-.master-card:hover .rating-stars {
-    transform: scale(1.1);
-    color: #FFD700;
-    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+.order-item img:hover {
+    opacity: 0.9;
+}
+
+/* Кнопка отклика */
+.order-item .btn-success {
+    transition: all 0.2s ease;
+}
+
+.order-item .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,168,107,0.3);
 }
 
 /* ===== КОМБО-ПОИСК ===== */
 #citySearchCombo {
     position: relative;
+    width: 100%;
+    margin-bottom: 20px;
 }
 
 #citySearchInput {
     border-radius: 40px;
-    padding: 10px 16px;
+    padding: 12px 20px;
     border: 2px solid var(--border);
     background: var(--bg-white);
-    transition: all 0.3s;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    width: 100%;
+    font-size: 1rem;
 }
 
 #citySearchInput:focus {
@@ -279,41 +276,173 @@
     overflow-y: auto;
     z-index: 1050;
     animation: slideDown 0.2s ease;
+    width: 100%;
 }
 
 .dropdown-item {
-    padding: 8px 16px;
+    padding: 10px 16px;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-dark);
 }
 
 .dropdown-item:hover {
     background: var(--accent-light) !important;
-    padding-left: 20px;
+    padding-left: 24px;
+    color: var(--accent-dark);
 }
 
 .dropdown-district {
-    padding: 6px 12px;
+    padding: 8px 16px;
     background: var(--bg-light);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--accent);
     position: sticky;
     top: 0;
     z-index: 1;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+/* ===== КНОПКИ РЕЙТИНГА ===== */
+.btn-group .btn-outline-secondary {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-soft);
+    padding: 8px 16px;
+    font-weight: 500;
+}
+
+.btn-group .btn-outline-secondary:hover {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+}
+
+.btn-group .btn-outline-secondary.active {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+}
+
+/* ===== КАРТОЧКИ МАСТЕРОВ ===== */
+.master-card {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.master-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: var(--shadow-hover);
+}
+
+.master-avatar {
+    width: 80px;
+    height: 80px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 40px;
+    transition: all 0.3s;
+}
+
+.master-card:hover .master-avatar {
+    transform: rotate(5deg) scale(1.1);
+    box-shadow: 0 10px 25px rgba(230,122,75,0.4);
+}
+
+.master-card h6 {
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.master-card .rating-stars {
+    color: #FFD700;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.master-card:hover .rating-stars {
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.master-card p {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    text-align: center;
+    margin-bottom: 15px;
+    flex-grow: 1;
+}
+
+/* Кнопка "Смотреть профиль" */
+.master-card .btn-sm {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    transition: all 0.3s;
+    padding: 8px 16px;
+    font-weight: 600;
+    width: 100%;
+    border-radius: 40px;
+}
+
+.master-card .btn-sm:hover {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+}
+
+/* ===== ЗАГОЛОВКИ СЕКЦИЙ ===== */
+.card h3 {
+    position: relative;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.card h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 3px;
 }
 
 /* ===== КРАСИВЫЙ КУБОК ===== */
 #topMastersList .card h3 i.fa-trophy {
-    /* Стандартные свойства для современных браузеров */
     background: linear-gradient(135deg, #FFD700, #FFA500);
     background-clip: text;
-    -webkit-background-clip: text;  /* для Safari */
-    color: transparent;  /* вместо -webkit-text-fill-color */
+    -webkit-background-clip: text;
+    color: transparent;
     filter: drop-shadow(0 2px 5px rgba(255,215,0,0.3));
     transition: all 0.3s ease;
+    font-size: 1.8rem;
+    margin-right: 8px;
 }
 
 #topMastersList .card h3 i.fa-trophy:hover {
@@ -321,7 +450,6 @@
     filter: drop-shadow(0 5px 15px rgba(255,215,0,0.5));
 }
 
-/* ===== ЗВЁЗДЫ В КАРТОЧКАХ ===== */
 .master-card i.fa-trophy,
 .master-card .badge-primary i.fa-star {
     color: #FFD700;
@@ -329,12 +457,6 @@
 }
 
 /* ===== КРАСИВАЯ КАРТА ===== */
-#ordersMap + .card h3 i.fa-map-marked-alt {
-    color: #FF4B4B;
-    filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
-    animation: pulse 2s infinite;
-}
-
 #ordersMap {
     border: 3px solid transparent;
     border-radius: var(--radius-lg);
@@ -345,6 +467,8 @@
     -webkit-mask-composite: xor;
     box-shadow: 0 10px 30px rgba(255,75,75,0.2);
     transition: all 0.3s;
+    width: 100%;
+    height: 450px;
 }
 
 #ordersMap:hover {
@@ -353,59 +477,15 @@
 }
 
 /* Метки на карте */
-.ymaps-2-1-79-placemark__icon {
-    filter: hue-rotate(0deg) saturate(200%);
-}
-
 .ymaps-2-1-79-placemark {
-    position: relative;
     animation: bounce 2s infinite;
 }
 
-.ymaps-2-1-79-placemark::after {
-    content: '📍';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 30px;
-    filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
-}
-
-/* ===== АНИМАЦИИ ===== */
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
-    }
-    50% {
-        transform: scale(1.1);
-        filter: drop-shadow(0 5px 15px rgba(255,75,75,0.5));
-    }
-    100% {
-        transform: scale(1);
-        filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
-    }
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-5px);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Иконка карты в заголовке */
+#ordersMap + .card h3 i.fa-map-marked-alt {
+    color: #FF4B4B;
+    filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
+    animation: pulse 2s infinite;
 }
 
 /* ===== КНОПКА "НАВЕРХ" ===== */
@@ -440,6 +520,44 @@
     box-shadow: 0 10px 30px rgba(230,122,75,0.5);
 }
 
+/* ===== АНИМАЦИИ ===== */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
+    }
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 5px 15px rgba(255,75,75,0.5));
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 2px 5px rgba(255,75,75,0.3));
+    }
+}
+
+@keyframes gentlePulse {
+    0% { box-shadow: 0 0 0 0 rgba(230,122,75,0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(230,122,75,0); }
+    100% { box-shadow: 0 0 0 0 rgba(230,122,75,0); }
+}
+
 /* ===== СКЕЛЕТОНЫ ЗАГРУЗКИ ===== */
 .skeleton-order {
     background: linear-gradient(90deg, var(--bg-light) 25%, var(--border) 50%, var(--bg-light) 75%);
@@ -459,25 +577,35 @@
     }
 }
 
-/* ===== МОБИЛЬНАЯ ВЕРСИЯ ===== */
+/* ===== АДАПТИВ (МОБИЛЬНАЯ ВЕРСИЯ) ===== */
+@media (max-width: 992px) {
+    .master-card {
+        margin-bottom: 20px;
+    }
+}
+
 @media (max-width: 768px) {
     #orderFormRow {
         flex-direction: column;
+        min-height: auto;
     }
     
     #orderFormColumn,
     #ordersColumn {
         flex: 0 0 100%;
-        position: static;
-        max-height: none;
-        overflow-y: visible;
+        position: static !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+        width: 100%;
     }
     
     #orderFormColumn {
         z-index: 1;
+        margin-bottom: 20px;
     }
     
     #ordersMap {
+        height: 300px;
         border-width: 2px;
     }
     
@@ -490,5 +618,28 @@
         left: 20px;
         width: 40px;
         height: 40px;
+        font-size: 14px;
+    }
+    
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .order-price {
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .master-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
     }
 }
