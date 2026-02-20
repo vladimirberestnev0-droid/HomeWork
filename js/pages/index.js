@@ -210,7 +210,7 @@ function initFilters() {
         }
     }
     
-    // ===== КАТЕГОРИИ (оставляем как есть) =====
+    // ===== КАТЕГОРИИ =====
     const categoryFilter = document.getElementById('categoryFilter');
     if (categoryFilter && window.ORDER_CATEGORIES) {
         console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
@@ -242,7 +242,10 @@ function initFilters() {
     }
 }
 
-// ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ: Поиск по городам =====
+// ============================================
+// УМНЫЙ ПОИСК ПО ГОРОДАМ (с debounce и подсветкой)
+// ============================================
+
 function addCitySearch(select) {
     // Проверяем, есть ли уже контейнер для поиска
     if (document.getElementById('citySearchContainer')) {
@@ -269,17 +272,21 @@ function addCitySearch(select) {
     // Создаем контейнер для поиска
     const searchContainer = document.createElement('div');
     searchContainer.id = 'citySearchContainer';
-    searchContainer.className = 'mb-3';
+    searchContainer.className = 'mb-3 position-relative';
     searchContainer.innerHTML = `
         <div class="input-group">
             <span class="input-group-text bg-transparent border-end-0" style="border-radius: 40px 0 0 40px;">
-                <i class="fas fa-search text-secondary"></i>
+                <i class="fas fa-search" style="color: var(--accent);"></i>
             </span>
             <input type="text" 
-                   class="form-control border-start-0" 
+                   class="form-control border-start-0 border-end-0" 
                    id="citySearch" 
-                   placeholder="🔍 Поиск города..." 
-                   style="border-radius: 0 40px 40px 0;">
+                   placeholder="🔍 Найди свой город..." 
+                   style="border-radius: 0; box-shadow: none;">
+            <span class="input-group-text bg-transparent border-start-0" style="border-radius: 0 40px 40px 0;">
+                <i class="fas fa-times text-secondary" id="clearSearch" style="cursor: pointer; display: none;"></i>
+                <span id="searchCount" class="badge bg-accent ms-1" style="display: none;">0</span>
+            </span>
         </div>
     `;
     
@@ -288,57 +295,125 @@ function addCitySearch(select) {
         if (select.parentNode === filterSection) {
             filterSection.insertBefore(searchContainer, select);
         } else {
-            // Если select не прямой потомок, просто добавляем в начало
             filterSection.prepend(searchContainer);
         }
         console.log('✅ Поле поиска добавлено');
     } catch (error) {
         console.error('❌ Ошибка при вставке поиска:', error);
-        // Если не получилось, пробуем просто добавить в начало
         filterSection.prepend(searchContainer);
     }
     
     const searchInput = document.getElementById('citySearch');
+    const clearBtn = document.getElementById('clearSearch');
+    const countBadge = document.getElementById('searchCount');
+    
     if (!searchInput) return;
     
+    // ===== DEBOUNCE: ищем через 300мс после остановки печати =====
+    let searchTimeout;
+    
     searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
         const searchTerm = this.value.toLowerCase().trim();
+        
+        // Показываем/скрываем кнопку очистки
+        if (searchTerm.length > 0) {
+            clearBtn.style.display = 'inline-block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
+        
+        // Ждем пока пользователь перестанет печатать
+        searchTimeout = setTimeout(() => {
+            performSearch(searchTerm);
+        }, 300);
+    });
+    
+    // ===== КНОПКА ОЧИСТКИ =====
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        countBadge.style.display = 'none';
+        performSearch('');
+        searchInput.focus();
+    });
+    
+    // ===== ФУНКЦИЯ ПОИСКА С ПОДСВЕТКОЙ =====
+    function performSearch(searchTerm) {
+        let totalVisible = 0;
         
         // Проходим по всем optgroup
         Array.from(select.querySelectorAll('optgroup')).forEach(group => {
             let visibleCount = 0;
             
             Array.from(group.querySelectorAll('option')).forEach(option => {
-                const matches = option.textContent.toLowerCase().includes(searchTerm);
-                option.style.display = matches ? '' : 'none';
-                if (matches) visibleCount++;
+                const cityName = option.textContent;
+                const matches = searchTerm === '' || cityName.toLowerCase().includes(searchTerm);
+                
+                if (matches) {
+                    option.style.display = '';
+                    if (searchTerm !== '') {
+                        // Подсвечиваем найденный текст
+                        option.innerHTML = highlightText(cityName, searchTerm);
+                    } else {
+                        option.innerHTML = cityName;
+                    }
+                    visibleCount++;
+                } else {
+                    option.style.display = 'none';
+                }
             });
             
-            // Показываем группу, если в ней есть видимые опции
+            // Показываем группу, если есть видимые опции
             group.style.display = visibleCount > 0 ? '' : 'none';
+            totalVisible += visibleCount;
         });
         
-        // Отдельно обрабатываем первые опции (Все города и разделитель)
+        // Отдельно обрабатываем "Все города" и разделитель
         const firstOptions = Array.from(select.querySelectorAll('option:not(optgroup option)'));
         firstOptions.forEach(opt => {
-            opt.style.display = ''; // всегда показываем
+            opt.style.display = '';
+            if (opt.value === 'all') {
+                opt.innerHTML = '🏠 Все города';
+            }
         });
         
-        // Если ничего не найдено, показываем сообщение
-        const anyVisible = Array.from(select.querySelectorAll('option')).some(opt => opt.style.display !== 'none');
+        // Показываем счетчик найденных
+        if (searchTerm !== '' && totalVisible > 0) {
+            countBadge.textContent = totalVisible;
+            countBadge.style.display = 'inline-block';
+        } else {
+            countBadge.style.display = 'none';
+        }
         
-        // Удаляем старое сообщение если есть
+        // Показываем сообщение если ничего не найдено
+        updateNoResultsMessage(select, totalVisible, searchTerm);
+    }
+    
+    // ===== ПОДСВЕТКА ТЕКСТА =====
+    function highlightText(text, search) {
+        if (!search) return text;
+        const regex = new RegExp(`(${search})`, 'gi');
+        return text.replace(regex, '<span style="background: var(--accent-light); color: var(--accent-dark); font-weight: 600; border-radius: 4px; padding: 0 2px;">$1</span>');
+    }
+    
+    // ===== СООБЩЕНИЕ "НИЧЕГО НЕ НАЙДЕНО" =====
+    function updateNoResultsMessage(select, visibleCount, searchTerm) {
         const oldMessage = document.getElementById('noResultsMessage');
         if (oldMessage) oldMessage.remove();
         
-        if (!anyVisible) {
+        if (visibleCount === 0 && searchTerm !== '') {
             const noResults = document.createElement('option');
             noResults.id = 'noResultsMessage';
             noResults.disabled = true;
-            noResults.textContent = '❌ Ничего не найдено';
+            noResults.textContent = '❌ Город не найден';
+            noResults.style.backgroundColor = 'var(--bg-light)';
+            noResults.style.color = 'var(--text-soft)';
+            noResults.style.fontStyle = 'italic';
+            noResults.style.padding = '10px';
             select.appendChild(noResults);
         }
-    });
+    }
 }
 
 // ============================================
