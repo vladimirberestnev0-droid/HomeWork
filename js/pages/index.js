@@ -621,13 +621,35 @@ function initLeaderboardButtons() {
 }
 
 // ===== ОБРАБОТКА КЛИКА ПО ПРОФИЛЮ МАСТЕРА =====
-function handleViewMaster(masterId) {
-    if (Auth && Auth.isAuthenticated && Auth.isAuthenticated()) {
-        // Если авторизован — переходим на публичный профиль
-        window.location.href = `/HomeWork/master-profile.html?id=${masterId}`;
-    } else {
-        // Если нет — показываем модалку
-        showAuthRequiredModal();
+function showAuthRequiredModal() {
+    const modalEl = document.getElementById('authRequiredModal');
+    if (!modalEl) {
+        console.error('❌ Модалка не найдена');
+        return;
+    }
+    
+    try {
+        // Убиваем старые бэкдропы
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        
+        // Создаём новую модалку
+        const modal = new bootstrap.Modal(modalEl, {
+            backdrop: 'static',
+            keyboard: true
+        });
+        
+        modal.show();
+        
+        // Вешаем обработчик закрытия
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+        
+    } catch (error) {
+        console.error('❌ Ошибка модалки:', error);
     }
 }
 
