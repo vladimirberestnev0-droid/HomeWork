@@ -85,7 +85,8 @@ body.dark-theme h3,
 body.dark-theme h4,
 body.dark-theme h5,
 body.dark-theme h6 {
-    color: var(--text-dark);
+    color: white;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
 /* Текст */
@@ -93,6 +94,38 @@ body.dark-theme p,
 body.dark-theme span,
 body.dark-theme div:not(.badge):not(.btn) {
     color: var(--text-soft);
+}
+
+/* ===== ШАПКА ===== */
+body.dark-theme header {
+    background: rgba(30,30,30,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #404040;
+}
+
+body.dark-theme .logo-link {
+    color: white;
+}
+
+body.dark-theme .logo-link i {
+    color: #FF9F4B;
+}
+
+/* Навигация */
+body.dark-theme nav a.active {
+    background: var(--accent-gradient);
+    color: white !important;
+    text-shadow: 0 0 10px rgba(230,122,75,0.5);
+    font-weight: 700;
+}
+
+body.dark-theme nav a:not(.active) {
+    color: #a0a0a0 !important;
+}
+
+body.dark-theme nav a:not(.active):hover {
+    color: white !important;
+    background: rgba(230,122,75,0.2);
 }
 
 /* Поля ввода */
@@ -205,24 +238,64 @@ body.dark-theme .filter-btn.active {
     color: white;
 }
 
-/* Выпадающие списки */
+/* ===== ВЫПАДАЮЩИЙ СПИСОК ГОРОДОВ ===== */
 body.dark-theme #cityDropdown {
     background: #2d2d2d;
-    border-color: var(--border);
+    border-color: #404040;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+/* Заголовки районов */
 body.dark-theme .dropdown-district {
-    background: #1e1e1e;
-    color: var(--accent);
+    background: #1e1e1e !important;
+    color: #FF9F4B !important;  /* яркий акцент */
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(230,122,75,0.3);
+    border-bottom: 1px solid #404040;
+}
+
+/* Названия городов */
+body.dark-theme .dropdown-item {
+    color: #e0e0e0 !important;  /* светлый текст */
+    font-weight: 500;
 }
 
 body.dark-theme .dropdown-item:hover {
-    background: #3d3d3d;
+    background: #3d3d3d !important;
+    color: white !important;
+    padding-left: 20px;
 }
 
-/* Карта */
-body.dark-theme #ordersMap {
-    filter: brightness(0.9) contrast(1.1);
+/* Выбранный город */
+body.dark-theme .dropdown-item[data-city-id].selected {
+    background: rgba(230,122,75,0.2) !important;
+    color: #FF9F4B !important;
+    font-weight: 700;
+}
+
+/* Карточки мастеров */
+body.dark-theme .master-card {
+    background: #2d2d2d;
+    color: #e0e0e0;
+}
+
+body.dark-theme .master-card h6 {
+    color: white;
+}
+
+body.dark-theme .master-card p {
+    color: #a0a0a0;
+}
+
+/* Кнопка "Смотреть профиль" */
+body.dark-theme .master-card .btn-sm {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+body.dark-theme .master-card .btn-sm:hover {
+    background: var(--accent);
+    color: white;
 }
 
 /* Ссылки */
