@@ -473,33 +473,110 @@ function showError(message) {
 }
 
 // ============================================
-// ЗАГРУЗКА ТОП МАСТЕРОВ
+// ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАМ
 // ============================================
 
-async function loadTopMasters() {
+let currentLeaderboardPeriod = 'week'; // 'day', 'week', 'month', 'all'
+
+async function loadTopMasters(period = 'week') {
     const container = document.getElementById('topMastersList');
     if (!container) return;
+    
+    // Показываем загрузку
+    container.innerHTML = '<div class="text-center p-5"><div class="spinner mb-3"></div><p class="text-secondary">Загрузка...</p></div>';
     
     try {
         if (!window.db) {
             throw new Error('db не определен');
         }
         
-        const snapshot = await db.collection('users')
+        // Определяем дату для фильтрации
+        const now = new Date();
+        let startDate = null;
+        
+        switch(period) {
+            case 'day':
+                startDate = new Date(now.setHours(0, 0, 0, 0));
+                break;
+            case 'week':
+                startDate = new Date(now.setDate(now.getDate() - 7));
+                break;
+            case 'month':
+                startDate = new Date(now.setMonth(now.getMonth() - 1));
+                break;
+            case 'all':
+            default:
+                startDate = null; // все время
+        }
+        
+        // Получаем всех мастеров
+        const mastersSnapshot = await db.collection('users')
             .where('role', '==', USER_ROLE.MASTER)
-            .orderBy('rating', 'desc')
-            .limit(6)
             .get();
         
-        if (snapshot.empty) {
+        const masters = [];
+        
+        for (const doc of mastersSnapshot.docs) {
+            const master = { id: doc.id, ...doc.data() };
+            
+            // Если нужен период, считаем активность за этот период
+            if (startDate) {
+                // Считаем заказы за период
+                const ordersSnapshot = await db.collection('orders')
+                    .where('selectedMasterId', '==', doc.id)
+                    .where('status', '==', ORDER_STATUS.COMPLETED)
+                    .where('completedAt', '>=', startDate)
+                    .get();
+                
+                // Если за период ничего нет — пропускаем или показываем с 0
+                master.periodCompleted = ordersSnapshot.size;
+                
+                // Считаем рейтинг за период (можно усложнить)
+                let periodRating = 0;
+                let periodReviews = 0;
+                
+                ordersSnapshot.forEach(orderDoc => {
+                    const order = orderDoc.data();
+                    if (order.reviews) {
+                        order.reviews.forEach(review => {
+                            if (review.masterId === doc.id) {
+                                periodRating += review.rating || 0;
+                                periodReviews++;
+                            }
+                        });
+                    }
+                });
+                
+                master.periodRating = periodReviews > 0 ? periodRating / periodReviews : 0;
+            }
+            
+            masters.push(master);
+        }
+        
+        // Сортируем по рейтингу (за период или общий)
+        masters.sort((a, b) => {
+            if (startDate) {
+                return (b.periodRating || 0) - (a.periodRating || 0);
+            } else {
+                return (b.rating || 0) - (a.rating || 0);
+            }
+        });
+        
+        // Берем топ-6
+        const topMasters = masters.slice(0, 6);
+        
+        if (topMasters.length === 0) {
             container.innerHTML = '<div class="text-center p-5">Пока нет мастеров</div>';
             return;
         }
         
         container.innerHTML = '';
-        snapshot.forEach(doc => {
-            const master = doc.data();
-            const rating = master.rating || 0;
+        
+        topMasters.forEach(master => {
+            // Используем рейтинг за период или общий
+            const rating = startDate ? (master.periodRating || 0) : (master.rating || 0);
+            const completedJobs = startDate ? (master.periodCompleted || 0) : (master.completedJobs || 0);
+            
             const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
             
             const col = document.createElement('div');
@@ -513,10 +590,10 @@ async function loadTopMasters() {
                     <div class="rating-stars mb-2">${stars}</div>
                     <div class="mb-2">
                         <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
-                        <span class="badge badge-success ms-1">📦 ${master.completedJobs || 0}</span>
+                        <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
                     </div>
                     <p class="small text-secondary mb-2">${Helpers.escapeHtml?.(master.categories) || master.categories || 'Специалист'}</p>
-                    <button class="btn btn-sm w-100" onclick="viewMaster('${doc.id}')">
+                    <button class="btn btn-sm w-100" onclick="viewMaster('${master.id}')">
                         Смотреть профиль
                     </button>
                 </div>
@@ -528,6 +605,29 @@ async function loadTopMasters() {
         console.error('❌ Ошибка загрузки мастеров:', error);
         container.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
     }
+}
+
+// ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
+function initLeaderboardButtons() {
+    const buttons = {
+        day: document.getElementById('leaderboardDaily'),
+        week: document.getElementById('leaderboardWeekly'),
+        month: document.getElementById('leaderboardMonthly'),
+        all: document.getElementById('leaderboardAll')
+    };
+    
+    Object.entries(buttons).forEach(([period, btn]) => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                // Убираем active со всех
+                Object.values(buttons).forEach(b => b?.classList.remove('active'));
+                // Добавляем active текущей
+                btn.classList.add('active');
+                // Загружаем маasters за период
+                loadTopMasters(period);
+            });
+        }
+    });
 }
 
 // ============================================
