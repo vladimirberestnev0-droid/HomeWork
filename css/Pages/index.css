@@ -244,3 +244,56 @@
         z-index: 1;
     }
 }
+
+/* ===== ФИКС ДЁРГАНЬЯ ФОРМЫ ===== */
+
+/* Отключаем любые трансформации на форме */
+#orderFormColumn * {
+    transition: none !important;
+    transform: none !important;
+}
+
+/* Контейнер формы — без анимаций */
+#orderFormColumn .card {
+    transition: none !important;
+    transform: none !important;
+    box-shadow: var(--shadow); /* оставляем тень, но без изменений */
+}
+
+/* Все элементы формы — без эффектов */
+#orderForm input,
+#orderForm select,
+#orderForm textarea,
+#orderForm button,
+#orderForm .btn,
+#orderForm .form-control,
+#orderForm .form-select {
+    transition: none !important;
+    transform: none !important;
+}
+
+/* Отключаем hover-эффекты на карточках заказов, которые задевают форму */
+@media (min-width: 992px) {
+    .order-item:hover {
+        transform: translateY(-2px) !important; /* минимальное движение */
+        box-shadow: 0 5px 15px rgba(230,122,75,0.1) !important;
+    }
+}
+
+/* Добавляем "безопасную зону" */
+#orderFormColumn {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+#ordersColumn {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+/* Убираем ripple-эффекты Bootstrap */
+.btn::after {
+    display: none !important;
+}
