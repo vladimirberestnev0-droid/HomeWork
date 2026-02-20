@@ -1,6 +1,7 @@
 /* ===== THEME.CSS — ТЁМНАЯ И СВЕТЛАЯ ТЕМЫ ===== */
+/* Версия: 3.0 — ПРОКАЧАННАЯ */
 
-/* Светлая тема (по умолчанию) */
+/* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
 :root {
     /* Основные цвета */
     --primary: #1E2B3C;
@@ -31,6 +32,141 @@
     --shadow: 0 12px 30px rgba(0,0,0,0.05);
     --shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
+    
+    /* Специальные для светлой темы */
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
+    --gradient-gold: linear-gradient(135deg, #FFD700, #FFA500);
+}
+
+/* ===== ПРОКАЧАННАЯ СВЕТЛАЯ ТЕМА ===== */
+body:not(.dark-theme) {
+    background: var(--bg-light);
+}
+
+/* Карточки с мягкой тенью */
+body:not(.dark-theme) .card,
+body:not(.dark-theme) .master-card,
+body:not(.dark-theme) .order-item,
+body:not(.dark-theme) .profile-card,
+body:not(.dark-theme) .stat-card,
+body:not(.dark-theme) .filter-section {
+    background: var(--bg-white);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(230,122,75,0.1);
+}
+
+body:not(.dark-theme) .card:hover,
+body:not(.dark-theme) .master-card:hover,
+body:not(.dark-theme) .order-item:hover,
+body:not(.dark-theme) .profile-card:hover,
+body:not(.dark-theme) .stat-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    border-color: rgba(230,122,75,0.3);
+    transform: translateY(-2px);
+}
+
+/* Кнопки с градиентом */
+body:not(.dark-theme) .btn-primary,
+body:not(.dark-theme) .btn:not(.btn-outline-secondary) {
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+}
+
+body:not(.dark-theme) .btn-primary:hover,
+body:not(.dark-theme) .btn:not(.btn-outline-secondary):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(230,122,75,0.4);
+}
+
+/* Кнопка "Смотреть профиль" в светлой теме */
+body:not(.dark-theme) .master-card .btn-sm {
+    background: white;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    transition: all 0.3s;
+    font-weight: 600;
+}
+
+body:not(.dark-theme) .master-card .btn-sm:hover {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+}
+
+/* Заголовки с градиентом */
+body:not(.dark-theme) h1,
+body:not(.dark-theme) h2,
+body:not(.dark-theme) h3,
+body:not(.dark-theme) h4,
+body:not(.dark-theme) h5,
+body:not(.dark-theme) h6 {
+    color: var(--primary);
+}
+
+/* Красивые подчеркивания для заголовков карточек */
+body:not(.dark-theme) .card h3 {
+    position: relative;
+    padding-bottom: 10px;
+}
+
+body:not(.dark-theme) .card h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 3px;
+}
+
+/* Цены заказов */
+body:not(.dark-theme) .order-price {
+    background: linear-gradient(135deg, #fff1e6, #ffe4d6);
+    color: var(--accent);
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(230,122,75,0.1);
+}
+
+/* Фильтры */
+body:not(.dark-theme) .filter-btn {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    transition: all 0.3s;
+}
+
+body:not(.dark-theme) .filter-btn:hover,
+body:not(.dark-theme) .filter-btn.active {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+}
+
+/* Поля ввода */
+body:not(.dark-theme) input,
+body:not(.dark-theme) select,
+body:not(.dark-theme) textarea {
+    border: 2px solid #f0f0f0;
+    background: white;
+    transition: all 0.3s;
+}
+
+body:not(.dark-theme) input:focus,
+body:not(.dark-theme) select:focus,
+body:not(.dark-theme) textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(230,122,75,0.1);
+}
+
+/* Рейтинг */
+body:not(.dark-theme) .rating-stars {
+    color: #FFD700;
 }
 
 /* ===== ТЁМНАЯ ТЕМА ===== */
@@ -38,20 +174,20 @@ body.dark-theme {
     /* Основные цвета */
     --primary: #e0e0e0;
     --primary-light: #f0f0f0;
-    --accent: #FF9F4B;  /* ярче для контраста */
+    --accent: #FF9F4B;
     --accent-dark: #E67A4B;
     --accent-light: #4a2a1a;
     
     /* Фоны */
-    --bg-light: #121212;      /* темнее для контраста */
-    --bg-white: #1e1e1e;      /* карточки */
+    --bg-light: #121212;
+    --bg-white: #1e1e1e;
     --bg-card: #2d2d2d;
     --bg-hover: #2a2a2a;
     
-    /* Текст — ВАЖНО: делаем светлее и контрастнее */
-    --text-dark: #ffffff;      /* белый для основного текста */
-    --text-soft: #e0e0e0;      /* светло-серый для второстепенного */
-    --text-muted: #a0a0a0;     /* серый для неактивного */
+    /* Текст */
+    --text-dark: #ffffff;
+    --text-soft: #e0e0e0;
+    --text-muted: #a0a0a0;
     
     /* Границы */
     --border: #404040;
@@ -63,7 +199,11 @@ body.dark-theme {
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.8);
 }
 
-/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
+/* ===== ТЁМНАЯ ТЕМА — ОСНОВНЫЕ СТИЛИ ===== */
+body.dark-theme {
+    background: var(--bg-light);
+    color: var(--text-soft);
+}
 
 /* Карточки */
 body.dark-theme .card,
@@ -89,14 +229,66 @@ body.dark-theme h6 {
     text-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
-/* Текст */
-body.dark-theme p,
-body.dark-theme span,
-body.dark-theme div:not(.badge):not(.btn) {
-    color: var(--text-soft);
+/* ===== ТЁМНАЯ ТЕМА — КОНТРАСТНЫЕ НАДПИСИ ===== */
+
+/* Кнопка "Смотреть профиль" — всегда видна */
+body.dark-theme .master-card .btn-sm {
+    border: 2px solid var(--accent);
+    color: var(--accent) !important;
+    background: transparent;
+    font-weight: 600;
+    opacity: 1 !important;
+    text-shadow: 0 0 5px rgba(230,122,75,0.3);
 }
 
-/* ===== ШАПКА ===== */
+body.dark-theme .master-card .btn-sm:hover {
+    background: var(--accent);
+    color: white !important;
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(230,122,75,0.5);
+}
+
+/* Имя мастера */
+body.dark-theme .master-card h6 {
+    color: white !important;
+    font-weight: 700;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* Категории мастера */
+body.dark-theme .master-card p {
+    color: #cccccc !important;
+    font-size: 0.9rem;
+}
+
+/* Бейджи с рейтингом */
+body.dark-theme .master-card .badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 0 10px rgba(230,122,75,0.3);
+}
+
+body.dark-theme .master-card .badge-success {
+    background: rgba(0,168,107,0.2);
+    color: #4ade80;
+    border: 1px solid rgba(0,168,107,0.3);
+}
+
+/* Рейтинг звёздами */
+body.dark-theme .master-card .rating-stars {
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+    font-size: 1.2rem;
+}
+
+/* Цена заказа */
+body.dark-theme .order-price {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* Шапка */
 body.dark-theme header {
     background: rgba(30,30,30,0.95);
     backdrop-filter: blur(10px);
@@ -154,32 +346,6 @@ body.dark-theme .btn-outline-secondary:hover {
     border-color: var(--accent);
 }
 
-/* Бейджи */
-body.dark-theme .badge {
-    background: #2d2d2d;
-    color: var(--text-dark);
-}
-
-body.dark-theme .badge-primary {
-    background: var(--accent-gradient);
-    color: white;
-}
-
-body.dark-theme .badge-success {
-    background: rgba(0,168,107,0.2);
-    color: #00d88b;
-}
-
-body.dark-theme .badge-warning {
-    background: rgba(255,176,32,0.2);
-    color: #ffc107;
-}
-
-body.dark-theme .badge-danger {
-    background: rgba(220,53,69,0.2);
-    color: #ff6b7a;
-}
-
 /* Мета-информация заказов */
 body.dark-theme .order-meta {
     color: var(--text-soft);
@@ -188,17 +354,6 @@ body.dark-theme .order-meta {
 
 body.dark-theme .order-meta i {
     color: var(--accent);
-}
-
-/* Цена заказа */
-body.dark-theme .order-price {
-    background: var(--accent-light);
-    color: var(--accent);
-}
-
-/* Рейтинг */
-body.dark-theme .rating-stars {
-    color: #FFD700;
 }
 
 /* Модальные окна */
@@ -245,57 +400,62 @@ body.dark-theme #cityDropdown {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* Заголовки районов */
 body.dark-theme .dropdown-district {
     background: #1e1e1e !important;
-    color: #FF9F4B !important;  /* яркий акцент */
+    color: #FF9F4B !important;
     font-weight: 700;
-    text-shadow: 0 0 5px rgba(230,122,75,0.3);
     border-bottom: 1px solid #404040;
 }
 
-/* Названия городов */
 body.dark-theme .dropdown-item {
-    color: #e0e0e0 !important;  /* светлый текст */
+    color: #e0e0e0 !important;
     font-weight: 500;
 }
 
 body.dark-theme .dropdown-item:hover {
     background: #3d3d3d !important;
     color: white !important;
-    padding-left: 20px;
 }
 
-/* Выбранный город */
-body.dark-theme .dropdown-item[data-city-id].selected {
-    background: rgba(230,122,75,0.2) !important;
-    color: #FF9F4B !important;
-    font-weight: 700;
+/* ===== СКРОЛЛБАР ===== */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
 }
 
-/* Карточки мастеров */
-body.dark-theme .master-card {
-    background: #2d2d2d;
-    color: #e0e0e0;
+::-webkit-scrollbar-track {
+    background: var(--bg-light);
 }
 
-body.dark-theme .master-card h6 {
-    color: white;
-}
-
-body.dark-theme .master-card p {
-    color: #a0a0a0;
-}
-
-/* Кнопка "Смотреть профиль" */
-body.dark-theme .master-card .btn-sm {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-body.dark-theme .master-card .btn-sm:hover {
+::-webkit-scrollbar-thumb {
     background: var(--accent);
-    color: white;
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Тёмная тема скроллбар */
+body.dark-theme::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+body.dark-theme::-webkit-scrollbar-thumb {
+    background: var(--accent);
+}
+
+body.dark-theme::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* ===== УТИЛИТЫ ДЛЯ ТЕМ ===== */
+body.dark-theme .text-muted {
+    color: var(--text-muted) !important;
+}
+
+body.dark-theme .bg-light {
+    background: #2d2d2d !important;
 }
 
 /* Ссылки */
@@ -307,20 +467,10 @@ body.dark-theme a:hover {
     color: var(--accent-dark);
 }
 
-/* Скелетоны загрузки */
-body.dark-theme .skeleton {
-    background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
-}
-
-/* Скроллбар для тёмной темы */
-body.dark-theme::-webkit-scrollbar-track {
-    background: #1e1e1e;
-}
-
-body.dark-theme::-webkit-scrollbar-thumb {
-    background: var(--accent);
-}
-
-body.dark-theme::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark);
+/* ===== АДАПТИВ ===== */
+@media (max-width: 768px) {
+    body.dark-theme .master-card .btn-sm {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
 }
