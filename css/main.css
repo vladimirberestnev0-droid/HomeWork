@@ -3251,3 +3251,48 @@ body.dark-theme .modal-workhom .btn-outline-secondary:hover {
     margin-top: auto;  /* прижимает кнопку к низу */
     padding-top: 20px;
 }
+
+/* main.css — стили для умного поиска */
+
+#citySearchContainer {
+    transition: all 0.3s ease;
+}
+
+#citySearch:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(230,122,75,0.1) !important;
+}
+
+#clearSearch {
+    transition: transform 0.2s;
+}
+
+#clearSearch:hover {
+    transform: scale(1.2);
+    color: var(--accent) !important;
+}
+
+#searchCount {
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 20px;
+    animation: pulse 0.3s;
+}
+
+/* Анимация для счетчика */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Подсветка найденных городов */
+optgroup option span.highlight {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 0 2px;
+}
