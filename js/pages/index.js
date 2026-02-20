@@ -477,10 +477,7 @@ function applyFilters(resetPage = true) {
             );
         }
     }
-    
-    // Перемешиваем массив для рандомности
-    filtered = shuffleArray(filtered);
-    
+        
     // Обновляем отображаемые заказы
     if (resetPage) {
         displayedOrders = filtered.slice(0, PAGINATION.ORDERS_INITIAL);
@@ -497,16 +494,6 @@ function applyFilters(resetPage = true) {
     // Обновляем UI
     renderOrders();
     updateLoadMoreButton(filtered.length);
-}
-
-// Перемешивание массива (для рандомности)
-function shuffleArray(array) {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
 }
 
 // Обновление кнопки "Показать еще"
