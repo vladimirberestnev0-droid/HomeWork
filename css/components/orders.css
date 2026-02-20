@@ -1,0 +1,104 @@
+/* ===== ORDERS.CSS ===== */
+.order-item {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    border-left: 6px solid var(--accent);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    animation: slideUp 0.5s ease-out forwards;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    position: relative;
+    z-index: 1;
+    transform: translateY(0);
+}
+
+.order-item:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: var(--shadow-hover);
+    z-index: 5;
+}
+
+.order-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(230,122,75,0.05), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.order-item:hover::before {
+    transform: translateX(100%);
+}
+
+.order-item:nth-child(1) { animation-delay: 0.1s; }
+.order-item:nth-child(2) { animation-delay: 0.2s; }
+.order-item:nth-child(3) { animation-delay: 0.3s; }
+.order-item:nth-child(4) { animation-delay: 0.4s; }
+.order-item:nth-child(5) { animation-delay: 0.5s; }
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.order-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.order-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 4px 16px;
+    border-radius: var(--radius-full);
+}
+
+.order-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.order-meta span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.order-meta i {
+    color: var(--accent);
+    width: 16px;
+}
+
+#ordersList {
+    min-height: 200px;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+#ordersList > * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}

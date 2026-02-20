@@ -1,0 +1,133 @@
+/* ===== GAMIFICATION.CSS ===== */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.achievement-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    padding: 15px;
+    text-align: center;
+    transition: var(--transition);
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.achievement-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-hover);
+}
+
+.achievement-card.earned {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.achievement-card.earned .achievement-icon {
+    color: gold;
+}
+
+.achievement-icon {
+    font-size: 32px;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.achievement-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.achievement-xp {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+.achievement-card.earned .achievement-xp {
+    color: rgba(255,255,255,0.8);
+}
+
+.leaderboard {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 5px;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.leaderboard-item:hover {
+    background: var(--bg-light);
+    transform: translateX(5px);
+}
+
+.leaderboard-rank {
+    width: 30px;
+    height: 30px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.leaderboard-rank.rank-1 { background: gold; color: #333; }
+.leaderboard-rank.rank-2 { background: silver; color: #333; }
+.leaderboard-rank.rank-3 { background: #cd7f32; color: white; }
+
+.leaderboard-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    color: var(--accent);
+}
+
+.leaderboard-info {
+    flex: 1;
+}
+
+.leaderboard-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.leaderboard-stats {
+    display: flex;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+.leaderboard-xp {
+    font-weight: 600;
+    color: var(--accent);
+}

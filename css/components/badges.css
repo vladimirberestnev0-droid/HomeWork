@@ -1,0 +1,110 @@
+/* ===== BADGES.CSS ===== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--bg-light);
+    color: var(--text-dark);
+}
+
+.badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.badge-success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.badge-info {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.badge-open,
+.status-open {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.badge-progress,
+.status-progress {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.badge-completed,
+.status-completed {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-pending {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-approved {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-rejected {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.level-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.level-1 { background: var(--level-1); }
+.level-2 { background: var(--level-2); }
+.level-3 { background: var(--level-3); }
+.level-4 { background: var(--level-4); color: var(--text-dark); }
+.level-5 { background: var(--level-5); }
+.level-6 { background: var(--level-6); }
+.level-7 { background: var(--level-7); }
+.level-8 { background: var(--level-8); }
+
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.achievement-badge i {
+    font-size: 1.2rem;
+}
+
+.achievement-locked {
+    opacity: 0.5;
+    filter: grayscale(1);
+}

@@ -1,0 +1,28 @@
+/* ===== TABLES.CSS ===== */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    text-align: left;
+    padding: 12px;
+    background: var(--bg-light);
+    color: var(--text-dark);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+}
+
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-soft);
+}
+
+.table tr:hover td {
+    background: var(--bg-hover);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}

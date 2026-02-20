@@ -1,0 +1,142 @@
+/* ===== PAGES/INDEX.CSS ===== */
+#ordersCount {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+#loadMoreBtn {
+    padding: 12px 30px;
+    min-width: 200px;
+    transition: var(--transition);
+}
+
+#loadMoreBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+#loadMoreBtn i {
+    transition: transform 0.3s;
+}
+
+#loadMoreBtn:hover i {
+    transform: translateY(3px);
+}
+
+#orderFormRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+#orderFormColumn {
+    flex: 0 0 calc(50% - 10px);
+    position: sticky;
+    top: 90px;
+    align-self: flex-start;
+    height: fit-content;
+    max-height: calc(100vh - 100px);
+}
+
+#orderFormColumn .card {
+    height: fit-content;
+    position: sticky;
+    top: 90px;
+}
+
+#ordersColumn {
+    flex: 0 0 calc(50% - 10px);
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+#ordersColumn .card {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+}
+
+#ordersColumn::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ordersColumn::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+#orderForm input, 
+#orderForm select, 
+#orderForm textarea {
+    scroll-margin-top: 100px;
+}
+
+#citySearchCombo {
+    position: relative;
+}
+
+#citySearchInput {
+    border-radius: 40px;
+    padding: 10px 16px;
+    border: 2px solid var(--border);
+    background: var(--bg-white);
+}
+
+#citySearchInput:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(230,122,75,0.1);
+    outline: none;
+}
+
+#cityDropdown {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    margin-top: 5px;
+    box-shadow: var(--shadow-hover);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1050;
+}
+
+.dropdown-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-item:hover {
+    background: var(--accent-light) !important;
+    padding-left: 20px;
+}
+
+.dropdown-district {
+    padding: 6px 12px;
+    background: var(--bg-light);
+    font-weight: 600;
+    color: var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+#loadMoreContainer {
+    margin-top: auto;
+    padding-top: 20px;
+}

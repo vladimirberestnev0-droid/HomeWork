@@ -1,0 +1,45 @@
+/* ===== PAGES/PAYMENT-SUCCESS.CSS ===== */
+.success-container {
+    max-width: 400px;
+    text-align: center;
+    background: white;
+    padding: 50px 40px;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    animation: scaleIn 0.5s ease;
+}
+
+.success-icon {
+    width: 100px;
+    height: 100px;
+    background: var(--success);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    margin: 0 auto 30px;
+    animation: pulse 2s infinite;
+}
+
+.success-container h1 {
+    color: var(--success);
+    margin-bottom: 15px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    margin-top: 30px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    animation: progress 3s linear forwards;
+    width: 100%;
+}
