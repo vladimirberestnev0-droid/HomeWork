@@ -1,6 +1,8 @@
-/* ===== THEME.CSS ===== */
+/* ===== THEME.CSS — ТЁМНАЯ И СВЕТЛАЯ ТЕМЫ ===== */
+
+/* Светлая тема (по умолчанию) */
 :root {
-    /* Light Theme (default) */
+    /* Основные цвета */
     --primary: #1E2B3C;
     --primary-light: #2C3E50;
     --accent: #E67A4B;
@@ -12,6 +14,7 @@
     --bg-light: #F9F7F5;
     --bg-white: #FFFFFF;
     --bg-card: #FFFFFF;
+    --bg-hover: #f5f5f5;
     
     /* Текст */
     --text-dark: #2D3A4A;
@@ -21,6 +24,7 @@
     
     /* Границы */
     --border: #E2E8F0;
+    --border-light: #f0f0f0;
     
     /* Тени */
     --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
@@ -29,55 +33,85 @@
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
 }
 
+/* ===== ТЁМНАЯ ТЕМА ===== */
 body.dark-theme {
+    /* Основные цвета */
     --primary: #e0e0e0;
     --primary-light: #f0f0f0;
-    --accent: #E67A4B;
-    --accent-dark: #D45C2F;
+    --accent: #FF9F4B;  /* ярче для контраста */
+    --accent-dark: #E67A4B;
     --accent-light: #4a2a1a;
     
     /* Фоны */
-    --bg-light: #1a1a1a;
-    --bg-white: #2d2d2d;
+    --bg-light: #121212;      /* темнее для контраста */
+    --bg-white: #1e1e1e;      /* карточки */
     --bg-card: #2d2d2d;
+    --bg-hover: #2a2a2a;
     
-    /* Текст */
-    --text-dark: #e0e0e0;
-    --text-soft: #a0a0a0;
-    --text-muted: #808080;
+    /* Текст — ВАЖНО: делаем светлее и контрастнее */
+    --text-dark: #ffffff;      /* белый для основного текста */
+    --text-soft: #e0e0e0;      /* светло-серый для второстепенного */
+    --text-muted: #a0a0a0;     /* серый для неактивного */
     
     /* Границы */
     --border: #404040;
+    --border-light: #333333;
     
     /* Тени */
-    --shadow: 0 12px 30px rgba(0,0,0,0.3);
-    --shadow-hover: 0 20px 40px rgba(230,122,75,0.25);
-    --shadow-dark: 0 12px 30px rgba(0,0,0,0.5);
+    --shadow: 0 12px 30px rgba(0,0,0,0.5);
+    --shadow-hover: 0 20px 40px rgba(230,122,75,0.3);
+    --shadow-dark: 0 12px 30px rgba(0,0,0,0.8);
 }
 
+/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
+
+/* Карточки */
 body.dark-theme .card,
 body.dark-theme .order-item,
 body.dark-theme .profile-card,
 body.dark-theme .stat-card,
 body.dark-theme .chart-card,
-body.dark-theme .admin-card,
 body.dark-theme .master-card,
-body.dark-theme .filter-section,
-body.dark-theme .master-rating-card {
+body.dark-theme .filter-section {
     background: var(--bg-white);
     border-color: var(--border);
+    color: var(--text-dark);
 }
 
+/* Заголовки */
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6 {
+    color: var(--text-dark);
+}
+
+/* Текст */
+body.dark-theme p,
+body.dark-theme span,
+body.dark-theme div:not(.badge):not(.btn) {
+    color: var(--text-soft);
+}
+
+/* Поля ввода */
 body.dark-theme input,
 body.dark-theme textarea,
 body.dark-theme select {
-    background: #333;
-    color: #e0e0e0;
+    background: #2d2d2d;
+    color: var(--text-dark);
     border-color: var(--border);
 }
 
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* Кнопки */
 body.dark-theme .btn-outline-secondary {
-    color: #e0e0e0;
+    color: var(--text-dark);
     border-color: var(--border);
 }
 
@@ -85,4 +119,135 @@ body.dark-theme .btn-outline-secondary:hover {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+
+/* Бейджи */
+body.dark-theme .badge {
+    background: #2d2d2d;
+    color: var(--text-dark);
+}
+
+body.dark-theme .badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+body.dark-theme .badge-success {
+    background: rgba(0,168,107,0.2);
+    color: #00d88b;
+}
+
+body.dark-theme .badge-warning {
+    background: rgba(255,176,32,0.2);
+    color: #ffc107;
+}
+
+body.dark-theme .badge-danger {
+    background: rgba(220,53,69,0.2);
+    color: #ff6b7a;
+}
+
+/* Мета-информация заказов */
+body.dark-theme .order-meta {
+    color: var(--text-soft);
+    border-top-color: var(--border);
+}
+
+body.dark-theme .order-meta i {
+    color: var(--accent);
+}
+
+/* Цена заказа */
+body.dark-theme .order-price {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+/* Рейтинг */
+body.dark-theme .rating-stars {
+    color: #FFD700;
+}
+
+/* Модальные окна */
+body.dark-theme .modal-content {
+    background: var(--bg-white);
+    color: var(--text-dark);
+}
+
+body.dark-theme .modal-header {
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme .modal-footer {
+    border-top-color: var(--border);
+}
+
+/* Табы */
+body.dark-theme .tab {
+    color: var(--text-soft);
+}
+
+body.dark-theme .tab:hover {
+    background: #2d2d2d;
+    color: var(--accent);
+}
+
+/* Фильтры */
+body.dark-theme .filter-btn {
+    background: #2d2d2d;
+    color: var(--text-dark);
+    border-color: var(--border);
+}
+
+body.dark-theme .filter-btn:hover,
+body.dark-theme .filter-btn.active {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+/* Выпадающие списки */
+body.dark-theme #cityDropdown {
+    background: #2d2d2d;
+    border-color: var(--border);
+}
+
+body.dark-theme .dropdown-district {
+    background: #1e1e1e;
+    color: var(--accent);
+}
+
+body.dark-theme .dropdown-item:hover {
+    background: #3d3d3d;
+}
+
+/* Карта */
+body.dark-theme #ordersMap {
+    filter: brightness(0.9) contrast(1.1);
+}
+
+/* Ссылки */
+body.dark-theme a {
+    color: var(--accent);
+}
+
+body.dark-theme a:hover {
+    color: var(--accent-dark);
+}
+
+/* Скелетоны загрузки */
+body.dark-theme .skeleton {
+    background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
+}
+
+/* Скроллбар для тёмной темы */
+body.dark-theme::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+body.dark-theme::-webkit-scrollbar-thumb {
+    background: var(--accent);
+}
+
+body.dark-theme::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
 }
