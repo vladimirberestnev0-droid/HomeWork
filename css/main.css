@@ -4117,3 +4117,73 @@ body.dark-theme .review-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(230,122,75,0.3);
 }
+
+/* ===== КАРТОЧКИ ЗАКАЗОВ ===== */
+
+/* Контейнер заказов - всегда видим */
+#ordersList {
+    min-height: 200px;  /* чтобы не схлопывался */
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+/* Сами карточки */
+.order-item {
+    position: relative;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    border-left: 6px solid var(--accent);
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    animation: slideUp 0.3s ease-out forwards;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    transform: translateY(0);
+}
+
+/* Анимация появления */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Исправляем возможные конфликты */
+.card {
+    overflow: visible !important;
+}
+
+/* Если заказы загружаются, но не видны - это перестраховка */
+#ordersList > * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Убираем лишние display: none */
+.d-none {
+    display: none !important;
+}
+
+/* Спиннер загрузки */
+.spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
