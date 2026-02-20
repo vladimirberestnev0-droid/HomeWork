@@ -3386,3 +3386,17 @@ body.dark-theme .dropdown-item:hover {
 #orderForm textarea {
     scroll-margin-top: 100px; /* Отступ при прокрутке к полю */
 }
+
+/* Отключаем анимацию на узких экранах */
+@media (max-width: 992px) {
+    .order-item:hover {
+        transform: none;
+    }
+}
+
+/* Делаем анимацию менее агрессивной */
+.order-item:hover {
+    transform: translateY(-3px);  /* было -5px, стало -3px */
+    box-shadow: 0 10px 20px rgba(230,122,75,0.1);  /* более мягкая тень */
+    transition: all 0.2s ease;  /* ускоряем анимацию */
+}
