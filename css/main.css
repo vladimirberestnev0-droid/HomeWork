@@ -3406,41 +3406,34 @@ body.dark-theme .dropdown-item:hover {
 /* Форма заказа — всегда сверху */
 #orderFormColumn {
     position: relative;
-    z-index: 10;  /* форма выше всех */
+    z-index: 10;
 }
 
 /* Контейнер заказов */
 #ordersColumn {
     position: relative;
-    z-index: 1;  /* заказы ниже формы */
+    z-index: 1;
 }
 
-/* Карточки заказов — анимация НЕ вылезает за пределы */
+/* Карточки заказов — единое описание */
 .order-item {
     position: relative;
     z-index: 1;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    will-change: transform, box-shadow;  /* оптимизация анимации */
+    will-change: transform, box-shadow;
+    overflow: visible !important;
+    animation: slideUp 0.3s ease-out;  /* анимация появления */
+    background: var(--bg-white);  /* фон чтобы не просвечивало */
 }
 
-/* Анимация при наведении — но под формой */
+/* Анимация при наведении */
 .order-item:hover {
-    transform: translateY(-5px) scale(1.02);  /* небольшое увеличение */
+    transform: translateY(-5px) scale(1.02);
     box-shadow: var(--shadow-hover);
-    z-index: 5;  /* поднимается, но всё ещё ниже формы (10 > 5) */
+    z-index: 5;  /* выше соседей, но ниже формы (10 > 5) */
 }
 
-/* Чтобы тень не обрезалась */
-.order-item {
-    overflow: visible !important;
-}
-
-/* Исправляем возможные баги с перекрытием */
-.card {
-    overflow: visible !important;
-}
-
-/* Для мобилок — отключаем анимацию */
+/* Для мобилок — менее агрессивная анимация */
 @media (max-width: 768px) {
     .order-item:hover {
         transform: translateY(-2px);
@@ -3448,12 +3441,7 @@ body.dark-theme .dropdown-item:hover {
     }
 }
 
-/* Плавное появление заказов */
-.order-item {
-    animation: slideUp 0.3s ease-out;
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
+/* Анимация появления */
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -3463,4 +3451,9 @@ body.dark-theme .dropdown-item:hover {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Исправляем баги с перекрытием */
+.card {
+    overflow: visible !important;
 }
