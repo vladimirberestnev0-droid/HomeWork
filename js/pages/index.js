@@ -173,8 +173,10 @@ function initFilters() {
             applyFilters(true);
         });
         
-        // Добавляем поиск по городам (опционально, для удобства)
-        addCitySearch(citySelect);
+        // Добавляем поиск по городам (с задержкой для гарантии)
+        setTimeout(() => {
+            addCitySearch(citySelect);
+        }, 50);
         
     } else {
         console.error('❌ SORTED_CITIES_BY_DISTRICT не найден');
@@ -240,14 +242,29 @@ function initFilters() {
     }
 }
 
-// ===== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Поиск по городам =====
+// ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ: Поиск по городам =====
 function addCitySearch(select) {
     // Проверяем, есть ли уже контейнер для поиска
-    if (document.getElementById('citySearchContainer')) return;
+    if (document.getElementById('citySearchContainer')) {
+        console.log('🔍 Поиск уже существует');
+        return;
+    }
     
-    // Находим родительский элемент (обычно .filter-section)
-    const filterSection = select.closest('.filter-section') || select.parentElement;
-    if (!filterSection) return;
+    // Находим родительский элемент
+    let filterSection = select.closest('.filter-section');
+    
+    // Если не нашли .filter-section, ищем любой родительский контейнер
+    if (!filterSection) {
+        filterSection = select.parentElement;
+    }
+    
+    // Если все еще нет — выходим
+    if (!filterSection) {
+        console.warn('⚠️ Не удалось найти родительский контейнер для поиска городов');
+        return;
+    }
+    
+    console.log('✅ Найден контейнер для поиска:', filterSection);
     
     // Создаем контейнер для поиска
     const searchContainer = document.createElement('div');
@@ -266,10 +283,23 @@ function addCitySearch(select) {
         </div>
     `;
     
-    // Вставляем перед select
-    filterSection.insertBefore(searchContainer, select);
+    // Вставляем перед select с проверкой
+    try {
+        if (select.parentNode === filterSection) {
+            filterSection.insertBefore(searchContainer, select);
+        } else {
+            // Если select не прямой потомок, просто добавляем в начало
+            filterSection.prepend(searchContainer);
+        }
+        console.log('✅ Поле поиска добавлено');
+    } catch (error) {
+        console.error('❌ Ошибка при вставке поиска:', error);
+        // Если не получилось, пробуем просто добавить в начало
+        filterSection.prepend(searchContainer);
+    }
     
     const searchInput = document.getElementById('citySearch');
+    if (!searchInput) return;
     
     searchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase().trim();
@@ -296,15 +326,17 @@ function addCitySearch(select) {
         
         // Если ничего не найдено, показываем сообщение
         const anyVisible = Array.from(select.querySelectorAll('option')).some(opt => opt.style.display !== 'none');
-        if (!anyVisible && !document.getElementById('noResultsMessage')) {
+        
+        // Удаляем старое сообщение если есть
+        const oldMessage = document.getElementById('noResultsMessage');
+        if (oldMessage) oldMessage.remove();
+        
+        if (!anyVisible) {
             const noResults = document.createElement('option');
             noResults.id = 'noResultsMessage';
             noResults.disabled = true;
             noResults.textContent = '❌ Ничего не найдено';
             select.appendChild(noResults);
-        } else if (anyVisible) {
-            const noResults = document.getElementById('noResultsMessage');
-            if (noResults) noResults.remove();
         }
     });
 }
