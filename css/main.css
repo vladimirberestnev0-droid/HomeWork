@@ -4187,3 +4187,70 @@ body.dark-theme .review-card:hover {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* ===== ИСПРАВЛЕНИЕ УРОВНЕЙ И СКРОЛЛА ===== */
+
+/* Родительский контейнер для двух колонок */
+#orderFormRow {
+    display: flex;
+    align-items: flex-start;  /* выравниваем по верхнему краю */
+    gap: 20px;
+}
+
+/* Левая колонка (форма) — прилипает */
+#orderFormColumn {
+    flex: 0 0 calc(50% - 10px);  /* фиксированная ширина */
+    position: sticky;
+    top: 90px;  /* отступ от шапки */
+    align-self: flex-start;
+    height: fit-content;
+    max-height: calc(100vh - 100px);  /* не выше экрана */
+}
+
+/* Правая колонка (заявки) — скроллится */
+#ordersColumn {
+    flex: 0 0 calc(50% - 10px);  /* фиксированная ширина */
+    max-height: calc(100vh - 100px);  /* высота = экран минус шапка */
+    overflow-y: auto;  /* ВКЛЮЧАЕМ СКРОЛЛ */
+    padding-right: 10px;  /* место для скролла */
+}
+
+/* Сами карточки заказов */
+.order-item {
+    margin-bottom: 15px;
+    transition: transform 0.2s;
+}
+
+/* Стилизация скролла */
+#ordersColumn::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ordersColumn::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Для мобилок — отключаем sticky */
+@media (max-width: 768px) {
+    #orderFormRow {
+        flex-direction: column;
+    }
+    
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 100%;
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+    }
+}
