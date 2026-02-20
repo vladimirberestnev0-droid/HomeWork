@@ -157,3 +157,18 @@ textarea.form-control {
     flex-wrap: wrap;
     gap: 8px;
 }
+
+/* Исправляем дерганье мыши */
+#orderForm input,
+#orderForm select,
+#orderForm textarea,
+#orderForm button {
+    transition: none;  /* убираем анимацию на форме */
+}
+
+#orderForm input:hover,
+#orderForm select:hover,
+#orderForm textarea:hover,
+#orderForm button:hover {
+    transform: none;  /* отключаем подскоки */
+}
