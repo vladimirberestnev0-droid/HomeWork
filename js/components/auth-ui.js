@@ -1,285 +1,478 @@
-// ===== js/components/auth-ui.js =====
-// КОМПОНЕНТЫ UI ДЛЯ АВТОРИЗАЦИИ
+// ===== js/services/auth.js =====
+// УЛУЧШЕННАЯ АВТОРИЗАЦИЯ С ПРОВЕРКАМИ
 
-const AuthUI = (function() {
-    // Проверяем доступность Bootstrap
-    function isBootstrapAvailable() {
-        return typeof bootstrap !== 'undefined' && bootstrap.Modal;
-    }
+const Auth = (function() {
+    // Приватные переменные
+    let currentUser = null;
+    let currentUserData = null;
+    let authListeners = [];
+    let unsubscribe = null;
 
-    /**
-     * Показать модалку входа
-     */
-    function showLoginModal() {
-        console.log('🔓 Открытие модалки входа');
-        
-        // Проверяем Bootstrap
-        if (!isBootstrapAvailable()) {
-            console.error('❌ Bootstrap не загружен!');
-            alert('Ошибка загрузки модального окна. Обновите страницу.');
+    // Безопасный Helpers
+    const safeHelpers = {
+        showNotification: (msg, type) => {
+            if (window.Helpers && Helpers.showNotification) {
+                Helpers.showNotification(msg, type);
+            } else {
+                console.log(`🔔 ${type}: ${msg}`);
+                // Пробуем показать alert как fallback
+                if (type === 'error') alert(`❌ ${msg}`);
+                else if (type === 'success') alert(`✅ ${msg}`);
+                else alert(msg);
+            }
+        },
+        validateEmail: (email) => {
+            if (window.Helpers && Helpers.validateEmail) {
+                return Helpers.validateEmail(email);
+            }
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        },
+        validatePhone: (phone) => {
+            if (window.Helpers && Helpers.validatePhone) {
+                return Helpers.validatePhone(phone);
+            }
+            return /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/.test(phone);
+        }
+    };
+
+    // Инициализация
+    function init() {
+        if (!window.auth) {
+            console.error('❌ auth не определен! Проверь порядок подключения скриптов');
             return;
         }
-
-        // Удаляем старую модалку если есть
-        const oldModal = document.getElementById('loginModal');
-        if (oldModal) oldModal.remove();
-
-        // Создаем модалку
-        const modalHtml = `
-            <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-sign-in-alt me-2" style="color: var(--accent);"></i>
-                                Вход в ВоркХом
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" id="loginEmail" placeholder="email@example.com">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="loginPassword" placeholder="••••••">
-                            </div>
-                            <button class="btn w-100" onclick="AuthUI.submitLogin()">
-                                <i class="fas fa-sign-in-alt me-2"></i> Войти
-                            </button>
-                        </div>
-                        <div class="modal-footer">
-                            <p class="text-secondary mb-0">Нет аккаунта? 
-                                <a href="#" onclick="AuthUI.showRegisterModal(); return false;">Зарегистрироваться</a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Добавляем в DOM
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        // Показываем модалку
-        const modalElement = document.getElementById('loginModal');
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        
-        // Убираем фокус с фона
-        modalElement.addEventListener('shown.bs.modal', () => {
-            document.getElementById('loginEmail')?.focus();
-        });
-    }
-
-    /**
-     * Показать модалку регистрации
-     */
-    function showRegisterModal() {
-        console.log('📝 Открытие модалки регистрации');
-        
-        if (!isBootstrapAvailable()) {
-            console.error('❌ Bootstrap не загружен!');
-            alert('Ошибка загрузки модального окна. Обновите страницу.');
-            return;
-        }
-
-        const oldModal = document.getElementById('registerModal');
-        if (oldModal) oldModal.remove();
-
-        const modalHtml = `
-            <div class="modal fade" id="registerModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-user-plus me-2" style="color: var(--accent);"></i>
-                                Регистрация
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label">Имя</label>
-                                <input type="text" class="form-control" id="regName">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" id="regEmail">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="regPassword">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Телефон</label>
-                                <input type="tel" class="form-control" id="regPhone" placeholder="+7 (999) 123-45-67">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Вы</label>
-                                <select class="form-select" id="regRole">
-                                    <option value="client">Клиент (ищу мастера)</option>
-                                    <option value="master">Мастер (ищу заказы)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3" id="masterCategoriesField" style="display: none;">
-                                <label class="form-label">Категории (через запятую)</label>
-                                <input type="text" class="form-control" id="regCategories" placeholder="Сантехника, Электрика">
-                            </div>
-                            <button class="btn w-100" onclick="AuthUI.submitRegister()">
-                                <i class="fas fa-user-plus me-2"></i> Зарегистрироваться
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        // Показываем/скрываем поле категорий
-        document.getElementById('regRole').addEventListener('change', function() {
-            const field = document.getElementById('masterCategoriesField');
-            field.style.display = this.value === 'master' ? 'block' : 'none';
+        unsubscribe = auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            
+            if (user) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    currentUserData = userDoc.exists ? userDoc.data() : null;
+                } catch (error) {
+                    console.error('Ошибка загрузки данных пользователя:', error);
+                    currentUserData = null;
+                }
+            } else {
+                currentUserData = null;
+            }
+            
+            // Уведомляем подписчиков
+            notifyListeners();
+            
+            // Обновляем UI
+            updateUI();
         });
         
-        const modalElement = document.getElementById('registerModal');
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+        initTheme();
+        
+        console.log('✅ Auth инициализирован');
     }
 
-    /**
-     * Отправка формы входа
-     */
-    async function submitLogin() {
-        const email = document.getElementById('loginEmail')?.value;
-        const password = document.getElementById('loginPassword')?.value;
-        
-        if (!email || !password) {
-            Helpers.showNotification('Заполните все поля', 'warning');
-            return;
-        }
-        
-        const result = await Auth.login(email, password);
-        if (result.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-            if (modal) modal.hide();
+    // Получить пользователя
+    function getUser() {
+        return currentUser;
+    }
+
+    // Получить данные пользователя
+    function getUserData() {
+        return currentUserData;
+    }
+
+    // Проверка авторизации
+    function isAuthenticated() {
+        return !!currentUser;
+    }
+
+    // Проверка роли
+    function hasRole(role) {
+        return currentUserData?.role === role;
+    }
+
+    function isMaster() {
+        return currentUserData?.role === USER_ROLE?.MASTER;
+    }
+
+    function isClient() {
+        return currentUserData?.role === USER_ROLE?.CLIENT;
+    }
+
+    function isAdmin() {
+        return currentUser?.uid === ADMIN_UID;
+    }
+
+    // Регистрация
+    async function register(email, password, userData) {
+        try {
+            // Валидация
+            if (!safeHelpers.validateEmail(email)) {
+                throw new Error('Некорректный email');
+            }
+            
+            if (password.length < 6) {
+                throw new Error('Пароль должен быть не менее 6 символов');
+            }
+            
+            if (userData.role === 'master' && userData.phone && !safeHelpers.validatePhone(userData.phone)) {
+                throw new Error('Некорректный формат телефона');
+            }
+            
+            // Создаем пользователя
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Подготавливаем данные
+            const firestoreData = {
+                name: userData.name || '',
+                email: email,
+                phone: userData.phone || '',
+                role: userData.role || (USER_ROLE?.CLIENT || 'client'),
+                rating: 0,
+                reviews: 0,
+                categories: userData.role === (USER_ROLE?.MASTER || 'master') ? (userData.categories || '') : '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                favorites: [],
+                viewedOrders: [],
+                verified: false,
+                banned: false,
+                badges: []
+            };
+            
+            // Сохраняем в Firestore
+            await db.collection('users').doc(user.uid).set(firestoreData);
+            
+            safeHelpers.showNotification('✅ Регистрация прошла успешно!', 'success');
+            return { success: true, user };
+            
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            
+            let errorMessage = 'Ошибка регистрации';
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'Этот email уже используется';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Некорректный email';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'Слишком простой пароль';
+            } else {
+                errorMessage = error.message;
+            }
+            
+            safeHelpers.showNotification(`❌ ${errorMessage}`, 'error');
+            return { success: false, error: errorMessage };
         }
     }
 
-    /**
-     * Отправка формы регистрации
-     */
-    async function submitRegister() {
-        const userData = {
-            name: document.getElementById('regName')?.value,
-            phone: document.getElementById('regPhone')?.value,
-            role: document.getElementById('regRole')?.value
+    // Вход
+    async function login(email, password) {
+        try {
+            if (!email || !password) {
+                throw new Error('Введите email и пароль');
+            }
+            
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            
+            // Проверяем бан
+            const userData = await db.collection('users').doc(userCredential.user.uid).get();
+            if (userData.exists && userData.data().banned) {
+                await auth.signOut();
+                throw new Error('Ваш аккаунт заблокирован');
+            }
+            
+            safeHelpers.showNotification('✅ Вход выполнен успешно!', 'success');
+            return { success: true, user: userCredential.user };
+            
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            
+            let errorMessage = 'Ошибка входа';
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = 'Пользователь не найден';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Неверный пароль';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Некорректный email';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Слишком много попыток. Попробуйте позже';
+            } else {
+                errorMessage = error.message;
+            }
+            
+            safeHelpers.showNotification(`❌ ${errorMessage}`, 'error');
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    // Выход
+    async function logout() {
+        try {
+            await auth.signOut();
+            // Очищаем кэш
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            safeHelpers.showNotification('👋 До свидания!', 'info');
+            return { success: true };
+        } catch (error) {
+            console.error('Ошибка выхода:', error);
+            safeHelpers.showNotification('❌ Ошибка при выходе', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Обновление профиля
+    async function updateProfile(userId, data) {
+        try {
+            if (!userId) throw new Error('ID пользователя не указан');
+            
+            await db.collection('users').doc(userId).update({
+                ...data,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Обновляем локальные данные
+            if (userId === currentUser?.uid) {
+                currentUserData = { ...currentUserData, ...data };
+            }
+            
+            safeHelpers.showNotification('✅ Профиль обновлен', 'success');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка обновления профиля:', error);
+            safeHelpers.showNotification('❌ Ошибка обновления профиля', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Добавление в избранное
+    async function addToFavorites(masterId) {
+        try {
+            if (!currentUser) throw new Error('Необходимо авторизоваться');
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                favorites: firebase.firestore.FieldValue.arrayUnion(masterId)
+            });
+            
+            safeHelpers.showNotification('✅ Мастер добавлен в избранное', 'success');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка добавления в избранное:', error);
+            safeHelpers.showNotification('❌ Ошибка', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function removeFromFavorites(masterId) {
+        try {
+            if (!currentUser) throw new Error('Необходимо авторизоваться');
+            
+            await db.collection('users').doc(currentUser.uid).update({
+                favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
+            });
+            
+            safeHelpers.showNotification('❌ Мастер удален из избранного', 'info');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка удаления из избранного:', error);
+            safeHelpers.showNotification('❌ Ошибка', 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    async function getFavorites() {
+        try {
+            if (!currentUser) return [];
+            
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const favorites = userDoc.data()?.favorites || [];
+            
+            const masters = [];
+            for (const masterId of favorites) {
+                const masterDoc = await db.collection('users').doc(masterId).get();
+                if (masterDoc.exists) {
+                    masters.push({
+                        id: masterDoc.id,
+                        ...masterDoc.data()
+                    });
+                }
+            }
+            
+            return masters;
+            
+        } catch (error) {
+            console.error('Ошибка загрузки избранного:', error);
+            return [];
+        }
+    }
+
+    // Подписка на изменения авторизации
+    function onAuthChange(callback) {
+        if (typeof callback === 'function') {
+            authListeners.push(callback);
+            
+            // Сразу вызываем с текущим состоянием
+            callback({
+                user: currentUser,
+                userData: currentUserData,
+                isAuthenticated: !!currentUser,
+                isMaster: isMaster(),
+                isClient: isClient(),
+                isAdmin: isAdmin()
+            });
+        }
+    }
+
+    function notifyListeners() {
+        const state = {
+            user: currentUser,
+            userData: currentUserData,
+            isAuthenticated: !!currentUser,
+            isMaster: isMaster(),
+            isClient: isClient(),
+            isAdmin: isAdmin()
         };
         
-        if (!userData.name || !userData.phone) {
-            Helpers.showNotification('Заполните все поля', 'warning');
-            return;
+        authListeners.forEach(listener => {
+            try {
+                listener(state);
+            } catch (error) {
+                console.error('Ошибка в listener авторизации:', error);
+            }
+        });
+    }
+
+    // Обновление UI на основе статуса авторизации
+    function updateUI() {
+        // Скрываем/показываем блоки авторизации
+        document.querySelectorAll('.auth-required').forEach(el => {
+            if (el) el.classList.toggle('d-none', !currentUser);
+        });
+        
+        document.querySelectorAll('.no-auth-required').forEach(el => {
+            if (el) el.classList.toggle('d-none', !!currentUser);
+        });
+        
+        document.querySelectorAll('.client-only').forEach(el => {
+            if (el) el.classList.toggle('d-none', !isClient());
+        });
+        
+        document.querySelectorAll('.master-only').forEach(el => {
+            if (el) el.classList.toggle('d-none', !isMaster());
+        });
+        
+        document.querySelectorAll('.admin-only').forEach(el => {
+            if (el) el.classList.toggle('d-none', !isAdmin());
+        });
+        
+        // Обновляем информацию о пользователе
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        if (userEmailDisplay && currentUser) {
+            userEmailDisplay.innerText = currentUser.email || '';
         }
         
-        if (userData.role === 'master') {
-            userData.categories = document.getElementById('regCategories')?.value;
+        const userRoleDisplay = document.getElementById('userRoleDisplay');
+        if (userRoleDisplay && currentUserData) {
+            userRoleDisplay.innerText = currentUserData.role === (USER_ROLE?.MASTER || 'master') ? 'Мастер' : 'Клиент';
         }
         
-        const email = document.getElementById('regEmail')?.value;
-        const password = document.getElementById('regPassword')?.value;
-        
-        if (!email || !password) {
-            Helpers.showNotification('Заполните email и пароль', 'warning');
-            return;
+        // Обновляем ссылки с проверками
+        const clientLink = document.getElementById('clientLink');
+        if (clientLink) {
+            clientLink.href = isAuthenticated() ? '/HomeWork/client.html' : '#';
+            clientLink.onclick = (e) => {
+                if (!isAuthenticated()) {
+                    e.preventDefault();
+                    safeHelpers.showNotification('Войдите в систему', 'warning');
+                }
+            };
         }
         
-        const result = await Auth.register(email, password, userData);
-        if (result.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-            if (modal) modal.hide();
+        const masterLink = document.getElementById('masterLink');
+        if (masterLink) {
+            masterLink.href = isAuthenticated() ? '/HomeWork/masters.html' : '#';
+            masterLink.onclick = (e) => {
+                if (!isAuthenticated()) {
+                    e.preventDefault();
+                    safeHelpers.showNotification('Войдите в систему', 'warning');
+                }
+            };
         }
     }
 
-    /**
-     * Отрисовка блока авторизации
-     */
-    function renderAuthBlock() {
-        const container = document.getElementById('authBlockContainer');
-        if (!container) return;
-
-        if (Auth.isAuthenticated()) {
-            renderUserInfo(container);
-        } else {
-            renderAuthButtons(container);
+    // Инициализация темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            updateThemeIcon(true);
         }
     }
 
-    /**
-     * Рендер кнопок для неавторизованных
-     */
-    function renderAuthButtons(container) {
-        container.innerHTML = `
-            <div class="card mb-4">
-                <div class="d-flex justify-content-between align-items-center p-4">
-                    <div>
-                        <i class="fas fa-user-circle fa-2x me-3" style="color: var(--accent);"></i>
-                        <span>Войдите, чтобы создавать заказы или откликаться</span>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-outline-secondary" onclick="AuthUI.showLoginModal()">
-                            <i class="fas fa-sign-in-alt me-2"></i>Вход
-                        </button>
-                        <button class="btn" onclick="AuthUI.showRegisterModal()">
-                            <i class="fas fa-user-plus me-2"></i>Регистрация
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeIcon(isDark);
     }
 
-    /**
-     * Рендер информации о пользователе
-     */
-    function renderUserInfo(container) {
-        const user = Auth.getUser();
-        const userData = Auth.getUserData();
-        
-        container.innerHTML = `
-            <div class="card mb-4">
-                <div class="d-flex justify-content-between align-items-center p-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold">${Helpers.escapeHtml(userData?.name || 'Пользователь')}</div>
-                            <div class="small text-secondary">${user?.email || ''}</div>
-                            <div class="small">
-                                <span class="badge badge-${userData?.role === 'master' ? 'success' : 'primary'}">
-                                    ${userData?.role === 'master' ? 'Мастер' : 'Клиент'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-outline-secondary" onclick="Auth.logout()">
-                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
-                    </button>
-                </div>
-            </div>
-        `;
+    function updateThemeIcon(isDark) {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+    }
+
+    // Очистка при выходе
+    function cleanup() {
+        if (unsubscribe) {
+            unsubscribe();
+        }
     }
 
     // Публичное API
     return {
-        renderAuthBlock,
-        showLoginModal,
-        showRegisterModal,
-        submitLogin,
-        submitRegister
+        init,
+        getUser,
+        getUserData,
+        isAuthenticated,
+        hasRole,
+        isMaster,
+        isClient,
+        isAdmin,
+        register,
+        login,
+        logout,
+        updateProfile,
+        addToFavorites,
+        removeFromFavorites,
+        getFavorites,
+        onAuthChange,
+        toggleTheme,
+        cleanup
     };
 })();
 
-window.AuthUI = AuthUI;
+// Автоинициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем наличие auth перед инициализацией
+    if (window.auth) {
+        Auth.init();
+    } else {
+        console.warn('⏳ Ожидание инициализации Firebase...');
+        // Пробуем еще раз через секунду
+        setTimeout(() => {
+            if (window.auth) {
+                Auth.init();
+            } else {
+                console.error('❌ Firebase auth не загрузился');
+            }
+        }, 1000);
+    }
+});
+
+window.Auth = Auth;

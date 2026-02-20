@@ -6,6 +6,34 @@ const Orders = (function() {
     const cache = new Map();
     let listeners = [];
 
+    // Безопасный Helpers
+    const safeHelpers = {
+        showNotification: (msg, type) => {
+            if (window.Helpers && Helpers.showNotification) {
+                Helpers.showNotification(msg, type);
+            } else {
+                console.log(`🔔 ${type}: ${msg}`);
+                if (type === 'error') alert(`❌ ${msg}`);
+                else if (type === 'success') alert(`✅ ${msg}`);
+                else alert(msg);
+            }
+        },
+        validatePrice: (price) => {
+            if (window.Helpers && Helpers.validatePrice) {
+                return Helpers.validatePrice(price);
+            }
+            return price && !isNaN(price) && price >= 500 && price <= 1000000;
+        }
+    };
+
+    // Проверка модерации (с fallback)
+    async function checkModeration(text, context) {
+        if (window.Moderation && Moderation.check) {
+            return Moderation.check(text, context);
+        }
+        return { isValid: true, violations: [] };
+    }
+
     // Создание заказа
     async function create(orderData) {
         try {
@@ -26,7 +54,7 @@ const Orders = (function() {
                 throw new Error('Выберите категорию');
             }
 
-            if (!Helpers.validatePrice(orderData.price)) {
+            if (!safeHelpers.validatePrice(orderData.price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
@@ -35,12 +63,12 @@ const Orders = (function() {
             }
 
             // Проверка модерации
-            const modResult = await Moderation.moderateOrder(orderData);
+            const modResult = await checkModeration(orderData.title, 'order_title');
             if (!modResult.isValid) {
-                throw new Error(modResult.violations[0]?.reason || 'Текст не прошел модерацию');
+                throw new Error('Текст не прошел модерацию');
             }
 
-            // Подготовка данных
+            // Подготовка данных (ВСЕГДА serverTimestamp!)
             const order = {
                 category: orderData.category,
                 title: orderData.title,
@@ -54,7 +82,7 @@ const Orders = (function() {
                 clientPhone: orderData.clientPhone,
                 clientId: Auth.getUser().uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: ORDER_STATUS.OPEN,
+                status: 'open', // ORDER_STATUS.OPEN
                 responses: [],
                 views: 0
             };
@@ -68,13 +96,13 @@ const Orders = (function() {
             // Очищаем кэш
             clearCache();
             
-            Helpers.showNotification('✅ Заказ создан!', 'success');
+            safeHelpers.showNotification('✅ Заказ создан!', 'success');
             
             return { success: true, orderId: docRef.id };
             
         } catch (error) {
             console.error('Ошибка создания заказа:', error);
-            Helpers.showNotification(`❌ ${error.message}`, 'error');
+            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -83,7 +111,7 @@ const Orders = (function() {
     async function notifyMasters(orderId, order) {
         try {
             const mastersSnapshot = await db.collection('users')
-                .where('role', '==', USER_ROLE.MASTER)
+                .where('role', '==', 'master')
                 .where('banned', '==', false)
                 .get();
 
@@ -134,9 +162,9 @@ const Orders = (function() {
             }
 
             let query = db.collection('orders')
-                .where('status', '==', ORDER_STATUS.OPEN)
+                .where('status', '==', 'open')
                 .orderBy('createdAt', 'desc')
-                .limit(PAGINATION.ORDERS_PER_PAGE);
+                .limit(20);
 
             if (filters.category && filters.category !== 'all') {
                 query = query.where('category', '==', filters.category);
@@ -170,7 +198,7 @@ const Orders = (function() {
             
         } catch (error) {
             console.error('Ошибка загрузки заказов:', error);
-            Helpers.showNotification('❌ Ошибка загрузки заказов', 'error');
+            safeHelpers.showNotification('❌ Ошибка загрузки заказов', 'error');
             return [];
         }
     }
@@ -238,7 +266,7 @@ const Orders = (function() {
         }
     }
 
-    // ✅ ИСПРАВЛЕННЫЙ ОТКЛИК НА ЗАКАЗ
+    // ОТКЛИК НА ЗАКАЗ (исправлено - ВСЕГДА serverTimestamp)
     async function respondToOrder(orderId, price, comment) {
         try {
             if (!Auth.isAuthenticated()) {
@@ -249,13 +277,13 @@ const Orders = (function() {
                 throw new Error('Только мастера могут откликаться');
             }
 
-            if (!Helpers.validatePrice(price)) {
+            if (!safeHelpers.validatePrice(price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
             // Проверка модерации
             if (comment) {
-                const modResult = Moderation.check(comment, 'master_comment');
+                const modResult = await checkModeration(comment, 'master_comment');
                 if (!modResult.isValid) {
                     throw new Error(modResult.reason || 'Комментарий не прошел модерацию');
                 }
@@ -271,7 +299,7 @@ const Orders = (function() {
             const orderData = orderDoc.data();
             const clientId = orderData.clientId;
 
-            // ✅ ИСПРАВЛЕНО: используем обычную дату вместо serverTimestamp()
+            // ✅ ИСПРАВЛЕНО: используем serverTimestamp() вместо ISO строки
             const response = {
                 masterId: user.uid,
                 masterName: userData?.name || 'Мастер',
@@ -280,7 +308,7 @@ const Orders = (function() {
                 masterReviews: userData?.reviews || 0,
                 price: parseInt(price),
                 comment: comment || '',
-                createdAt: new Date().toISOString() // ✅ Обычная дата, строка
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await db.collection('orders').doc(orderId).update({
@@ -289,7 +317,9 @@ const Orders = (function() {
 
             // Создаем чат
             try {
-                await Chats.create(orderId, user.uid, clientId);
+                if (window.Chats && Chats.create) {
+                    await Chats.create(orderId, user.uid, clientId);
+                }
             } catch (chatError) {
                 console.error('❌ Ошибка создания чата:', chatError);
             }
@@ -302,13 +332,13 @@ const Orders = (function() {
             // Очищаем кэш
             clearCache();
 
-            Helpers.showNotification('✅ Отклик отправлен!', 'success');
+            safeHelpers.showNotification('✅ Отклик отправлен!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка отклика:', error);
-            Helpers.showNotification(`❌ ${error.message}`, 'error');
+            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -329,7 +359,7 @@ const Orders = (function() {
             }
 
             await db.collection('orders').doc(orderId).update({
-                status: ORDER_STATUS.IN_PROGRESS,
+                status: 'in_progress',
                 selectedMasterId: masterId,
                 selectedPrice: price,
                 selectedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -348,13 +378,13 @@ const Orders = (function() {
 
             clearCache();
 
-            Helpers.showNotification('✅ Мастер выбран!', 'success');
+            safeHelpers.showNotification('✅ Мастер выбран!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка выбора мастера:', error);
-            Helpers.showNotification(`❌ ${error.message}`, 'error');
+            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -385,7 +415,7 @@ const Orders = (function() {
             }
 
             await db.collection('orders').doc(orderId).update({
-                status: ORDER_STATUS.COMPLETED,
+                status: 'completed',
                 completedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -398,13 +428,13 @@ const Orders = (function() {
             clearCache();
 
             console.log('✅ Заказ завершен:', orderId);
-            Helpers.showNotification('✅ Заказ завершен!', 'success');
+            safeHelpers.showNotification('✅ Заказ завершен!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('❌ Ошибка завершения заказа:', error);
-            Helpers.showNotification(`❌ ${error.message}`, 'error');
+            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -417,7 +447,7 @@ const Orders = (function() {
             }
 
             const snapshot = await db.collection('orders')
-                .where('status', '==', ORDER_STATUS.OPEN)
+                .where('status', '==', 'open')
                 .orderBy('createdAt', 'desc')
                 .limit(20)
                 .get();
@@ -457,7 +487,7 @@ const Orders = (function() {
                 const user = Auth.getUser();
                 const viewedOrder = {
                     orderId: orderId,
-                    viewedAt: new Date().toISOString() // ✅ Исправлено на обычную дату
+                    viewedAt: firebase.firestore.FieldValue.serverTimestamp() // ✅ serverTimestamp!
                 };
                 
                 await db.collection('users').doc(user.uid).update({
@@ -476,8 +506,8 @@ const Orders = (function() {
             const responses = await getMasterResponses(masterId);
             
             const total = responses.length;
-            const accepted = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS || r.status === ORDER_STATUS.COMPLETED).length;
-            const completed = responses.filter(r => r.status === ORDER_STATUS.COMPLETED).length;
+            const accepted = responses.filter(r => r.status === 'in_progress' || r.status === 'completed').length;
+            const completed = responses.filter(r => r.status === 'completed').length;
             
             return {
                 total,

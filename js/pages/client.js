@@ -1,4 +1,5 @@
 // ===== CLIENT.JS — Логика кабинета клиента =====
+// ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРОВЕРКАМИ
 
 (function() {
     // Состояние страницы
@@ -6,6 +7,57 @@
     let currentOrderId = null;
     let currentMasterId = null;
     let reviewModal = null;
+
+    // Безопасный Helpers
+    const safeHelpers = {
+        escapeHtml: (text) => {
+            if (!text) return '';
+            if (window.Helpers && Helpers.escapeHtml) {
+                return Helpers.escapeHtml(text);
+            }
+            // Fallback
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+        formatDate: (timestamp) => {
+            if (window.Helpers && Helpers.formatDate) {
+                return Helpers.formatDate(timestamp);
+            }
+            if (!timestamp) return 'только что';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return date.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } catch {
+                return 'недавно';
+            }
+        },
+        showNotification: (msg, type) => {
+            if (window.Helpers && Helpers.showNotification) {
+                Helpers.showNotification(msg, type);
+            } else {
+                console.log(`🔔 ${type}: ${msg}`);
+                if (type === 'error') alert(`❌ ${msg}`);
+                else if (type === 'success') alert(`✅ ${msg}`);
+                else alert(msg);
+            }
+        },
+        getCategoryIcon: (cat) => {
+            if (window.Helpers && Helpers.getCategoryIcon) {
+                return Helpers.getCategoryIcon(cat);
+            }
+            return 'fa-tag';
+        },
+        pluralize: (count, words) => {
+            if (window.Helpers && Helpers.pluralize) {
+                return Helpers.pluralize(count, words);
+            }
+            return words[0];
+        }
+    };
+
+    // Безопасное получение элемента
+    const getElement = (id) => document.getElementById(id);
 
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', () => {
@@ -16,49 +68,51 @@
         }
 
         // Подписываемся на изменения авторизации
-        Auth.onAuthChange(async (state) => {
-            console.log('🔄 Статус авторизации в клиентском кабинете:', state);
-            
-            const authRequired = document.getElementById('authRequired');
-            const clientCabinet = document.getElementById('clientCabinet');
-            
-            if (state.isAuthenticated && state.isClient) {
-                // Показать кабинет клиента
-                if (authRequired) authRequired?.classList.add('d-none');
-                if (clientCabinet) clientCabinet?.classList.remove('d-none');
+        if (window.Auth && Auth.onAuthChange) {
+            Auth.onAuthChange(async (state) => {
+                console.log('🔄 Статус авторизации в клиентском кабинете:', state);
                 
-                // Заполнить профиль (с проверками)
-                const nameEl = document.getElementById('clientName');
-                if (nameEl) nameEl.innerText = state.userData?.name || 'Клиент';
+                const authRequired = getElement('authRequired');
+                const clientCabinet = getElement('clientCabinet');
                 
-                const emailEl = document.getElementById('clientEmail');
-                if (emailEl) emailEl.innerText = state.user?.email || '';
-                
-                const balanceEl = document.getElementById('clientBalance');
-                if (balanceEl) balanceEl.innerText = state.userData?.balance || '0 ₽';
-                
-                // Загрузить данные
-                try {
-                    await Promise.all([
-                        loadClientOrders('all'),
-                        loadFavorites(),
-                        loadHistory()
-                    ]);
-                } catch (error) {
-                    console.error('❌ Ошибка загрузки данных:', error);
-                    Helpers.showNotification('Ошибка загрузки данных', 'error');
+                if (state.isAuthenticated && state.isClient) {
+                    // Показать кабинет клиента
+                    if (authRequired) authRequired?.classList.add('d-none');
+                    if (clientCabinet) clientCabinet?.classList.remove('d-none');
+                    
+                    // Заполнить профиль
+                    const nameEl = getElement('clientName');
+                    if (nameEl) nameEl.innerText = state.userData?.name || 'Клиент';
+                    
+                    const emailEl = getElement('clientEmail');
+                    if (emailEl) emailEl.innerText = state.user?.email || '';
+                    
+                    const balanceEl = getElement('clientBalance');
+                    if (balanceEl) balanceEl.innerText = state.userData?.balance || '0 ₽';
+                    
+                    // Загрузить данные
+                    try {
+                        await Promise.all([
+                            loadClientOrders('all'),
+                            loadFavorites(),
+                            loadHistory()
+                        ]);
+                    } catch (error) {
+                        console.error('❌ Ошибка загрузки данных:', error);
+                        safeHelpers.showNotification('Ошибка загрузки данных', 'error');
+                    }
+                    
+                } else if (state.isAuthenticated && !state.isClient) {
+                    safeHelpers.showNotification('Эта страница только для клиентов', 'warning');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                    
+                } else {
+                    // Показать блок авторизации
+                    if (authRequired) authRequired?.classList.remove('d-none');
+                    if (clientCabinet) clientCabinet?.classList.add('d-none');
                 }
-                
-            } else if (state.isAuthenticated && !state.isClient) {
-                Helpers.showNotification('Эта страница только для клиентов', 'warning');
-                setTimeout(() => window.location.href = 'index.html', 2000);
-                
-            } else {
-                // Показать блок авторизации
-                if (authRequired) authRequired?.classList.remove('d-none');
-                if (clientCabinet) clientCabinet?.classList.add('d-none');
-            }
-        });
+            });
+        }
 
         // Инициализация обработчиков
         initEventListeners();
@@ -91,26 +145,23 @@
         });
 
         // Выход
-        document.getElementById('logoutLink')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            Auth.logout().then(() => {
-                window.location.href = 'index.html';
+        const logoutLink = getElement('logoutLink');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.Auth && Auth.logout) {
+                    Auth.logout().then(() => {
+                        window.location.href = 'index.html';
+                    });
+                }
             });
-        });
-
-        // Навигация по табам через ссылки
-        document.getElementById('favoritesLink')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelector('[data-tab="favorites"]')?.click();
-        });
-
-        document.getElementById('historyLink')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelector('[data-tab="history"]')?.click();
-        });
+        }
 
         // Отправка отзыва
-        document.getElementById('submitReview')?.addEventListener('click', submitReview);
+        const submitReviewBtn = getElement('submitReview');
+        if (submitReviewBtn) {
+            submitReviewBtn.addEventListener('click', submitReview);
+        }
 
         // Звезды рейтинга
         document.querySelectorAll('.rating-star').forEach(star => {
@@ -125,12 +176,15 @@
         });
 
         // Темная тема
-        document.getElementById('themeToggle')?.addEventListener('click', Auth.toggleTheme);
+        const themeToggle = getElement('themeToggle');
+        if (themeToggle && window.Auth && Auth.toggleTheme) {
+            themeToggle.addEventListener('click', Auth.toggleTheme);
+        }
     }
 
     // Загрузка заказов клиента
     async function loadClientOrders(filter = 'all') {
-        const ordersList = document.getElementById('ordersList');
+        const ordersList = getElement('ordersList');
         if (!ordersList) return;
         
         ordersList.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
@@ -138,6 +192,11 @@
         try {
             const user = Auth.getUser();
             if (!user) return;
+            
+            if (!window.Orders || !Orders.getClientOrders) {
+                ordersList.innerHTML = '<div class="text-center p-5 text-danger">Сервис заказов недоступен</div>';
+                return;
+            }
             
             const orders = await Orders.getClientOrders(user.uid, filter);
             
@@ -155,7 +214,8 @@
 
             ordersList.innerHTML = '';
             orders.forEach(order => {
-                ordersList.appendChild(createOrderCard(order));
+                const card = createOrderCard(order);
+                if (card) ordersList.appendChild(card);
             });
             
         } catch (error) {
@@ -166,6 +226,8 @@
 
     // Создание карточки заказа
     function createOrderCard(order) {
+        if (!order) return null;
+        
         const div = document.createElement('div');
         div.className = 'order-item';
         
@@ -204,14 +266,14 @@
                     <div class="card mb-3 p-4">
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <div>
-                                <span class="fw-bold">${Helpers.escapeHtml(resp.masterName || 'Мастер')}</span>
+                                <span class="fw-bold">${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}</span>
                                 <span class="badge badge-info ms-2">
                                     ⭐ ${(resp.masterRating || 0).toFixed(1)} (${resp.masterReviews || 0})
                                 </span>
                             </div>
                             <span class="fw-bold" style="color: var(--accent);">${resp.price || 0} ₽</span>
                         </div>
-                        <p class="text-secondary mb-3">${Helpers.escapeHtml(resp.comment || '')}</p>
+                        <p class="text-secondary mb-3">${safeHelpers.escapeHtml(resp.comment || '')}</p>
                         <div class="d-flex gap-2 flex-wrap">
                             <button onclick="window.openChat('${order.id}', '${resp.masterId}')" class="btn btn-outline-secondary">
                                 <i class="fas fa-comment me-2"></i>Чат
@@ -224,7 +286,7 @@
                             ` : ''}
                             
                             ${order.status === 'completed' && !hasReview ? `
-                                <button onclick="window.openReview('${order.id}', '${resp.masterId}', '${Helpers.escapeHtml(resp.masterName || 'Мастер')}')" class="btn btn-outline-secondary">
+                                <button onclick="window.openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')" class="btn btn-outline-secondary">
                                     <i class="fas fa-star me-2"></i>Оценить
                                 </button>
                             ` : ''}
@@ -242,21 +304,21 @@
         div.innerHTML = `
             <div class="order-header">
                 <div>
-                    <h4 class="order-title d-inline">${Helpers.escapeHtml(order.title || 'Заказ')}</h4>
+                    <h4 class="order-title d-inline">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h4>
                     <span class="badge ${status.class} ms-2">${status.text}</span>
                 </div>
                 <span class="order-price">${order.price || 0} ₽</span>
             </div>
-            <p class="text-secondary mb-3">${Helpers.escapeHtml(order.description || '')}</p>
+            <p class="text-secondary mb-3">${safeHelpers.escapeHtml(order.description || '')}</p>
             ${photosHtml}
             <div class="order-meta mb-3">
                 <span>
-                    <i class="fas ${Helpers.getCategoryIcon(order.category)}"></i>
+                    <i class="fas ${safeHelpers.getCategoryIcon(order.category)}"></i>
                     ${order.category || 'Без категории'}
                 </span>
                 <span>
                     <i class="fas fa-map-marker-alt"></i>
-                    ${Helpers.escapeHtml(order.address || 'Адрес не указан')}
+                    ${safeHelpers.escapeHtml(order.address || 'Адрес не указан')}
                 </span>
             </div>
             ${responsesHtml}
@@ -267,10 +329,15 @@
 
     // Загрузка избранного
     async function loadFavorites() {
-        const favoritesList = document.getElementById('favoritesList');
+        const favoritesList = getElement('favoritesList');
         if (!favoritesList) return;
         
         try {
+            if (!window.Auth || !Auth.getFavorites) {
+                favoritesList.innerHTML = '<div class="text-center p-5 text-danger">Сервис недоступен</div>';
+                return;
+            }
+            
             const favorites = await Auth.getFavorites();
             
             if (favorites.length === 0) {
@@ -293,8 +360,8 @@
                     <div class="master-card mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h5 class="mb-1">${Helpers.escapeHtml(master.name || 'Мастер')}</h5>
-                                <p class="text-secondary mb-2">${Helpers.escapeHtml(master.categories || 'Специалист')}</p>
+                                <h5 class="mb-1">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h5>
+                                <p class="text-secondary mb-2">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
                                 <div class="mb-2">
                                     <span class="rating-stars">${stars}</span>
                                     <span class="text-secondary ms-2">${master.reviews || 0} отзывов</span>
@@ -320,7 +387,7 @@
 
     // Загрузка истории просмотров
     async function loadHistory() {
-        const historyList = document.getElementById('historyList');
+        const historyList = getElement('historyList');
         if (!historyList) return;
         
         try {
@@ -342,23 +409,26 @@
             
             historyList.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
             
-            const sortedViews = viewedOrders.sort((a, b) => 
-                new Date(b.viewedAt) - new Date(a.viewedAt)
-            ).slice(0, 20);
+            const sortedViews = viewedOrders.sort((a, b) => {
+                const aTime = a.viewedAt?.toDate ? a.viewedAt.toDate() : new Date(a.viewedAt);
+                const bTime = b.viewedAt?.toDate ? b.viewedAt.toDate() : new Date(b.viewedAt);
+                return bTime - aTime;
+            }).slice(0, 20);
             
             let html = '';
             for (const view of sortedViews) {
                 const orderDoc = await db.collection('orders').doc(view.orderId).get();
                 if (orderDoc.exists) {
                     const order = orderDoc.data();
+                    const viewedDate = view.viewedAt?.toDate ? view.viewedAt.toDate() : new Date(view.viewedAt);
                     html += `
                         <div class="card p-3 mb-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-1">${Helpers.escapeHtml(order.title || 'Заказ')}</h6>
+                                    <h6 class="mb-1">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h6>
                                     <small class="text-secondary">${order.price || 0} ₽ · ${order.category || ''}</small>
                                 </div>
-                                <small class="text-secondary">${new Date(view.viewedAt).toLocaleDateString()}</small>
+                                <small class="text-secondary">${viewedDate.toLocaleDateString()}</small>
                             </div>
                         </div>
                     `;
@@ -376,6 +446,11 @@
     window.selectMaster = async (orderId, masterId, price) => {
         if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
         
+        if (!window.Orders || !Orders.selectMaster) {
+            safeHelpers.showNotification('❌ Сервис заказов недоступен', 'error');
+            return;
+        }
+        
         const result = await Orders.selectMaster(orderId, masterId, price);
         if (result.success) {
             const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
@@ -392,17 +467,17 @@
         currentMasterId = masterId;
         currentRating = 0;
         
-        const reviewMasterInfo = document.getElementById('reviewMasterInfo');
+        const reviewMasterInfo = getElement('reviewMasterInfo');
         if (reviewMasterInfo) {
-            reviewMasterInfo.innerHTML = `<p class="fw-bold mb-0">Мастер: ${Helpers.escapeHtml(masterName)}</p>`;
+            reviewMasterInfo.innerHTML = `<p class="fw-bold mb-0">Мастер: ${safeHelpers.escapeHtml(masterName)}</p>`;
         }
         
-        const reviewText = document.getElementById('reviewText');
+        const reviewText = getElement('reviewText');
         if (reviewText) reviewText.value = '';
         
         document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
         
-        if (reviewModal) reviewModal?.show();
+        if (reviewModal) reviewModal.show();
     };
 
     // Отправка отзыва
@@ -416,8 +491,8 @@
             const review = {
                 masterId: currentMasterId,
                 rating: currentRating,
-                text: document.getElementById('reviewText')?.value || '',
-                createdAt: new Date().toISOString()
+                text: getElement('reviewText')?.value || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() // ✅ serverTimestamp!
             };
 
             await db.collection('orders').doc(currentOrderId).update({
@@ -436,15 +511,15 @@
                 });
             }
 
-            if (reviewModal) reviewModal?.hide();
-            Helpers.showNotification('✅ Отзыв отправлен!', 'success');
+            if (reviewModal) reviewModal.hide();
+            safeHelpers.showNotification('✅ Отзыв отправлен!', 'success');
             
             const activeFilter = document.querySelector('.filter-tab.active')?.dataset.filter || 'all';
             await loadClientOrders(activeFilter);
             
         } catch (error) {
             console.error('❌ Ошибка при отправке отзыва:', error);
-            Helpers.showNotification('❌ Ошибка при отправке отзыва', 'error');
+            safeHelpers.showNotification('❌ Ошибка при отправке отзыва', 'error');
         }
     }
 })();

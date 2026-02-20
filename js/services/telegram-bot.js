@@ -1,57 +1,39 @@
-// ===== ЗАГРУЗКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ =====
-require('dotenv').config({ path: './server/.env' });
+// ===== /server/telegram-bot.js =====
+// НЕ В ПАПКЕ JS! ЭТО СЕРВЕРНЫЙ ФАЙЛ!
+// Запускать через: node server/telegram-bot.js
 
+require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const admin = require('firebase-admin');
 
 // ========== КОНФИГУРАЦИЯ ==========
-// Токен из .env!
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
-    console.error('❌ Ошибка: TELEGRAM_BOT_TOKEN не найден в .env');
+    console.error('❌ TELEGRAM_BOT_TOKEN не найден в .env');
     process.exit(1);
 }
 
-// Инициализация Firebase Admin из переменных окружения
+// Инициализация Firebase Admin
 try {
-    if (process.env.FIREBASE_PROJECT_ID && 
-        process.env.FIREBASE_CLIENT_EMAIL && 
-        process.env.FIREBASE_PRIVATE_KEY) {
-        
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-            }),
-            databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
-        });
-        
-        console.log('✅ Firebase Admin инициализирован из .env');
-    } else {
-        console.error('❌ Ошибка: нет переменных Firebase в .env');
-        process.exit(1);
-    }
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        })
+    });
+    console.log('✅ Firebase Admin инициализирован');
 } catch (error) {
-    console.error('❌ Ошибка инициализации Firebase Admin:', error.message);
+    console.error('❌ Ошибка Firebase:', error);
     process.exit(1);
 }
 
-// Инициализация бота
-const bot = new TelegramBot(token, { 
-    polling: true,
-    polling: {
-        interval: 300,
-        autoStart: true,
-        params: {
-            timeout: 10
-        }
-    }
-});
-
+const bot = new TelegramBot(token, { polling: true });
 const db = admin.firestore();
 
-console.log('🤖 Бот запущен и слушает команды...');
+console.log('🤖 Telegram бот запущен!');
+
+// ... остальной код бота ...
 console.log('📱 Имя бота:', process.env.TELEGRAM_BOT_USERNAME || '@WorkHomBot');
 
 // ========== ОБРАБОТКА ОШИБОК ==========

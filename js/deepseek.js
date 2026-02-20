@@ -1,25 +1,75 @@
-// ===== deepseek.js — РАБОЧАЯ ВЕРСИЯ С PROXYAPI =====
+// ===== deepseek.js — РАБОЧАЯ ВЕРСИЯ С ПРОКСИ ЧЕРЕЗ FIREBASE =====
 
 // Состояние чата
 let deepSeekVisible = false;
 let failedAttempts = 0;
 const MAX_FAILED_ATTEMPTS = 3;
 
-// ===== ВАЖНО! СЮДА ВСТАВЬ НОВЫЙ КЛЮЧ =====
+// Конфигурация (ключи ТОЛЬКО на сервере!)
 const CONFIG = {
-    API_URL: 'https://openai.api.proxyapi.ru/v1/chat/completions',
-    API_KEY: 'sk-or-v1-sk-dktm7dKCFrBGNaAkn6Z7Y0SA55lNYsqY',  // ← ВСТАВЬ НОВЫЙ КЛЮЧ!
-    MODEL: 'openrouter/deepseek/deepseek-chat'
+    // Используем Firebase Functions как прокси
+    API_URL: 'https://us-central1-homework-6a562.cloudfunctions.net/deepseekProxy',
+    // Или локально для разработки:
+    // API_URL: 'http://localhost:5001/homework-6a562/us-central1/deepseekProxy',
+    MODEL: 'deepseek-chat',
+    TIMEOUT: 15000 // 15 секунд
 };
 
+// Функция переключения чата
 function toggleDeepSeekChat() {
     const chat = document.getElementById('deepseek-chat-window');
+    if (!chat) return;
+    
     deepSeekVisible = !deepSeekVisible;
     chat.classList.toggle('hidden', !deepSeekVisible);
+    
+    // Если открыли - фокус на input
+    if (deepSeekVisible) {
+        setTimeout(() => {
+            document.getElementById('deepseek-input')?.focus();
+        }, 300);
+    }
 }
 
+// Безопасное добавление сообщения
+function addMessage(text, sender) {
+    const container = document.getElementById('deepseek-messages');
+    if (!container) return;
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `deepseek-message ${sender === 'bro' ? 'bro-message' : 'user-message'}`;
+    msgDiv.textContent = text;
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Показать индикатор печати
+function showTypingIndicator() {
+    const container = document.getElementById('deepseek-messages');
+    if (!container) return;
+    
+    // Удаляем старый индикатор если есть
+    hideTypingIndicator();
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'deepseek-message bro-message';
+    typingDiv.textContent = 'Бро печатает...';
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Скрыть индикатор печати
+function hideTypingIndicator() {
+    const typing = document.getElementById('typing-indicator');
+    if (typing) typing.remove();
+}
+
+// Основная функция отправки сообщения
 async function sendToDeepSeek() {
     const input = document.getElementById('deepseek-input');
+    if (!input) return;
+    
     const message = input.value.trim();
     if (!message) return;
 
@@ -33,34 +83,33 @@ async function sendToDeepSeek() {
     // Проверяем, не превышен ли лимит ошибок
     if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
         hideTypingIndicator();
-        addMessage('⛔ Бот временно недоступен. Загляни позже!', 'bro');
+        addMessage('⛔ Бот временно недоступен. Загляни позже или напиши в поддержку!', 'bro');
         return;
     }
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+        // Получаем токен авторизации если пользователь залогинен
+        let token = null;
+        if (window.Auth && Auth.getUser) {
+            const user = Auth.getUser();
+            if (user) {
+                token = await user.getIdToken();
+            }
+        }
 
         const response = await fetch(CONFIG.API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.API_KEY}`
+                'Authorization': token ? `Bearer ${token}` : ''
             },
             body: JSON.stringify({
+                message: message,
                 model: CONFIG.MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Ты — бро-помощник на сайте ВоркХом. Ты общаешься неформально, с юмором, используешь слова типа "бро", "короче", "слушай". Ты помогаешь с поиском мастеров, советами по ремонту, ценами. Ты позитивный и энергичный!'
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ],
-                temperature: 0.9,
-                max_tokens: 500
+                userId: Auth.getUser()?.uid || 'anonymous'
             }),
             signal: controller.signal
         });
@@ -68,7 +117,9 @@ async function sendToDeepSeek() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            throw new Error(`Ошибка HTTP: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Ошибка HTTP:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -77,6 +128,10 @@ async function sendToDeepSeek() {
         let reply = '';
         if (data.choices && data.choices[0] && data.choices[0].message) {
             reply = data.choices[0].message.content;
+        } else if (data.reply) {
+            reply = data.reply;
+        } else if (data.text) {
+            reply = data.text;
         } else {
             console.error('Неожиданный ответ API:', data);
             throw new Error('Неверный формат ответа');
@@ -95,43 +150,51 @@ async function sendToDeepSeek() {
         hideTypingIndicator();
         
         if (error.name === 'AbortError') {
-            addMessage('Бро, таймаут... Сервер долго думает. Попробуй ещё раз! ⏱️', 'bro');
+            addMessage('Бро, сервер долго думает... Попробуй ещё раз или задай вопрос покороче! ⏱️', 'bro');
         } else if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-            addMessage('⛔ Бот не отвечает. Загляни позже!', 'bro');
+            addMessage('⛔ Бот временно не отвечает. Попробуй позже или напиши в поддержку support@workhom.ru', 'bro');
         } else {
-            addMessage('Ой, бро, что-то сломалось... Давай позже? 😅', 'bro');
+            addMessage('Ой, бро, что-то пошло не так... Давай попробуем ещё раз? 😅', 'bro');
         }
     }
 }
 
-function addMessage(text, sender) {
-    const container = document.getElementById('deepseek-messages');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `deepseek-message ${sender === 'bro' ? 'bro-message' : 'user-message'}`;
-    msgDiv.textContent = text;
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function showTypingIndicator() {
-    const container = document.getElementById('deepseek-messages');
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'deepseek-message bro-message';
-    typingDiv.textContent = 'Бро печатает...';
-    container.appendChild(typingDiv);
-}
-
-function hideTypingIndicator() {
-    const typing = document.getElementById('typing-indicator');
-    if (typing) typing.remove();
+// Обработка нажатия Enter
+function setupDeepSeekEvents() {
+    const input = document.getElementById('deepseek-input');
+    if (!input) return;
+    
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendToDeepSeek();
+        }
+    });
 }
 
 // Закрытие по клику вне окна
 window.addEventListener('click', function(e) {
     const chat = document.getElementById('deepseek-chat-window');
     const button = document.getElementById('deepseek-bro-button');
+    
+    if (!chat || !button) return;
+    
     if (deepSeekVisible && !chat.contains(e.target) && !button.contains(e.target)) {
         toggleDeepSeekChat();
     }
 });
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    setupDeepSeekEvents();
+    
+    // Добавляем приветственное сообщение если чат пуст
+    const container = document.getElementById('deepseek-messages');
+    if (container && container.children.length === 0) {
+        addMessage('Привет, бро! 👋 Что ищешь? Мастера, цену или просто поболтать?', 'bro');
+    }
+});
+
+// Экспортируем функции в глобальную область
+window.toggleDeepSeekChat = toggleDeepSeekChat;
+window.sendToDeepSeek = sendToDeepSeek;
