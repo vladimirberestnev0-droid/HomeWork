@@ -641,16 +641,64 @@ function showAuthRequiredModal() {
         return;
     }
     
-    if (!authModal) {
-        authModal = new bootstrap.Modal(modalEl);
+    // Убеждаемся, что Bootstrap доступен
+    if (typeof bootstrap === 'undefined') {
+        console.error('❌ Bootstrap не загружен');
+        alert('Ошибка загрузки модального окна. Обновите страницу.');
+        return;
     }
     
-    authModal.show();
+    try {
+        // Если модалка уже создана, просто показываем
+        if (authModal) {
+            authModal.show();
+            return;
+        }
+        
+        // Создаём новую модалку
+        authModal = new bootstrap.Modal(modalEl, {
+            backdrop: 'static',  // чтобы не закрывалась по клику вне
+            keyboard: true        // закрытие по ESC
+        });
+        
+        // Показываем
+        authModal.show();
+        
+        // Добавляем обработчик закрытия
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            // Очищаем фон если что-то пошло не так
+            document.body.classList.remove('modal-open');
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while(backdrops.length > 0) {
+                backdrops[0].parentNode.removeChild(backdrops[0]);
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка при открытии модалки:', error);
+        
+        // Fallback — если модалка не работает, показываем alert
+        alert('Для просмотра профиля необходимо войти в систему');
+        
+        // Пробуем открыть модалку авторизации через AuthUI
+        if (typeof AuthUI !== 'undefined' && AuthUI.showLoginModal) {
+            AuthUI.showLoginModal();
+        }
+    }
 }
 
 function closeAuthModal() {
     if (authModal) {
         authModal.hide();
+        
+        // Принудительно убираем фон
+        setTimeout(() => {
+            document.body.classList.remove('modal-open');
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            while(backdrops.length > 0) {
+                backdrops[0].parentNode.removeChild(backdrops[0]);
+            }
+        }, 300);
     }
 }
 
