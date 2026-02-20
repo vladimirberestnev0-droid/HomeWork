@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Загрузка данных
     loadAllOrders();
-    loadTopMasters('week');  // ← 1. ЗАМЕНИ ЭТУ СТРОКУ (было loadTopMasters())
+    loadTopMasters('week');
     
     // Инициализация обработчиков
     initEventListeners();
     
-    // Инициализация кнопок рейтинга  // ← 2. ДОБАВЬ ЭТУ СТРОКУ
+    // Инициализация кнопок рейтинга
     initLeaderboardButtons();
 });
 
@@ -476,16 +476,15 @@ function showError(message) {
 }
 
 // ============================================
-// ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАМ
+// ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАм
 // ============================================
 
-let currentLeaderboardPeriod = 'week'; // 'day', 'week', 'month', 'all'
+let currentLeaderboardPeriod = 'week';
 
 async function loadTopMasters(period = 'week') {
     const container = document.getElementById('topMastersList');
     if (!container) return;
     
-    // Показываем загрузку
     container.innerHTML = '<div class="text-center p-5"><div class="spinner mb-3"></div><p class="text-secondary">Загрузка...</p></div>';
     
     try {
@@ -493,7 +492,6 @@ async function loadTopMasters(period = 'week') {
             throw new Error('db не определен');
         }
         
-        // Определяем дату для фильтрации
         const now = new Date();
         let startDate = null;
         
@@ -509,10 +507,9 @@ async function loadTopMasters(period = 'week') {
                 break;
             case 'all':
             default:
-                startDate = null; // все время
+                startDate = null;
         }
         
-        // Получаем всех мастеров
         const mastersSnapshot = await db.collection('users')
             .where('role', '==', USER_ROLE.MASTER)
             .get();
@@ -522,19 +519,15 @@ async function loadTopMasters(period = 'week') {
         for (const doc of mastersSnapshot.docs) {
             const master = { id: doc.id, ...doc.data() };
             
-            // Если нужен период, считаем активность за этот период
             if (startDate) {
-                // Считаем заказы за период
                 const ordersSnapshot = await db.collection('orders')
                     .where('selectedMasterId', '==', doc.id)
                     .where('status', '==', ORDER_STATUS.COMPLETED)
                     .where('completedAt', '>=', startDate)
                     .get();
                 
-                // Если за период ничего нет — пропускаем или показываем с 0
                 master.periodCompleted = ordersSnapshot.size;
                 
-                // Считаем рейтинг за период (можно усложнить)
                 let periodRating = 0;
                 let periodReviews = 0;
                 
@@ -556,7 +549,6 @@ async function loadTopMasters(period = 'week') {
             masters.push(master);
         }
         
-        // Сортируем по рейтингу (за период или общий)
         masters.sort((a, b) => {
             if (startDate) {
                 return (b.periodRating || 0) - (a.periodRating || 0);
@@ -565,7 +557,6 @@ async function loadTopMasters(period = 'week') {
             }
         });
         
-        // Берем топ-6
         const topMasters = masters.slice(0, 6);
         
         if (topMasters.length === 0) {
@@ -576,7 +567,6 @@ async function loadTopMasters(period = 'week') {
         container.innerHTML = '';
         
         topMasters.forEach(master => {
-            // Используем рейтинг за период или общий
             const rating = startDate ? (master.periodRating || 0) : (master.rating || 0);
             const completedJobs = startDate ? (master.periodCompleted || 0) : (master.completedJobs || 0);
             
@@ -596,7 +586,7 @@ async function loadTopMasters(period = 'week') {
                         <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
                     </div>
                     <p class="small text-secondary mb-2">${Helpers.escapeHtml?.(master.categories) || master.categories || 'Специалист'}</p>
-                    <button class="btn btn-sm w-100" onclick="viewMaster('${master.id}')">
+                    <button class="btn btn-sm w-100" onclick="handleViewMaster('${master.id}')">
                         Смотреть профиль
                     </button>
                 </div>
@@ -622,15 +612,46 @@ function initLeaderboardButtons() {
     Object.entries(buttons).forEach(([period, btn]) => {
         if (btn) {
             btn.addEventListener('click', () => {
-                // Убираем active со всех
                 Object.values(buttons).forEach(b => b?.classList.remove('active'));
-                // Добавляем active текущей
                 btn.classList.add('active');
-                // Загружаем мастеров за период
                 loadTopMasters(period);
             });
         }
     });
+}
+
+// ===== ОБРАБОТКА КЛИКА ПО ПРОФИЛЮ МАСТЕРА =====
+function handleViewMaster(masterId) {
+    if (Auth && Auth.isAuthenticated && Auth.isAuthenticated()) {
+        // Если авторизован — переходим на публичный профиль
+        window.location.href = `/HomeWork/master-profile.html?id=${masterId}`;
+    } else {
+        // Если нет — показываем модалку
+        showAuthRequiredModal();
+    }
+}
+
+// ===== МОДАЛКА АВТОРИЗАЦИИ =====
+let authModal = null;
+
+function showAuthRequiredModal() {
+    const modalEl = document.getElementById('authRequiredModal');
+    if (!modalEl) {
+        console.error('❌ Модалка не найдена');
+        return;
+    }
+    
+    if (!authModal) {
+        authModal = new bootstrap.Modal(modalEl);
+    }
+    
+    authModal.show();
+}
+
+function closeAuthModal() {
+    if (authModal) {
+        authModal.hide();
+    }
 }
 
 // ============================================
@@ -661,7 +682,7 @@ function initMaps() {
         
         if (document.getElementById('ordersMap') && typeof ymaps !== 'undefined') {
             ordersMap = new ymaps.Map('ordersMap', {
-                center: [61.0, 69.0], // Центр ХМАО
+                center: [61.0, 69.0],
                 zoom: 8
             });
             loadOrdersMap();
@@ -737,10 +758,6 @@ async function respondToOrder(orderId) {
     }
 }
 
-function viewMaster(masterId) {
-    window.location.href = `/HomeWork/masters.html?master=${masterId}`;
-}
-
 // ============================================
 // РАБОТА С ФАЙЛАМИ
 // ============================================
@@ -805,7 +822,6 @@ function removePhoto(fileName) {
 // ============================================
 
 function initEventListeners() {
-    // Выход
     const logoutHandler = () => {
         if (typeof Auth !== 'undefined' && Auth.logout) {
             Auth.logout();
@@ -814,44 +830,34 @@ function initEventListeners() {
     document.getElementById('logoutBtn')?.addEventListener('click', logoutHandler);
     document.getElementById('headerLogoutBtn')?.addEventListener('click', logoutHandler);
 
-    // Обновление
     document.getElementById('refreshBtn')?.addEventListener('click', () => {
         loadAllOrders();
         loadOrdersMap();
     });
 
-    // Темная тема
     document.getElementById('themeToggle')?.addEventListener('click', () => {
         if (typeof Auth !== 'undefined' && Auth.toggleTheme) {
             Auth.toggleTheme();
         }
     });
 
-    // Фильтр по категориям
     document.querySelectorAll('.category-filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
             filters.category = this.dataset.category;
             applyFilters(true);
         });
     });
 
-    // Сброс фильтров
     document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
-        // Сбрасываем город (уже обработано в initCityCombo)
         filters = { category: 'all', city: 'all' };
-        
-        // Сбрасываем категорию
         document.querySelectorAll('.category-filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.category === 'all');
         });
-        
         applyFilters(true);
     });
 
-    // Кнопка "Показать еще"
     document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
         if (!isLoading && hasMore) {
             isLoading = true;
@@ -860,34 +866,28 @@ function initEventListeners() {
         }
     });
 
-    // Загрузка фото
     const uploadArea = document.getElementById('uploadArea');
     const photoInput = document.getElementById('photoInput');
 
     if (uploadArea && photoInput) {
         uploadArea.addEventListener('click', () => photoInput.click());
-
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.style.background = 'rgba(230,122,75,0.1)';
         });
-
         uploadArea.addEventListener('dragleave', () => {
             uploadArea.style.background = '';
         });
-
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.style.background = '';
             handleFiles(e.dataTransfer.files);
         });
-
         photoInput.addEventListener('change', (e) => {
             handleFiles(e.target.files);
         });
     }
 
-    // Форма заказа
     document.getElementById('orderForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -939,7 +939,6 @@ function initEventListeners() {
         }
     });
 
-    // AI-подсказка цены
     const categoryEl = document.getElementById('category');
     const descriptionEl = document.getElementById('description');
     const priceEl = document.getElementById('price');
@@ -1019,7 +1018,9 @@ window.loadOrders = loadAllOrders;
 window.loadOrdersMap = loadOrdersMap;
 window.loadTopMasters = loadTopMasters;
 window.respondToOrder = respondToOrder;
-window.viewMaster = viewMaster;
+window.handleViewMaster = handleViewMaster;
+window.showAuthRequiredModal = showAuthRequiredModal;
+window.closeAuthModal = closeAuthModal;
 window.removePhoto = removePhoto;
 
 console.log('✅ index.js успешно загружен, все функции доступны глобально!');
