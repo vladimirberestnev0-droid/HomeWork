@@ -40,10 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Загрузка данных
     loadAllOrders();
-    loadTopMasters();
+    loadTopMasters('week');  // ← 1. ЗАМЕНИ ЭТУ СТРОКУ (было loadTopMasters())
     
     // Инициализация обработчиков
     initEventListeners();
+    
+    // Инициализация кнопок рейтинга  // ← 2. ДОБАВЬ ЭТУ СТРОКУ
+    initLeaderboardButtons();
 });
 
 // Подписка на изменения авторизации
@@ -605,6 +608,29 @@ async function loadTopMasters(period = 'week') {
         console.error('❌ Ошибка загрузки мастеров:', error);
         container.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
     }
+}
+
+// ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
+function initLeaderboardButtons() {
+    const buttons = {
+        day: document.getElementById('leaderboardDaily'),
+        week: document.getElementById('leaderboardWeekly'),
+        month: document.getElementById('leaderboardMonthly'),
+        all: document.getElementById('leaderboardAll')
+    };
+    
+    Object.entries(buttons).forEach(([period, btn]) => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                // Убираем active со всех
+                Object.values(buttons).forEach(b => b?.classList.remove('active'));
+                // Добавляем active текущей
+                btn.classList.add('active');
+                // Загружаем мастеров за период
+                loadTopMasters(period);
+            });
+        }
+    });
 }
 
 // ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
