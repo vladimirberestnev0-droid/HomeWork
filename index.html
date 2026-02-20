@@ -586,5 +586,21 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ===== 9. DeepSeek Бро ===== -->
 <script src="/HomeWork/js/deepseek.js"></script>
 
+<!-- Кнопка "Наверх" -->
+<div id="scrollToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <i class="fas fa-arrow-up"></i>
+</div>
+
+<script>
+    // Показывать кнопку при скролле
+    window.addEventListener('scroll', function() {
+        const btn = document.getElementById('scrollToTop');
+        if (window.scrollY > 500) {
+            btn.classList.add('visible');
+        } else {
+            btn.classList.remove('visible');
+        }
+    });
+</script>
 </body>
 </html>
