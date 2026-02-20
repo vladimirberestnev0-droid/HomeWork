@@ -140,3 +140,107 @@
     margin-top: auto;
     padding-top: 20px;
 }
+/* ===== ИСПРАВЛЕНИЕ СКРОЛЛА ЗАКАЗОВ ===== */
+
+/* Родительский контейнер */
+#orderFormRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    position: relative;
+}
+
+/* Левая колонка (форма) — всегда сверху */
+#orderFormColumn {
+    flex: 0 0 calc(50% - 10px);
+    position: sticky;
+    top: 90px;
+    align-self: flex-start;
+    height: fit-content;
+    z-index: 10;  /* форма выше заказов */
+    background: transparent;
+}
+
+/* Правая колонка (заказы) — скролл */
+#ordersColumn {
+    flex: 0 0 calc(50% - 10px);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding-right: 10px;
+    position: relative;
+    z-index: 1;  /* заказы ниже формы */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--bg-light);
+}
+
+/* Сами карточки заказов */
+.order-item {
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+    border-left: 4px solid var(--accent);
+}
+
+/* Чтобы при наведении не вылезали */
+.order-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    z-index: 5;  /* выше соседей, но всё ещё ниже формы */
+}
+
+/* Стилизация скролла */
+#ordersColumn::-webkit-scrollbar {
+    width: 6px;
+}
+
+#ordersColumn::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Исправляем прыгание мыши */
+#orderFormColumn .card {
+    pointer-events: auto;  /* форма кликабельна */
+    position: relative;
+    z-index: 20;
+    background: var(--bg-white);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Чтобы заказы не наезжали */
+#ordersColumn {
+    pointer-events: auto;
+}
+
+/* Для мобилок */
+@media (max-width: 768px) {
+    #orderFormRow {
+        flex-direction: column;
+    }
+    
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 100%;
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    #orderFormColumn {
+        z-index: 1;
+    }
+}
