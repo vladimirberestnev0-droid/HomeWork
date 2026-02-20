@@ -1,7 +1,16 @@
+// ===== deepseek.js — РАБОЧАЯ ВЕРСИЯ С PROXYAPI =====
+
 // Состояние чата
 let deepSeekVisible = false;
 let failedAttempts = 0;
 const MAX_FAILED_ATTEMPTS = 3;
+
+// ===== ВАЖНО! СЮДА ВСТАВЬ НОВЫЙ КЛЮЧ =====
+const CONFIG = {
+    API_URL: 'https://openai.api.proxyapi.ru/v1/chat/completions',
+    API_KEY: 'sk-or-v1-sk-dktm7dKCFrBGNaAkn6Z7Y0SA55lNYsqY',  // ← ВСТАВЬ НОВЫЙ КЛЮЧ!
+    MODEL: 'openrouter/deepseek/deepseek-chat'
+};
 
 function toggleDeepSeekChat() {
     const chat = document.getElementById('deepseek-chat-window');
@@ -29,16 +38,29 @@ async function sendToDeepSeek() {
     }
 
     try {
-        const API_URL = 'https://home-work-deep.vercel.app/api/deepseek';
-
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // Таймаут 5 секунд
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд
 
-        const response = await fetch(API_URL, {
+        const response = await fetch(CONFIG.API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CONFIG.API_KEY}`
+            },
             body: JSON.stringify({
-                messages: [{ role: 'user', content: message }]
+                model: CONFIG.MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Ты — бро-помощник на сайте ВоркХом. Ты общаешься неформально, с юмором, используешь слова типа "бро", "короче", "слушай". Ты помогаешь с поиском мастеров, советами по ремонту, ценами. Ты позитивный и энергичный!'
+                    },
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ],
+                temperature: 0.9,
+                max_tokens: 500
             }),
             signal: controller.signal
         });
@@ -46,11 +68,19 @@ async function sendToDeepSeek() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            throw new Error('Ошибка сети');
+            throw new Error(`Ошибка HTTP: ${response.status}`);
         }
 
         const data = await response.json();
-        const reply = data.choices[0].message.content;
+        
+        // Проверяем структуру ответа
+        let reply = '';
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+            reply = data.choices[0].message.content;
+        } else {
+            console.error('Неожиданный ответ API:', data);
+            throw new Error('Неверный формат ответа');
+        }
 
         hideTypingIndicator();
         addMessage(reply, 'bro');
@@ -64,8 +94,10 @@ async function sendToDeepSeek() {
         
         hideTypingIndicator();
         
-        if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-            addMessage('⛔ Бот не отвечает. Попробуй позже.', 'bro');
+        if (error.name === 'AbortError') {
+            addMessage('Бро, таймаут... Сервер долго думает. Попробуй ещё раз! ⏱️', 'bro');
+        } else if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+            addMessage('⛔ Бот не отвечает. Загляни позже!', 'bro');
         } else {
             addMessage('Ой, бро, что-то сломалось... Давай позже? 😅', 'bro');
         }
