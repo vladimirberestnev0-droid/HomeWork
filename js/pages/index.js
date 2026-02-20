@@ -633,29 +633,6 @@ function initLeaderboardButtons() {
     });
 }
 
-// ===== ОБРАБОТЧИКИ ДЛЯ КНОПОК ПЕРИОДОВ =====
-function initLeaderboardButtons() {
-    const buttons = {
-        day: document.getElementById('leaderboardDaily'),
-        week: document.getElementById('leaderboardWeekly'),
-        month: document.getElementById('leaderboardMonthly'),
-        all: document.getElementById('leaderboardAll')
-    };
-    
-    Object.entries(buttons).forEach(([period, btn]) => {
-        if (btn) {
-            btn.addEventListener('click', () => {
-                // Убираем active со всех
-                Object.values(buttons).forEach(b => b?.classList.remove('active'));
-                // Добавляем active текущей
-                btn.classList.add('active');
-                // Загружаем маasters за период
-                loadTopMasters(period);
-            });
-        }
-    });
-}
-
 // ============================================
 // ФУНКЦИИ РАБОТЫ С КАРТАМИ
 // ============================================
