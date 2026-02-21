@@ -976,4 +976,5 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     display: flex !important;
     height: auto !important;
     min-height: 600px !important;
+    margin-bottom: 40px !important;
 }
