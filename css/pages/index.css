@@ -1,5 +1,23 @@
 /* ===== PAGES/INDEX.CSS ===== */
-/* Версия: 6.1 — ФИНАЛЬНАЯ С РАБОЧЕЙ КНОПКОЙ */
+/* Версия: 7.0 — УЛЬТИМАТИВНАЯ (ВСЁ В ОДНОМ) */
+
+/* ===== CSS ПЕРЕМЕННЫЕ ===== */
+:root {
+    /* Анимации */
+    --transition-fast: all 0.15s ease;
+    --transition-normal: all 0.2s ease;
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Z-INDEX */
+    --z-form: 30;
+    --z-form-card: 31;
+    --z-orders: 20;
+    --z-card: 15;
+    --z-card-hover: 25;
+    --z-button: 26;
+    --z-dropdown: 10000;
+    --z-tooltip: 9999;
+}
 
 /* ===== КОНТЕЙНЕР ФОРМЫ И ЗАКАЗОВ ===== */
 #orderFormRow {
@@ -9,6 +27,8 @@
     position: relative;
     min-height: 600px;
     width: 100%;
+    isolation: isolate;
+    z-index: 1;
 }
 
 /* ===== ЛЕВАЯ КОЛОНКА (ФОРМА) ===== */
@@ -19,7 +39,8 @@
     align-self: flex-start;
     height: fit-content;
     max-height: calc(100vh - 100px);
-    z-index: 10;
+    z-index: var(--z-form);
+    isolation: isolate;
 }
 
 #orderFormColumn .card {
@@ -31,6 +52,8 @@
     isolation: isolate;
     max-height: calc(100vh - 120px);
     overflow-y: auto;
+    position: relative;
+    z-index: var(--z-form-card);
 }
 
 /* Стилизация скролла формы */
@@ -71,6 +94,7 @@
     padding-right: 10px;
     position: sticky;
     top: 90px;
+    z-index: var(--z-orders);
     scrollbar-gutter: stable;
 }
 
@@ -87,6 +111,12 @@
 #ordersColumn::-webkit-scrollbar-thumb {
     background: var(--accent);
     border-radius: 10px;
+}
+
+/* Градиент для плавного скролла */
+#ordersColumn {
+    -webkit-mask-image: linear-gradient(to bottom, black 98%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 98%, transparent 100%);
 }
 
 /* ===== КАРТОЧКИ ЗАКАЗОВ ===== */
@@ -110,14 +140,20 @@
     will-change: box-shadow, border-color;
     
     /* Анимация появления */
-    animation: fadeInUp 0.3s ease-out;
+    animation: fadeSlide 0.3s ease-out;
     cursor: default;
+    
+    /* Z-INDEX */
+    position: relative;
+    z-index: var(--z-card);
+    margin-bottom: 15px;
 }
 
 .order-item:hover {
     box-shadow: var(--shadow-hover);
     border-left-color: var(--accent-dark);
     transform: none;
+    z-index: var(--z-card-hover);
 }
 
 /* Индекс появления для первых 6 заказов */
@@ -213,11 +249,16 @@
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: box-shadow;
+    
+    /* Z-INDEX */
+    position: relative;
+    z-index: var(--z-card);
 }
 
 .master-card:hover {
     box-shadow: var(--shadow-hover);
     transform: none;
+    z-index: var(--z-card-hover);
 }
 
 .master-avatar {
@@ -243,7 +284,7 @@
     background: transparent;
     border: 2px solid var(--accent);
     color: var(--accent);
-    transition: all 0.2s ease;
+    transition: var(--transition-normal);
     padding: 8px 16px;
     font-weight: 600;
     width: 100%;
@@ -251,6 +292,8 @@
     transform: translateZ(0);
     cursor: pointer;
     margin-top: auto;
+    position: relative;
+    z-index: var(--z-button);
 }
 
 .master-card .btn-sm:hover {
@@ -282,46 +325,184 @@
 }
 
 #cityDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: var(--bg-white);
     border: 2px solid var(--border);
     border-radius: 20px;
     margin-top: 5px;
     box-shadow: var(--shadow-hover);
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    animation: slideDown 0.2s ease;
+    z-index: var(--z-dropdown);
+    
+    /* Скролл */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--bg-light);
+    scroll-behavior: smooth;
+    
+    /* Анимация */
+    animation: fadeSlideDown 0.25s var(--transition-slow);
 }
 
+/* Стилизация скролла для WebKit */
+#cityDropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+#cityDropdown::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#cityDropdown::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+    border: 2px solid var(--bg-light);
+}
+
+#cityDropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Элементы дропдауна */
 .dropdown-item {
-    padding: 10px 16px;
+    padding: 12px 20px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-slow);
     color: var(--text-dark);
+    position: relative;
+    overflow: hidden;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--border);
+    
+    /* Анимация появления */
+    animation: fadeSlide 0.3s ease forwards;
+    opacity: 0;
 }
 
+/* Индексы появления */
+.dropdown-item:nth-child(1) { animation-delay: 0.02s; }
+.dropdown-item:nth-child(2) { animation-delay: 0.04s; }
+.dropdown-item:nth-child(3) { animation-delay: 0.06s; }
+.dropdown-item:nth-child(4) { animation-delay: 0.08s; }
+.dropdown-item:nth-child(5) { animation-delay: 0.1s; }
+.dropdown-item:nth-child(6) { animation-delay: 0.12s; }
+.dropdown-item:nth-child(7) { animation-delay: 0.14s; }
+.dropdown-item:nth-child(8) { animation-delay: 0.16s; }
+.dropdown-item:nth-child(9) { animation-delay: 0.18s; }
+.dropdown-item:nth-child(10) { animation-delay: 0.2s; }
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:first-child {
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+}
+
+.dropdown-item:last-child {
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+}
+
+/* Эффект волны при наведении */
+.dropdown-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+    opacity: 0;
+    z-index: -1;
+}
+
+.dropdown-item:hover::before {
+    width: 300px;
+    height: 300px;
+    opacity: 0.1;
+}
+
+/* Основной эффект наведения */
 .dropdown-item:hover {
-    background: var(--accent-light);
-    padding-left: 24px;
-    color: var(--accent-dark);
+    background: var(--accent-gradient);
+    color: white;
+    padding-left: 30px;
+    border-left: 3px solid var(--accent-dark);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
 }
 
+/* Анимация иконки */
+.dropdown-item i {
+    margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-item:hover i {
+    transform: scale(1.2) rotate(5deg);
+}
+
+/* Эффект для выбранного города */
+.dropdown-item.selected {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 600;
+    border-left: 3px solid var(--accent);
+    padding-left: 30px;
+}
+
+.dropdown-item.selected::after {
+    content: '✓';
+    position: absolute;
+    right: 15px;
+    color: var(--accent);
+    font-weight: bold;
+    animation: checkPop 0.3s ease;
+}
+
+/* Эффект при клике */
+.dropdown-item:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+}
+
+/* Заголовки районов */
 .dropdown-district {
-    padding: 8px 16px;
+    padding: 10px 16px;
     background: var(--bg-light);
     font-weight: 700;
     color: var(--accent);
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
     border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.dropdown-district:hover {
+    background: var(--accent-light);
+    color: var(--accent-dark);
 }
 
 /* ===== КНОПКА "НАВЕРХ" ===== */
 #scrollToTop {
     position: fixed;
     bottom: 30px;
-    right: 30px;  /* 👈 СПРАВА ВНИЗУ */
+    right: 30px;
     width: 55px;
     height: 55px;
     background: var(--accent-gradient);
@@ -332,8 +513,8 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 5px 20px rgba(230,122,75,0.3);
-    z-index: 9999;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: var(--z-tooltip);
+    transition: var(--transition-slow);
     border: none;
     opacity: 0;
     visibility: hidden;
@@ -357,7 +538,33 @@
     filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
 }
 
-/* Анимация пульсации для привлечения внимания */
+#scrollToTop.visible {
+    animation: pulse 2s infinite;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @keyframes pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(230,122,75,0.7);
@@ -370,37 +577,33 @@
     }
 }
 
-#scrollToTop.visible {
-    animation: pulse 2s infinite;
+@keyframes checkPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
-/* ===== АНИМАЦИИ ===== */
-@keyframes slideDown {
+@keyframes slideUp {
     from {
-        opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(100%);
     }
     to {
-        opacity: 1;
         transform: translateY(0);
     }
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ===== КНОПКИ ===== */
+/* ===== БАЗОВЫЕ СТИЛИ ДЛЯ КНОПОК ===== */
 button, .btn, .filter-btn, .dropdown-item {
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: var(--transition-fast);
 }
 
 /* ===== ЗАЩИТА ОТ КОНФЛИКТОВ ===== */
@@ -410,7 +613,82 @@ button, .btn, .filter-btn, .dropdown-item {
     position: relative;
 }
 
-/* ===== АДАПТИВ ===== */
+#orderFormColumn,
+#orderFormColumn * {
+    isolation: isolate;
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+body.dark-theme #cityDropdown {
+    background: var(--bg-dark-card, #2d2d2d);
+    border-color: var(--border-dark, #404040);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    scrollbar-color: var(--accent) var(--bg-dark);
+}
+
+body.dark-theme #cityDropdown::-webkit-scrollbar-track {
+    background: var(--bg-dark, #1a1a1a);
+}
+
+body.dark-theme #cityDropdown::-webkit-scrollbar-thumb {
+    background: var(--accent, #E67A4B);
+    border-color: var(--bg-dark, #1a1a1a);
+}
+
+body.dark-theme #cityDropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark, #D45C2F);
+}
+
+body.dark-theme .dropdown-item {
+    color: var(--text-soft, #e0e0e0);
+    background: transparent;
+}
+
+body.dark-theme .dropdown-item:hover {
+    background: var(--accent-gradient);
+    color: white;
+    padding-left: 30px;
+    border-left: 3px solid var(--accent-dark);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+}
+
+body.dark-theme .dropdown-item:hover::before {
+    opacity: 0.15;
+}
+
+body.dark-theme .dropdown-item.selected {
+    background: rgba(230,122,75,0.2);
+    color: var(--accent-light);
+}
+
+body.dark-theme .dropdown-district {
+    background: var(--bg-dark, #1a1a1a);
+    color: var(--accent, #FF9F4B);
+    border-bottom-color: var(--border-dark, #404040);
+}
+
+body.dark-theme .dropdown-district:hover {
+    background: rgba(230,122,75,0.15);
+    color: var(--accent-light);
+}
+
+body.dark-theme #citySearchInput {
+    background: var(--bg-dark-card, #2d2d2d);
+    border-color: var(--border-dark, #404040);
+    color: var(--text-soft, #e0e0e0);
+}
+
+body.dark-theme #citySearchInput::placeholder {
+    color: var(--text-muted, #a0a0a0);
+}
+
+body.dark-theme #citySearchInput:focus {
+    border-color: var(--accent, #E67A4B);
+    box-shadow: 0 0 0 3px rgba(230,122,75,0.2);
+    background: var(--bg-dark-card, #2d2d2d);
+}
+
+/* ===== ВСЕ МЕДИА-ЗАПРОСЫ В ОДНОМ МЕСТЕ ===== */
 @media (max-width: 992px) {
     #orderFormColumn,
     #ordersColumn {
@@ -430,6 +708,11 @@ button, .btn, .filter-btn, .dropdown-item {
         height: auto;
         max-height: none;
         overflow-y: visible;
+        z-index: auto;
+    }
+    
+    #orderFormColumn {
+        z-index: calc(var(--z-form) + 10);
     }
     
     #orderFormColumn .card {
@@ -441,6 +724,20 @@ button, .btn, .filter-btn, .dropdown-item {
         scrollbar-gutter: auto;
         height: auto;
         max-height: 600px;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+    
+    #cityDropdown {
+        max-height: 250px !important;
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        border-radius: 20px 20px 0 0;
+        animation: slideUp 0.3s ease;
     }
     
     #scrollToTop {
@@ -480,7 +777,6 @@ button, .btn, .filter-btn, .dropdown-item {
     }
 }
 
-/* Для очень маленьких экранов */
 @media (max-width: 360px) {
     #scrollToTop {
         width: 35px;
@@ -488,4 +784,197 @@ button, .btn, .filter-btn, .dropdown-item {
         bottom: 10px;
         right: 10px;
     }
+}
+
+/* ===== ПРОКАЧАННАЯ СВЕТЛАЯ ТЕМА ===== */
+:root {
+    /* Новые цвета для светлой темы */
+    --bg-light-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    --card-glow: 0 10px 30px -10px rgba(230,122,75,0.2);
+    --card-glow-hover: 0 20px 40px -10px rgba(230,122,75,0.3);
+    --accent-soft: #fff5f0;
+    --text-soft-dark: #2c3e50;
+    --border-soft: #ffd7cc;
+}
+
+/* Градиентный фон для всего сайта */
+body:not(.dark-theme) {
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%);
+    position: relative;
+}
+
+/* Легкий паттерн поверх градиента */
+body:not(.dark-theme)::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 20px 20px, rgba(230,122,75,0.03) 2px, transparent 2px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Контейнеры выше фона */
+body:not(.dark-theme) .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== ПРОКАЧАННЫЕ КАРТОЧКИ ===== */
+body:not(.dark-theme) .card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .card:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+}
+
+/* ===== ПРОКАЧАННЫЕ ЗАКАЗЫ ===== */
+body:not(.dark-theme) .order-item {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-left: 4px solid var(--accent);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .order-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+    border-left-color: var(--accent);
+}
+
+/* ===== ПРОКАЧАННЫЕ МАСТЕРА ===== */
+body:not(.dark-theme) .master-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .master-card:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+}
+
+/* ===== ПРОКАЧАННЫЙ ПОИСК ===== */
+body:not(.dark-theme) #citySearchInput {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(230, 122, 75, 0.2);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) #citySearchInput:focus {
+    background: white;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(230, 122, 75, 0.15);
+}
+
+/* ===== ПРОКАЧАННЫЙ ДРОПДАУН ===== */
+body:not(.dark-theme) #cityDropdown {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(230, 122, 75, 0.3);
+    box-shadow: 0 20px 40px -15px rgba(230, 122, 75, 0.3);
+}
+
+/* ===== ПРОКАЧАННЫЕ КНОПКИ ===== */
+body:not(.dark-theme) .btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(230, 122, 75, 0.3);
+    color: var(--accent-dark);
+}
+
+body:not(.dark-theme) .btn-outline-secondary:hover {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 20px rgba(230, 122, 75, 0.3);
+}
+
+/* ===== ПРОКАЧАННЫЙ ХЕДЕР ===== */
+body:not(.dark-theme) header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 30px -10px rgba(230, 122, 75, 0.2);
+}
+
+/* ===== ПРОКАЧАННЫЙ ФУТЕР ===== */
+body:not(.dark-theme) footer {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* ===== ПРОКАЧАННЫЕ МОДАЛКИ ===== */
+body:not(.dark-theme) .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* ===== ПРОКАЧАННЫЙ СКРОЛЛ ===== */
+body:not(.dark-theme) ::-webkit-scrollbar-track {
+    background: rgba(230, 122, 75, 0.05);
+}
+
+body:not(.dark-theme) ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ ФИШКИ ===== */
+
+/* Подсветка активных элементов */
+body:not(.dark-theme) .nav a.active {
+    background: linear-gradient(135deg, rgba(230,122,75,0.1), rgba(255,159,75,0.1));
+    color: var(--accent-dark);
+    border: 1px solid rgba(230,122,75,0.3);
+}
+
+/* Красивые разделители */
+body:not(.dark-theme) .order-meta {
+    border-top-color: rgba(230, 122, 75, 0.2);
+}
+
+/* Тени для текста */
+body:not(.dark-theme) h1, 
+body:not(.dark-theme) h2, 
+body:not(.dark-theme) h3 {
+    text-shadow: 2px 2px 4px rgba(230,122,75,0.1);
+}
+
+/* Анимация для фона при скролле */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body:not(.dark-theme) {
+    background: linear-gradient(-45deg, #f5f7fa, #eef2f6, #e9ecef, #f8f9fa);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
 }
