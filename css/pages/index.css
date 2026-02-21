@@ -970,3 +970,10 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
         right: 10px !important;
     }
 }
+
+/* ===== СРОЧНЫЙ ФИКС КОНТЕЙНЕРА ===== */
+#orderFormRow {
+    display: flex !important;
+    height: auto !important;
+    min-height: 600px !important;
+}
