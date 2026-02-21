@@ -1,5 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ВЕРСИЯ 13.0 — С DEEPSEEK БРО И БЕЗ ВЕРХНЕГО ИИ
+// ВЕРСИЯ 13.2 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ
 
 // Глобальные переменные
 let map = null;
@@ -1545,6 +1545,66 @@ window.addEventListener('load', () => {
 window.addEventListener('resize', () => {
     setTimeout(checkOrderPositioning, 100);
 });
+
+// ============================================
+// ЖЁСТКИЙ ФИКС ВИДИМОСТИ КОНТЕЙНЕРОВ
+// ============================================
+(function forceShowContainers() {
+    // Ждём полной загрузки страницы
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            console.log('🔧 Применяем фикс видимости контейнеров...');
+            
+            // Список контейнеров для проверки
+            const containers = [
+                'orderFormRow',
+                'orderFormColumn',
+                'ordersColumn',
+                'ordersList',
+                'ordersMap'
+            ];
+            
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // Принудительные стили
+                    el.style.setProperty('display', 'block', 'important');
+                    el.style.setProperty('visibility', 'visible', 'important');
+                    el.style.setProperty('opacity', '1', 'important');
+                    el.style.setProperty('height', 'auto', 'important');
+                    el.style.setProperty('min-height', '100px', 'important');
+                    
+                    // Специально для formRow
+                    if (id === 'orderFormRow') {
+                        el.style.setProperty('display', 'flex', 'important');
+                        el.style.setProperty('min-height', '600px', 'important');
+                    }
+                    
+                    // Для колонок
+                    if (id === 'orderFormColumn' || id === 'ordersColumn') {
+                        el.style.setProperty('flex', '0 0 50%', 'important');
+                        el.style.setProperty('max-width', '50%', 'important');
+                        el.style.setProperty('min-height', '500px', 'important');
+                    }
+                    
+                    // Для списка заказов
+                    if (id === 'ordersList') {
+                        el.style.setProperty('display', 'flex', 'important');
+                        el.style.setProperty('flex-direction', 'column', 'important');
+                        el.style.setProperty('gap', '15px', 'important');
+                    }
+                    
+                    console.log(`✅ ${id} принудительно показан`);
+                }
+            });
+            
+            // Принудительный ререндер
+            window.dispatchEvent(new Event('resize'));
+            
+            console.log('🎉 Фикс контейнеров применён!');
+        }, 300);
+    });
+})();
 
 // ============================================
 // ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
