@@ -418,26 +418,16 @@ body:not(.dark-theme) .filter-section:hover {
     border: 1px solid var(--border) !important;
     pointer-events: auto !important;
     isolation: isolate !important;
-    max-height: calc(100vh - 120px) !important;
-    overflow-y: auto !important;
+    max-height: none !important;        /* изменено */
+    overflow: visible !important;        /* добавлено */
     position: relative !important;
     z-index: var(--z-form-card) !important;
     width: 100% !important;
 }
 
-/* Стилизация скролла формы */
+/* Убираем скроллбар у формы */
 #orderFormColumn .card::-webkit-scrollbar {
-    width: 4px !important;
-}
-
-#orderFormColumn .card::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
-}
-
-#orderFormColumn .card::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
+    display: none !important;            /* добавлено */
 }
 
 /* Форма — безопасные анимации */
@@ -1059,4 +1049,45 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
         position: static !important;
         min-height: auto !important;
     }
+}
+
+/* ===== ЖЁСТКИЙ ФИКС СПИСКА ЗАКАЗОВ ===== */
+#ordersColumn {
+    height: calc(100vh - 120px) !important;
+    max-height: calc(100vh - 120px) !important;
+    overflow-y: hidden !important;        /* Изменено */
+    display: flex !important;
+    flex-direction: column !important;
+    position: sticky !important;
+    top: 90px !important;
+}
+
+#ordersList {
+    flex: 1 !important;
+    overflow-y: auto !important;           /* Скролл здесь */
+    overflow-x: hidden !important;
+    padding-right: 10px !important;
+    height: 100% !important;                /* Добавлено */
+    max-height: 100% !important;            /* Добавлено */
+}
+
+/* Убираем маски */
+#ordersColumn {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+}
+
+/* Стилизация скролла внутри списка */
+#ordersList::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#ordersList::-webkit-scrollbar-track {
+    background: var(--bg-light) !important;
+    border-radius: 10px !important;
+}
+
+#ordersList::-webkit-scrollbar-thumb {
+    background: var(--accent) !important;
+    border-radius: 10px !important;
 }
