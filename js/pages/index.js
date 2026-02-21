@@ -70,6 +70,43 @@ const safeHelpers = {
 };
 
 // ============================================
+// ФУНКЦИЯ ПРОВЕРКИ ПОЗИЦИОНИРОВАНИЯ
+// ============================================
+
+function checkOrderPositioning() {
+    const formColumn = document.getElementById('orderFormColumn');
+    const ordersColumn = document.getElementById('ordersColumn');
+    const formRow = document.getElementById('orderFormRow');
+    
+    if (!formColumn || !ordersColumn || !formRow) return;
+    
+    console.log('🔍 Проверка позиционирования:');
+    console.log('- formColumn display:', window.getComputedStyle(formColumn).display);
+    console.log('- ordersColumn display:', window.getComputedStyle(ordersColumn).display);
+    console.log('- formRow flex-direction:', window.getComputedStyle(formRow).flexDirection);
+    
+    // Принудительно применяем стили если что-то пошло не так
+    if (window.getComputedStyle(formRow).flexDirection !== 'row') {
+        console.warn('⚠️ flex-direction не row, применяем фикс');
+        formRow.style.setProperty('flex-direction', 'row', 'important');
+    }
+    
+    if (window.getComputedStyle(formColumn).flex !== '0 0 50%') {
+        console.warn('⚠️ ширина формы не 50%, применяем фикс');
+        formColumn.style.setProperty('flex', '0 0 50%', 'important');
+        formColumn.style.setProperty('max-width', '50%', 'important');
+        formColumn.style.setProperty('width', '50%', 'important');
+    }
+    
+    if (window.getComputedStyle(ordersColumn).flex !== '0 0 50%') {
+        console.warn('⚠️ ширина заказов не 50%, применяем фикс');
+        ordersColumn.style.setProperty('flex', '0 0 50%', 'important');
+        ordersColumn.style.setProperty('max-width', '50%', 'important');
+        ordersColumn.style.setProperty('width', '50%', 'important');
+    }
+}
+
+// ============================================
 // ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
 // ============================================
 
@@ -1277,6 +1314,9 @@ function updateTrackingInfo(position) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 index.js загружен и готов к работе!');
     
+    // Проверяем позиционирование
+    setTimeout(checkOrderPositioning, 500);
+    
     // Отрисовываем блок авторизации
     if (typeof AuthUI?.renderAuthBlock === 'function') {
         AuthUI.renderAuthBlock();
@@ -1355,6 +1395,15 @@ if (typeof Auth?.onAuthChange === 'function') {
         }
     });
 }
+
+// Перепроверяем позиционирование после загрузки всех ресурсов
+window.addEventListener('load', () => {
+    setTimeout(checkOrderPositioning, 100);
+});
+
+window.addEventListener('resize', () => {
+    setTimeout(checkOrderPositioning, 100);
+});
 
 // ============================================
 // ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
