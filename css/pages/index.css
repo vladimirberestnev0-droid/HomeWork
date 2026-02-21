@@ -1,5 +1,5 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 12.0 — УЛЬТИМАТИВНАЯ С ФИКСАМИ ПОРЯДКА */
+/* Версия: 13.0 — ФИНАЛЬНАЯ С ЧЁТКОЙ СТРУКТУРОЙ */
 
 /* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
 #orderFormRow {
@@ -13,7 +13,7 @@
     isolation: isolate !important;
     z-index: 1 !important;
     flex-wrap: nowrap !important;
-    margin-bottom: 40px !important; /* ОТСТУП ПЕРЕД РЕЙТИНГОМ */
+    margin-bottom: 40px !important;
 }
 
 /* Левая колонка (форма) */
@@ -25,30 +25,31 @@
     top: 90px !important;
     align-self: flex-start !important;
     height: fit-content !important;
-    max-height: none !important;           /* Убираем ограничение */
+    max-height: none !important;
     z-index: var(--z-form) !important;
     isolation: isolate !important;
 }
 
-/* Правая колонка (заказы) */
+/* Правая колонка (заказы) - ИСПРАВЛЕНО */
 #ordersColumn {
     flex: 0 0 50% !important;
     max-width: 50% !important;
     width: 50% !important;
     height: calc(100vh - 120px) !important;
-    overflow-y: auto !important;
+    max-height: calc(100vh - 120px) !important;
+    overflow-y: hidden !important;
     overflow-x: hidden !important;
     padding-right: 10px !important;
     position: sticky !important;
     top: 90px !important;
     z-index: var(--z-orders) !important;
-    scrollbar-gutter: stable !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 /* ===== РЕЙТИНГ МАСТЕРОВ - ИСПРАВЛЕННЫЙ СЕЛЕКТОР ===== */
-/* Целимся ТОЛЬКО в ряд, который сразу после карты и содержит заголовок с кубком */
 #ordersMap ~ .row.g-4.mb-5:has(> div > .card h3 i.fa-trophy) {
-    margin-top: 40px !important;    /* Добавляем отступ сверху, чтобы не прилипало */
+    margin-top: 40px !important;
     margin-bottom: 40px !important;
     position: relative !important;
     clear: both !important;
@@ -71,7 +72,6 @@
     border-color: var(--accent-light) !important;
 }
 
-/* Прозрачность для светлой темы */
 body:not(.dark-theme) .filter-section {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -94,7 +94,6 @@ body:not(.dark-theme) .filter-section:hover {
     display: none !important;
 }
 
-/* Альтернативный способ если селектор :has не работает */
 .hide-lat-lng #latitude,
 .hide-lat-lng #longitude,
 .hide-lat-lng .latitude-field,
@@ -102,7 +101,6 @@ body:not(.dark-theme) .filter-section:hover {
     display: none !important;
 }
 
-/* Оставляем только карту */
 #map {
     width: 100% !important;
     height: 250px !important;
@@ -126,16 +124,15 @@ body:not(.dark-theme) .filter-section:hover {
 
 @keyframes trophyGlow {
     0%, 100% {
-        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3)) !important;
-        transform: scale(1) !important;
+        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
+        transform: scale(1);
     }
     50% {
-        filter: drop-shadow(0 8px 16px rgba(255, 215, 0, 0.6)) !important;
-        transform: scale(1.05) !important;
+        filter: drop-shadow(0 8px 16px rgba(255, 215, 0, 0.6));
+        transform: scale(1.05);
     }
 }
 
-/* Золотая обводка для всего блока рейтинга */
 .rating-header {
     position: relative !important;
     overflow: hidden !important;
@@ -153,15 +150,10 @@ body:not(.dark-theme) .filter-section:hover {
 }
 
 @keyframes goldLine {
-    0%, 100% {
-        opacity: 0.5 !important;
-    }
-    50% {
-        opacity: 1 !important;
-    }
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
 }
 
-/* Кнопки периодов с золотым акцентом */
 .btn-group .btn-outline-secondary {
     border-color: var(--border) !important;
     transition: all 0.3s ease !important;
@@ -196,12 +188,8 @@ body:not(.dark-theme) .filter-section:hover {
 }
 
 @keyframes crownFloat {
-    0%, 100% {
-        left: -20px !important;
-    }
-    50% {
-        left: -25px !important;
-    }
+    0%, 100% { left: -20px; }
+    50% { left: -25px; }
 }
 
 /* ===== 4. КНОПКА БОТА И КНОПКА НАВЕРХ ===== */
@@ -297,37 +285,37 @@ body:not(.dark-theme) .filter-section:hover {
     filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
 }
 
-/* ===== 5. СТИЛИЗАЦИЯ СКРОЛЛА ЗАКАЗОВ ===== */
-#ordersColumn::-webkit-scrollbar {
-    width: 6px !important;
-}
-
-#ordersColumn::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
-}
-
-#ordersColumn::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
-}
-
-#ordersColumn::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark) !important;
-}
-
-/* Градиент для плавного скролла */
-#ordersColumn {
-    -webkit-mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
-    mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
-}
-
-/* ===== 6. КАРТОЧКИ ЗАКАЗОВ ===== */
+/* ===== 5. КАРТОЧКИ ЗАКАЗОВ ===== */
 #ordersList {
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
     min-height: 200px !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 10px !important;
+    height: 100% !important;
+    max-height: 100% !important;
+}
+
+/* Стилизация скролла списка */
+#ordersList::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#ordersList::-webkit-scrollbar-track {
+    background: var(--bg-light) !important;
+    border-radius: 10px !important;
+}
+
+#ordersList::-webkit-scrollbar-thumb {
+    background: var(--accent) !important;
+    border-radius: 10px !important;
+}
+
+#ordersList::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark) !important;
 }
 
 .order-item {
@@ -410,7 +398,7 @@ body:not(.dark-theme) .filter-section:hover {
     width: 16px !important;
 }
 
-/* ===== 7. ФОРМА ===== */
+/* ===== 6. ФОРМА ===== */
 #orderFormColumn .card {
     height: fit-content !important;
     background: var(--bg-white) !important;
@@ -418,19 +406,17 @@ body:not(.dark-theme) .filter-section:hover {
     border: 1px solid var(--border) !important;
     pointer-events: auto !important;
     isolation: isolate !important;
-    max-height: none !important;        /* изменено */
-    overflow: visible !important;        /* добавлено */
+    max-height: none !important;
+    overflow: visible !important;
     position: relative !important;
     z-index: var(--z-form-card) !important;
     width: 100% !important;
 }
 
-/* Убираем скроллбар у формы */
 #orderFormColumn .card::-webkit-scrollbar {
-    display: none !important;            /* добавлено */
+    display: none !important;
 }
 
-/* Форма — безопасные анимации */
 #orderForm input,
 #orderForm select,
 #orderForm textarea {
@@ -444,7 +430,7 @@ body:not(.dark-theme) .filter-section:hover {
     border-color: var(--accent) !important;
 }
 
-/* ===== 8. ИНДИКАТОР КОЛИЧЕСТВА ЗАКАЗОВ ===== */
+/* ===== 7. ИНДИКАТОР КОЛИЧЕСТВА ЗАКАЗОВ ===== */
 .orders-header {
     display: flex !important;
     justify-content: space-between !important;
@@ -466,7 +452,7 @@ body:not(.dark-theme) .filter-section:hover {
     margin-right: 5px !important;
 }
 
-/* ===== 9. КНОПКА "ПОКАЗАТЬ ЕЩЕ" ===== */
+/* ===== 8. КНОПКА "ПОКАЗАТЬ ЕЩЕ" ===== */
 #loadMoreContainer {
     text-align: center !important;
     margin-top: 20px !important;
@@ -487,7 +473,7 @@ body:not(.dark-theme) .filter-section:hover {
     border-color: var(--accent) !important;
 }
 
-/* ===== 10. КАРТА ЗАКАЗОВ ===== */
+/* ===== 9. КАРТА ЗАКАЗОВ ===== */
 #ordersMap {
     width: 100% !important;
     height: 450px !important;
@@ -496,7 +482,7 @@ body:not(.dark-theme) .filter-section:hover {
     margin-top: 20px !important;
 }
 
-/* ===== 11. AI ПОДСКАЗКА ===== */
+/* ===== 10. AI ПОДСКАЗКА ===== */
 .ai-price-hint {
     background: var(--accent-light) !important;
     color: var(--accent-dark) !important;
@@ -512,7 +498,7 @@ body:not(.dark-theme) .filter-section:hover {
     box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
 }
 
-/* ===== 12. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
+/* ===== 11. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
 body.master-mode #orderFormColumn {
     display: none !important;
 }
@@ -523,7 +509,7 @@ body.master-mode #ordersColumn {
     width: 100% !important;
 }
 
-/* ===== 13. ПРОЗРАЧНЫЕ ЗАКАЗЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
+/* ===== 12. ПРОЗРАЧНЫЕ ЭЛЕМЕНТЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
 body:not(.dark-theme) .order-item {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -544,7 +530,6 @@ body:not(.dark-theme) .order-meta {
     border-top-color: rgba(230, 122, 75, 0.2) !important;
 }
 
-/* ===== 14. ПРОЗРАЧНЫЙ КОНТЕЙНЕР ФИЛЬТРОВ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
 body:not(.dark-theme) .filter-section {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -558,7 +543,7 @@ body:not(.dark-theme) .filter-section:hover {
     border-color: var(--accent-light) !important;
 }
 
-/* ===== 15. СТИЛИ ДЛЯ САДЖЕСТОВ АДРЕСА ===== */
+/* ===== 13. СТИЛИ ДЛЯ САДЖЕСТОВ АДРЕСА ===== */
 .address-suggestions {
     position: absolute !important;
     top: 100% !important;
@@ -648,7 +633,6 @@ body:not(.dark-theme) .filter-section:hover {
     border-radius: 10px !important;
 }
 
-/* Тёмная тема для саджестов */
 body.dark-theme .address-suggestions {
     background: var(--bg-card) !important;
     border-color: var(--border) !important;
@@ -671,7 +655,7 @@ body.dark-theme .address-suggestion-item .address-type {
     color: var(--text-muted) !important;
 }
 
-/* ===== 16. УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КАРТ ===== */
+/* ===== 14. УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КАРТ ===== */
 #map, #ordersMap {
     border-radius: var(--radius-md) !important;
     overflow: hidden !important;
@@ -713,7 +697,7 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     color: var(--text-soft) !important;
 }
 
-/* ===== 17. АНИМАЦИИ ===== */
+/* ===== 15. АНИМАЦИИ ===== */
 @keyframes fadeSlide {
     from {
         opacity: 0;
@@ -763,12 +747,8 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
 }
 
 @keyframes goldLine {
-    0%, 100% {
-        opacity: 0.5;
-    }
-    50% {
-        opacity: 1;
-    }
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
 }
 
 @keyframes trophyGlow {
@@ -783,12 +763,8 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
 }
 
 @keyframes crownFloat {
-    0%, 100% {
-        left: -20px;
-    }
-    50% {
-        left: -25px;
-    }
+    0%, 100% { left: -20px; }
+    50% { left: -25px; }
 }
 
 @keyframes slideUp {
@@ -800,7 +776,7 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     }
 }
 
-/* ===== 18. АДАПТИВ ===== */
+/* ===== 16. АДАПТИВ ===== */
 @media (max-width: 1200px) {
     #orderFormColumn,
     #ordersColumn {
@@ -855,8 +831,6 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
         scrollbar-gutter: auto !important;
         height: auto !important;
         max-height: 500px !important;
-        -webkit-mask-image: none !important;
-        mask-image: none !important;
         margin-bottom: 20px !important;
     }
     
@@ -962,144 +936,11 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     }
 }
 
-/* ===== СРОЧНЫЙ ФИКС КОНТЕЙНЕРА ===== */
-#orderFormRow {
-    display: flex !important;
-    height: auto !important;
-    min-height: 600px !important;
-    margin-bottom: 40px !important;
-}
-
-/* ===== РЕЙТИНГ МАСТЕРОВ - ФИНАЛЬНЫЙ ФИКС ===== */
-/* Ищем любой элемент после карты, а потом нужный ряд */
-#ordersMap ~ * + .row.g-4.mb-5:has(.card h3 i.fa-trophy),
-#ordersMap ~ .row.g-4.mb-5:has(.card h3 i.fa-trophy) {
-    margin-top: 40px !important;
-    margin-bottom: 40px !important;
-    position: relative !important;
-    clear: both !important;
-    z-index: 2 !important;
-}
-
-/* ===== ЖЁСТКИЙ ФИКС КОНТЕЙНЕРОВ - ПРОВЕРЕНО В КОНСОЛИ ===== */
-#orderFormRow {
-    display: flex !important;
-    flex-direction: row !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    height: auto !important;
-    min-height: 600px !important;
-    width: 100% !important;
-    margin-bottom: 40px !important;
-}
-
-#orderFormColumn {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
-    height: auto !important;
-    min-height: 500px !important;
-    position: sticky !important;
-    top: 90px !important;
-}
-
-#ordersColumn {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
-    height: auto !important;
-    min-height: 500px !important;
-    overflow-y: auto !important;
-    position: sticky !important;
-    top: 90px !important;
-}
-
-#ordersList {
-    display: flex !important;
-    flex-direction: column !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    gap: 15px !important;
-    min-height: 200px !important;
-}
-
-#ordersMap {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    width: 100% !important;
-    height: 450px !important;
-    margin-top: 20px !important;
-}
-
-/* Для мобильной версии */
-@media (max-width: 768px) {
-    #orderFormRow {
-        flex-direction: column !important;
-    }
-    
-    #orderFormColumn,
-    #ordersColumn {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-        position: static !important;
-        min-height: auto !important;
-    }
-}
-
-/* ===== ЖЁСТКИЙ ФИКС СПИСКА ЗАКАЗОВ ===== */
-#ordersColumn {
-    height: calc(100vh - 120px) !important;
-    max-height: calc(100vh - 120px) !important;
-    overflow-y: hidden !important;        /* Изменено */
-    display: flex !important;
-    flex-direction: column !important;
-    position: sticky !important;
-    top: 90px !important;
-}
-
-#ordersList {
-    flex: 1 !important;
-    overflow-y: auto !important;           /* Скролл здесь */
-    overflow-x: hidden !important;
-    padding-right: 10px !important;
-    height: 100% !important;                /* Добавлено */
-    max-height: 100% !important;            /* Добавлено */
-}
-
-/* Убираем маски */
-#ordersColumn {
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-}
-
-/* Стилизация скролла внутри списка */
-#ordersList::-webkit-scrollbar {
-    width: 6px !important;
-}
-
-#ordersList::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
-}
-
-#ordersList::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
-}
-
-/* ===== ЧЁТКАЯ СТРУКТУРА: ФОРМА + ЗАКАЗЫ > РЕЙТИНГ > КАРТА ===== */
-/* Гарантируем, что ряд с формой и заказами занимает свою высоту */
+/* ===== ФИНАЛЬНАЯ СТРУКТУРА: ФОРМА + ЗАКАЗЫ > РЕЙТИНГ > КАРТА ===== */
 #orderFormRow {
     margin-bottom: 40px !important;
-    min-height: auto !important;
 }
 
-/* Отделяем рейтинг от карты */
 .row.g-4.mb-5:has(.card h3 i.fa-trophy) {
     margin-top: 20px !important;
     margin-bottom: 20px !important;
@@ -1108,7 +949,6 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     width: 100% !important;
 }
 
-/* Карта всегда после рейтинга */
 #ordersMap {
     margin-top: 30px !important;
     margin-bottom: 30px !important;
@@ -1117,20 +957,11 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     width: 100% !important;
 }
 
-/* Убираем возможные лишние отступы у контейнера */
 .container.py-4 {
     display: flex !important;
     flex-direction: column !important;
 }
 
-/* Форма и заказы в одном ряду */
-#orderFormRow {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    width: 100% !important;
-}
-
-/* Всё остальное идёт своим порядком */
 .row:not(#orderFormRow) {
     width: 100% !important;
     margin-left: 0 !important;
