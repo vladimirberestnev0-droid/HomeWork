@@ -21,11 +21,17 @@
     <link rel="stylesheet" href="/HomeWork/css/core/animations.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
 
+    <!-- ===== LAYOUTS ===== -->
+    <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
+
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
     <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
 
     <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/pages/group-chat.css">
@@ -37,12 +43,32 @@
     <link rel="stylesheet" href="/HomeWork/css/responsive.css">
 </head>
 <body>
+    <!-- Шапка -->
+    <header>
+        <a href="/HomeWork/" class="logo-link">
+            <i class="fas fa-house"></i>
+            <span>ВоркХом</span>
+        </a>
+        <nav>
+            <a href="/HomeWork/">Главная</a>
+            <a href="/HomeWork/client.html">Мои заказы</a>
+            <a href="/HomeWork/masters.html">Мастерам</a>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </nav>
+    </header>
+
     <div class="chat-container">
-        <!-- Шапка -->
+        <!-- Шапка чата -->
         <div class="chat-header">
             <a href="javascript:history.back()" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
+            
+            <div class="chat-avatar">
+                <i class="fas fa-users"></i>
+            </div>
             
             <div class="chat-info">
                 <h2 id="chatTitle">Групповой чат</h2>
@@ -80,8 +106,8 @@
         <div id="messagesArea" class="messages-area">
             <div class="empty-chat">
                 <i class="fas fa-comments"></i>
-                <h3>Начните диалог</h3>
-                <p>Напишите первое сообщение</p>
+                <h3>Добро пожаловать в чат</h3>
+                <p>Обсуждайте детали заказа с мастером и клиентом</p>
             </div>
         </div>
 
@@ -98,7 +124,7 @@
             <button id="attachButton" class="attach-btn" title="Прикрепить файл">
                 <i class="fas fa-paperclip"></i>
             </button>
-            <input type="file" id="fileInput" style="display: none;" multiple>
+            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx">
             
             <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
             
@@ -178,48 +204,22 @@
         </div>
     </div>
 
-     <!-- ===== 1. БИБЛИОТЕКИ (СНАЧАЛА) ===== -->
+    <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- ===== 2. CORE МОДУЛИ (В ПРАВИЛЬНОМ ПОРЯДКЕ) ===== -->
     <script src="/HomeWork/js/core/constants-light.js"></script>
     <script src="/HomeWork/js/core/helpers.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
-
-    <!-- ===== 3. ОСНОВНЫЕ СЕРВИСЫ ===== -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
-    
-    <!-- ===== 4. ОСТАЛЬНЫЕ СЕРВИСЫ ===== -->
-    <script src="/HomeWork/js/services/badges.js"></script>
-    <script src="/HomeWork/js/services/moderation.js"></script>
-    <script src="/HomeWork/js/services/payments.js"></script>
-    <script src="/HomeWork/js/services/ai-assistant.js"></script>
-    <script src="/HomeWork/js/services/tracking.js"></script>
-    <script src="/HomeWork/js/services/smart-schedule.js"></script>
-    <script src="/HomeWork/js/services/video-chat.js"></script>
-    <script src="/HomeWork/js/services/gamification.js"></script>
-    <script src="/HomeWork/js/services/analytics.js"></script>
-    <script src="/HomeWork/js/services/redis-cache.js"></script>
-    <script src="/HomeWork/js/services/cdn.js"></script>
-    <script src="/HomeWork/js/services/microservices.js"></script>
-    
-    <!-- ===== 5. КОМПОНЕНТЫ UI ===== -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
-    
-    <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
     <script src="/HomeWork/js/services/websocket.js"></script>
-    
-    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM (НЕ СЕРВЕРНЫЙ!) ===== -->
-    <script src="/HomeWork/js/services/telegram-client.js"></script>
-    
-    <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
     <script src="/HomeWork/js/pages/group-chat.js"></script>
 </body>
 </html>

@@ -24,15 +24,19 @@
 
     <!-- ===== LAYOUTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
+    <link rel="stylesheet" href="/HomeWork/css/layouts/footer.css">
     <link rel="stylesheet" href="/HomeWork/css/layouts/grids.css">
 
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
     <link rel="stylesheet" href="/HomeWork/css/components/badges.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
     <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/ratings.css">
     <link rel="stylesheet" href="/HomeWork/css/components/tabs.css">
     <link rel="stylesheet" href="/HomeWork/css/components/tables.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
@@ -54,14 +58,16 @@
                 <i class="fas fa-shield-alt"></i>
                 <span>ВоркХом Админ</span>
             </a>
-            <div class="d-flex gap-3">
-                <button class="btn btn-outline-secondary rounded-pill" id="themeToggle">
+            <nav>
+                <a href="/HomeWork/">Главная</a>
+                <a href="/HomeWork/admin.html" class="active">Админ-панель</a>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button id="logoutBtn" class="btn btn-outline-secondary rounded-pill">
+                <button id="logoutBtn" class="btn btn-sm btn-outline-secondary rounded-pill">
                     <i class="fas fa-sign-out-alt me-2"></i> Выйти
                 </button>
-            </div>
+            </nav>
         </header>
 
         <!-- Статистика -->
@@ -254,7 +260,7 @@
         </div>
     </div>
 
-        <!-- Модалка просмотра фото -->
+    <!-- Модалка просмотра фото -->
     <div class="modal fade" id="imageModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -269,48 +275,54 @@
         </div>
     </div>
 
-    <!-- ===== 1. БИБЛИОТЕКИ (СНАЧАЛА) ===== -->
+    <!-- Футер -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>ВоркХом Админ</h4>
+                <p>Управление маркетплейсом строительных услуг</p>
+            </div>
+            <div class="footer-section">
+                <h4>Статистика</h4>
+                <ul>
+                    <li><span id="footerUsers">0</span> пользователей</li>
+                    <li><span id="footerMasters">0</span> мастеров</li>
+                    <li><span id="footerOrders">0</span> заказов</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Контакты</h4>
+                <ul>
+                    <li><i class="fas fa-envelope me-2"></i> admin@workhom.ru</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 ВоркХом. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- ===== 2. CORE МОДУЛИ (В ПРАВИЛЬНОМ ПОРЯДКЕ) ===== -->
     <script src="/HomeWork/js/core/constants-light.js"></script>
     <script src="/HomeWork/js/core/helpers.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
-
-    <!-- ===== 3. ОСНОВНЫЕ СЕРВИСЫ ===== -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
-    
-    <!-- ===== 4. ОСТАЛЬНЫЕ СЕРВИСЫ ===== -->
     <script src="/HomeWork/js/services/badges.js"></script>
     <script src="/HomeWork/js/services/moderation.js"></script>
     <script src="/HomeWork/js/services/payments.js"></script>
-    <script src="/HomeWork/js/services/ai-assistant.js"></script>
-    <script src="/HomeWork/js/services/tracking.js"></script>
-    <script src="/HomeWork/js/services/smart-schedule.js"></script>
-    <script src="/HomeWork/js/services/video-chat.js"></script>
-    <script src="/HomeWork/js/services/gamification.js"></script>
     <script src="/HomeWork/js/services/analytics.js"></script>
-    <script src="/HomeWork/js/services/redis-cache.js"></script>
-    <script src="/HomeWork/js/services/cdn.js"></script>
-    <script src="/HomeWork/js/services/microservices.js"></script>
-    
-    <!-- ===== 5. КОМПОНЕНТЫ UI ===== -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
-    
-    <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
     <script src="/HomeWork/js/services/websocket.js"></script>
-    
-    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM ===== -->
     <script src="/HomeWork/js/services/telegram-client.js"></script>
-    
-    <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
     <script src="/HomeWork/js/pages/admin.js"></script>
 </body>
 </html>

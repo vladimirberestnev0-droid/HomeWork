@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — Чат</title>
+    <title>ВоркХом — Чат с мастером</title>
 
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
@@ -21,11 +21,17 @@
     <link rel="stylesheet" href="/HomeWork/css/core/animations.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
 
+    <!-- ===== LAYOUTS ===== -->
+    <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
+
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
     <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
 
     <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/pages/chat.css">
@@ -37,27 +43,43 @@
     <link rel="stylesheet" href="/HomeWork/css/responsive.css">
 </head>
 <body>
+    <!-- Шапка -->
+    <header>
+        <a href="/HomeWork/" class="logo-link">
+            <i class="fas fa-house"></i>
+            <span>ВоркХом</span>
+        </a>
+        <nav>
+            <a href="/HomeWork/">Главная</a>
+            <a href="/HomeWork/client.html" id="clientLink">Мои заказы</a>
+            <a href="/HomeWork/masters.html" id="masterLink">Мастерам</a>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </nav>
+    </header>
+
     <div class="chat-container">
-        <!-- Шапка -->
+        <!-- Шапка чата -->
         <div class="chat-header">
             <a href="javascript:history.back()" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
             
             <div class="chat-avatar">
-                <i class="fas fa-user"></i>
+                <i class="fas fa-user-tie"></i>
             </div>
             
             <div class="chat-info">
                 <h2 id="chatPartnerName">Загрузка...</h2>
                 <p id="chatPartnerRole">
-                    Клиент
+                    <span id="partnerRole">Мастер</span>
                     <span class="online-status" id="onlineStatus"></span>
                 </p>
             </div>
 
             <div class="order-badge" id="orderInfo" onclick="showOrderDetails()">
-                📋 Заказ #...
+                📋 Заказ #<span id="orderNumber">...</span>
             </div>
             
             <!-- Кнопки чата -->
@@ -83,7 +105,7 @@
             <div class="empty-chat">
                 <i class="fas fa-comments"></i>
                 <h3>Начните диалог</h3>
-                <p>Напишите первое сообщение</p>
+                <p>Обсудите детали заказа с мастером</p>
             </div>
         </div>
 
@@ -92,22 +114,22 @@
             собеседник печатает...
         </div>
 
-        <!-- Быстрые ответы -->
+        <!-- Быстрые ответы для строительных услуг -->
         <div id="quickReplies" class="quick-replies hidden">
             <div class="quick-replies-buttons">
-                <button class="quick-reply-btn" data-text="✅ Принято! Приступаю">
+                <button class="quick-reply-btn" data-text="✅ Принято! Приступаю к работе">
                     <i class="fas fa-check-circle me-2"></i>Принято
                 </button>
                 <button class="quick-reply-btn" data-text="🚗 Выезжаю, буду через час">
                     <i class="fas fa-truck me-2"></i>Выезжаю
                 </button>
-                <button class="quick-reply-btn" data-text="❓ Уточните детали">
-                    <i class="fas fa-question-circle me-2"></i>Уточнить
+                <button class="quick-reply-btn" data-text="🔧 Нужны дополнительные материалы">
+                    <i class="fas fa-tools me-2"></i>Материалы
                 </button>
-                <button class="quick-reply-btn" data-text="💰 Цена: [цена] ₽">
-                    <i class="fas fa-tag me-2"></i>Цена
+                <button class="quick-reply-btn" data-text="💰 Смета: [сумма] ₽">
+                    <i class="fas fa-calculator me-2"></i>Смета
                 </button>
-                <button class="quick-reply-btn" data-text="📸 Отправьте фото">
+                <button class="quick-reply-btn" data-text="📸 Отправьте фото проблемы">
                     <i class="fas fa-camera me-2"></i>Фото
                 </button>
                 <button class="quick-reply-btn" data-text="🕐 Во сколько будете?">
@@ -121,7 +143,7 @@
             <button id="attachButton" class="attach-btn" title="Прикрепить файл">
                 <i class="fas fa-paperclip"></i>
             </button>
-            <input type="file" id="fileInput" style="display: none;" multiple>
+            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx">
             
             <button id="voiceButton" class="voice-btn" title="Голосовое сообщение">
                 <i class="fas fa-microphone"></i>
@@ -156,48 +178,37 @@
         </button>
     </div>
 
-     <!-- ===== 1. БИБЛИОТЕКИ (СНАЧАЛА) ===== -->
+    <!-- Модалка деталей заказа -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📋 Детали заказа</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailsContent">
+                    <!-- Заполняется JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- ===== 2. CORE МОДУЛИ (В ПРАВИЛЬНОМ ПОРЯДКЕ) ===== -->
     <script src="/HomeWork/js/core/constants-light.js"></script>
     <script src="/HomeWork/js/core/helpers.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
-
-    <!-- ===== 3. ОСНОВНЫЕ СЕРВИСЫ ===== -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
-    
-    <!-- ===== 4. ОСТАЛЬНЫЕ СЕРВИСЫ ===== -->
-    <script src="/HomeWork/js/services/badges.js"></script>
-    <script src="/HomeWork/js/services/moderation.js"></script>
-    <script src="/HomeWork/js/services/payments.js"></script>
-    <script src="/HomeWork/js/services/ai-assistant.js"></script>
-    <script src="/HomeWork/js/services/tracking.js"></script>
-    <script src="/HomeWork/js/services/smart-schedule.js"></script>
-    <script src="/HomeWork/js/services/video-chat.js"></script>
-    <script src="/HomeWork/js/services/gamification.js"></script>
-    <script src="/HomeWork/js/services/analytics.js"></script>
-    <script src="/HomeWork/js/services/redis-cache.js"></script>
-    <script src="/HomeWork/js/services/cdn.js"></script>
-    <script src="/HomeWork/js/services/microservices.js"></script>
-    
-    <!-- ===== 5. КОМПОНЕНТЫ UI ===== -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
-    
-    <!-- ===== 6. WEBSOCKET (ЗАВИСИТ ОТ AUTH) ===== -->
     <script src="/HomeWork/js/services/websocket.js"></script>
-    
-    <!-- ===== 7. КЛИЕНТСКИЙ TELEGRAM (НЕ СЕРВЕРНЫЙ!) ===== -->
-    <script src="/HomeWork/js/services/telegram-client.js"></script>
-    
-    <!-- ===== 8. СКРИПТ СТРАНИЦЫ ===== -->
     <script src="/HomeWork/js/pages/chat.js"></script>
 </body>
 </html>

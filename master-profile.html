@@ -24,10 +24,13 @@
     <!-- ===== LAYOUTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
     <link rel="stylesheet" href="/HomeWork/css/layouts/footer.css">
+    <link rel="stylesheet" href="/HomeWork/css/layouts/grids.css">
 
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
     <link rel="stylesheet" href="/HomeWork/css/components/badges.css">
     <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
@@ -66,7 +69,7 @@
         <div id="profileContent">
             <div class="text-center p-5">
                 <div class="spinner mb-3"></div>
-                <p class="text-secondary">Загрузка профиля...</p>
+                <p class="text-secondary">Загрузка профиля мастера...</p>
             </div>
         </div>
     </div>
@@ -76,11 +79,12 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Портфолио</h5>
+                    <h5 class="modal-title">Портфолио работ</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
                     <img id="portfolioImage" src="" class="img-fluid rounded-4">
+                    <p id="portfolioDescription" class="mt-3 text-secondary"></p>
                 </div>
             </div>
         </div>
@@ -113,6 +117,33 @@
             </div>
         </div>
     </div>
+
+    <!-- Футер -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>ВоркХом</h4>
+                <p>Маркетплейс строительных услуг</p>
+            </div>
+            <div class="footer-section">
+                <h4>О мастере</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle me-2"></i> Проверенный профиль</li>
+                    <li><i class="fas fa-shield-alt me-2"></i> Гарантия качества</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Поддержка</h4>
+                <ul>
+                    <li><i class="fas fa-phone me-2"></i> 8 (800) 123-45-67</li>
+                    <li><i class="fas fa-envelope me-2"></i> support@workhom.ru</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 ВоркХом. Все права защищены.</p>
+        </div>
+    </footer>
 
     <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -160,7 +191,7 @@
                     .get();
                 
                 const portfolio = [];
-                portfolioSnapshot.forEach(doc => portfolio.push(doc.data()));
+                portfolioSnapshot.forEach(doc => portfolio.push({ id: doc.id, ...doc.data() }));
                 
                 // Загружаем отзывы
                 const ordersSnapshot = await db.collection('orders')
@@ -174,7 +205,11 @@
                     if (order.reviews) {
                         order.reviews.forEach(review => {
                             if (review.masterId === masterId) {
-                                reviews.push(review);
+                                reviews.push({
+                                    ...review,
+                                    orderId: doc.id,
+                                    orderTitle: order.title
+                                });
                             }
                         });
                     }
@@ -190,7 +225,7 @@
                     portfolioHtml = `
                         <div class="portfolio-grid">
                             ${portfolio.map(work => `
-                                <div class="portfolio-item" onclick="showPortfolio('${work.imageUrl}')">
+                                <div class="portfolio-item" onclick="showPortfolio('${work.imageUrl}', '${work.description || ''}')">
                                     <img src="${work.imageUrl}" alt="${work.title || 'Работа'}">
                                 </div>
                             `).join('')}
@@ -209,13 +244,19 @@
                                 <span class="fw-bold">${Helpers.escapeHtml(review.clientName || 'Клиент')}</span>
                                 <span class="review-rating">${'★'.repeat(review.rating)}</span>
                             </div>
-                            <p class="text-secondary mb-0">${Helpers.escapeHtml(review.text || '')}</p>
-                            <small class="text-muted">${Helpers.formatDate(review.createdAt)}</small>
+                            <p class="text-secondary mb-2">${Helpers.escapeHtml(review.text || '')}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">${Helpers.formatDate(review.createdAt)}</small>
+                                <small class="text-muted">Заказ: ${review.orderTitle || 'Неизвестно'}</small>
+                            </div>
                         </div>
                     `).join('');
                 } else {
                     reviewsHtml = '<p class="text-secondary">Пока нет отзывов</p>';
                 }
+                
+                // Категории
+                const categories = master.categories ? master.categories.split(',').map(c => c.trim()) : ['Строительные работы'];
                 
                 container.innerHTML = `
                     <!-- Шапка профиля -->
@@ -225,10 +266,12 @@
                                 <i class="fas fa-user-tie"></i>
                             </div>
                             <h1 class="display-5 fw-bold">${Helpers.escapeHtml(master.name || 'Мастер')}</h1>
+                            <p class="lead">${master.specialization || 'Строительные работы'}</p>
                             <div class="d-flex justify-content-center gap-3 mt-3">
                                 <span class="badge badge-primary">⭐ ${(master.rating || 0).toFixed(1)}</span>
                                 <span class="badge badge-success">📦 ${master.completedJobs || 0} работ</span>
                                 <span class="badge badge-info">📋 ${reviews.length} отзывов</span>
+                                ${master.verified ? '<span class="badge" style="background: #4CAF50; color: white;">✅ Верифицирован</span>' : ''}
                             </div>
                         </div>
                     </div>
@@ -239,15 +282,15 @@
                             <!-- О себе -->
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-info-circle me-2" style="color: var(--accent);"></i>О себе</h5>
-                                <p>${Helpers.escapeHtml(master.bio || 'Пока ничего не рассказал о себе')}</p>
+                                <p>${Helpers.escapeHtml(master.bio || 'Профессиональный мастер с опытом работы. Выполняю качественный ремонт и строительные работы.')}</p>
                             </div>
                             
                             <!-- Категории -->
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-tools me-2" style="color: var(--accent);"></i>Специализация</h5>
                                 <div class="d-flex flex-wrap gap-2">
-                                    ${(master.categories || 'Ремонт').split(',').map(cat => 
-                                        `<span class="badge badge-primary">${cat.trim()}</span>`
+                                    ${categories.map(cat => 
+                                        `<span class="badge badge-primary">${cat}</span>`
                                     ).join('')}
                                 </div>
                             </div>
@@ -289,7 +332,7 @@
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-medal me-2" style="color: var(--accent);"></i>Награды</h5>
                                 <div id="badgesContainer" class="d-flex flex-wrap gap-2">
-                                    ${(master.badges || []).map(badge => 
+                                    ${(master.badges || ['Профессионал', 'Опытный мастер']).map(badge => 
                                         `<span class="badge" style="background: var(--accent); color: white;">
                                             <i class="fas fa-check-circle me-1"></i>${badge}
                                         </span>`
@@ -310,11 +353,20 @@
                                     <span>Выполнено заказов:</span>
                                     <span class="fw-bold">${master.completedJobs || 0}</span>
                                 </div>
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between mb-2">
                                     <span>Откликов:</span>
                                     <span class="fw-bold">${master.totalResponses || 0}</span>
                                 </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Успешность:</span>
+                                    <span class="fw-bold">${master.successRate || 100}%</span>
+                                </div>
                             </div>
+                            
+                            <!-- Кнопка для связи -->
+                            <button class="btn w-100 mt-3" onclick="startChat('${masterId}')">
+                                <i class="fas fa-comment me-2"></i> Написать мастеру
+                            </button>
                         </div>
                     </div>
                 `;
@@ -325,13 +377,22 @@
             }
         }
         
-        function showPortfolio(imageUrl) {
+        function showPortfolio(imageUrl, description) {
             document.getElementById('portfolioImage').src = imageUrl;
+            document.getElementById('portfolioDescription').textContent = description || '';
             new bootstrap.Modal(document.getElementById('portfolioModal')).show();
         }
         
         function showContactAuth() {
             new bootstrap.Modal(document.getElementById('authContactModal')).show();
+        }
+        
+        function startChat(masterId) {
+            if (!Auth.isAuthenticated()) {
+                showContactAuth();
+                return;
+            }
+            window.location.href = `/HomeWork/chat.html?masterId=${masterId}`;
         }
         
         // Загружаем профиль при старте

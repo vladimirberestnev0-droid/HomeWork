@@ -19,27 +19,14 @@
 
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
 
     <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/pages/offline.css">
 
     <!-- ===== THEME ===== -->
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
-    
-    <style>
-        /* ТОЛЬКО специфичные для этой страницы стили, которых нет в offline.css */
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-light);
-            color: var(--text-dark);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 20px;
-        }
-    </style>
 </head>
 <body>
     <div class="offline-container">
@@ -91,6 +78,7 @@
                                     <div class="fw-bold">${order.title || 'Заказ'}</div>
                                     <div class="small text-secondary">${order.price || 0} ₽</div>
                                     <div class="small text-secondary">${order.category || 'Без категории'}</div>
+                                    <div class="small text-muted">${order.address || 'Адрес не указан'}</div>
                                 </div>
                             `).join('');
                         } else {
