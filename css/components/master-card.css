@@ -1,18 +1,27 @@
 /* ===== MASTER-CARD.CSS ===== */
+/* Версия: 2.1 — ИСПРАВЛЕНЫ АНИМАЦИИ */
+
 .master-card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 24px;
     text-align: center;
     box-shadow: var(--shadow);
-    transition: var(--transition);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;  /* ✅ Только тень */
     height: 100%;
     position: relative;
+    border: 1px solid transparent;
+    
+    /* Защита от дергания */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: box-shadow, border-color;
 }
 
 .master-card:hover {
-    transform: translateY(-5px);
+    /* transform: translateY(-5px);  /* ❌ УБРАЛИ */
     box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);  /* ✅ Добавили рамку вместо движения */
 }
 
 .master-avatar {
@@ -27,6 +36,15 @@
     color: white;
     font-size: 48px;
     box-shadow: 0 10px 20px rgba(230,122,75,0.3);
+    
+    /* Плавная анимация только для аватара */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transform: translateZ(0);
+}
+
+.master-card:hover .master-avatar {
+    transform: rotate(3deg) scale(1.02);  /* ✅ Легкое вращение только аватара */
+    box-shadow: 0 15px 30px rgba(230,122,75,0.4);
 }
 
 .master-level-badge {
@@ -43,12 +61,27 @@
     justify-content: center;
     font-weight: bold;
     font-size: 14px;
+    
+    /* Анимация для бейджа */
+    transition: transform 0.2s ease;
+}
+
+.master-card:hover .master-level-badge {
+    transform: scale(1.1);  /* ✅ Бейдж чуть увеличивается */
 }
 
 .master-name {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 8px;
+    color: var(--text-dark);
+    
+    /* Анимация для имени */
+    transition: color 0.2s ease;
+}
+
+.master-card:hover .master-name {
+    color: var(--accent);  /* ✅ Имя меняет цвет */
 }
 
 .master-rating {
@@ -56,4 +89,139 @@
     font-size: 1.1rem;
     letter-spacing: 2px;
     margin-bottom: 12px;
+    
+    /* Анимация для звезд */
+    transition: transform 0.2s ease;
+}
+
+.master-card:hover .master-rating {
+    transform: scale(1.05);  /* ✅ Звезды чуть увеличиваются */
+}
+
+/* Стили для кнопки внутри карточки */
+.master-card .btn {
+    transition: all 0.2s ease;
+    transform: translateZ(0);
+    margin-top: 10px;
+}
+
+.master-card:hover .btn {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: scale(1.02);  /* ✅ Кнопка чуть увеличивается */
+}
+
+/* Дополнительная информация */
+.master-info {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    transition: border-color 0.2s ease;
+}
+
+.master-card:hover .master-info {
+    border-top-color: var(--accent-light);
+}
+
+/* Категории */
+.master-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.master-category {
+    background: var(--bg-light);
+    color: var(--text-soft);
+    padding: 4px 12px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.master-card:hover .master-category {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+}
+
+/* Статистика */
+.master-stats {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+.master-stats span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.master-stats i {
+    color: var(--accent);
+    transition: transform 0.2s ease;
+}
+
+.master-card:hover .master-stats i {
+    transform: scale(1.2);
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+body.dark-theme .master-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .master-card:hover {
+    border-color: var(--accent);
+}
+
+body.dark-theme .master-category {
+    background: var(--bg-dark);
+    color: var(--text-muted);
+}
+
+body.dark-theme .master-card:hover .master-category {
+    background: rgba(230,122,75,0.2);
+    color: var(--accent);
+}
+
+/* ===== АДАПТИВ ===== */
+@media (max-width: 768px) {
+    .master-card {
+        padding: 20px;
+    }
+    
+    .master-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+    
+    .master-name {
+        font-size: 1.1rem;
+    }
+    
+    .master-stats {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .master-card {
+        padding: 15px;
+    }
+    
+    .master-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+    }
 }
