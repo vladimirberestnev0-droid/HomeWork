@@ -157,3 +157,105 @@ body:not(.dark-theme) .modal-content {
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.9);
 }
+
+/* ===== MODALS.CSS ===== */
+/* Версия: 3.1 — УЛУЧШЕННЫЕ МОДАЛКИ */
+
+/* ... существующие стили ... */
+
+/* Модалка подтверждения выхода */
+.modal-logout .modal-header {
+    background: linear-gradient(135deg, #DC3545, #ff6b6b) !important;
+    color: white !important;
+}
+
+.modal-logout .modal-header i {
+    animation: bounce 1s ease-in-out infinite !important;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* Модалка успеха */
+.modal-success .modal-header {
+    background: linear-gradient(135deg, #00A86B, #2ecc71) !important;
+    color: white !important;
+}
+
+.modal-success .modal-header i {
+    animation: checkPop 0.5s ease !important;
+}
+
+/* Модалка предупреждения */
+.modal-warning .modal-header {
+    background: linear-gradient(135deg, #FFB020, #f39c12) !important;
+    color: white !important;
+}
+
+/* Анимация появления */
+.modal.fade .modal-dialog {
+    transform: scale(0.9) translateY(-30px);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Красивые кнопки в модалках */
+.modal-footer .btn {
+    min-width: 120px !important;
+    padding: 10px 20px !important;
+    border-radius: 40px !important;
+    transition: all 0.3s ease !important;
+}
+
+.modal-footer .btn:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.modal-footer .btn-outline-secondary:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+}
+
+/* Затемнение фона */
+.modal-backdrop {
+    backdrop-filter: blur(3px) !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-backdrop.show {
+    opacity: 1 !important;
+}
+
+/* Убираем мигание скролла */
+body.modal-open {
+    padding-right: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Адаптив для модалок */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 10px !important;
+    }
+    
+    .modal-content {
+        border-radius: 20px !important;
+    }
+    
+    .modal-footer {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    .modal-footer .btn {
+        width: 100% !important;
+    }
+}
