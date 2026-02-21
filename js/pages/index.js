@@ -1546,6 +1546,44 @@ window.addEventListener('resize', () => {
     setTimeout(checkOrderPositioning, 100);
 });
 
+// ===== ФИКС СТРУКТУРЫ ЗАКАЗОВ =====
+(function fixOrdersStructure() {
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            console.log('🔧 Применяем фикс структуры заказов...');
+            
+            const ordersCol = document.getElementById('ordersColumn');
+            const ordersList = document.getElementById('ordersList');
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            
+            if (ordersCol && ordersList && loadMoreContainer) {
+                // Проверяем, есть ли уже orders-content
+                let ordersContent = document.querySelector('.orders-content');
+                
+                if (!ordersContent) {
+                    // Создаем контейнер
+                    ordersContent = document.createElement('div');
+                    ordersContent.className = 'orders-content';
+                    
+                    // Перемещаем элементы
+                    ordersList.parentNode.insertBefore(ordersContent, ordersList);
+                    ordersContent.appendChild(ordersList);
+                    ordersContent.appendChild(loadMoreContainer);
+                    
+                    console.log('✅ Структура заказов создана');
+                }
+                
+                // Принудительные стили
+                ordersContent.style.cssText = 'flex: 1 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important;';
+                ordersList.style.cssText = 'flex: 1 !important; overflow-y: auto !important;';
+                loadMoreContainer.style.cssText = 'flex-shrink: 0 !important; text-align: center !important; padding: 10px 0 !important;';
+                
+                console.log('✅ Фикс структуры заказов применён');
+            }
+        }, 1000);
+    });
+})();
+
 // ============================================
 // ЖЁСТКИЙ ФИКС ВИДИМОСТИ КОНТЕЙНЕРОВ
 // ============================================
