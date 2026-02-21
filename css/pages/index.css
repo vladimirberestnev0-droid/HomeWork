@@ -1,5 +1,5 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 10.0 — ЗАКАЗЫ РЯДОМ С ФОРМОЙ, ФИКС ПОЗИЦИОНИРОВАНИЯ */
+/* Версия: 11.0 — УЛЬТИМАТИВНАЯ С КОСМЕТИЧЕСКИМИ УЛУЧШЕНИЯМИ */
 
 /* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
 #orderFormRow {
@@ -12,7 +12,7 @@
     width: 100% !important;
     isolation: isolate !important;
     z-index: 1 !important;
-    flex-wrap: nowrap !important; /* Запрещаем перенос */
+    flex-wrap: nowrap !important;
 }
 
 /* Левая колонка (форма) */
@@ -27,8 +27,6 @@
     max-height: calc(100vh - 100px) !important;
     z-index: var(--z-form) !important;
     isolation: isolate !important;
-    float: none !important; /* Убираем float */
-    clear: none !important; /* Убираем clear */
 }
 
 /* Правая колонка (заказы) */
@@ -44,11 +42,251 @@
     top: 90px !important;
     z-index: var(--z-orders) !important;
     scrollbar-gutter: stable !important;
-    float: none !important;
-    clear: none !important;
 }
 
-/* Стилизация скролла заказов */
+/* ===== 1. ОБЩИЙ КОНТЕЙНЕР ДЛЯ ФИЛЬТРОВ ===== */
+.filter-section {
+    background: var(--bg-white) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 20px !important;
+    margin-bottom: 30px !important;
+    box-shadow: var(--shadow) !important;
+    border: 1px solid var(--border) !important;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+.filter-section:hover {
+    box-shadow: var(--shadow-hover) !important;
+    border-color: var(--accent-light) !important;
+}
+
+/* Прозрачность для светлой темы */
+body:not(.dark-theme) .filter-section {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: var(--card-glow) !important;
+}
+
+body:not(.dark-theme) .filter-section:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: var(--card-glow-hover) !important;
+    border-color: var(--accent-light) !important;
+}
+
+/* ===== 2. СКРЫВАЕМ ШИРОТУ И ДОЛГОТУ ===== */
+#latitude,
+#longitude,
+.form-group:has(#latitude),
+.form-group:has(#longitude),
+.row:has(#latitude):has(#longitude) {
+    display: none !important;
+}
+
+/* Альтернативный способ если селектор :has не работает */
+.hide-lat-lng #latitude,
+.hide-lat-lng #longitude,
+.hide-lat-lng .latitude-field,
+.hide-lat-lng .longitude-field {
+    display: none !important;
+}
+
+/* Оставляем только карту */
+#map {
+    width: 100% !important;
+    height: 250px !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
+    margin-top: 10px !important;
+}
+
+/* ===== 3. УЛУЧШЕННЫЙ КУБОК ДЛЯ РЕЙТИНГА МАСТЕРОВ ===== */
+.card h3 i.fa-trophy {
+    background: linear-gradient(135deg, #FFD700, #FFA500) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3)) !important;
+    animation: trophyGlow 2s ease-in-out infinite !important;
+    display: inline-block !important;
+    margin-right: 8px !important;
+    font-size: 1.8rem !important;
+}
+
+@keyframes trophyGlow {
+    0%, 100% {
+        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3)) !important;
+        transform: scale(1) !important;
+    }
+    50% {
+        filter: drop-shadow(0 8px 16px rgba(255, 215, 0, 0.6)) !important;
+        transform: scale(1.05) !important;
+    }
+}
+
+/* Золотая обводка для всего блока рейтинга */
+.rating-header {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.rating-header::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -10px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 4px !important;
+    background: linear-gradient(90deg, transparent, #FFD700, #FFA500, #FFD700, transparent) !important;
+    animation: goldLine 3s ease-in-out infinite !important;
+}
+
+@keyframes goldLine {
+    0%, 100% {
+        opacity: 0.5 !important;
+    }
+    50% {
+        opacity: 1 !important;
+    }
+}
+
+/* Кнопки периодов с золотым акцентом */
+.btn-group .btn-outline-secondary {
+    border-color: var(--border) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-group .btn-outline-secondary:hover {
+    border-color: #FFD700 !important;
+    color: #FFD700 !important;
+    background: rgba(255, 215, 0, 0.1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
+}
+
+.btn-group .btn-outline-secondary.active {
+    background: linear-gradient(135deg, #FFD700, #FFA500) !important;
+    color: #333 !important;
+    border-color: transparent !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+}
+
+.btn-group .btn-outline-secondary.active::before {
+    content: '👑' !important;
+    position: absolute !important;
+    left: -20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 16px !important;
+    animation: crownFloat 2s ease-in-out infinite !important;
+}
+
+@keyframes crownFloat {
+    0%, 100% {
+        left: -20px !important;
+    }
+    50% {
+        left: -25px !important;
+    }
+}
+
+/* ===== 4. КНОПКА БОТА И КНОПКА НАВЕРХ ===== */
+#deepseek-bro-button {
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: var(--accent) !important;
+    color: white !important;
+    padding: 15px 25px !important;
+    border-radius: 60px !important;
+    cursor: pointer !important;
+    box-shadow: 0 10px 30px rgba(230,122,75,0.4) !important;
+    z-index: var(--z-tooltip) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    animation: float 3s ease-in-out infinite !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: none !important;
+}
+
+#deepseek-bro-button:hover {
+    transform: translateY(-5px) scale(1.05) !important;
+    box-shadow: 0 20px 40px rgba(230,122,75,0.6) !important;
+}
+
+#deepseek-bro-button img {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid white !important;
+}
+
+#deepseek-chat-window {
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 30px !important;
+    width: 350px !important;
+    height: 500px !important;
+    background: var(--bg-white) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2) !important;
+    z-index: calc(var(--z-tooltip) - 1) !important;
+    display: none !important;
+    flex-direction: column !important;
+    transition: all 0.3s !important;
+    border: 1px solid var(--border) !important;
+}
+
+#deepseek-chat-window:not(.hidden) {
+    display: flex !important;
+}
+
+#scrollToTop {
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 30px !important;
+    width: 55px !important;
+    height: 55px !important;
+    background: var(--accent-gradient) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 5px 20px rgba(230,122,75,0.3) !important;
+    z-index: var(--z-tooltip) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: scale(0.8) !important;
+}
+
+#scrollToTop.visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: scale(1) !important;
+    animation: pulse 2s infinite !important;
+}
+
+#scrollToTop:hover {
+    background: var(--accent-dark) !important;
+    transform: scale(1.15) translateY(-5px) !important;
+    box-shadow: 0 15px 30px rgba(230,122,75,0.6) !important;
+}
+
+#scrollToTop i {
+    font-size: 24px !important;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
+}
+
+/* ===== 5. СТИЛИЗАЦИЯ СКРОЛЛА ЗАКАЗОВ ===== */
 #ordersColumn::-webkit-scrollbar {
     width: 6px !important;
 }
@@ -73,19 +311,14 @@
     mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
 }
 
-/* Контейнер заказов */
+/* ===== 6. КАРТОЧКИ ЗАКАЗОВ ===== */
 #ordersList {
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
     min-height: 200px !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative !important;
-    z-index: 2 !important;
 }
 
-/* Карточки заказов */
 .order-item {
     background: var(--bg-white) !important;
     border-radius: var(--radius-lg) !important;
@@ -101,9 +334,6 @@
     position: relative !important;
     z-index: var(--z-card) !important;
     margin-bottom: 15px !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: block !important;
     width: 100% !important;
 }
 
@@ -114,7 +344,6 @@
     z-index: var(--z-card-hover) !important;
 }
 
-/* Индекс появления для первых 6 заказов */
 .order-item:nth-child(1) { animation-delay: 0.05s !important; }
 .order-item:nth-child(2) { animation-delay: 0.1s !important; }
 .order-item:nth-child(3) { animation-delay: 0.15s !important; }
@@ -170,7 +399,7 @@
     width: 16px !important;
 }
 
-/* Форма */
+/* ===== 7. ФОРМА ===== */
 #orderFormColumn .card {
     height: fit-content !important;
     background: var(--bg-white) !important;
@@ -214,7 +443,7 @@
     border-color: var(--accent) !important;
 }
 
-/* Индикатор количества заказов */
+/* ===== 8. ИНДИКАТОР КОЛИЧЕСТВА ЗАКАЗОВ ===== */
 .orders-header {
     display: flex !important;
     justify-content: space-between !important;
@@ -236,7 +465,7 @@
     margin-right: 5px !important;
 }
 
-/* Кнопка "Показать еще" */
+/* ===== 9. КНОПКА "ПОКАЗАТЬ ЕЩЕ" ===== */
 #loadMoreContainer {
     text-align: center !important;
     margin-top: 20px !important;
@@ -257,22 +486,15 @@
     border-color: var(--accent) !important;
 }
 
-/* Карта */
-#map, #ordersMap {
+/* ===== 10. КАРТА ===== */
+#ordersMap {
     width: 100% !important;
+    height: 450px !important;
     border-radius: var(--radius-md) !important;
     overflow: hidden !important;
 }
 
-#map {
-    height: 250px !important;
-}
-
-#ordersMap {
-    height: 450px !important;
-}
-
-/* AI подсказка */
+/* ===== 11. AI ПОДСКАЗКА ===== */
 .ai-price-hint {
     background: var(--accent-light) !important;
     color: var(--accent-dark) !important;
@@ -288,7 +510,7 @@
     box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
 }
 
-/* Скрытие формы для мастеров */
+/* ===== 12. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
 body.master-mode #orderFormColumn {
     display: none !important;
 }
@@ -299,7 +521,7 @@ body.master-mode #ordersColumn {
     width: 100% !important;
 }
 
-/* Прозрачные заказы для светлой темы */
+/* ===== 13. ПРОЗРАЧНЫЕ ЗАКАЗЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
 body:not(.dark-theme) .order-item {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -320,17 +542,115 @@ body:not(.dark-theme) .order-meta {
     border-top-color: rgba(230, 122, 75, 0.2) !important;
 }
 
-/* ===== АДАПТИВ ДЛЯ ПЛАНШЕТОВ ===== */
+/* ===== 14. ПРОЗРАЧНЫЙ КОНТЕЙНЕР ФИЛЬТРОВ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
+body:not(.dark-theme) .filter-section {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: var(--card-glow) !important;
+}
+
+body:not(.dark-theme) .filter-section:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: var(--card-glow-hover) !important;
+    border-color: var(--accent-light) !important;
+}
+
+/* ===== 15. АНИМАЦИИ ===== */
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(230,122,75,0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(230,122,75,0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(230,122,75,0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes goldLine {
+    0%, 100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes trophyGlow {
+    0%, 100% {
+        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
+        transform: scale(1);
+    }
+    50% {
+        filter: drop-shadow(0 8px 16px rgba(255, 215, 0, 0.6));
+        transform: scale(1.05);
+    }
+}
+
+@keyframes crownFloat {
+    0%, 100% {
+        left: -20px;
+    }
+    50% {
+        left: -25px;
+    }
+}
+
+/* ===== 16. АДАПТИВ ===== */
+@media (max-width: 1200px) {
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+}
+
 @media (max-width: 992px) {
     #orderFormColumn,
     #ordersColumn {
         flex: 0 0 50% !important;
         max-width: 50% !important;
-        width: 50% !important;
+    }
+    
+    .btn-group {
+        flex-wrap: wrap !important;
+        gap: 5px !important;
     }
 }
 
-/* ===== АДАПТИВ ДЛЯ ТЕЛЕФОНОВ ===== */
 @media (max-width: 768px) {
     #orderFormRow {
         flex-direction: column !important;
@@ -364,11 +684,56 @@ body:not(.dark-theme) .order-meta {
         max-height: 600px !important;
         -webkit-mask-image: none !important;
         mask-image: none !important;
-        margin-top: 20px !important; /* Отступ от формы на мобилках */
+        margin-top: 20px !important;
+    }
+    
+    #scrollToTop {
+        bottom: 80px !important;
+        right: 20px !important;
+        width: 45px !important;
+        height: 45px !important;
+    }
+    
+    #scrollToTop i {
+        font-size: 20px !important;
+    }
+    
+    #deepseek-bro-button {
+        bottom: 20px !important;
+        right: 20px !important;
+        padding: 12px 20px !important;
+    }
+    
+    #deepseek-chat-window {
+        bottom: 90px !important;
+        right: 20px !important;
+        width: 300px !important;
+        height: 450px !important;
+    }
+    
+    .filter-section {
+        padding: 15px !important;
+    }
+    
+    .order-price {
+        font-size: 1.2rem !important;
     }
 }
 
-/* ===== АДАПТИВ ДЛЯ МАЛЕНЬКИХ ТЕЛЕФОНОВ ===== */
+@media (max-width: 576px) {
+    .btn-group {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+    
+    .btn-group .btn {
+        flex: 1 !important;
+        font-size: 0.9rem !important;
+        padding: 6px 10px !important;
+    }
+}
+
 @media (max-width: 480px) {
     #ordersColumn {
         max-height: 500px !important;
@@ -379,6 +744,36 @@ body:not(.dark-theme) .order-meta {
     }
     
     .order-price {
-        font-size: 1.2rem !important;
+        font-size: 1.1rem !important;
+    }
+    
+    #scrollToTop {
+        bottom: 70px !important;
+        right: 15px !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    #scrollToTop i {
+        font-size: 18px !important;
+    }
+    
+    #deepseek-bro-button {
+        padding: 10px 15px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    #deepseek-bro-button img {
+        width: 30px !important;
+        height: 30px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    #scrollToTop {
+        width: 35px !important;
+        height: 35px !important;
+        bottom: 65px !important;
+        right: 10px !important;
     }
 }
