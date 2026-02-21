@@ -25,7 +25,7 @@
     top: 90px !important;
     align-self: flex-start !important;
     height: fit-content !important;
-    max-height: calc(100vh - 100px) !important;
+    max-height: none !important;           /* Убираем ограничение */
     z-index: var(--z-form) !important;
     isolation: isolate !important;
 }
@@ -1090,4 +1090,49 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
 #ordersList::-webkit-scrollbar-thumb {
     background: var(--accent) !important;
     border-radius: 10px !important;
+}
+
+/* ===== ЧЁТКАЯ СТРУКТУРА: ФОРМА + ЗАКАЗЫ > РЕЙТИНГ > КАРТА ===== */
+/* Гарантируем, что ряд с формой и заказами занимает свою высоту */
+#orderFormRow {
+    margin-bottom: 40px !important;
+    min-height: auto !important;
+}
+
+/* Отделяем рейтинг от карты */
+.row.g-4.mb-5:has(.card h3 i.fa-trophy) {
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+    clear: both !important;
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Карта всегда после рейтинга */
+#ordersMap {
+    margin-top: 30px !important;
+    margin-bottom: 30px !important;
+    clear: both !important;
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Убираем возможные лишние отступы у контейнера */
+.container.py-4 {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Форма и заказы в одном ряду */
+#orderFormRow {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+}
+
+/* Всё остальное идёт своим порядком */
+.row:not(#orderFormRow) {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
