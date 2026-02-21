@@ -45,9 +45,10 @@
     scrollbar-gutter: stable !important;
 }
 
-/* ===== РЕЙТИНГ МАСТЕРОВ - СТРОГО ПОСЛЕ ===== */
-.row.g-4.mb-5:has(.card h3 i.fa-trophy) {
-    margin-top: 0 !important;
+/* ===== РЕЙТИНГ МАСТЕРОВ - ИСПРАВЛЕННЫЙ СЕЛЕКТОР ===== */
+/* Целимся ТОЛЬКО в ряд, который сразу после карты и содержит заголовок с кубком */
+#ordersMap ~ .row.g-4.mb-5:has(> div > .card h3 i.fa-trophy) {
+    margin-top: 40px !important;    /* Добавляем отступ сверху, чтобы не прилипало */
     margin-bottom: 40px !important;
     position: relative !important;
     clear: both !important;
