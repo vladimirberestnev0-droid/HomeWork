@@ -1,0 +1,29 @@
+/* ===== PAGES/OFFLINE.CSS ===== */
+.offline-container {
+    max-width: 500px;
+    text-align: center;
+    background: white;
+    padding: 50px 40px;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    animation: slideUp 0.5s ease;
+}
+
+.offline-icon {
+    font-size: 80px;
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+
+.cached-orders {
+    margin-top: 40px;
+    text-align: left;
+}
+
+.cached-order {
+    background: var(--bg-light);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--accent);
+}
