@@ -1,7 +1,7 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 9.0 — ЗАКАЗЫ РЯДОМ С ФОРМОЙ, ФИКС ПОЗИЦИОНИРОВАНИЯ */
+/* Версия: 10.0 — ЗАКАЗЫ РЯДОМ С ФОРМОЙ, ФИКС ПОЗИЦИОНИРОВАНИЯ */
 
-/* Контейнер формы и заказов */
+/* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
 #orderFormRow {
     display: flex !important;
     flex-direction: row !important;
@@ -12,12 +12,14 @@
     width: 100% !important;
     isolation: isolate !important;
     z-index: 1 !important;
+    flex-wrap: nowrap !important; /* Запрещаем перенос */
 }
 
 /* Левая колонка (форма) */
 #orderFormColumn {
     flex: 0 0 50% !important;
     max-width: 50% !important;
+    width: 50% !important;
     position: sticky !important;
     top: 90px !important;
     align-self: flex-start !important;
@@ -25,12 +27,15 @@
     max-height: calc(100vh - 100px) !important;
     z-index: var(--z-form) !important;
     isolation: isolate !important;
+    float: none !important; /* Убираем float */
+    clear: none !important; /* Убираем clear */
 }
 
 /* Правая колонка (заказы) */
 #ordersColumn {
     flex: 0 0 50% !important;
     max-width: 50% !important;
+    width: 50% !important;
     height: calc(100vh - 120px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
@@ -39,6 +44,33 @@
     top: 90px !important;
     z-index: var(--z-orders) !important;
     scrollbar-gutter: stable !important;
+    float: none !important;
+    clear: none !important;
+}
+
+/* Стилизация скролла заказов */
+#ordersColumn::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#ordersColumn::-webkit-scrollbar-track {
+    background: var(--bg-light) !important;
+    border-radius: 10px !important;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb {
+    background: var(--accent) !important;
+    border-radius: 10px !important;
+}
+
+#ordersColumn::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark) !important;
+}
+
+/* Градиент для плавного скролла */
+#ordersColumn {
+    -webkit-mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
+    mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
 }
 
 /* Контейнер заказов */
@@ -168,29 +200,18 @@
     border-radius: 10px !important;
 }
 
-/* Стилизация скролла заказов */
-#ordersColumn::-webkit-scrollbar {
-    width: 6px !important;
+/* Форма — безопасные анимации */
+#orderForm input,
+#orderForm select,
+#orderForm textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-#ordersColumn::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
-}
-
-#ordersColumn::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
-}
-
-#ordersColumn::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark) !important;
-}
-
-/* Градиент для плавного скролла */
-#ordersColumn {
-    -webkit-mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
-    mask-image: linear-gradient(to bottom, black 98%, transparent 100%) !important;
+#orderForm input:hover,
+#orderForm select:hover,
+#orderForm textarea:hover {
+    transform: none !important;
+    border-color: var(--accent) !important;
 }
 
 /* Индикатор количества заказов */
@@ -236,6 +257,48 @@
     border-color: var(--accent) !important;
 }
 
+/* Карта */
+#map, #ordersMap {
+    width: 100% !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
+}
+
+#map {
+    height: 250px !important;
+}
+
+#ordersMap {
+    height: 450px !important;
+}
+
+/* AI подсказка */
+.ai-price-hint {
+    background: var(--accent-light) !important;
+    color: var(--accent-dark) !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.ai-price-hint:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
+}
+
+/* Скрытие формы для мастеров */
+body.master-mode #orderFormColumn {
+    display: none !important;
+}
+
+body.master-mode #ordersColumn {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
 /* Прозрачные заказы для светлой темы */
 body:not(.dark-theme) .order-item {
     background: rgba(255, 255, 255, 0.9) !important;
@@ -257,24 +320,28 @@ body:not(.dark-theme) .order-meta {
     border-top-color: rgba(230, 122, 75, 0.2) !important;
 }
 
-/* Адаптив для главной страницы */
+/* ===== АДАПТИВ ДЛЯ ПЛАНШЕТОВ ===== */
 @media (max-width: 992px) {
     #orderFormColumn,
     #ordersColumn {
         flex: 0 0 50% !important;
         max-width: 50% !important;
+        width: 50% !important;
     }
 }
 
+/* ===== АДАПТИВ ДЛЯ ТЕЛЕФОНОВ ===== */
 @media (max-width: 768px) {
     #orderFormRow {
         flex-direction: column !important;
+        flex-wrap: wrap !important;
     }
     
     #orderFormColumn,
     #ordersColumn {
         flex: 0 0 100% !important;
         max-width: 100% !important;
+        width: 100% !important;
         position: static !important;
         height: auto !important;
         max-height: none !important;
@@ -297,9 +364,11 @@ body:not(.dark-theme) .order-meta {
         max-height: 600px !important;
         -webkit-mask-image: none !important;
         mask-image: none !important;
+        margin-top: 20px !important; /* Отступ от формы на мобилках */
     }
 }
 
+/* ===== АДАПТИВ ДЛЯ МАЛЕНЬКИХ ТЕЛЕФОНОВ ===== */
 @media (max-width: 480px) {
     #ordersColumn {
         max-height: 500px !important;
@@ -311,28 +380,5 @@ body:not(.dark-theme) .order-meta {
     
     .order-price {
         font-size: 1.2rem !important;
-    }
-}
-
-/* ФИКС ПОЗИЦИОНИРОВАНИЯ - НА ВСЯКИЙ СЛУЧАЙ */
-#orderFormRow {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-}
-
-#orderFormColumn,
-#ordersColumn {
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
-    width: 50% !important;
-}
-
-@media (max-width: 768px) {
-    #orderFormColumn,
-    #ordersColumn {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-        width: 100% !important;
     }
 }
