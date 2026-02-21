@@ -1,5 +1,5 @@
 /* ===== PAGES/INDEX.CSS ===== */
-/* Версия: 5.1 — ФИНАЛЬНАЯ С ФИКСАМИ */
+/* Версия: 5.2 — ИСПРАВЛЕНЫ АНИМАЦИИ */
 
 /* ===== КОНТЕЙНЕР ФОРМЫ И ЗАКАЗОВ ===== */
 #orderFormRow {
@@ -27,19 +27,23 @@
     background: var(--bg-white);
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
+    pointer-events: auto;
+    isolation: isolate;
 }
 
-/* Форма — только нужные анимации */
+/* Форма — безопасные анимации */
 #orderForm input,
 #orderForm select,
 #orderForm textarea {
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 #orderForm input:hover,
 #orderForm select:hover,
 #orderForm textarea:hover {
-    transform: none;  /* Без движений */
+    transform: none;  /* ✅ БЕЗ ДВИЖЕНИЙ */
+    border-color: var(--accent);
 }
 
 /* ===== ПРАВАЯ КОЛОНКА (ЗАКАЗЫ) ===== */
@@ -50,7 +54,7 @@
     overflow-x: hidden;
     padding-right: 10px;
     position: relative;
-    scrollbar-gutter: stable;  /* Фикс дергания */
+    scrollbar-gutter: stable;
 }
 
 /* Стилизация скролла */
@@ -76,12 +80,18 @@
     padding: 20px;
     box-shadow: var(--shadow);
     border-left: 4px solid var(--accent);
-    transition: box-shadow 0.3s ease, border-left-width 0.2s ease;  /* Плавно */
+    transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
+    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: box-shadow, border-color;
 }
 
 .order-item:hover {
     box-shadow: var(--shadow-hover);
-    border-left-width: 6px;  /* Плавно меняется */
+    border-left-color: var(--accent-dark);
+    /* ✅ УБРАЛ transform: translateY() И scale() */
+    transform: none;
 }
 
 .order-header {
@@ -134,7 +144,7 @@
 
 /* ===== КАРТОЧКИ МАСТЕРОВ ===== */
 .master-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: box-shadow 0.2s ease;
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 20px;
@@ -142,11 +152,16 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: box-shadow;
 }
 
 .master-card:hover {
-    transform: translateY(-5px) scale(1.02);
     box-shadow: var(--shadow-hover);
+    /* ✅ УБРАЛ transform: translateY() И scale() */
+    transform: none;
 }
 
 .master-avatar {
@@ -160,28 +175,33 @@
     margin: 0 auto 15px;
     color: white;
     font-size: 40px;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
+    /* ЗАЩИТА */
+    transform: translateZ(0);
 }
 
 .master-card:hover .master-avatar {
-    transform: rotate(5deg) scale(1.1);
+    transform: rotate(3deg);  /* ✅ УМЕНЬШИЛ rotate */
 }
 
 .master-card .btn-sm {
     background: transparent;
     border: 2px solid var(--accent);
     color: var(--accent);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     padding: 8px 16px;
     font-weight: 600;
     width: 100%;
     border-radius: 40px;
+    /* ЗАЩИТА */
+    transform: translateZ(0);
+    cursor: pointer;
 }
 
 .master-card .btn-sm:hover {
     background: var(--accent);
     color: white;
-    transform: scale(1.05);
+    transform: scale(1.02);  /* ✅ УМЕНЬШИЛ scale */
 }
 
 /* ===== КОМБО-ПОИСК ===== */
@@ -196,7 +216,7 @@
     padding: 12px 20px;
     border: 2px solid var(--border);
     background: var(--bg-white);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     width: 100%;
 }
 
@@ -258,10 +278,11 @@
     cursor: pointer;
     box-shadow: 0 5px 20px rgba(230,122,75,0.3);
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     border: none;
     opacity: 0;
     visibility: hidden;
+    transform: translateZ(0);
 }
 
 #scrollToTop.visible {
@@ -270,7 +291,7 @@
 }
 
 #scrollToTop:hover {
-    transform: scale(1.1) translateY(-5px);
+    transform: scale(1.05) translateY(-2px);  /* ✅ УМЕНЬШИЛ анимацию */
     box-shadow: 0 10px 30px rgba(230,122,75,0.5);
 }
 
@@ -284,6 +305,13 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ===== ЗАЩИТА ОТ КОНФЛИКТОВ ===== */
+#orderFormColumn,
+#ordersColumn {
+    pointer-events: auto;
+    position: relative;
 }
 
 /* ===== АДАПТИВ ===== */
@@ -309,5 +337,32 @@
         left: 20px;
         width: 40px;
         height: 40px;
+    }
+}
+
+/* Добавь в конец index.css */
+.order-item {
+    /* существующие стили */
+    cursor: default;  /* ✅ НОРМАЛЬНЫЙ КУРСОР */
+}
+
+button, .btn, .filter-btn, .dropdown-item {
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+/* Плавное появление заказов */
+.order-item {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
