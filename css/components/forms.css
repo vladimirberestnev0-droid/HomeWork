@@ -1,5 +1,5 @@
 /* ===== FORMS.CSS ===== */
-/* Версия: 2.0 — БЕЗ КОНФЛИКТОВ */
+/* Версия: 3.0 — ВСЕ ФОРМЫ */
 
 .form-group {
     margin-bottom: 20px;
@@ -137,51 +137,15 @@ textarea.form-control {
     border: 1px solid var(--border);
 }
 
-/* Секция фильтров */
-.filter-section {
-    margin-bottom: 20px;
-    padding: 20px;
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-}
-
-.category-filter {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-.city-filter {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-/* Кнопки фильтров */
-.filter-btn {
-    padding: 8px 16px;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--border);
+/* Тёмная тема */
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme select {
     background: var(--bg-white);
     color: var(--text-dark);
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    border-color: var(--border);
 }
 
-.filter-btn:hover {
-    background: var(--accent-light);
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
-
-.filter-btn.active {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: transparent;
+body.dark-theme input::placeholder {
+    color: var(--text-muted);
 }

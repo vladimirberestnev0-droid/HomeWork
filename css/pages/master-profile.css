@@ -1,9 +1,6 @@
 /* ===== MASTER-PROFILE.CSS ===== */
-/* Версия: 2.0 — ПУБЛИЧНЫЙ ПРОФИЛЬ МАСТЕРА */
+/* Версия: 3.0 — ПРОФИЛЬ МАСТЕРА */
 
-/* Используем базовые стили из profile.css + добавляем специфичные */
-
-/* Контакты (защищенные) */
 .contact-protected {
     background: var(--bg-light);
     border-radius: 20px;
@@ -48,7 +45,6 @@
     box-shadow: 0 10px 20px rgba(230,122,75,0.3);
 }
 
-/* Отзывы */
 .review-card {
     background: var(--bg-white);
     border-radius: 20px;
@@ -79,14 +75,6 @@
     letter-spacing: 2px;
 }
 
-/* Портфолио */
-.portfolio-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
 .portfolio-item {
     border-radius: 15px;
     overflow: hidden;
@@ -114,36 +102,6 @@
     transform: scale(1.1);
 }
 
-/* Бейджи */
-.profile-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    border-radius: 30px;
-    background: var(--accent-light);
-    color: var(--accent-dark);
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-right: 8px;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-}
-
-.profile-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 10px rgba(230,122,75,0.2);
-}
-
-.profile-badge i {
-    margin-right: 5px;
-}
-
-.profile-badge.gold {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
-}
-
-/* ===== ТЁМНАЯ ТЕМА ===== */
 body.dark-theme .contact-protected {
     background: #2d2d2d;
     border-color: var(--accent);
@@ -156,11 +114,4 @@ body.dark-theme .review-card {
 
 body.dark-theme .review-card:hover {
     border-color: var(--accent);
-}
-
-/* ===== АНИМАЦИИ ===== */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
 }

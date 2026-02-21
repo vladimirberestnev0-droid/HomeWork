@@ -1,4 +1,6 @@
-/* ===== PAGES/404.CSS ===== */
+/* ===== 404.CSS ===== */
+/* Версия: 2.0 — СТРАНИЦА 404 */
+
 .error-container {
     max-width: 600px;
     text-align: center;
@@ -71,16 +73,4 @@
     border-radius: 20px;
     font-size: 14px;
     color: #5A6B7A;
-}
-
-.logo-text {
-    font-size: 24px;
-    font-weight: 700;
-    color: #2D3A4A;
-    margin-top: 20px;
-}
-
-.logo-text i {
-    color: #E67A4B;
-    margin-right: 10px;
 }

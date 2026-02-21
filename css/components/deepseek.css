@@ -1,9 +1,11 @@
 /* ===== DEEPSEEK.CSS ===== */
+/* Версия: 2.0 — ЧАТ С БРО */
+
 #deepseek-bro-button {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: var(--accent, #E67A4B);
+    background: var(--accent);
     color: white;
     padding: 15px 25px;
     border-radius: 60px;
@@ -36,7 +38,7 @@
     display: none;
     flex-direction: column;
     transition: all 0.3s;
-    border: 1px solid var(--border, #E2E8F0);
+    border: 1px solid var(--border);
 }
 
 #deepseek-chat-window:not(.hidden) {
@@ -44,7 +46,7 @@
 }
 
 .deepseek-header {
-    background: var(--accent, #E67A4B);
+    background: var(--accent);
     color: white;
     padding: 15px 20px;
     border-radius: 20px 20px 0 0;
@@ -69,7 +71,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: var(--bg-light, #F9F7F5);
+    background: var(--bg-light);
 }
 
 .deepseek-message {
@@ -82,14 +84,14 @@
 
 .bro-message {
     background: white;
-    color: var(--text-dark, #2D3A4A);
+    color: var(--text-dark);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .user-message {
-    background: var(--accent, #E67A4B);
+    background: var(--accent);
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -97,7 +99,7 @@
 
 .deepseek-input-area {
     padding: 15px;
-    border-top: 1px solid var(--border, #E2E8F0);
+    border-top: 1px solid var(--border);
     display: flex;
     gap: 10px;
     background: white;
@@ -107,17 +109,17 @@
 #deepseek-input {
     flex: 1;
     padding: 12px 15px;
-    border: 1px solid var(--border, #E2E8F0);
+    border: 1px solid var(--border);
     border-radius: 30px;
     outline: none;
     font-size: 14px;
 }
 
 #deepseek-input:focus {
-    border-color: var(--accent, #E67A4B);
+    border-color: var(--accent);
 }
 
 #typing-indicator {
     font-style: italic;
-    color: var(--text-soft, #5A6B7A);
+    color: var(--text-soft);
 }

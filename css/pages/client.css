@@ -1,4 +1,6 @@
-/* ===== PAGES/CLIENT.CSS ===== */
+/* ===== CLIENT.CSS ===== */
+/* Версия: 2.0 — КЛИЕНТСКАЯ ЧАСТЬ */
+
 .balance-card {
     background: var(--bg-light);
     border-radius: var(--radius-md);

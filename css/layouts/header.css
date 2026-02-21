@@ -1,0 +1,139 @@
+/* ===== HEADER.CSS ===== */
+/* Версия: 3.0 — ШАПКА САЙТА */
+
+header {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px 30px;
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    position: sticky;
+    top: 10px;
+    z-index: var(--z-sticky);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid transparent;
+}
+
+header:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.logo i {
+    font-size: 32px;
+    color: var(--accent);
+    filter: drop-shadow(0 4px 8px rgba(230, 122, 75, 0.3));
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logo:hover i {
+    transform: rotate(5deg) scale(1.1);
+    filter: drop-shadow(0 6px 12px rgba(230, 122, 75, 0.5));
+}
+
+.logo-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.logo-link:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+nav a {
+    text-decoration: none;
+    color: var(--text-soft);
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+nav a:hover {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    transform: translateY(-2px);
+}
+
+nav a.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 8px 20px rgba(230, 122, 75, 0.3);
+}
+
+nav a.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(230, 122, 75, 0.4);
+}
+
+body:not(.dark-theme) header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 30px -10px rgba(230, 122, 75, 0.2);
+}
+
+body:not(.dark-theme) .nav a.active {
+    background: linear-gradient(135deg, rgba(230,122,75,0.1), rgba(255,159,75,0.1));
+    color: var(--accent-dark);
+    border: 1px solid rgba(230,122,75,0.3);
+}
+
+body.dark-theme header {
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    border-color: var(--border);
+}
+
+body.dark-theme .logo-link {
+    color: white;
+}
+
+body.dark-theme .logo-link i {
+    color: var(--accent);
+}
+
+body.dark-theme nav a {
+    color: var(--text-muted);
+}
+
+body.dark-theme nav a:hover {
+    background: rgba(255, 159, 75, 0.2);
+    color: var(--accent);
+}
+
+body.dark-theme nav a.active {
+    background: var(--accent-gradient);
+    color: white;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}

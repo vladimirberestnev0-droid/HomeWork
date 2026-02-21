@@ -1,13 +1,5 @@
-/* ===== PAGES/VIDEO-CHAT.CSS ===== */
-.video-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    height: calc(100vh - 200px);
-    padding: 20px;
-    background: var(--bg-dark);
-    border-radius: var(--radius-lg);
-}
+/* ===== VIDEO-CHAT.CSS ===== */
+/* Версия: 2.0 — ВИДЕОЧАТ */
 
 .video-box {
     background: #1a1a1a;

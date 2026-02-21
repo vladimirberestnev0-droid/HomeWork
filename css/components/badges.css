@@ -1,4 +1,6 @@
 /* ===== BADGES.CSS ===== */
+/* Версия: 3.0 — БЕЙДЖИ И ИНДИКАТОРЫ */
+
 .badge {
     display: inline-flex;
     align-items: center;
@@ -107,4 +109,48 @@
 .achievement-locked {
     opacity: 0.5;
     filter: grayscale(1);
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 30px;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.profile-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(230,122,75,0.2);
+}
+
+.profile-badge i {
+    margin-right: 5px;
+}
+
+.profile-badge.gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
 }

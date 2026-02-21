@@ -1,4 +1,6 @@
-/* ===== PAGES/CHAT.CSS ===== */
+/* ===== CHAT.CSS ===== */
+/* Версия: 2.0 — ЧАТ */
+
 .chat-container {
     max-width: 1200px;
     width: 100%;
@@ -61,9 +63,6 @@
 .chat-info h2 {
     font-size: 18px;
     margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .online-status {
@@ -79,22 +78,6 @@
 .online-status.online {
     background: var(--success);
     animation: pulse 2s infinite;
-}
-
-.order-badge {
-    background: var(--bg-light);
-    padding: 8px 16px;
-    border-radius: 40px;
-    font-size: 13px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: var(--transition);
-}
-
-.order-badge:hover {
-    background: var(--accent-light);
-    color: var(--accent);
 }
 
 .messages-area {
@@ -155,75 +138,6 @@
     text-align: right;
 }
 
-.message-files {
-    margin-top: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.message-image {
-    max-width: 200px;
-    max-height: 200px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.message-image:hover {
-    transform: scale(1.05);
-}
-
-.message-file {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 20px;
-    font-size: 13px;
-    text-decoration: none;
-    color: inherit;
-    transition: var(--transition);
-}
-
-.message-file:hover {
-    background: rgba(255,255,255,0.3);
-}
-
-.quick-replies {
-    padding: 10px 30px;
-    background: var(--bg-white);
-    border-top: 1px solid var(--border);
-    overflow-x: auto;
-}
-
-.quick-replies-buttons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.quick-reply-btn {
-    background: var(--bg-light);
-    border: 1px solid var(--border);
-    padding: 8px 16px;
-    border-radius: 40px;
-    font-size: 13px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: var(--transition);
-    color: var(--text-dark);
-}
-
-.quick-reply-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
-
 .chat-input {
     background: var(--bg-white);
     padding: 20px 30px;
@@ -232,29 +146,6 @@
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
-}
-
-.attach-btn, .voice-btn, .emoji-btn, .poll-btn {
-    background: none;
-    border: none;
-    color: var(--text-soft);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    transition: var(--transition);
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.attach-btn:hover, .voice-btn:hover, .emoji-btn:hover, .poll-btn:hover {
-    color: var(--accent);
-    background: var(--bg-light);
-    transform: scale(1.1);
 }
 
 #messageInput {
@@ -295,159 +186,4 @@
 .send-btn:hover {
     background: var(--accent-dark);
     transform: scale(1.1) rotate(15deg);
-}
-
-.file-preview-area {
-    padding: 10px 30px;
-    background: var(--bg-light);
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.file-preview-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--bg-white);
-    border: 1px solid var(--border);
-    border-radius: 40px;
-    font-size: 13px;
-    color: var(--text-dark);
-}
-
-.file-preview-item i {
-    color: var(--accent);
-}
-
-.remove-file {
-    cursor: pointer;
-    color: var(--text-soft);
-    font-weight: bold;
-    transition: var(--transition);
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.remove-file:hover {
-    color: var(--danger);
-    background: var(--bg-light);
-    transform: scale(1.2);
-}
-
-.typing-indicator {
-    font-size: 12px;
-    color: var(--text-soft);
-    padding: 4px 16px;
-    font-style: italic;
-}
-
-.empty-chat {
-    text-align: center;
-    color: var(--text-soft);
-    padding: 60px 20px;
-}
-
-.empty-chat i {
-    font-size: 64px;
-    color: var(--border);
-    margin-bottom: 16px;
-}
-
-.pinned-order {
-    background: var(--bg-light);
-    padding: 12px 30px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-}
-
-.pinned-order-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.pinned-message {
-    background: var(--accent-light);
-    padding: 12px 30px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-    color: var(--accent-dark);
-}
-
-.unpin-btn {
-    cursor: pointer;
-    color: var(--text-soft);
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-}
-
-.unpin-btn:hover {
-    background: var(--bg-white);
-    color: var(--danger);
-}
-
-.group-timer {
-    background: var(--info-light);
-    color: var(--info);
-    padding: 8px 16px;
-    text-align: center;
-    font-weight: 600;
-}
-
-.voice-recording {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent);
-    color: white;
-    padding: 16px 32px;
-    border-radius: 60px;
-    box-shadow: 0 10px 40px rgba(230,122,75,0.4);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    z-index: var(--z-popover);
-}
-
-.recording-wave {
-    display: flex;
-    gap: 3px;
-    height: 30px;
-    align-items: center;
-}
-
-.recording-wave span {
-    width: 4px;
-    height: 100%;
-    background: white;
-    border-radius: 2px;
-    animation: wave 1s ease-in-out infinite;
-}
-
-.recording-wave span:nth-child(2) { animation-delay: 0.2s; }
-.recording-wave span:nth-child(3) { animation-delay: 0.4s; }
-.recording-wave span:nth-child(4) { animation-delay: 0.6s; }
-
-.recording-timer {
-    font-family: monospace;
-    font-size: 18px;
-    min-width: 60px;
 }

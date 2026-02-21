@@ -1,0 +1,245 @@
+/* ===== RESPONSIVE.CSS ===== */
+/* Версия: 3.0 — ВСЕ МЕДИА-ЗАПРОСЫ В ОДНОМ МЕСТЕ */
+
+@media (max-width: 1200px) {
+    .container { padding: 15px; }
+    .dashboard { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .video-container { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 992px) {
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+    h3 { font-size: 1.5rem; }
+    
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .leaderboard-item { flex-wrap: wrap; }
+    
+    /* Главная страница */
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 50%;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+        position: static;
+    }
+    
+    nav { justify-content: center; }
+    .btn { width: 100%; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .order-header { flex-direction: column; align-items: flex-start; }
+    .order-meta { flex-direction: column; gap: 8px; }
+    .dashboard { grid-template-columns: 1fr; }
+    .category-filter-btn { width: 100%; }
+    .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+    
+    /* Главная страница */
+    #orderFormRow {
+        flex-direction: column;
+    }
+    
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 100%;
+        position: static;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+        z-index: auto;
+    }
+    
+    #orderFormColumn {
+        z-index: calc(var(--z-form) + 10);
+    }
+    
+    #orderFormColumn .card {
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    #ordersColumn {
+        scrollbar-gutter: auto;
+        height: auto;
+        max-height: 600px;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+    
+    /* Дропдаун на мобилках */
+    #cityDropdown {
+        max-height: 250px !important;
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        border-radius: 20px 20px 0 0;
+        animation: slideUp 0.3s ease;
+    }
+    
+    /* Кнопка наверх */
+    #scrollToTop {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+    
+    #scrollToTop i {
+        font-size: 20px;
+    }
+    
+    /* Профиль */
+    .profile-header {
+        padding: 30px 0;
+        border-radius: 0 0 30px 30px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        font-size: 50px;
+    }
+    
+    .profile-name {
+        font-size: 24px;
+    }
+    
+    .profile-stats {
+        gap: 15px;
+    }
+    
+    .profile-stat-item {
+        padding: 10px 15px;
+        min-width: 90px;
+    }
+    
+    .profile-stat-value {
+        font-size: 20px;
+    }
+    
+    /* Мастер карточки */
+    .master-card {
+        padding: 20px;
+    }
+    
+    .master-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+    
+    .master-name {
+        font-size: 1.1rem;
+    }
+    
+    .master-stats {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-width: none;
+    }
+    
+    .modal-content {
+        padding: 15px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .container { padding: 10px; }
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    .card { padding: 15px; }
+    .avatar-lg { width: 60px; height: 60px; font-size: 24px; }
+    .notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+        min-width: auto;
+    }
+    .search-btn { padding: 1rem; }
+    .achievements-grid { grid-template-columns: 1fr; }
+    
+    /* Главная страница */
+    #ordersColumn {
+        max-height: 500px;
+    }
+    
+    .order-item {
+        padding: 15px;
+    }
+    
+    .order-price {
+        font-size: 1.2rem;
+    }
+    
+    #scrollToTop {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    #scrollToTop i {
+        font-size: 18px;
+    }
+    
+    /* Мастер карточки */
+    .master-card {
+        padding: 15px;
+    }
+    
+    .master-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+    }
+}
+
+@media (max-width: 360px) {
+    #scrollToTop {
+        width: 35px;
+        height: 35px;
+        bottom: 10px;
+        right: 10px;
+    }
+}
+
+@media print {
+    header, footer, .no-print, #scrollToTop, #deepseek-bro-button {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}

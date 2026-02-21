@@ -1,7 +1,6 @@
 /* ===== MODALS.CSS ===== */
-/* Версия: 2.0 — ЧЕТКАЯ ИЕРАРХИЯ */
+/* Версия: 3.0 — МОДАЛЬНЫЕ ОКНА */
 
-/* Бекдроп (затемнение) */
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -10,7 +9,7 @@
     bottom: 0;
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(3px);
-    z-index: 9990;  /* Ниже модалки */
+    z-index: 9990;
     display: none;
 }
 
@@ -18,7 +17,6 @@
     display: block;
 }
 
-/* Контейнер модалки */
 .modal {
     position: fixed;
     top: 0;
@@ -28,21 +26,20 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10000;  /* Выше всего */
+    z-index: 10000;
 }
 
 .modal.show {
     display: flex;
 }
 
-/* Диалог модалки */
 .modal-dialog {
     position: relative;
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
     margin: auto;
-    z-index: 10001;  /* Самый верх */
+    z-index: 10001;
     pointer-events: auto;
 }
 
@@ -54,7 +51,6 @@
     max-width: 300px;
 }
 
-/* Контент модалки */
 .modal-content {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
@@ -66,7 +62,6 @@
     animation: scaleIn 0.3s ease;
 }
 
-/* Хедер */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -104,12 +99,10 @@
     transform: rotate(90deg);
 }
 
-/* Боди */
 .modal-body {
     margin-bottom: 20px;
 }
 
-/* Футер */
 .modal-footer {
     display: flex;
     justify-content: flex-end;
@@ -119,7 +112,6 @@
     border-top: 1px solid var(--border);
 }
 
-/* Анимации */
 .modal.fade .modal-dialog {
     transform: scale(0.9) translateY(-30px);
     opacity: 0;
@@ -131,7 +123,6 @@
     opacity: 1;
 }
 
-/* Специальный стиль для модалок Workhom */
 .modal-workhom .modal-content {
     border-radius: 30px;
     overflow: hidden;
@@ -161,14 +152,8 @@
     padding: 15px 25px 25px;
 }
 
-/* ===== АНИМАЦИИ ===== */
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+body:not(.dark-theme) .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
 }

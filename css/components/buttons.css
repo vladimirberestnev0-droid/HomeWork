@@ -1,4 +1,6 @@
 /* ===== BUTTONS.CSS ===== */
+/* Версия: 3.0 — ВСЕ КНОПКИ В ОДНОМ МЕСТЕ */
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -48,6 +50,7 @@
     transform: translateY(-1px);
 }
 
+/* Outline кнопка */
 .btn-outline-secondary {
     background: transparent;
     border: 2px solid var(--border);
@@ -67,6 +70,7 @@
     display: none;
 }
 
+/* Цветные кнопки */
 .btn-success {
     background: var(--success);
     box-shadow: 0 8px 20px rgba(0,168,107,0.2);
@@ -107,6 +111,7 @@
     background: #0769b3;
 }
 
+/* Размеры */
 .btn-sm {
     padding: 8px 20px;
     font-size: 0.9rem;
@@ -121,6 +126,7 @@
     width: 100%;
 }
 
+/* Иконки */
 .btn-icon {
     padding: 12px;
     border-radius: 50%;
@@ -131,6 +137,7 @@
     border-radius: 50%;
 }
 
+/* Специальные кнопки */
 .search-btn {
     background: var(--accent);
     color: white;
@@ -167,7 +174,7 @@
     color: var(--text-dark);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: var(--transition-smooth);
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -184,4 +191,77 @@
     color: white;
     border-color: transparent;
     box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+}
+
+/* Кнопка "Наверх" */
+#scrollToTop {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 55px;
+    height: 55px;
+    background: var(--accent-gradient);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(230,122,75,0.3);
+    z-index: var(--z-tooltip);
+    transition: var(--transition-slow);
+    border: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+}
+
+#scrollToTop.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    animation: pulse 2s infinite;
+}
+
+#scrollToTop:hover {
+    background: var(--accent-dark);
+    transform: scale(1.15) translateY(-5px);
+    box-shadow: 0 15px 30px rgba(230,122,75,0.6);
+}
+
+#scrollToTop i {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+}
+
+/* Выход */
+.header-logout-btn {
+    background: transparent;
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    padding: 8px 20px;
+    border-radius: var(--radius-full);
+    transition: var(--transition-smooth);
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.header-logout-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220,53,69,0.3);
+}
+
+/* Тёмная тема для кнопок */
+body.dark-theme .btn-outline-secondary {
+    color: var(--text-dark);
+    border-color: var(--border);
+}
+
+body.dark-theme .btn-outline-secondary:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }
