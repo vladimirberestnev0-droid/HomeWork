@@ -1,4 +1,3 @@
-// ===== js/services/auth.js =====
 // УЛУЧШЕННАЯ АВТОРИЗАЦИЯ С ПРОВЕРКАМИ
 
 const Auth = (function() {
