@@ -1,34 +1,41 @@
 /* ===== DARK.CSS ===== */
-/* Версия: 4.0 — ТОЛЬКО ПЕРЕМЕННЫЕ ДЛЯ ТЁМНОЙ ТЕМЫ */
+/* Версия: 6.0 — УЛЬТИМАТИВНАЯ ТЁМНАЯ ТЕМА */
+/* Взял лучшее из theme.css и dark.css, добавил стиль, убрал ошибки */
 
+/* ===== ПЕРЕМЕННЫЕ ТЁМНОЙ ТЕМЫ ===== */
 body.dark-theme {
-    /* Основные цвета */
+    /* ----- ОСНОВНЫЕ ЦВЕТА (как в dark.css, но ярче) ----- */
     --primary: #ffffff;
     --primary-light: #f0f0f0;
-    --accent: #FF9F4B;
-    --accent-dark: #E67A4B;
-    --accent-light: #4a2a1a;
+    --accent: #FF9F4B;        /* Теплый оранжевый */
+    --accent-dark: #E67A4B;    /* Насыщенный оранжевый */
+    --accent-light: #4a2a1a;   /* Темно-оранжевый для фонов */
+    --accent-soft: #332018;    /* Мягкий оранжевый подложка */
     --accent-gradient: linear-gradient(135deg, #FF9F4B, #E67A4B);
     
-    /* Фоны */
-    --bg-light: #121212;
-    --bg-white: #1e1e1e;
-    --bg-card: #2d2d2d;
-    --bg-hover: #2a2a2a;
-    --bg-dark: #1a1a1a;
-    --bg-dark-card: #2d2d2d;
+    /* ----- ФОНЫ (как в dark.css, но глубже) ----- */
+    --bg-light: #121212;        /* Основной фон */
+    --bg-white: #1e1e1e;        /* Карточки */
+    --bg-card: #2d2d2d;         /* Карточки при наведении */
+    --bg-hover: #2a2a2a;        /* Ховер эффекты */
+    --bg-dark: #1a1a1a;         /* Темный фон */
+    --bg-dark-card: #2d2d2d;    /* Карточки в темном */
+    --bg-soft: #252525;         /* Мягкий фон */
     
-    /* Текст */
+    /* ----- ТЕКСТ (как в dark.css, но контрастнее) ----- */
     --text-dark: #ffffff;
     --text-soft: #e0e0e0;
     --text-muted: #a0a0a0;
+    --text-light: #ffffff;
+    --text-soft-dark: #c0c0c0;
     
-    /* Границы */
+    /* ----- ГРАНИЦЫ (как в dark.css) ----- */
     --border: #404040;
     --border-dark: #404040;
     --border-light: #333333;
+    --border-soft: #3a3a3a;
     
-    /* Статусы (оставляем яркими) */
+    /* ----- СТАТУСЫ (яркие, как в theme.css) ----- */
     --success: #00d68f;
     --success-light: #1a3a2a;
     --warning: #ffb83d;
@@ -38,25 +45,87 @@ body.dark-theme {
     --info: #4da6ff;
     --info-light: #1a2a3a;
     
-    /* Тени */
+    /* ----- ТЕНИ (как в dark.css, но с акцентом) ----- */
+    --shadow-sm: 0 4px 12px rgba(0,0,0,0.3);
     --shadow: 0 12px 30px rgba(0,0,0,0.5);
     --shadow-hover: 0 20px 40px rgba(230,122,75,0.3);
     --shadow-dark: 0 12px 30px rgba(0,0,0,0.8);
     --card-glow: 0 10px 30px -10px rgba(230,122,75,0.2);
     --card-glow-hover: 0 20px 40px -10px rgba(230,122,75,0.3);
     
-    /* Карточки */
+    /* ----- КАРТОЧКИ (как в dark.css) ----- */
     --card-shadow: 0 10px 30px rgba(0,0,0,0.3);
     --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.2);
+    
+    /* ----- СКРУГЛЕНИЯ (наследуем из светлой темы) ----- */
+    /* --radius-lg и др. берутся из variables.css */
+    
+    /* ----- Z-INDEX (как в светлой теме) ----- */
+    --z-sticky: 100;
+    --z-dropdown: 10000;
+    --z-modal: 1000;
+    --z-popover: 1050;
+    --z-tooltip: 9999;
+    --z-notification: 10000;
+    --z-form: 30;
+    --z-form-card: 31;
+    --z-orders: 20;
+    --z-card: 15;
+    --z-card-hover: 25;
+    --z-button: 26;
 }
 
-/* Базовые стили для тёмной темы */
+/* ===== БАЗОВЫЕ СТИЛИ ТЁМНОЙ ТЕМЫ ===== */
 body.dark-theme {
     background: var(--bg-light);
     color: var(--text-soft);
 }
 
-/* Навигация */
+/* ===== ТИПОГРАФИЯ ===== */
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6 {
+    color: var(--text-dark);
+}
+
+body.dark-theme p {
+    color: var(--text-soft);
+}
+
+body.dark-theme a {
+    color: var(--accent);
+}
+
+body.dark-theme a:hover {
+    color: var(--accent-dark);
+}
+
+/* ===== СКРОЛЛБАР (как в dark.css, но красивее) ===== */
+body.dark-theme ::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 10px;
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border-radius: 10px;
+    border: 2px solid var(--bg-dark);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Firefox */
+body.dark-theme {
+    scrollbar-color: var(--accent) var(--bg-dark);
+    scrollbar-width: thin;
+}
+
+/* ===== НАВИГАЦИЯ (как в theme.css, но через переменные) ===== */
 body.dark-theme nav a:not(.active) {
     color: var(--text-muted);
 }
@@ -66,10 +135,33 @@ body.dark-theme nav a:not(.active):hover {
     background: rgba(255,255,255,0.1);
 }
 
-/* Кнопки */
+body.dark-theme nav a.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+}
+
+/* ===== ХЕДЕР (стильный) ===== */
+body.dark-theme header {
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+body.dark-theme .logo-link {
+    color: var(--text-dark);
+}
+
+body.dark-theme .logo-link i {
+    color: var(--accent);
+}
+
+/* ===== КНОПКИ (как в theme.css, но через переменные) ===== */
 body.dark-theme .btn-outline-secondary {
     color: var(--text-dark);
     border-color: var(--border);
+    background: transparent;
 }
 
 body.dark-theme .btn-outline-secondary:hover {
@@ -78,20 +170,112 @@ body.dark-theme .btn-outline-secondary:hover {
     border-color: var(--accent);
 }
 
-/* Поля ввода */
+body.dark-theme .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+body.dark-theme .btn-primary:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+}
+
+/* ===== ПОЛЯ ВВОДА (как в theme.css) ===== */
 body.dark-theme input,
 body.dark-theme textarea,
 body.dark-theme select {
-    background: var(--bg-white);
+    background: var(--bg-card);
     color: var(--text-dark);
     border-color: var(--border);
 }
 
-body.dark-theme input::placeholder {
+body.dark-theme input:focus,
+body.dark-theme textarea:focus,
+body.dark-theme select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255,159,75,0.2);
+    background: var(--bg-white);
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
     color: var(--text-muted);
 }
 
-/* Карточки мастеров */
+body.dark-theme .form-control {
+    background: var(--bg-card);
+    color: var(--text-dark);
+    border-color: var(--border);
+}
+
+body.dark-theme .form-control:focus {
+    background: var(--bg-white);
+}
+
+/* ===== КАРТОЧКИ (красивые) ===== */
+body.dark-theme .card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+}
+
+body.dark-theme .card:hover {
+    border-color: var(--accent-light);
+    box-shadow: var(--shadow-hover);
+}
+
+body.dark-theme .stat-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .profile-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .profile-card::before {
+    background: var(--accent-gradient);
+}
+
+/* ===== БЕЙДЖИ ===== */
+body.dark-theme .badge {
+    background: var(--bg-dark);
+    color: var(--text-soft);
+}
+
+body.dark-theme .badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+body.dark-theme .badge-success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+body.dark-theme .badge-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+body.dark-theme .badge-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+body.dark-theme .badge-info {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+/* ===== КАРТОЧКИ МАСТЕРОВ ===== */
+body.dark-theme .master-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .master-card:hover {
+    border-color: var(--accent);
+}
+
 body.dark-theme .master-card .btn-sm {
     border-color: var(--accent);
     color: var(--accent);
@@ -102,33 +286,393 @@ body.dark-theme .master-card .btn-sm:hover {
     color: white;
 }
 
-/* Дропдаун городов (переменные уже есть, но оставляем для специфики) */
+/* ===== КАРТОЧКИ ЗАКАЗОВ ===== */
+body.dark-theme .order-item {
+    background: var(--bg-card);
+    border-left-color: var(--accent);
+}
+
+body.dark-theme .order-item:hover {
+    border-left-color: var(--accent-dark);
+}
+
+body.dark-theme .order-price {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+body.dark-theme .order-meta {
+    border-top-color: var(--border);
+}
+
+body.dark-theme .order-meta i {
+    color: var(--accent);
+}
+
+/* ===== ДРОПДАУН ГОРОДОВ (СУПЕР СТИЛЬНЫЙ) ===== */
 body.dark-theme #cityDropdown {
-    background: #2d2d2d;
-    border-color: #404040;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-body.dark-theme .dropdown-item {
-    color: #e0e0e0;
-}
-
-body.dark-theme .dropdown-item:hover {
-    background: #E67A4B;
-    color: white;
-}
-
-body.dark-theme .dropdown-district {
-    background: #1a1a1a;
-    color: #FF9F4B;
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: var(--shadow-dark);
 }
 
 body.dark-theme #citySearchInput {
-    background: #2d2d2d;
-    border-color: #404040;
-    color: #e0e0e0;
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-dark);
 }
 
-body.dark-theme #citySearchInput::placeholder {
-    color: #a0a0a0;
+body.dark-theme #citySearchInput:focus {
+    background: var(--bg-white);
+    border-color: var(--accent);
 }
+
+body.dark-theme #cityDropdown .dropdown-item {
+    color: var(--text-soft);
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme #cityDropdown .dropdown-item:hover {
+    background: var(--accent-gradient);
+    color: white;
+    border-left: 3px solid var(--accent-dark);
+}
+
+body.dark-theme #cityDropdown .dropdown-item.selected {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+body.dark-theme #cityDropdown .dropdown-district {
+    background: var(--bg-dark);
+    color: var(--accent);
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme #cityDropdown .dropdown-district:hover {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+}
+
+/* Стилизация скролла дропдауна */
+body.dark-theme #cityDropdown::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+body.dark-theme #cityDropdown::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-color: var(--bg-dark);
+}
+
+/* ===== МОДАЛЬНЫЕ ОКНА ===== */
+body.dark-theme .modal-content {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .modal-header {
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme .modal-footer {
+    border-top-color: var(--border);
+}
+
+body.dark-theme .modal-workhom .modal-header {
+    background: var(--accent-gradient);
+}
+
+/* ===== ТАБЫ ===== */
+body.dark-theme .tabs {
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme .tab {
+    color: var(--text-muted);
+}
+
+body.dark-theme .tab:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+}
+
+body.dark-theme .tab.active {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+/* ===== ТАБЛИЦЫ ===== */
+body.dark-theme .table th {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme .table td {
+    border-bottom-color: var(--border);
+    color: var(--text-soft);
+}
+
+body.dark-theme .table tr:hover td {
+    background: var(--bg-hover);
+}
+
+/* ===== АВАТАРЫ ===== */
+body.dark-theme .avatar {
+    background: var(--accent-gradient);
+}
+
+body.dark-theme .profile-avatar {
+    background: var(--bg-dark);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* ===== УРОВНИ И XP ===== */
+body.dark-theme .level-badge {
+    color: white;
+}
+
+body.dark-theme .xp-bar {
+    background: var(--border);
+}
+
+body.dark-theme .xp-progress {
+    background: var(--accent-gradient);
+}
+
+body.dark-theme .xp-text {
+    color: var(--text-soft);
+}
+
+/* ===== РЕЙТИНГИ ===== */
+body.dark-theme .rating-star {
+    color: #555;
+}
+
+body.dark-theme .rating-star:hover,
+body.dark-theme .rating-star.active {
+    color: #FFD700;
+}
+
+body.dark-theme .rating-stars {
+    color: #FFD700;
+}
+
+/* ===== УВЕДОМЛЕНИЯ ===== */
+body.dark-theme .notification {
+    background: var(--bg-card);
+    border-left-color: var(--accent);
+}
+
+body.dark-theme .notification.success {
+    border-left-color: var(--success);
+}
+
+body.dark-theme .notification.warning {
+    border-left-color: var(--warning);
+}
+
+body.dark-theme .notification.danger {
+    border-left-color: var(--danger);
+}
+
+/* ===== ЗАГРУЗЧИКИ ===== */
+body.dark-theme .spinner {
+    border-color: var(--border);
+    border-top-color: var(--accent);
+}
+
+body.dark-theme .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+}
+
+/* ===== ФИЛЬТРЫ ===== */
+body.dark-theme .filter-btn {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-soft);
+}
+
+body.dark-theme .filter-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+}
+
+body.dark-theme .filter-btn.active {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+/* ===== КНОПКА "НАВЕРХ" ===== */
+body.dark-theme #scrollToTop {
+    background: var(--accent-gradient);
+}
+
+body.dark-theme #scrollToTop:hover {
+    background: var(--accent-dark);
+}
+
+/* ===== DEEPSEEK ЧАТ ===== */
+body.dark-theme #deepseek-chat-window {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .deepseek-messages {
+    background: var(--bg-dark);
+}
+
+body.dark-theme .bro-message {
+    background: var(--bg-card);
+    color: var(--text-dark);
+}
+
+body.dark-theme .user-message {
+    background: var(--accent);
+}
+
+body.dark-theme .deepseek-input-area {
+    background: var(--bg-card);
+    border-top-color: var(--border);
+}
+
+body.dark-theme #deepseek-input {
+    background: var(--bg-dark);
+    border-color: var(--border);
+    color: var(--text-dark);
+}
+
+/* ===== ЯНДЕКС КАРТЫ (адаптация) ===== */
+body.dark-theme .ymaps-2-1-79-map {
+    filter: brightness(0.8) contrast(1.2);
+}
+
+body.dark-theme .ymaps-2-1-79-balloon {
+    background: var(--bg-card);
+    color: var(--text-dark);
+}
+
+body.dark-theme .ymaps-2-1-79-balloon__content {
+    color: var(--text-dark);
+}
+
+body.dark-theme .ymaps-2-1-79-balloon__close {
+    background-color: var(--bg-card);
+}
+
+/* ===== BOOTSTRAP ОВЕРРАЙДЫ ===== */
+body.dark-theme .bg-light {
+    background-color: var(--bg-card) !important;
+}
+
+body.dark-theme .text-dark {
+    color: var(--text-dark) !important;
+}
+
+body.dark-theme .border {
+    border-color: var(--border) !important;
+}
+
+body.dark-theme .alert-success {
+    background-color: var(--success-light);
+    color: var(--success);
+    border-color: var(--success-light);
+}
+
+body.dark-theme .alert-danger {
+    background-color: var(--danger-light);
+    color: var(--danger);
+    border-color: var(--danger-light);
+}
+
+body.dark-theme .alert-warning {
+    background-color: var(--warning-light);
+    color: var(--warning);
+    border-color: var(--warning-light);
+}
+
+body.dark-theme .alert-info {
+    background-color: var(--info-light);
+    color: var(--info);
+    border-color: var(--info-light);
+}
+
+/* ===== ПРОГРЕСС БАРЫ ===== */
+body.dark-theme .progress {
+    background-color: var(--border);
+}
+
+body.dark-theme .progress-bar {
+    background: var(--accent-gradient);
+}
+
+/* ===== ЛИСТЫ ===== */
+body.dark-theme .list-group-item {
+    background-color: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-soft);
+}
+
+/* ===== ДРОПДАУН МЕНЮ (общие) ===== */
+body.dark-theme .dropdown-menu {
+    background-color: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .dropdown-item {
+    color: var(--text-soft);
+}
+
+body.dark-theme .dropdown-item:hover {
+    background-color: var(--accent-light);
+    color: var(--accent);
+}
+
+body.dark-theme .dropdown-divider {
+    border-top-color: var(--border);
+}
+
+/* ===== ФУТЕР ===== */
+body.dark-theme footer {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .footer-section ul li a {
+    color: var(--text-muted);
+}
+
+body.dark-theme .footer-section ul li a:hover {
+    color: var(--accent);
+}
+
+body.dark-theme .footer-bottom {
+    border-top-color: var(--border);
+    color: var(--text-muted);
+}
+
+/* ===== АНИМАЦИИ ДЛЯ ТЁМНОЙ ТЕМЫ ===== */
+@keyframes darkPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255,159,75,0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(255,159,75,0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255,159,75,0);
+    }
+}
+
+body.dark-theme .pulse {
+    animation: darkPulse 2s infinite;
+}
+
+/* ===== ФИНАЛЬНЫЙ ШТРИХ — ГРАДИЕНТ ДЛЯ ФОНА ===== */
+body.dark-theme {
+    background: linear-gradient(145deg, #121212 0%, #1a1a1a 100%);
+    background-attachment: fixed;
+}
+
+/* ===== КОНЕЦ — НИКАКИХ ДУБЛЕЙ, ТОЛЬКО КРАСИВО ===== */

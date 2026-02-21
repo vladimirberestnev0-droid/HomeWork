@@ -214,3 +214,16 @@ body.dark-theme .master-card .btn-sm:hover {
     background: var(--accent);
     color: white;
 }
+
+/* В самом конце файла добавить: */
+@media (prefers-reduced-motion: reduce) {
+    .master-card,
+    .master-avatar,
+    .master-level-badge,
+    .master-name,
+    .master-rating,
+    .master-card .btn-sm {
+        transition: none !important;
+        animation: none !important;
+    }
+}
