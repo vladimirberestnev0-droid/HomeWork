@@ -979,3 +979,14 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     min-height: 600px !important;
     margin-bottom: 40px !important;
 }
+
+/* ===== РЕЙТИНГ МАСТЕРОВ - ФИНАЛЬНЫЙ ФИКС ===== */
+/* Ищем любой элемент после карты, а потом нужный ряд */
+#ordersMap ~ * + .row.g-4.mb-5:has(.card h3 i.fa-trophy),
+#ordersMap ~ .row.g-4.mb-5:has(.card h3 i.fa-trophy) {
+    margin-top: 40px !important;
+    margin-bottom: 40px !important;
+    position: relative !important;
+    clear: both !important;
+    z-index: 2 !important;
+}
