@@ -84,9 +84,7 @@
                 </div>
                 
                 <!-- Кнопки действий -->
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="aiAssistantBtn" title="ИИ помощник">
-                    <i class="fas fa-robot"></i>
-                </button>
+                <!-- ❌ УДАЛЕНА КНОПКА ИИ ПОМОЩНИКА ИЗ ШАПКИ -->
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="telegramBtn" title="Telegram бот">
                     <i class="fab fa-telegram"></i>
                 </button>
@@ -376,36 +374,7 @@
         </div>
     </div>
 
-    <!-- Модалка ИИ помощника -->
-    <div class="modal fade modal-workhom" id="aiAssistantModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-robot me-2"></i>
-                        ИИ помощник
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="ai-chat" id="aiChat" style="height: 300px; overflow-y: auto;">
-                        <div class="message received mb-3">
-                            <div class="message-bubble">
-                                <i class="fas fa-robot me-2"></i>
-                                Привет! Я помогу подобрать мастера, рассчитать цену или ответить на вопросы
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-group mt-3">
-                        <input type="text" class="form-control" id="aiQuestion" placeholder="Задайте вопрос...">
-                        <button class="btn btn-primary" id="askAiBtn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- ❌ УДАЛЕНА МОДАЛКА ИИ ПОМОЩНИКА (была на строках 855-880) -->
 
     <!-- Модалка достижений -->
     <div class="modal fade" id="achievementsModal" tabindex="-1">
@@ -566,29 +535,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- DeepSeek Бро -->
+<!-- DeepSeek ИИ Помощник (ОСТАЁТСЯ) -->
 <div id="deepseek-bro-button" onclick="toggleDeepSeekChat()">
-    <img src="/HomeWork/icons/icon-72x72.png" alt="Бро" style="width:40px; height:40px; border-radius:50%;">
-    <span>Доброго дня</span>
+    <i class="fas fa-robot"></i>
+    <span>ИИ помощник</span>
 </div>
 
 <div id="deepseek-chat-window" class="hidden">
     <div class="deepseek-header">
-        <span>🤖 Твой бро</span>
+        <span><i class="fas fa-robot"></i> ИИ помощник</span>
         <button onclick="toggleDeepSeekChat()">×</button>
     </div>
     <div id="deepseek-messages" class="deepseek-messages">
         <div class="deepseek-message bro-message">
-            Приветт бро! Что ищешь? Мастера, цену или просто поболтать?
+            <i class="fas fa-robot"></i> Привет! Я ИИ помощник ВоркХом. Могу помочь подобрать мастера, рассчитать цену или ответить на вопросы о сервисе! 🤖
         </div>
     </div>
     <div class="deepseek-input-area">
-        <input type="text" id="deepseek-input" placeholder="Спроси у бро...">
-        <button onclick="sendToDeepSeek()">➤</button>
+        <input type="text" id="deepseek-input" placeholder="Задайте вопрос...">
+        <button onclick="sendToDeepSeek()"><i class="fas fa-paper-plane"></i></button>
     </div>
 </div>
 
-<!-- ===== 9. DeepSeek Бро ===== -->
+<!-- ===== DeepSeek ИИ Помощник ===== -->
 <script src="/HomeWork/js/deepseek.js"></script>
 
 <!-- Кнопка "Наверх" -->
