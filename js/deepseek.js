@@ -1,4 +1,4 @@
-// ===== deepseek.js — РАБОЧАЯ ВЕРСИЯ С ПРОКСИ ЧЕРЕЗ FIREBASE =====
+// ===== deepseek.js — УЛУЧШЕННЫЙ ИИ ПОМОЩНИК =====
 
 // Состояние чата
 let deepSeekVisible = false;
@@ -9,8 +9,6 @@ const MAX_FAILED_ATTEMPTS = 3;
 const CONFIG = {
     // Используем Firebase Functions как прокси
     API_URL: 'https://us-central1-homework-6a562.cloudfunctions.net/deepseekProxy',
-    // Или локально для разработки:
-    // API_URL: 'http://localhost:5001/homework-6a562/us-central1/deepseekProxy',
     MODEL: 'deepseek-chat',
     TIMEOUT: 15000 // 15 секунд
 };
@@ -38,7 +36,14 @@ function addMessage(text, sender) {
     
     const msgDiv = document.createElement('div');
     msgDiv.className = `deepseek-message ${sender === 'bro' ? 'bro-message' : 'user-message'}`;
-    msgDiv.textContent = text;
+    
+    // Добавляем иконку для сообщений бота
+    if (sender === 'bro') {
+        msgDiv.innerHTML = `<i class="fas fa-robot"></i> ${text}`;
+    } else {
+        msgDiv.innerHTML = `<i class="fas fa-user"></i> ${text}`;
+    }
+    
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
 }
@@ -53,8 +58,7 @@ function showTypingIndicator() {
     
     const typingDiv = document.createElement('div');
     typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'deepseek-message bro-message';
-    typingDiv.textContent = 'Бро печатает...';
+    typingDiv.innerHTML = '<i class="fas fa-robot"></i> ИИ помощник печатает...';
     container.appendChild(typingDiv);
     container.scrollTop = container.scrollHeight;
 }
@@ -83,7 +87,7 @@ async function sendToDeepSeek() {
     // Проверяем, не превышен ли лимит ошибок
     if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
         hideTypingIndicator();
-        addMessage('⛔ Бот временно недоступен. Загляни позже или напиши в поддержку!', 'bro');
+        addMessage('⛔ ИИ помощник временно недоступен. Загляните позже или напишите в поддержку!', 'bro');
         return;
     }
 
@@ -109,7 +113,7 @@ async function sendToDeepSeek() {
             body: JSON.stringify({
                 message: message,
                 model: CONFIG.MODEL,
-                userId: Auth.getUser()?.uid || 'anonymous'
+                userId: Auth?.getUser()?.uid || 'anonymous'
             }),
             signal: controller.signal
         });
@@ -150,11 +154,11 @@ async function sendToDeepSeek() {
         hideTypingIndicator();
         
         if (error.name === 'AbortError') {
-            addMessage('Бро, сервер долго думает... Попробуй ещё раз или задай вопрос покороче! ⏱️', 'bro');
+            addMessage('ИИ помощник долго думает... Попробуйте ещё раз или задайте вопрос покороче! ⏱️', 'bro');
         } else if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-            addMessage('⛔ Бот временно не отвечает. Попробуй позже или напиши в поддержку support@workhom.ru', 'bro');
+            addMessage('⛔ ИИ помощник временно не отвечает. Попробуйте позже или напишите в поддержку support@workhom.ru', 'bro');
         } else {
-            addMessage('Ой, бро, что-то пошло не так... Давай попробуем ещё раз? 😅', 'bro');
+            addMessage('Что-то пошло не так... Давайте попробуем ещё раз? 😅', 'bro');
         }
     }
 }
@@ -172,7 +176,7 @@ function setupDeepSeekEvents() {
     });
 }
 
-// Закрытие по клику вне окна
+// Закрытие по клику вне
 window.addEventListener('click', function(e) {
     const chat = document.getElementById('deepseek-chat-window');
     const button = document.getElementById('deepseek-bro-button');
@@ -191,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Добавляем приветственное сообщение если чат пуст
     const container = document.getElementById('deepseek-messages');
     if (container && container.children.length === 0) {
-        addMessage('Привет, бро! 👋 Что ищешь? Мастера, цену или просто поболтать?', 'bro');
+        addMessage('Привет! Я ИИ помощник ВоркХом. Могу помочь подобрать мастера, рассчитать цену или ответить на вопросы о сервисе! 🤖', 'bro');
     }
 });
 

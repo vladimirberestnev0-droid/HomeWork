@@ -1,125 +1,312 @@
 /* ===== DEEPSEEK.CSS ===== */
-/* Версия: 2.0 — ЧАТ С БРО */
+/* Версия: 3.0 — УЛУЧШЕННЫЙ ДИЗАЙН */
 
 #deepseek-bro-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--accent);
-    color: white;
-    padding: 15px 25px;
-    border-radius: 60px;
-    cursor: pointer;
-    box-shadow: 0 10px 30px rgba(230,122,75,0.4);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    animation: float 3s ease-in-out infinite;
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 15px 25px !important;
+    border-radius: 60px !important;
+    cursor: pointer !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4) !important;
+    z-index: var(--z-tooltip) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    animation: float 3s ease-in-out infinite !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: none !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
 }
 
-#deepseek-bro-button img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+#deepseek-bro-button:hover {
+    transform: translateY(-5px) scale(1.05) !important;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6) !important;
+}
+
+#deepseek-bro-button i {
+    font-size: 24px !important;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
+    animation: pulse 2s infinite !important;
+}
+
+#deepseek-bro-button span {
+    font-size: 16px !important;
 }
 
 #deepseek-chat-window {
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    width: 350px;
-    height: 500px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-    transition: all 0.3s;
-    border: 1px solid var(--border);
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 30px !important;
+    width: 380px !important;
+    height: 520px !important;
+    background: var(--bg-white) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2) !important;
+    z-index: calc(var(--z-tooltip) - 1) !important;
+    display: none !important;
+    flex-direction: column !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    border: 1px solid var(--border) !important;
+    overflow: hidden !important;
+    animation: slideIn 0.3s ease !important;
 }
 
 #deepseek-chat-window:not(.hidden) {
-    display: flex;
+    display: flex !important;
 }
 
 .deepseek-header {
-    background: var(--accent);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 20px 20px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 18px 20px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-weight: 700 !important;
+    font-size: 18px !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.deepseek-header i {
+    margin-right: 10px !important;
+    font-size: 20px !important;
+    animation: pulse 2s infinite !important;
 }
 
 .deepseek-header button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    transition: background 0.3s ease !important;
+}
+
+.deepseek-header button:hover {
+    background: rgba(255,255,255,0.2) !important;
+    transform: rotate(90deg) !important;
 }
 
 .deepseek-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: var(--bg-light);
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    background: var(--bg-light) !important;
 }
 
 .deepseek-message {
-    max-width: 80%;
-    padding: 10px 15px;
-    border-radius: 18px;
-    animation: slideUp 0.3s;
-    word-wrap: break-word;
+    max-width: 85% !important;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    animation: slideUp 0.3s ease !important;
+    word-wrap: break-word !important;
+    line-height: 1.5 !important;
+    font-size: 14px !important;
+    position: relative !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
 }
 
 .bro-message {
-    background: white;
-    color: var(--text-dark);
-    align-self: flex-start;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    background: white !important;
+    color: var(--text-dark) !important;
+    align-self: flex-start !important;
+    border-bottom-left-radius: 4px !important;
+    border-left: 3px solid #667eea !important;
 }
 
 .user-message {
-    background: var(--accent);
-    color: white;
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    align-self: flex-end !important;
+    border-bottom-right-radius: 4px !important;
+}
+
+.deepseek-message i {
+    margin-right: 8px !important;
+    font-size: 16px !important;
 }
 
 .deepseek-input-area {
-    padding: 15px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 10px;
-    background: white;
-    border-radius: 0 0 20px 20px;
+    padding: 15px !important;
+    border-top: 1px solid var(--border) !important;
+    display: flex !important;
+    gap: 10px !important;
+    background: white !important;
+    border-radius: 0 0 20px 20px !important;
 }
 
 #deepseek-input {
-    flex: 1;
-    padding: 12px 15px;
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    outline: none;
-    font-size: 14px;
+    flex: 1 !important;
+    padding: 12px 16px !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 30px !important;
+    outline: none !important;
+    font-size: 14px !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+    background: var(--bg-light) !important;
 }
 
 #deepseek-input:focus {
-    border-color: var(--accent);
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1) !important;
+    background: white !important;
+}
+
+#deepseek-input::placeholder {
+    color: var(--text-muted) !important;
+}
+
+.deepseek-input-area button {
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+.deepseek-input-area button:hover {
+    transform: scale(1.1) rotate(15deg) !important;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5) !important;
 }
 
 #typing-indicator {
-    font-style: italic;
-    color: var(--text-soft);
+    font-style: italic !important;
+    color: var(--text-soft) !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    background: rgba(102, 126, 234, 0.1) !important;
+    border-radius: 30px !important;
+    align-self: flex-start !important;
+    animation: pulse 1.5s infinite !important;
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Тёмная тема */
+body.dark-theme .deepseek-messages {
+    background: var(--bg-dark) !important;
+}
+
+body.dark-theme .bro-message {
+    background: var(--bg-card) !important;
+    color: var(--text-dark) !important;
+    border-left-color: #667eea !important;
+}
+
+body.dark-theme .deepseek-input-area {
+    background: var(--bg-card) !important;
+    border-top-color: var(--border) !important;
+}
+
+body.dark-theme #deepseek-input {
+    background: var(--bg-dark) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+body.dark-theme #deepseek-input:focus {
+    background: var(--bg-card) !important;
+    border-color: #667eea !important;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+    #deepseek-chat-window {
+        bottom: 90px !important;
+        right: 20px !important;
+        width: 320px !important;
+        height: 480px !important;
+    }
+    
+    #deepseek-bro-button {
+        bottom: 20px !important;
+        right: 20px !important;
+        padding: 12px 20px !important;
+    }
+    
+    #deepseek-bro-button i {
+        font-size: 20px !important;
+    }
+    
+    #deepseek-bro-button span {
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #deepseek-chat-window {
+        width: 300px !important;
+        height: 450px !important;
+        right: 10px !important;
+        bottom: 80px !important;
+    }
+    
+    #deepseek-bro-button {
+        padding: 10px 18px !important;
+        right: 10px !important;
+    }
 }

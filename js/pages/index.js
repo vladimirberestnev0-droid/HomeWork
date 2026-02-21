@@ -1,5 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ПОЛНАЯ ВЕРСИЯ С АВТОПОДСТАНОВКОЙ АДРЕСОВ
+// ВЕРСИЯ 13.0 — С DEEPSEEK БРО И БЕЗ ВЕРХНЕГО ИИ
 
 // Глобальные переменные
 let map = null;
@@ -109,189 +109,6 @@ function checkOrderPositioning() {
         ordersColumn.style.setProperty('flex', '0 0 50%', 'important');
         ordersColumn.style.setProperty('max-width', '50%', 'important');
         ordersColumn.style.setProperty('width', '50%', 'important');
-    }
-}
-
-// ============================================
-// ФУНКЦИЯ АВТОПОДСТАНОВКИ АДРЕСОВ (НОВАЯ!)
-// ============================================
-
-function initAddressAutocomplete() {
-    const addressInput = document.getElementById('address');
-    if (!addressInput || typeof ymaps === 'undefined') return;
-    
-    console.log('📍 Инициализация автоподстановки адресов');
-    
-    // Создаем контейнер для саджестов
-    if (!document.getElementById('addressSuggestions')) {
-        const suggestionsDiv = document.createElement('div');
-        suggestionsDiv.id = 'addressSuggestions';
-        suggestionsDiv.className = 'address-suggestions';
-        suggestionsDiv.style.display = 'none';
-        addressInput.parentNode.style.position = 'relative';
-        addressInput.parentNode.appendChild(suggestionsDiv);
-        addressContainer = suggestionsDiv;
-    }
-    
-    // Индикатор загрузки
-    const loadingIcon = document.createElement('i');
-    loadingIcon.className = 'fas fa-spinner address-loading';
-    loadingIcon.id = 'addressLoading';
-    loadingIcon.style.display = 'none';
-    addressInput.parentNode.appendChild(loadingIcon);
-    
-    // Слушаем ввод
-    addressInput.addEventListener('input', function(e) {
-        const query = e.target.value.trim();
-        
-        // Показываем индикатор загрузки
-        const loading = document.getElementById('addressLoading');
-        if (loading) loading.style.display = 'block';
-        
-        // Отменяем предыдущий таймаут
-        if (addressTimeout) clearTimeout(addressTimeout);
-        
-        // Если меньше 3 символов - скрываем саджесты
-        if (query.length < 3) {
-            if (addressContainer) addressContainer.style.display = 'none';
-            if (loading) loading.style.display = 'none';
-            return;
-        }
-        
-        // Ждем 300мс после последнего ввода
-        addressTimeout = setTimeout(() => {
-            searchAddresses(query);
-        }, 300);
-    });
-    
-    // Закрытие по клику вне
-    document.addEventListener('click', function(e) {
-        if (!addressInput.contains(e.target) && !addressContainer?.contains(e.target)) {
-            if (addressContainer) addressContainer.style.display = 'none';
-            selectedAddressIndex = -1;
-        }
-    });
-    
-    // Клавиши вверх/вниз/enter
-    addressInput.addEventListener('keydown', function(e) {
-        if (!addressContainer || addressContainer.style.display === 'none') return;
-        
-        const items = addressContainer.querySelectorAll('.address-suggestion-item');
-        if (items.length === 0) return;
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedAddressIndex = (selectedAddressIndex + 1) % items.length;
-            highlightSuggestion(items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedAddressIndex = (selectedAddressIndex - 1 + items.length) % items.length;
-            highlightSuggestion(items);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (selectedAddressIndex >= 0 && items[selectedAddressIndex]) {
-                items[selectedAddressIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            addressContainer.style.display = 'none';
-            selectedAddressIndex = -1;
-        }
-    });
-}
-
-// Подсветка выбранного саджеста
-function highlightSuggestion(items) {
-    items.forEach((item, index) => {
-        if (index === selectedAddressIndex) {
-            item.style.background = 'var(--accent-light)';
-            item.scrollIntoView({ block: 'nearest' });
-        } else {
-            item.style.background = '';
-        }
-    });
-}
-
-// Поиск адресов через Яндекс.Карты
-async function searchAddresses(query) {
-    if (!addressContainer || typeof ymaps === 'undefined') return;
-    
-    try {
-        const loading = document.getElementById('addressLoading');
-        
-        // Ищем через геокодер Яндекса
-        const result = await ymaps.geocode(query, {
-            results: 10,
-            kind: 'house',
-            boundedBy: [[70.0, 50.0], [55.0, 80.0]] // Ограничиваем ХМАО
-        });
-        
-        if (loading) loading.style.display = 'none';
-        
-        const suggestions = result.geoObjects.toArray();
-        currentSuggestions = suggestions;
-        
-        if (suggestions.length === 0) {
-            addressContainer.style.display = 'none';
-            return;
-        }
-        
-        // Строим HTML саджестов
-        let html = '';
-        suggestions.forEach((suggestion, index) => {
-            const address = suggestion.getAddressLine();
-            const coords = suggestion.geometry.getCoordinates();
-            
-            // Определяем тип объекта
-            let type = '📍';
-            let typeClass = 'address';
-            
-            const kinds = suggestion.getPremise() ? 'дом' : 
-                         suggestion.getThoroughfare() ? 'улица' : 
-                         'район';
-            
-            html += `
-                <div class="address-suggestion-item" 
-                     data-address="${address.replace(/"/g, '&quot;')}"
-                     data-lat="${coords[0]}"
-                     data-lon="${coords[1]}"
-                     data-index="${index}">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span class="address-text">${address}</span>
-                    <span class="address-type">${kinds}</span>
-                </div>
-            `;
-        });
-        
-        addressContainer.innerHTML = html;
-        addressContainer.style.display = 'block';
-        selectedAddressIndex = -1;
-        
-        // Добавляем обработчики клика
-        addressContainer.querySelectorAll('.address-suggestion-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const address = this.dataset.address;
-                const lat = parseFloat(this.dataset.lat);
-                const lon = parseFloat(this.dataset.lon);
-                
-                document.getElementById('address').value = address;
-                document.getElementById('latitude').value = lat.toFixed(6);
-                document.getElementById('longitude').value = lon.toFixed(6);
-                
-                addressContainer.style.display = 'none';
-                
-                // Обновляем карту
-                if (window.map) {
-                    window.map.setCenter([lat, lon], 15);
-                    window.map.geoObjects.removeAll();
-                    window.map.geoObjects.add(new ymaps.Placemark([lat, lon]));
-                }
-            });
-        });
-        
-    } catch (error) {
-        console.error('❌ Ошибка поиска адреса:', error);
-        const loading = document.getElementById('addressLoading');
-        if (loading) loading.style.display = 'none';
     }
 }
 
@@ -910,8 +727,8 @@ function initMaps() {
     try {
         if (document.getElementById('map') && typeof ymaps !== 'undefined') {
             map = new ymaps.Map('map', {
-                center: [55.7558, 37.6173],
-                zoom: 10
+                center: [61.0, 69.0], // Центр ХМАО
+                zoom: 8
             });
             
             map.events.add('click', async (e) => {
@@ -976,6 +793,177 @@ async function loadOrdersMap() {
         });
     } catch (error) {
         console.error('❌ Ошибка карты:', error);
+    }
+}
+
+// ============================================
+// ФУНКЦИЯ АВТОПОДСТАНОВКИ АДРЕСОВ
+// ============================================
+
+function initAddressAutocomplete() {
+    const addressInput = document.getElementById('address');
+    if (!addressInput || typeof ymaps === 'undefined') return;
+    
+    console.log('📍 Инициализация автоподстановки адресов');
+    
+    // Создаем контейнер для саджестов
+    if (!document.getElementById('addressSuggestions')) {
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.id = 'addressSuggestions';
+        suggestionsDiv.className = 'address-suggestions';
+        suggestionsDiv.style.display = 'none';
+        addressInput.parentNode.style.position = 'relative';
+        addressInput.parentNode.appendChild(suggestionsDiv);
+        addressContainer = suggestionsDiv;
+    }
+    
+    // Индикатор загрузки
+    const loadingIcon = document.createElement('i');
+    loadingIcon.className = 'fas fa-spinner address-loading';
+    loadingIcon.id = 'addressLoading';
+    loadingIcon.style.display = 'none';
+    addressInput.parentNode.appendChild(loadingIcon);
+    
+    // Слушаем ввод
+    addressInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        const loading = document.getElementById('addressLoading');
+        if (loading) loading.style.display = 'block';
+        
+        if (addressTimeout) clearTimeout(addressTimeout);
+        
+        if (query.length < 3) {
+            if (addressContainer) addressContainer.style.display = 'none';
+            if (loading) loading.style.display = 'none';
+            return;
+        }
+        
+        addressTimeout = setTimeout(() => {
+            searchAddresses(query);
+        }, 300);
+    });
+    
+    // Закрытие по клику вне
+    document.addEventListener('click', function(e) {
+        if (!addressInput.contains(e.target) && !addressContainer?.contains(e.target)) {
+            if (addressContainer) addressContainer.style.display = 'none';
+            selectedAddressIndex = -1;
+        }
+    });
+    
+    // Клавиши вверх/вниз/enter
+    addressInput.addEventListener('keydown', function(e) {
+        if (!addressContainer || addressContainer.style.display === 'none') return;
+        
+        const items = addressContainer.querySelectorAll('.address-suggestion-item');
+        if (items.length === 0) return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedAddressIndex = (selectedAddressIndex + 1) % items.length;
+            highlightSuggestion(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedAddressIndex = (selectedAddressIndex - 1 + items.length) % items.length;
+            highlightSuggestion(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedAddressIndex >= 0 && items[selectedAddressIndex]) {
+                items[selectedAddressIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            addressContainer.style.display = 'none';
+            selectedAddressIndex = -1;
+        }
+    });
+}
+
+// Подсветка выбранного саджеста
+function highlightSuggestion(items) {
+    items.forEach((item, index) => {
+        if (index === selectedAddressIndex) {
+            item.style.background = 'var(--accent-light)';
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.style.background = '';
+        }
+    });
+}
+
+// Поиск адресов через Яндекс.Карты
+async function searchAddresses(query) {
+    if (!addressContainer || typeof ymaps === 'undefined') return;
+    
+    try {
+        const loading = document.getElementById('addressLoading');
+        
+        const result = await ymaps.geocode(query, {
+            results: 10,
+            kind: 'house',
+            boundedBy: [[70.0, 50.0], [55.0, 80.0]]
+        });
+        
+        if (loading) loading.style.display = 'none';
+        
+        const suggestions = result.geoObjects.toArray();
+        currentSuggestions = suggestions;
+        
+        if (suggestions.length === 0) {
+            addressContainer.style.display = 'none';
+            return;
+        }
+        
+        let html = '';
+        suggestions.forEach((suggestion, index) => {
+            const address = suggestion.getAddressLine();
+            const coords = suggestion.geometry.getCoordinates();
+            
+            const kinds = suggestion.getPremise() ? 'дом' : 
+                         suggestion.getThoroughfare() ? 'улица' : 
+                         'район';
+            
+            html += `
+                <div class="address-suggestion-item" 
+                     data-address="${address.replace(/"/g, '&quot;')}"
+                     data-lat="${coords[0]}"
+                     data-lon="${coords[1]}"
+                     data-index="${index}">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="address-text">${address}</span>
+                    <span class="address-type">${kinds}</span>
+                </div>
+            `;
+        });
+        
+        addressContainer.innerHTML = html;
+        addressContainer.style.display = 'block';
+        selectedAddressIndex = -1;
+        
+        addressContainer.querySelectorAll('.address-suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const address = this.dataset.address;
+                const lat = parseFloat(this.dataset.lat);
+                const lon = parseFloat(this.dataset.lon);
+                
+                document.getElementById('address').value = address;
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lon.toFixed(6);
+                
+                addressContainer.style.display = 'none';
+                
+                if (window.map) {
+                    window.map.setCenter([lat, lon], 15);
+                    window.map.geoObjects.removeAll();
+                    window.map.geoObjects.add(new ymaps.Placemark([lat, lon]));
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка поиска адреса:', error);
+        const loading = document.getElementById('addressLoading');
+        if (loading) loading.style.display = 'none';
     }
 }
 
@@ -1159,8 +1147,8 @@ function initEventListeners() {
             description: document.getElementById('description').value,
             price: parseInt(document.getElementById('price').value),
             address: document.getElementById('address').value,
-            latitude: parseFloat(document.getElementById('latitude').value) || 55.7558,
-            longitude: parseFloat(document.getElementById('longitude').value) || 37.6173,
+            latitude: parseFloat(document.getElementById('latitude').value) || 61.0,
+            longitude: parseFloat(document.getElementById('longitude').value) || 69.0,
             photos: uploadedPhotos,
             clientName: document.getElementById('clientName').value,
             clientPhone: document.getElementById('phone').value
@@ -1258,44 +1246,6 @@ function initEventListeners() {
         categoryEl.addEventListener('change', updateAI);
         descriptionEl.addEventListener('input', updateAI);
     }
-
-    // AI Assistant button
-    document.getElementById('aiAssistantBtn')?.addEventListener('click', () => {
-        const modalEl = document.getElementById('aiAssistantModal');
-        if (modalEl && bootstrap) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        }
-    });
-
-    // Ask AI button
-    document.getElementById('askAiBtn')?.addEventListener('click', () => {
-        const question = document.getElementById('aiQuestion')?.value;
-        if (!question) return;
-        
-        const chat = document.getElementById('aiChat');
-        if (chat) {
-            chat.innerHTML += `
-                <div class="message sent mb-3">
-                    <div class="message-bubble">${safeHelpers.escapeHtml(question)}</div>
-                </div>
-            `;
-            
-            setTimeout(() => {
-                chat.innerHTML += `
-                    <div class="message received mb-3">
-                        <div class="message-bubble">
-                            <i class="fas fa-robot me-2"></i>
-                            Сейчас я помогу с вопросом "${safeHelpers.escapeHtml(question)}"... (демо-режим)
-                        </div>
-                    </div>
-                `;
-                chat.scrollTop = chat.scrollHeight;
-            }, 1000);
-            
-            document.getElementById('aiQuestion').value = '';
-        }
-    });
 
     // Achievements button
     document.getElementById('achievementsBtn')?.addEventListener('click', () => {
@@ -1475,7 +1425,6 @@ async function loadOnlineMasters() {
     if (!select) return;
     
     try {
-        // В демо-режиме показываем тестовых мастеров
         select.innerHTML = `
             <option value="">Выберите мастера</option>
             <option value="master1">🔨 Иван (Сантехник)</option>
