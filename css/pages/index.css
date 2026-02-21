@@ -1,5 +1,5 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 13.0 — ФИНАЛЬНАЯ С ЧЁТКОЙ СТРУКТУРОЙ */
+/* Версия: 14.0 — ФИНАЛЬНАЯ С ИДЕАЛЬНОЙ СТРУКТУРОЙ */
 
 /* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
 #orderFormRow {
@@ -45,6 +45,84 @@
     z-index: var(--z-orders) !important;
     display: flex !important;
     flex-direction: column !important;
+}
+
+/* Заголовок "Свежие заявки" */
+.orders-header {
+    flex-shrink: 0 !important;
+    margin-bottom: 15px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+/* Контейнер для списка и кнопки */
+.orders-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Список заказов - скролл здесь */
+#ordersList {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 10px !important;
+    margin-bottom: 15px !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+}
+
+/* Кнопка "Показать еще" */
+#loadMoreContainer {
+    flex-shrink: 0 !important;
+    text-align: center !important;
+    margin-top: 0 !important;
+    padding: 10px 0 !important;
+}
+
+#loadMoreBtn {
+    background: var(--bg-white) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-dark) !important;
+    padding: 10px 25px !important;
+    border-radius: 40px !important;
+    transition: all 0.2s ease !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+}
+
+#loadMoreBtn:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
+}
+
+/* Стилизация скролла */
+#ordersList::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#ordersList::-webkit-scrollbar-track {
+    background: var(--bg-light) !important;
+    border-radius: 10px !important;
+}
+
+#ordersList::-webkit-scrollbar-thumb {
+    background: var(--accent) !important;
+    border-radius: 10px !important;
+}
+
+#ordersList::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark) !important;
 }
 
 /* ===== РЕЙТИНГ МАСТЕРОВ - ИСПРАВЛЕННЫЙ СЕЛЕКТОР ===== */
@@ -285,39 +363,7 @@ body:not(.dark-theme) .filter-section:hover {
     filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
 }
 
-/* ===== 5. КАРТОЧКИ ЗАКАЗОВ ===== */
-#ordersList {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    min-height: 200px !important;
-    flex: 1 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 10px !important;
-    height: 100% !important;
-    max-height: 100% !important;
-}
-
-/* Стилизация скролла списка */
-#ordersList::-webkit-scrollbar {
-    width: 6px !important;
-}
-
-#ordersList::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
-}
-
-#ordersList::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
-}
-
-#ordersList::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark) !important;
-}
-
+/* ===== 5. КАРТОЧКИ ЗАКАЗОВ (старые стили) ===== */
 .order-item {
     background: var(--bg-white) !important;
     border-radius: var(--radius-lg) !important;
@@ -431,14 +477,6 @@ body:not(.dark-theme) .filter-section:hover {
 }
 
 /* ===== 7. ИНДИКАТОР КОЛИЧЕСТВА ЗАКАЗОВ ===== */
-.orders-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 20px !important;
-    padding: 0 5px !important;
-}
-
 .orders-count-badge {
     background: var(--accent-light) !important;
     color: var(--accent-dark) !important;
@@ -452,28 +490,7 @@ body:not(.dark-theme) .filter-section:hover {
     margin-right: 5px !important;
 }
 
-/* ===== 8. КНОПКА "ПОКАЗАТЬ ЕЩЕ" ===== */
-#loadMoreContainer {
-    text-align: center !important;
-    margin-top: 20px !important;
-}
-
-#loadMoreBtn {
-    background: var(--bg-white) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-dark) !important;
-    padding: 10px 20px !important;
-    border-radius: 40px !important;
-    transition: all 0.2s ease !important;
-}
-
-#loadMoreBtn:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
-}
-
-/* ===== 9. КАРТА ЗАКАЗОВ ===== */
+/* ===== 8. КАРТА ЗАКАЗОВ ===== */
 #ordersMap {
     width: 100% !important;
     height: 450px !important;
@@ -482,7 +499,7 @@ body:not(.dark-theme) .filter-section:hover {
     margin-top: 20px !important;
 }
 
-/* ===== 10. AI ПОДСКАЗКА ===== */
+/* ===== 9. AI ПОДСКАЗКА ===== */
 .ai-price-hint {
     background: var(--accent-light) !important;
     color: var(--accent-dark) !important;
@@ -498,7 +515,7 @@ body:not(.dark-theme) .filter-section:hover {
     box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
 }
 
-/* ===== 11. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
+/* ===== 10. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
 body.master-mode #orderFormColumn {
     display: none !important;
 }
@@ -509,7 +526,7 @@ body.master-mode #ordersColumn {
     width: 100% !important;
 }
 
-/* ===== 12. ПРОЗРАЧНЫЕ ЭЛЕМЕНТЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
+/* ===== 11. ПРОЗРАЧНЫЕ ЭЛЕМЕНТЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
 body:not(.dark-theme) .order-item {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(10px) !important;
@@ -543,7 +560,7 @@ body:not(.dark-theme) .filter-section:hover {
     border-color: var(--accent-light) !important;
 }
 
-/* ===== 13. СТИЛИ ДЛЯ САДЖЕСТОВ АДРЕСА ===== */
+/* ===== 12. СТИЛИ ДЛЯ САДЖЕСТОВ АДРЕСА ===== */
 .address-suggestions {
     position: absolute !important;
     top: 100% !important;
@@ -655,7 +672,7 @@ body.dark-theme .address-suggestion-item .address-type {
     color: var(--text-muted) !important;
 }
 
-/* ===== 14. УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КАРТ ===== */
+/* ===== 13. УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КАРТ ===== */
 #map, #ordersMap {
     border-radius: var(--radius-md) !important;
     overflow: hidden !important;
@@ -697,7 +714,7 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     color: var(--text-soft) !important;
 }
 
-/* ===== 15. АНИМАЦИИ ===== */
+/* ===== 14. АНИМАЦИИ ===== */
 @keyframes fadeSlide {
     from {
         opacity: 0;
@@ -776,7 +793,7 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     }
 }
 
-/* ===== 16. АДАПТИВ ===== */
+/* ===== 15. АДАПТИВ ===== */
 @media (max-width: 1200px) {
     #orderFormColumn,
     #ordersColumn {
