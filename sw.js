@@ -1,7 +1,8 @@
 // ===== sw.js =====
 // Service Worker с офлайн режимом и кэшированием
+// ВЕРСИЯ 4.0 — ИСПРАВЛЕННЫЕ ПУТИ К ФАЙЛАМ
 
-const CACHE_NAME = 'workhom-v3';
+const CACHE_NAME = 'workhom-v4';
 const API_CACHE_NAME = 'workhom-api-v1';
 
 const STATIC_ASSETS = [
@@ -15,9 +16,12 @@ const STATIC_ASSETS = [
     '/HomeWork/offline.html',
     '/HomeWork/404.html',
     '/HomeWork/payment-success.html',
-    '/HomeWork/css/main.css',
+    // ===== ИСПРАВЛЕННЫЕ ПУТИ К CSS =====
+    '/HomeWork/css/index.css',           // ✅ вместо main.css
+    '/HomeWork/css/dark.css',            // ✅ вместо theme.css
     '/HomeWork/css/animations.css',
-    '/HomeWork/css/theme.css',
+    '/HomeWork/css/variables.css',
+    // ===== JS ФАЙЛЫ =====
     '/HomeWork/js/core/constants.js',
     '/HomeWork/js/core/helpers.js',
     '/HomeWork/js/core/firebase.js',
@@ -25,7 +29,10 @@ const STATIC_ASSETS = [
     '/HomeWork/js/services/auth.js',
     '/HomeWork/js/services/orders.js',
     '/HomeWork/js/services/chat.js',
+    '/HomeWork/js/services/auth-ui.js',
+    '/HomeWork/js/pages/index.js',
     '/HomeWork/manifest.json',
+    // ===== ВНЕШНИЕ РЕСУРСЫ =====
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
@@ -37,21 +44,25 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('✅ Кэширование статики');
+                console.log('✅ Кэширование статики...');
                 // Используем allSettled, чтобы не проваливать весь кэш из-за одной ошибки
                 return Promise.allSettled(
                     STATIC_ASSETS.map(url => 
                         cache.add(url).catch(err => 
-                            console.warn(`⚠️ Не удалось закэшировать ${url}:`, err)
+                            console.warn(`⚠️ Пропускаем ${url}:`, err.message)
                         )
                     )
                 );
             })
-            .then(() => console.log('✅ Кэширование завершено'))
+            .then(results => {
+                const succeeded = results.filter(r => r.status === 'fulfilled').length;
+                const failed = results.filter(r => r.status === 'rejected').length;
+                console.log(`✅ Кэширование завершено: ${succeeded} OK, ${failed} пропущено`);
+            })
     );
 });
 
-// Активация
+// Активация — удаляем старые кэши
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
@@ -63,17 +74,15 @@ self.addEventListener('activate', event => {
                     })
             );
         }).then(() => {
-            console.log('✅ Service Worker активирован');
+            console.log('✅ Service Worker v4 активирован');
             return self.clients.claim();
         })
     );
 });
 
-// Стратегия: Stale-While-Revalidate для статики
-// Network First для API
-// Cache First для изображений
+// Перехват запросов
 self.addEventListener('fetch', event => {
-    // ✅ ВАЖНО: Игнорируем все НЕ-GET запросы
+    // Игнорируем НЕ-GET запросы
     if (event.request.method !== 'GET') {
         event.respondWith(fetch(event.request));
         return;
@@ -81,16 +90,17 @@ self.addEventListener('fetch', event => {
 
     const url = new URL(event.request.url);
 
-    // Игнорируем запросы к Chrome и Firebase
+    // Игнорируем расширения Chrome, Firebase, Яндекс.Карты
     if (event.request.url.startsWith('chrome-extension://') ||
         event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('firebase') ||
-        event.request.url.includes('yandex')) {
+        event.request.url.includes('yandex') ||
+        event.request.url.includes('googleapis')) {
         event.respondWith(fetch(event.request));
         return;
     }
 
-    // API запросы - сначала сеть, потом кэш
+    // API запросы — сначала сеть, потом кэш
     if (url.pathname.startsWith('/api/') || 
         url.hostname.includes('firestore') ||
         url.hostname.includes('firebase')) {
@@ -109,7 +119,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Изображения - сначала кэш, потом сеть
+    // Изображения — сначала кэш, потом сеть
     if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/)) {
         event.respondWith(
             caches.match(event.request).then(response => {
@@ -120,8 +130,8 @@ self.addEventListener('fetch', event => {
                     });
                     return networkResponse;
                 }).catch(() => {
-                    // Возвращаем заглушку для иконок, если они не найдены
-                    if (event.request.url.includes('favicon.ico')) {
+                    // Заглушка для иконок
+                    if (event.request.url.includes('icon')) {
                         return new Response('', { status: 204 });
                     }
                 });
@@ -130,7 +140,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // HTML страницы - сначала сеть, при ошибке офлайн
+    // HTML страницы — сначала сеть, при ошибке офлайн
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request)
@@ -141,7 +151,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Всё остальное - Stale-While-Revalidate
+    // Всё остальное — Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then(cached => {
             const fetchPromise = fetch(event.request)
@@ -155,7 +165,7 @@ self.addEventListener('fetch', event => {
                     return networkResponse;
                 })
                 .catch(() => {
-                    console.log('🌐 Офлайн режим для:', event.request.url);
+                    // Тишина в консоли для офлайн режима
                 });
 
             return cached || fetchPromise;
@@ -163,17 +173,7 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// Фоновая синхронизация
-self.addEventListener('sync', event => {
-    if (event.tag === 'sync-orders') {
-        event.waitUntil(syncOrders());
-    }
-    if (event.tag === 'sync-messages') {
-        event.waitUntil(syncMessages());
-    }
-});
-
-// Push уведомления
+// Push-уведомления
 self.addEventListener('push', event => {
     let data = {};
     try {
@@ -211,9 +211,20 @@ self.addEventListener('notificationclick', event => {
     }
 });
 
-// Синхронизация заказов в офлайне
+// Фоновая синхронизация
+self.addEventListener('sync', event => {
+    if (event.tag === 'sync-orders') {
+        event.waitUntil(syncOrders());
+    }
+    if (event.tag === 'sync-messages') {
+        event.waitUntil(syncMessages());
+    }
+});
+
+// Синхронизация заказов
 async function syncOrders() {
     try {
+        console.log('🔄 Фоновая синхронизация заказов...');
         const db = await openIndexedDB();
         const offlineOrders = await db.getAll('offlineOrders');
         
@@ -240,6 +251,7 @@ async function syncOrders() {
 // Синхронизация сообщений
 async function syncMessages() {
     try {
+        console.log('🔄 Фоновая синхронизация сообщений...');
         const db = await openIndexedDB();
         const offlineMessages = await db.getAll('offlineMessages');
         
