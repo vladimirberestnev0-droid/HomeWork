@@ -1,5 +1,5 @@
 /* ===== PAGES/INDEX.CSS ===== */
-/* Версия: 5.2 — ИСПРАВЛЕНЫ АНИМАЦИИ */
+/* Версия: 6.1 — ФИНАЛЬНАЯ С РАБОЧЕЙ КНОПКОЙ */
 
 /* ===== КОНТЕЙНЕР ФОРМЫ И ЗАКАЗОВ ===== */
 #orderFormRow {
@@ -13,7 +13,7 @@
 
 /* ===== ЛЕВАЯ КОЛОНКА (ФОРМА) ===== */
 #orderFormColumn {
-    flex: 0 0 calc(50% - 10px);
+    flex: 0 0 50%;
     position: sticky;
     top: 90px;
     align-self: flex-start;
@@ -27,9 +27,25 @@
     background: var(--bg-white);
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
     pointer-events: auto;
     isolation: isolate;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+/* Стилизация скролла формы */
+#orderFormColumn .card::-webkit-scrollbar {
+    width: 4px;
+}
+
+#orderFormColumn .card::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#orderFormColumn .card::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
 }
 
 /* Форма — безопасные анимации */
@@ -42,22 +58,23 @@
 #orderForm input:hover,
 #orderForm select:hover,
 #orderForm textarea:hover {
-    transform: none;  /* ✅ БЕЗ ДВИЖЕНИЙ */
+    transform: none;
     border-color: var(--accent);
 }
 
 /* ===== ПРАВАЯ КОЛОНКА (ЗАКАЗЫ) ===== */
 #ordersColumn {
-    flex: 0 0 calc(50% - 10px);
-    max-height: calc(100vh - 120px);
+    flex: 0 0 50%;
+    height: calc(100vh - 120px);
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 10px;
-    position: relative;
+    position: sticky;
+    top: 90px;
     scrollbar-gutter: stable;
 }
 
-/* Стилизация скролла */
+/* Стилизация скролла заказов */
 #ordersColumn::-webkit-scrollbar {
     width: 6px;
 }
@@ -73,26 +90,43 @@
 }
 
 /* ===== КАРТОЧКИ ЗАКАЗОВ ===== */
+#ordersList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .order-item {
-    margin-bottom: 15px;
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 20px;
     box-shadow: var(--shadow);
     border-left: 4px solid var(--accent);
     transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
-    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
+    
+    /* Защита от дергания */
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: box-shadow, border-color;
+    
+    /* Анимация появления */
+    animation: fadeInUp 0.3s ease-out;
+    cursor: default;
 }
 
 .order-item:hover {
     box-shadow: var(--shadow-hover);
     border-left-color: var(--accent-dark);
-    /* ✅ УБРАЛ transform: translateY() И scale() */
     transform: none;
 }
+
+/* Индекс появления для первых 6 заказов */
+.order-item:nth-child(1) { animation-delay: 0.05s; }
+.order-item:nth-child(2) { animation-delay: 0.1s; }
+.order-item:nth-child(3) { animation-delay: 0.15s; }
+.order-item:nth-child(4) { animation-delay: 0.2s; }
+.order-item:nth-child(5) { animation-delay: 0.25s; }
+.order-item:nth-child(6) { animation-delay: 0.3s; }
 
 .order-header {
     display: flex;
@@ -142,6 +176,28 @@
     width: 16px;
 }
 
+/* Индикатор количества заказов */
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 5px;
+}
+
+.orders-count-badge {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    padding: 5px 15px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.orders-count-badge i {
+    margin-right: 5px;
+}
+
 /* ===== КАРТОЧКИ МАСТЕРОВ ===== */
 .master-card {
     transition: box-shadow 0.2s ease;
@@ -152,7 +208,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    /* ЗАЩИТА ОТ ДЕРГАНИЯ */
+    
+    /* Защита от дергания */
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: box-shadow;
@@ -160,7 +217,6 @@
 
 .master-card:hover {
     box-shadow: var(--shadow-hover);
-    /* ✅ УБРАЛ transform: translateY() И scale() */
     transform: none;
 }
 
@@ -176,12 +232,11 @@
     color: white;
     font-size: 40px;
     transition: transform 0.2s ease;
-    /* ЗАЩИТА */
     transform: translateZ(0);
 }
 
 .master-card:hover .master-avatar {
-    transform: rotate(3deg);  /* ✅ УМЕНЬШИЛ rotate */
+    transform: rotate(3deg);
 }
 
 .master-card .btn-sm {
@@ -193,15 +248,15 @@
     font-weight: 600;
     width: 100%;
     border-radius: 40px;
-    /* ЗАЩИТА */
     transform: translateZ(0);
     cursor: pointer;
+    margin-top: auto;
 }
 
 .master-card .btn-sm:hover {
     background: var(--accent);
     color: white;
-    transform: scale(1.02);  /* ✅ УМЕНЬШИЛ scale */
+    transform: scale(1.02);
 }
 
 /* ===== КОМБО-ПОИСК ===== */
@@ -266,9 +321,9 @@
 #scrollToTop {
     position: fixed;
     bottom: 30px;
-    left: 30px;
-    width: 50px;
-    height: 50px;
+    right: 30px;  /* 👈 СПРАВА ВНИЗУ */
+    width: 55px;
+    height: 55px;
     background: var(--accent-gradient);
     color: white;
     border-radius: 50%;
@@ -277,22 +332,46 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 5px 20px rgba(230,122,75,0.3);
-    z-index: 1000;
-    transition: all 0.2s ease;
+    z-index: 9999;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: none;
     opacity: 0;
     visibility: hidden;
-    transform: translateZ(0);
+    transform: scale(0.8);
 }
 
 #scrollToTop.visible {
     opacity: 1;
     visibility: visible;
+    transform: scale(1);
 }
 
 #scrollToTop:hover {
-    transform: scale(1.05) translateY(-2px);  /* ✅ УМЕНЬШИЛ анимацию */
-    box-shadow: 0 10px 30px rgba(230,122,75,0.5);
+    background: var(--accent-dark);
+    transform: scale(1.15) translateY(-5px);
+    box-shadow: 0 15px 30px rgba(230,122,75,0.6);
+}
+
+#scrollToTop i {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+}
+
+/* Анимация пульсации для привлечения внимания */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(230,122,75,0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(230,122,75,0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(230,122,75,0);
+    }
+}
+
+#scrollToTop.visible {
+    animation: pulse 2s infinite;
 }
 
 /* ===== АНИМАЦИИ ===== */
@@ -307,6 +386,23 @@
     }
 }
 
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== КНОПКИ ===== */
+button, .btn, .filter-btn, .dropdown-item {
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
 /* ===== ЗАЩИТА ОТ КОНФЛИКТОВ ===== */
 #orderFormColumn,
 #ordersColumn {
@@ -315,6 +411,13 @@
 }
 
 /* ===== АДАПТИВ ===== */
+@media (max-width: 992px) {
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 50%;
+    }
+}
+
 @media (max-width: 768px) {
     #orderFormRow {
         flex-direction: column;
@@ -324,45 +427,65 @@
     #ordersColumn {
         flex: 0 0 100%;
         position: static;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    #orderFormColumn .card {
         max-height: none;
         overflow-y: visible;
     }
     
     #ordersColumn {
         scrollbar-gutter: auto;
+        height: auto;
+        max-height: 600px;
     }
     
     #scrollToTop {
         bottom: 20px;
-        left: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+    
+    #scrollToTop i {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    #ordersColumn {
+        max-height: 500px;
+    }
+    
+    .order-item {
+        padding: 15px;
+    }
+    
+    .order-price {
+        font-size: 1.2rem;
+    }
+    
+    #scrollToTop {
+        bottom: 15px;
+        right: 15px;
         width: 40px;
         height: 40px;
     }
-}
-
-/* Добавь в конец index.css */
-.order-item {
-    /* существующие стили */
-    cursor: default;  /* ✅ НОРМАЛЬНЫЙ КУРСОР */
-}
-
-button, .btn, .filter-btn, .dropdown-item {
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-/* Плавное появление заказов */
-.order-item {
-    animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+    
+    #scrollToTop i {
+        font-size: 18px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 360px) {
+    #scrollToTop {
+        width: 35px;
+        height: 35px;
+        bottom: 10px;
+        right: 10px;
     }
 }
