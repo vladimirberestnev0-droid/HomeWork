@@ -275,41 +275,42 @@
             </div>
             
             <!-- Список заказов -->
-            <div class="col-md-6" id="ordersColumn">
-                <div class="card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">
-                            <i class="fas fa-list me-2" style="color: var(--accent);"></i>
-                            Свежие заявки
-                        </h3>
-                        <div>
-                            <span class="badge badge-primary me-2" id="ordersCount">0</span>
-                            <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn" title="Аналитика">
-                                <i class="fas fa-chart-line"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary ms-2" id="refreshBtn">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="ordersList">
-                        <div class="text-center p-5">
-                            <div class="spinner mb-3"></div>
-                            <p class="text-secondary">Загрузка заказов...</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Кнопка "Показать еще" -->
-                    <div id="loadMoreContainer" class="text-center mt-4 d-none">
-                        <button class="btn btn-outline-secondary" id="loadMoreBtn">
-                            <i class="fas fa-chevron-down me-2"></i>
-                            Показать еще <span id="remainingOrdersCount">0</span>
-                        </button>
-                    </div>
-                </div>
+<div class="col-md-6" id="ordersColumn">
+    <div class="card">
+        <div class="orders-header">
+            <h3 class="mb-0">
+                <i class="fas fa-list me-2" style="color: var(--accent);"></i>
+                Свежие заявки
+            </h3>
+            <div>
+                <span class="badge badge-primary me-2" id="ordersCount">0</span>
+                <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn" title="Аналитика">
+                    <i class="fas fa-chart-line"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary ms-2" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
             </div>
         </div>
+        
+        <div class="orders-content">
+            <div id="ordersList">
+                <div class="text-center p-5">
+                    <div class="spinner mb-3"></div>
+                    <p class="text-secondary">Загрузка заказов...</p>
+                </div>
+            </div>
+            
+            <!-- Кнопка "Показать еще" -->
+            <div id="loadMoreContainer" class="d-none">
+                <button class="btn" id="loadMoreBtn">
+                    <i class="fas fa-chevron-down me-2"></i>
+                    Показать еще <span id="remainingOrdersCount">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
         <!-- Рейтинги мастеров -->
         <div class="row g-4 mb-5">
