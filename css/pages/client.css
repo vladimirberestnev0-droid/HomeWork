@@ -1,20 +1,476 @@
 /* ===== CLIENT.CSS ===== */
-/* Версия: 2.0 — КЛИЕНТСКАЯ ЧАСТЬ */
+/* Версия: 3.0 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА */
 
+/* ===== ОСНОВНЫЕ СТИЛИ КАБИНЕТА ===== */
+
+/* Аватар в профиле */
+.client-avatar {
+    width: 120px;
+    height: 120px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 60px;
+    box-shadow: 0 10px 30px rgba(230,122,75,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 4px solid white;
+}
+
+.client-avatar:hover {
+    transform: scale(1.05) rotate(5deg);
+    box-shadow: 0 15px 40px rgba(230,122,75,0.4);
+}
+
+/* ===== КАРТОЧКА БАЛАНСА (УЛУЧШЕННАЯ) ===== */
 .balance-card {
-    background: var(--bg-light);
-    border-radius: var(--radius-md);
-    padding: 16px;
+    background: linear-gradient(135deg, var(--accent-light), rgba(230,122,75,0.1));
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.balance-info {
-    background: var(--bg-light);
-    border-radius: var(--radius-md);
-    padding: 16px;
+.balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
-#balanceAmount {
+.balance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.balance-label {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.balance-label i {
     color: var(--accent);
-    font-size: 2rem;
+}
+
+.balance-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(230,122,75,0.1);
+}
+
+.balance-amount-small {
+    font-size: 1.8rem;
+}
+
+.balance-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+/* ===== КАРТОЧКА ИНФОРМАЦИИ ===== */
+.balance-info {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+.balance-info:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);
+}
+
+/* ===== СТИЛИ ДЛЯ ПРОЗРАЧНЫХ КАРТОЧЕК ===== */
+body:not(.dark-theme) .balance-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .balance-card:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+}
+
+/* ===== СТАТИСТИКА КЛИЕНТА ===== */
+.client-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.client-stat-item {
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    padding: 15px 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.client-stat-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 5px 15px rgba(230,122,75,0.15);
+    background: var(--bg-white);
+}
+
+.client-stat-value {
+    font-size: 1.8rem;
     font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 5px;
+}
+
+.client-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== ИСТОРИЯ ЗАКАЗОВ ===== */
+.client-history-item {
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--accent);
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: var(--shadow-sm);
+}
+
+.client-history-item:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
+    border-left-color: var(--accent-dark);
+}
+
+.client-history-info h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.client-history-meta {
+    display: flex;
+    gap: 15px;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+.client-history-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.client-history-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+}
+
+/* ===== ПРОЗРАЧНЫЕ КАРТОЧКИ ===== */
+body:not(.dark-theme) .client-history-item {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-left: 4px solid var(--accent);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .client-history-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+    border-left-color: var(--accent);
+}
+
+/* ===== КНОПКИ ДЕЙСТВИЙ ===== */
+.client-action-btn {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.client-action-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(230,122,75,0.3);
+}
+
+.client-action-btn-success {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.client-action-btn-success:hover {
+    background: #00875A;
+    border-color: #00875A;
+    box-shadow: 0 10px 20px rgba(0,168,107,0.3);
+}
+
+/* ===== ПОПОЛНЕНИЕ БАЛАНСА ===== */
+.topup-presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.topup-preset {
+    background: var(--bg-light);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 15px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.topup-preset:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-3px);
+}
+
+.topup-preset.active {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3);
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+body.dark-theme .balance-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .balance-card:hover {
+    border-color: var(--accent);
+}
+
+body.dark-theme .client-stat-item {
+    background: var(--bg-card);
+}
+
+body.dark-theme .client-stat-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+body.dark-theme .client-history-item {
+    background: var(--bg-card);
+    border-left-color: var(--accent);
+}
+
+body.dark-theme .client-history-item:hover {
+    background: var(--bg-hover);
+    border-left-color: var(--accent-dark);
+}
+
+body.dark-theme .client-history-price {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes balancePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+        color: var(--accent-dark);
+    }
+}
+
+.balance-updated {
+    animation: balancePulse 0.5s ease;
+}
+
+/* ===== АДАПТИВ ===== */
+@media (max-width: 768px) {
+    .client-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
+    }
+    
+    .balance-amount {
+        font-size: 2rem;
+    }
+    
+    .client-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .client-history-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .client-history-price {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .client-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+    
+    .balance-amount {
+        font-size: 1.8rem;
+    }
+    
+    .client-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .client-history-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ ФИШКИ ===== */
+
+/* Прогресс-бар уровня */
+.client-level-progress {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+.client-level-progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.client-level-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+/* Бейджи клиента */
+.client-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.client-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(230,122,75,0.2);
+}
+
+.client-badge i {
+    margin-right: 5px;
+}
+
+.client-badge.gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+}
+
+/* Пустое состояние */
+.client-empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-soft);
+}
+
+.client-empty-state i {
+    font-size: 64px;
+    color: var(--border);
+    margin-bottom: 20px;
+}
+
+.client-empty-state h4 {
+    margin-bottom: 10px;
+    color: var(--text-dark);
+}
+
+.client-empty-state p {
+    margin-bottom: 25px;
 }
