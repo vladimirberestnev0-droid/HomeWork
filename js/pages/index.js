@@ -1,4 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
+// ПОЛНАЯ ВЕРСИЯ СО ВСЕМИ ФУНКЦИЯМИ
 
 // Глобальные переменные
 let map = null;
@@ -17,6 +18,56 @@ let displayedOrders = [];      // Отображаемые заказы
 let currentPage = 0;
 let isLoading = false;
 let hasMore = true;
+
+// Топ мастеров
+let currentLeaderboardPeriod = 'week';
+
+// Модалка авторизации
+let authModal = null;
+
+// Безопасный Helpers
+const safeHelpers = {
+    escapeHtml: (text) => {
+        if (!text) return '';
+        if (window.Helpers?.escapeHtml) return Helpers.escapeHtml(text);
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+    showNotification: (msg, type) => {
+        if (window.Helpers?.showNotification) {
+            Helpers.showNotification(msg, type);
+        } else {
+            console.log(`🔔 ${type}: ${msg}`);
+            if (type === 'error') alert(`❌ ${msg}`);
+            else if (type === 'success') alert(`✅ ${msg}`);
+            else alert(msg);
+        }
+    },
+    formatDate: (timestamp) => {
+        if (window.Helpers?.formatDate) return Helpers.formatDate(timestamp);
+        if (!timestamp) return 'только что';
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return 'недавно';
+        }
+    },
+    validatePrice: (price) => {
+        if (window.Helpers?.validatePrice) return Helpers.validatePrice(price);
+        return price && !isNaN(price) && price >= 500 && price <= 1000000;
+    },
+    getCategoryIcon: (cat) => {
+        if (window.Helpers?.getCategoryIcon) return Helpers.getCategoryIcon(cat);
+        return window.CATEGORY_ICONS?.[cat] || 'fa-tag';
+    },
+    pluralize: (count, words) => {
+        if (window.Helpers?.pluralize) return Helpers.pluralize(count, words);
+        const cases = [2, 0, 1, 1, 1, 2];
+        return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
+    }
+};
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ
@@ -70,12 +121,11 @@ function initCityCombo() {
     const dropdown = document.getElementById('cityDropdown');
     
     if (!container || !input || !dropdown || !window.SORTED_CITIES_BY_DISTRICT) {
-        console.error('❌ Не удалось инициализировать комбо-поиск');
+        console.warn('⚠️ Не удалось инициализировать комбо-поиск');
         return;
     }
     
     let selectedCityId = 'all';
-    let searchTimeout;
     
     // ===== СТРОИМ ВЫПАДАЮЩИЙ СПИСОК =====
     function buildDropdown(filterText = '') {
@@ -218,7 +268,7 @@ async function loadAllOrders() {
         console.log('📦 Загрузка заказов...');
         
         const snapshot = await db.collection('orders')
-            .where('status', '==', ORDER_STATUS.OPEN)
+            .where('status', '==', window.ORDER_STATUS?.OPEN || 'open')
             .orderBy('createdAt', 'desc')
             .get();
         
@@ -257,7 +307,7 @@ function applyFilters(resetPage = true) {
     }
     
     // Фильтр по городу
-    if (filters.city !== 'all') {
+    if (filters.city !== 'all' && window.CITIES) {
         const cityName = window.CITIES.find(c => c.id === filters.city)?.name;
         if (cityName) {
             filtered = filtered.filter(order => 
@@ -268,10 +318,10 @@ function applyFilters(resetPage = true) {
         
     // Обновляем отображаемые заказы
     if (resetPage) {
-        displayedOrders = filtered.slice(0, PAGINATION.ORDERS_INITIAL);
+        displayedOrders = filtered.slice(0, window.PAGINATION?.ORDERS_INITIAL || 7);
     } else {
         const start = displayedOrders.length;
-        const end = start + PAGINATION.ORDERS_LOAD_MORE;
+        const end = start + (window.PAGINATION?.ORDERS_LOAD_MORE || 5);
         const more = filtered.slice(start, end);
         displayedOrders = [...displayedOrders, ...more];
     }
@@ -288,6 +338,8 @@ function applyFilters(resetPage = true) {
 function updateLoadMoreButton(totalFiltered) {
     const container = document.getElementById('loadMoreContainer');
     const remainingSpan = document.getElementById('remainingOrdersCount');
+    
+    if (!container || !remainingSpan) return;
     
     if (hasMore) {
         const remaining = totalFiltered - displayedOrders.length;
@@ -331,12 +383,12 @@ function createOrderCard(order) {
     // Иконка города (определяем по адресу)
     let cityIcon = 'fa-map-marker-alt';
     let cityName = 'Город не указан';
-    if (order.address) {
+    if (order.address && window.CITIES) {
         const foundCity = window.CITIES.find(c => 
             order.address.toLowerCase().includes(c.name.toLowerCase())
         );
         if (foundCity) {
-            cityIcon = foundCity.icon;
+            cityIcon = foundCity.icon || 'fa-map-marker-alt';
             cityName = foundCity.name;
         }
     }
@@ -353,14 +405,15 @@ function createOrderCard(order) {
         `;
     }
     
-    let actionsHtml = '';
+    // Безопасная проверка для отображения кнопки отклика
     const showButton = typeof Auth !== 'undefined' && 
                       Auth.isAuthenticated && 
                       Auth.isAuthenticated() && 
-                      Auth.isMaster && 
+                      typeof Auth.isMaster === 'function' && 
                       Auth.isMaster() && 
-                      order.status === ORDER_STATUS.OPEN;
+                      order.status === (window.ORDER_STATUS?.OPEN || 'open');
     
+    let actionsHtml = '';
     if (showButton) {
         actionsHtml = `
             <div class="d-flex gap-2 mt-3">
@@ -373,10 +426,10 @@ function createOrderCard(order) {
     
     div.innerHTML = `
         <div class="order-header">
-            <h5 class="order-title mb-0">${Helpers.escapeHtml?.(order.title) || order.title || 'Заказ'}</h5>
+            <h5 class="order-title mb-0">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h5>
             <span class="order-price">${order.price || 0} ₽</span>
         </div>
-        <p class="text-secondary mb-3">${Helpers.escapeHtml?.(order.description) || order.description || 'Нет описания'}</p>
+        <p class="text-secondary mb-3">${safeHelpers.escapeHtml(order.description || 'Нет описания')}</p>
         ${photosHtml}
         <div class="order-meta">
             <span>
@@ -411,8 +464,6 @@ function showError(message) {
 // ЗАГРУЗКА ТОП МАСТЕРОВ ПО ПЕРИОДАМ
 // ============================================
 
-let currentLeaderboardPeriod = 'week';
-
 async function loadTopMasters(period = 'week') {
     const container = document.getElementById('topMastersList');
     if (!container) return;
@@ -443,7 +494,7 @@ async function loadTopMasters(period = 'week') {
         }
         
         const mastersSnapshot = await db.collection('users')
-            .where('role', '==', USER_ROLE.MASTER)
+            .where('role', '==', window.USER_ROLE?.MASTER || 'master')
             .get();
         
         const masters = [];
@@ -454,7 +505,7 @@ async function loadTopMasters(period = 'week') {
             if (startDate) {
                 const ordersSnapshot = await db.collection('orders')
                     .where('selectedMasterId', '==', doc.id)
-                    .where('status', '==', ORDER_STATUS.COMPLETED)
+                    .where('status', '==', window.ORDER_STATUS?.COMPLETED || 'completed')
                     .where('completedAt', '>=', startDate)
                     .get();
                 
@@ -511,13 +562,13 @@ async function loadTopMasters(period = 'week') {
                     <div class="master-avatar">
                         <i class="fas fa-user-tie"></i>
                     </div>
-                    <h6 class="fw-bold mb-1">${Helpers.escapeHtml?.(master.name) || master.name || 'Мастер'}</h6>
+                    <h6 class="fw-bold mb-1">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h6>
                     <div class="rating-stars mb-2">${stars}</div>
                     <div class="mb-2">
                         <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
                         <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
                     </div>
-                    <p class="small text-secondary mb-2">${Helpers.escapeHtml?.(master.categories) || master.categories || 'Специалист'}</p>
+                    <p class="small text-secondary mb-2">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
                     <button class="btn btn-sm w-100" onclick="handleViewMaster('${master.id}')">
                         Смотреть профиль
                     </button>
@@ -554,7 +605,7 @@ function initLeaderboardButtons() {
 
 // ===== ОБРАБОТКА КЛИКА ПО ПРОФИЛЮ МАСТЕРА =====
 function handleViewMaster(masterId) {
-    if (Auth && Auth.isAuthenticated && Auth.isAuthenticated()) {
+    if (Auth?.isAuthenticated?.()) {
         window.location.href = `/HomeWork/master-profile.html?id=${masterId}`;
     } else {
         showAuthRequiredModal();
@@ -562,18 +613,20 @@ function handleViewMaster(masterId) {
 }
 
 // ===== МОДАЛКА АВТОРИЗАЦИИ =====
-let authModal = null;
-
 function showAuthRequiredModal() {
     const modalEl = document.getElementById('authRequiredModal');
     if (!modalEl) {
         console.error('❌ Модалка не найдена');
+        safeHelpers.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
+        if (typeof AuthUI?.showLoginModal === 'function') {
+            AuthUI.showLoginModal();
+        }
         return;
     }
     
     if (typeof bootstrap === 'undefined') {
         console.error('❌ Bootstrap не загружен');
-        alert('Ошибка загрузки модального окна. Обновите страницу.');
+        safeHelpers.showNotification('Ошибка загрузки модального окна', 'error');
         return;
     }
     
@@ -602,9 +655,9 @@ function showAuthRequiredModal() {
         
     } catch (error) {
         console.error('❌ Ошибка модалки:', error);
-        alert('Для просмотра профиля необходимо войти в систему');
+        safeHelpers.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
         
-        if (typeof AuthUI !== 'undefined' && AuthUI.showLoginModal) {
+        if (typeof AuthUI?.showLoginModal === 'function') {
             AuthUI.showLoginModal();
         }
     }
@@ -668,7 +721,7 @@ async function loadOrdersMap() {
         ordersMap.geoObjects.removeAll();
         
         const snapshot = await db.collection('orders')
-            .where('status', '==', ORDER_STATUS.OPEN)
+            .where('status', '==', window.ORDER_STATUS?.OPEN || 'open')
             .limit(50)
             .get();
 
@@ -703,27 +756,36 @@ async function loadOrdersMap() {
 
 async function respondToOrder(orderId) {
     if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
-        Helpers.showNotification('❌ Сначала войдите в систему', 'warning');
+        safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
         return;
     }
     
-    if (typeof Auth === 'undefined' || !Auth.isMaster || !Auth.isMaster()) {
-        Helpers.showNotification('❌ Только мастера могут откликаться', 'warning');
+    if (typeof Auth.isMaster !== 'function' || !Auth.isMaster()) {
+        safeHelpers.showNotification('❌ Только мастера могут откликаться', 'warning');
         return;
     }
 
     const price = prompt('Ваша цена за работу (₽):', '');
     if (!price) return;
     
-    const comment = prompt('Краткий комментарий:', '');
+    const priceNum = parseInt(price);
+    if (isNaN(priceNum) || !safeHelpers.validatePrice(priceNum)) {
+        safeHelpers.showNotification('❌ Цена должна быть от 500 до 1 000 000 ₽', 'error');
+        return;
+    }
     
-    if (typeof Orders !== 'undefined' && Orders.respondToOrder) {
-        const result = await Orders.respondToOrder(orderId, price, comment);
-        if (result && result.success) {
+    const comment = prompt('Краткий комментарий (необязательно):', '');
+    
+    if (typeof Orders?.respondToOrder === 'function') {
+        const result = await Orders.respondToOrder(orderId, priceNum, comment || '');
+        if (result?.success) {
+            safeHelpers.showNotification('✅ Отклик отправлен!', 'success');
             loadAllOrders();
+        } else {
+            safeHelpers.showNotification(result?.error || '❌ Ошибка при отправке отклика', 'error');
         }
     } else {
-        Helpers.showNotification('❌ Функция отклика временно недоступна', 'error');
+        safeHelpers.showNotification('❌ Функция отклика временно недоступна', 'error');
     }
 }
 
@@ -733,7 +795,7 @@ async function respondToOrder(orderId) {
 
 async function handleFiles(files) {
     if (uploadedPhotos.length + files.length > 5) {
-        Helpers.showNotification('Максимум 5 фото', 'warning');
+        safeHelpers.showNotification('Максимум 5 фото', 'warning');
         return;
     }
     
@@ -792,10 +854,11 @@ function removePhoto(fileName) {
 
 function initEventListeners() {
     const logoutHandler = () => {
-        if (typeof Auth !== 'undefined' && Auth.logout) {
+        if (typeof Auth?.logout === 'function') {
             Auth.logout();
         }
     };
+    
     document.getElementById('logoutBtn')?.addEventListener('click', logoutHandler);
     document.getElementById('headerLogoutBtn')?.addEventListener('click', logoutHandler);
 
@@ -805,18 +868,9 @@ function initEventListeners() {
     });
 
     document.getElementById('themeToggle')?.addEventListener('click', () => {
-        if (typeof Auth !== 'undefined' && Auth.toggleTheme) {
+        if (typeof Auth?.toggleTheme === 'function') {
             Auth.toggleTheme();
         }
-    });
-
-    document.querySelectorAll('.category-filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            filters.category = this.dataset.category;
-            applyFilters(true);
-        });
     });
 
     document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
@@ -861,12 +915,12 @@ function initEventListeners() {
         e.preventDefault();
         
         if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
-            Helpers.showNotification('Пожалуйста, войдите в систему', 'warning');
+            safeHelpers.showNotification('Пожалуйста, войдите в систему', 'warning');
             return;
         }
         
-        if (typeof Auth !== 'undefined' && Auth.isMaster && Auth.isMaster()) {
-            Helpers.showNotification('Мастера не могут создавать заказы', 'warning');
+        if (typeof Auth.isMaster === 'function' && Auth.isMaster()) {
+            safeHelpers.showNotification('Мастера не могут создавать заказы', 'warning');
             return;
         }
 
@@ -883,16 +937,14 @@ function initEventListeners() {
             clientPhone: document.getElementById('phone').value
         };
 
-        if (typeof Orders !== 'undefined' && Orders.create) {
+        if (typeof Orders?.create === 'function') {
             const result = await Orders.create(orderData);
-            if (result && result.success) {
+            if (result?.success) {
                 document.getElementById('orderForm').reset();
                 document.getElementById('latitude').value = '';
                 document.getElementById('longitude').value = '';
                 uploadedPhotos = [];
-                if (document.getElementById('photoPreview')) {
-                    document.getElementById('photoPreview').innerHTML = '';
-                }
+                document.getElementById('photoPreview').innerHTML = '';
                 if (map) map.geoObjects.removeAll();
                 
                 document.getElementById('successMessage').classList.remove('d-none');
@@ -904,10 +956,11 @@ function initEventListeners() {
                 loadOrdersMap();
             }
         } else {
-            Helpers.showNotification('❌ Функция создания заказа временно недоступна', 'error');
+            safeHelpers.showNotification('❌ Функция создания заказа временно недоступна', 'error');
         }
     });
 
+    // AI Price Hint
     const categoryEl = document.getElementById('category');
     const descriptionEl = document.getElementById('description');
     const priceEl = document.getElementById('price');
@@ -976,6 +1029,245 @@ function initEventListeners() {
         categoryEl.addEventListener('change', updateAI);
         descriptionEl.addEventListener('input', updateAI);
     }
+
+    // AI Assistant button
+    document.getElementById('aiAssistantBtn')?.addEventListener('click', () => {
+        const modalEl = document.getElementById('aiAssistantModal');
+        if (modalEl && bootstrap) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    });
+
+    // Ask AI button
+    document.getElementById('askAiBtn')?.addEventListener('click', () => {
+        const question = document.getElementById('aiQuestion')?.value;
+        if (!question) return;
+        
+        const chat = document.getElementById('aiChat');
+        if (chat) {
+            chat.innerHTML += `
+                <div class="message sent mb-3">
+                    <div class="message-bubble">${safeHelpers.escapeHtml(question)}</div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                chat.innerHTML += `
+                    <div class="message received mb-3">
+                        <div class="message-bubble">
+                            <i class="fas fa-robot me-2"></i>
+                            Сейчас я помогу с вопросом "${safeHelpers.escapeHtml(question)}"... (демо-режим)
+                        </div>
+                    </div>
+                `;
+                chat.scrollTop = chat.scrollHeight;
+            }, 1000);
+            
+            document.getElementById('aiQuestion').value = '';
+        }
+    });
+
+    // Achievements button
+    document.getElementById('achievementsBtn')?.addEventListener('click', () => {
+        const modalEl = document.getElementById('achievementsModal');
+        if (modalEl && bootstrap) {
+            loadAchievements();
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    });
+
+    // Leaderboard button
+    document.getElementById('leaderboardBtn')?.addEventListener('click', () => {
+        const modalEl = document.getElementById('leaderboardModal');
+        if (modalEl && bootstrap) {
+            loadFullLeaderboard();
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    });
+
+    // Telegram button
+    document.getElementById('telegramBtn')?.addEventListener('click', () => {
+        if (typeof TelegramClient?.showLinkInstructions === 'function') {
+            TelegramClient.showLinkInstructions();
+        } else {
+            window.open('https://t.me/WorkHomBot', '_blank');
+        }
+    });
+
+    // Notifications button
+    document.getElementById('notificationsBtn')?.addEventListener('click', () => {
+        safeHelpers.showNotification('Уведомления пока в разработке', 'info');
+    });
+
+    // Analytics button
+    document.getElementById('analyticsBtn')?.addEventListener('click', () => {
+        safeHelpers.showNotification('Аналитика заказов будет доступна позже', 'info');
+    });
+
+    // Tracking toggle
+    document.getElementById('trackingToggle')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        const panel = document.getElementById('trackingPanel');
+        if (panel) {
+            if (panel.classList.contains('d-none')) {
+                panel.classList.remove('d-none');
+                btn.innerHTML = '<i class="fas fa-eye-slash me-1"></i> Скрыть мастеров';
+                loadOnlineMasters();
+            } else {
+                panel.classList.add('d-none');
+                btn.innerHTML = '<i class="fas fa-location-dot me-1"></i> Показать мастеров онлайн';
+            }
+        }
+    });
+
+    // Tracking master select
+    document.getElementById('trackingMasterSelect')?.addEventListener('change', (e) => {
+        const masterId = e.target.value;
+        if (masterId && typeof Tracking?.listenToMasterPosition === 'function') {
+            Tracking.listenToMasterPosition(masterId, (position) => {
+                updateTrackingInfo(position);
+            });
+        }
+    });
+
+    // AI Price Hint button
+    document.getElementById('aiPriceHintBtn')?.addEventListener('click', () => {
+        const cat = categoryEl?.value;
+        const desc = descriptionEl?.value;
+        
+        if (!cat || !desc) {
+            safeHelpers.showNotification('Сначала выберите категорию и напишите описание', 'warning');
+            return;
+        }
+        
+        const price = priceAI?.calc(cat, desc);
+        if (price && priceEl) {
+            priceEl.value = price;
+            safeHelpers.showNotification(`✅ Рекомендуемая цена: ${price} ₽`, 'success');
+        }
+    });
+}
+
+// ============================================
+// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================
+
+async function loadAchievements() {
+    const list = document.getElementById('achievementsList');
+    if (!list) return;
+    
+    try {
+        const user = Auth?.getUser?.();
+        if (!user) {
+            list.innerHTML = '<div class="text-center p-5">Войдите, чтобы увидеть достижения</div>';
+            return;
+        }
+        
+        const achievements = [
+            { id: 1, name: 'Первый заказ', desc: 'Создайте первый заказ', icon: 'fa-rocket', earned: false },
+            { id: 2, name: 'Отличный отзыв', desc: 'Получите 5 звёзд', icon: 'fa-star', earned: false },
+            { id: 3, name: 'Постоянный клиент', desc: 'Выполните 5 заказов', icon: 'fa-trophy', earned: false },
+            { id: 4, name: 'Мастер на все руки', desc: 'Попробуйте 3 категории', icon: 'fa-tools', earned: false },
+            { id: 5, name: 'Скоростной', desc: 'Заказ за 1 день', icon: 'fa-clock', earned: false }
+        ];
+        
+        list.innerHTML = achievements.map(ach => `
+            <div class="col-md-4">
+                <div class="card p-4 text-center ${ach.earned ? 'achievement-earned' : ''}">
+                    <i class="fas ${ach.icon} fa-2x mb-3" style="color: ${ach.earned ? 'gold' : 'var(--border)'};"></i>
+                    <h6>${ach.name}</h6>
+                    <p class="small text-secondary">${ach.desc}</p>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки достижений:', error);
+        list.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
+    }
+}
+
+async function loadFullLeaderboard() {
+    const list = document.getElementById('leaderboardList');
+    if (!list) return;
+    
+    try {
+        const snapshot = await db.collection('users')
+            .where('role', '==', window.USER_ROLE?.MASTER || 'master')
+            .orderBy('rating', 'desc')
+            .limit(20)
+            .get();
+        
+        if (snapshot.empty) {
+            list.innerHTML = '<div class="text-center p-5">Нет мастеров</div>';
+            return;
+        }
+        
+        let html = '';
+        let position = 1;
+        
+        snapshot.forEach(doc => {
+            const master = doc.data();
+            const rankClass = position <= 3 ? `rank-${position}` : '';
+            
+            html += `
+                <div class="leaderboard-item" onclick="handleViewMaster('${doc.id}')">
+                    <div class="leaderboard-rank ${rankClass}">${position}</div>
+                    <div class="leaderboard-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${safeHelpers.escapeHtml(master.name || 'Мастер')}</div>
+                        <div class="leaderboard-stats">
+                            <span><i class="fas fa-star me-1" style="color: gold;"></i>${(master.rating || 0).toFixed(1)}</span>
+                            <span><i class="fas fa-check-circle me-1" style="color: var(--success);"></i>${master.completedJobs || 0}</span>
+                            <span><i class="fas fa-comment me-1" style="color: var(--accent);"></i>${master.reviews || 0}</span>
+                        </div>
+                    </div>
+                    <div class="leaderboard-xp">${master.xp || 0} XP</div>
+                </div>
+            `;
+            position++;
+        });
+        
+        list.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки лидерборда:', error);
+        list.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
+    }
+}
+
+async function loadOnlineMasters() {
+    const select = document.getElementById('trackingMasterSelect');
+    if (!select) return;
+    
+    try {
+        // В демо-режиме показываем тестовых мастеров
+        select.innerHTML = `
+            <option value="">Выберите мастера</option>
+            <option value="master1">🔨 Иван (Сантехник)</option>
+            <option value="master2">⚡ Петр (Электрик)</option>
+            <option value="master3">🎨 Елена (Отделка)</option>
+        `;
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки онлайн мастеров:', error);
+    }
+}
+
+function updateTrackingInfo(position) {
+    const etaEl = document.getElementById('masterEta');
+    if (etaEl && position) {
+        etaEl.innerHTML = `
+            <i class="fas fa-location-dot me-2"></i>
+            Расстояние: ${position.eta?.distance || '...'} км | 
+            Время: ${position.eta?.minutes || '...'} мин
+        `;
+    }
 }
 
 // ============================================
@@ -986,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 index.js загружен и готов к работе!');
     
     // Отрисовываем блок авторизации
-    if (typeof AuthUI !== 'undefined') {
+    if (typeof AuthUI?.renderAuthBlock === 'function') {
         AuthUI.renderAuthBlock();
     }
     
@@ -1010,14 +1302,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Инициализация кнопок рейтинга
     initLeaderboardButtons();
+    
+    // Обновляем счетчик уведомлений
+    if (typeof Chats?.getUnreadCount === 'function') {
+        Chats.getUnreadCount().then(count => {
+            const badge = document.getElementById('notificationsBadge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }).catch(() => {});
+    }
 });
 
 // Подписка на изменения авторизации
-if (typeof Auth !== 'undefined') {
+if (typeof Auth?.onAuthChange === 'function') {
     Auth.onAuthChange((state) => {
         console.log('🔄 Статус авторизации изменился:', state);
         
-        if (typeof AuthUI !== 'undefined') {
+        if (typeof AuthUI?.renderAuthBlock === 'function') {
             AuthUI.renderAuthBlock();
         }
         
@@ -1062,5 +1369,7 @@ window.handleViewMaster = handleViewMaster;
 window.showAuthRequiredModal = showAuthRequiredModal;
 window.closeAuthModal = closeAuthModal;
 window.removePhoto = removePhoto;
+window.loadFullLeaderboard = loadFullLeaderboard;
+window.loadOnlineMasters = loadOnlineMasters;
 
 console.log('✅ index.js успешно загружен, все функции доступны глобально!');
