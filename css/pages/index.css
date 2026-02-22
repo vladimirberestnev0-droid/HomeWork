@@ -998,3 +998,98 @@ footer .fab:hover {
 }
 
 /* ❌ УДАЛЕНО: .row:not(#orderFormRow) { ... } — ЭТО ЛОМАЛО СЕТКУ */
+
+/* ===== ИСПРАВЛЕНИЕ ДРОПДАУНА ===== */
+#citySearchCombo {
+    z-index: 9999 !important; /* Поднимаем выше всего */
+}
+
+#cityDropdown {
+    z-index: 10000 !important; /* Ещё выше */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+    border: 2px solid var(--accent) !important;
+}
+
+/* Затемнение фона при открытом дропдауне */
+body.dropdown-open::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 9998;
+    pointer-events: none;
+}
+
+/* ===== ИСПРАВЛЕНИЕ ВЫСОТЫ КОНТЕЙНЕРОВ ===== */
+#orderFormColumn .card,
+#ordersColumn .card {
+    height: auto !important;
+    min-height: 600px !important; /* Фиксированная минимальная высота */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#ordersColumn .orders-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+#ordersList {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    max-height: 450px !important; /* Увеличено, чтобы поместилось больше заказов */
+    margin-bottom: 15px !important;
+}
+
+#loadMoreContainer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+}
+
+#loadMoreBtn {
+    background: var(--accent-light) !important;
+    color: var(--accent-dark) !important;
+    border: 2px solid var(--accent) !important;
+    font-weight: 600 !important;
+    padding: 12px !important;
+    border-radius: 40px !important;
+    transition: all 0.3s ease !important;
+}
+
+#loadMoreBtn:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(230,122,75,0.3) !important;
+}
+
+/* ===== УБИРАЕМ ПРИЛИПАНИЕ НА МОБИЛКАХ ===== */
+@media (max-width: 768px) {
+    #orderFormColumn,
+    #ordersColumn {
+        position: static !important; /* Отключаем sticky */
+        top: auto !important;
+    }
+    
+    #orderFormColumn .card,
+    #ordersColumn .card {
+        min-height: auto !important; /* Убираем минимальную высоту */
+    }
+    
+    #ordersList {
+        max-height: 400px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #ordersList {
+        max-height: 350px !important;
+    }
+}
