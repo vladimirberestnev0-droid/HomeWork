@@ -35,9 +35,9 @@
     flex: 0 0 50% !important;
     max-width: 50% !important;
     width: 50% !important;
-    height: calc(100vh - 120px) !important;
-    max-height: calc(100vh - 120px) !important;
-    overflow-y: hidden !important;
+    height: auto !important; /* УБРАЛИ жесткую высоту */
+    max-height: none !important;
+    overflow-y: visible !important;
     overflow-x: hidden !important;
     padding-right: 10px !important;
     position: sticky !important;
@@ -47,13 +47,14 @@
     flex-direction: column !important;
 }
 
-/* Заголовок "Свежие заявки" */
-.orders-header {
-    flex-shrink: 0 !important;
-    margin-bottom: 15px !important;
+/* Контейнер для списка и кнопки */
+.orders-content {
+    flex: 1 1 auto !important;
     display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    max-height: calc(100vh - 250px) !important; /* ОГРАНИЧИВАЕМ ТОЛЬКО КОНТЕЙНЕР СПИСКА */
 }
 
 /* Контейнер для списка и кнопки */
