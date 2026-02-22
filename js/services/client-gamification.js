@@ -274,6 +274,9 @@ const ClientGamification = (function() {
         MONTHLY_STREAK: 200
     };
 
+    // Хранилище функции отписки
+    let unsubscribeUser = null;
+
     // ===== ОСНОВНАЯ ЛОГИКА =====
 
     /**
@@ -874,21 +877,40 @@ const ClientGamification = (function() {
      */
     async function init(userId) {
         if (!userId) return;
-        
+
         // Первичная проверка достижений
         await checkAchievements(userId);
         
         // Обновляем UI
         await updateUI(userId);
-        
+
+        // Отписываемся от предыдущей подписки, если она была
+        if (unsubscribeUser) {
+            unsubscribeUser();
+            unsubscribeUser = null;
+        }
+
         // Подписываемся на изменения пользователя
         if (checkFirestore()) {
-            db.collection('users').doc(userId).onSnapshot(() => {
-                updateUI(userId);
-            });
+            unsubscribeUser = db.collection('users').doc(userId)
+                .onSnapshot(() => {
+                    updateUI(userId);
+                }, (error) => {
+                    console.error('Ошибка в подписке client-gamification:', error);
+                });
         }
-        
+
         console.log('✅ ClientGamification инициализирован для пользователя:', userId);
+    }
+
+    /**
+     * Очистка ресурсов (вызывать при выходе со страницы)
+     */
+    function cleanup() {
+        if (unsubscribeUser) {
+            unsubscribeUser();
+            unsubscribeUser = null;
+        }
     }
 
     // Публичное API
@@ -904,7 +926,8 @@ const ClientGamification = (function() {
         getUserAchievementsWithStatus,
         getAchievementsStats,
         updateUI,
-        init
+        init,
+        cleanup
     };
 })();
 
