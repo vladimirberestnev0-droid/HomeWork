@@ -1,10 +1,15 @@
 // ===== js/services/gamification.js =====
-// СИСТЕМА ГЕЙМИФИКАЦИИ (УРОВНИ, XP, АЧИВКИ, ТОПЫ)
+// СИСТЕМА ГЕЙМИФИКАЦИИ ДЛЯ МАСТЕРОВ
 
 const Gamification = (function() {
     // Константы
     const ORDER_STATUS = window.ORDER_STATUS || {
         COMPLETED: 'completed'
+    };
+
+    const USER_ROLE = window.USER_ROLE || {
+        MASTER: 'master',
+        CLIENT: 'client'
     };
 
     // Конфигурация уровней
@@ -259,7 +264,7 @@ const Gamification = (function() {
 
         const xpInCurrent = xp - currentLevel.minXP;
         const xpNeededForNext = nextLevel.minXP - currentLevel.minXP;
-        const progress = (xpInCurrent / xpNeededForNext) * 100;
+        const progress = Math.min(100, (xpInCurrent / xpNeededForNext) * 100);
 
         return {
             current: currentLevel,
@@ -272,7 +277,11 @@ const Gamification = (function() {
     /**
      * Добавление XP пользователю
      */
-    async function addXP(userId, amount, reason) {
+    async function addXP(userId, amount, reason, skipAchievements = false) {
+        if (!GamificationBase.checkFirestore()) {
+            return { success: false, error: 'Firestore не инициализирован' };
+        }
+        
         try {
             const userRef = db.collection('users').doc(userId);
             
@@ -314,8 +323,10 @@ const Gamification = (function() {
                 return { oldLevel, newLevel, newXP };
             });
 
-            // Проверяем ачивки
-            await checkAchievements(userId);
+            // Проверяем ачивки только если не skipAchievements
+            if (!skipAchievements) {
+                await checkAchievements(userId);
+            }
 
             return { success: true, ...result };
             
@@ -329,6 +340,8 @@ const Gamification = (function() {
      * Уведомление о повышении уровня
      */
     async function notifyLevelUp(userId, oldLevel, newLevel) {
+        if (!GamificationBase.checkFirestore()) return;
+        
         await db.collection('notifications').add({
             userId: userId,
             type: 'level_up',
@@ -343,14 +356,19 @@ const Gamification = (function() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
+        // Показываем уведомление
+        GamificationBase.showLevelUpNotification(oldLevel, newLevel);
+
         // Дарим XP за повышение
-        await addXP(userId, 100, 'Бонус за повышение уровня');
+        await addXP(userId, 100, 'Бонус за повышение уровня', true);
     }
 
     /**
      * Проверка и выдача ачивок
      */
     async function checkAchievements(userId) {
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) return [];
@@ -372,7 +390,7 @@ const Gamification = (function() {
                         newAchievements.push(key);
                         
                         // Добавляем XP за ачивку
-                        await addXP(userId, ach.xp, `achievement_${key}`);
+                        await addXP(userId, ach.xp, `achievement_${key}`, true);
                         
                         // Создаем уведомление
                         await db.collection('notifications').add({
@@ -387,6 +405,9 @@ const Gamification = (function() {
                             read: false,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+
+                        // Показываем уведомление
+                        GamificationBase.showAchievementNotification(ach, ach.xp);
                     }
                 } catch (e) {
                     console.error(`Ошибка проверки ачивки ${key}:`, e);
@@ -411,6 +432,8 @@ const Gamification = (function() {
      * Получение статистики пользователя
      */
     async function getUserStats(userId) {
+        if (!GamificationBase.checkFirestore()) return {};
+        
         try {
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) return {};
@@ -466,7 +489,7 @@ const Gamification = (function() {
 
             // Дней на платформе
             const daysOnPlatform = user.createdAt ? 
-                Math.floor((Date.now() - user.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                Math.floor((Date.now() - GamificationBase.safeGetDate(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
             return {
                 completedOrders,
@@ -495,6 +518,8 @@ const Gamification = (function() {
      * Получение топа мастеров
      */
     async function getLeaderboard(period = 'all', limit = 10) {
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             let query = db.collection('users')
                 .where('role', '==', USER_ROLE.MASTER)
@@ -535,6 +560,8 @@ const Gamification = (function() {
      * Получение топа за неделю
      */
     async function getWeeklyLeaderboard(limit = 10) {
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
@@ -557,12 +584,14 @@ const Gamification = (function() {
                 const userDoc = await db.collection('users').doc(userId).get();
                 if (userDoc.exists) {
                     const user = userDoc.data();
-                    leaders.push({
-                        id: userId,
-                        name: user.name || 'Мастер',
-                        xp: xp,
-                        level: getLevelFromXP(user.xp || 0).level
-                    });
+                    if (user.role === USER_ROLE.MASTER) {
+                        leaders.push({
+                            id: userId,
+                            name: user.name || 'Мастер',
+                            xp: xp,
+                            level: getLevelFromXP(user.xp || 0).level
+                        });
+                    }
                 }
             }
 
@@ -578,6 +607,8 @@ const Gamification = (function() {
      * Получение ачивок пользователя
      */
     async function getUserAchievements(userId) {
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) return [];
@@ -609,10 +640,10 @@ const Gamification = (function() {
      * Рендер прогресса в UI
      */
     function renderProgress(userId) {
-        const user = Auth.getUser();
+        const user = Auth?.getUser?.();
         if (!user) return;
 
-        const userData = Auth.getUserData();
+        const userData = Auth?.getUserData?.();
         if (!userData) return;
 
         const xp = userData.xp || 0;
@@ -648,6 +679,25 @@ const Gamification = (function() {
         if (progressBlock) progressBlock.classList.remove('d-none');
     }
 
+    /**
+     * Инициализация
+     */
+    async function init(userId) {
+        if (!userId) return;
+        
+        await checkAchievements(userId);
+        renderProgress(userId);
+        
+        // Подписываемся на изменения
+        if (GamificationBase.checkFirestore()) {
+            db.collection('users').doc(userId).onSnapshot(() => {
+                renderProgress(userId);
+            });
+        }
+        
+        console.log('✅ Gamification инициализирован для мастера:', userId);
+    }
+
     // Публичное API
     return {
         LEVELS,
@@ -659,7 +709,8 @@ const Gamification = (function() {
         getLeaderboard,
         getWeeklyLeaderboard,
         getUserAchievements,
-        renderProgress
+        renderProgress,
+        init
     };
 })();
 

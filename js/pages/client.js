@@ -16,6 +16,14 @@
     let reviewModal = null;
     let topupModal = null;
     let editProfileModal = null;
+    let achievementsModal = null;
+
+    // Кэш для статистики
+    let statsCache = {
+        achievements: null,
+        progress: null,
+        lastUpdate: 0
+    };
 
     // Безопасный Helpers
     const safeHelpers = {
@@ -30,7 +38,7 @@
             if (window.Helpers?.formatDate) return Helpers.formatDate(timestamp);
             if (!timestamp) return 'только что';
             try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                const date = GamificationBase?.safeGetDate(timestamp) || new Date(timestamp);
                 return date.toLocaleString('ru-RU', { 
                     day: 'numeric', 
                     month: 'long', 
@@ -48,22 +56,66 @@
                 minimumFractionDigits: 0
             }).format(amount || 0);
         },
-        showNotification: (msg, type) => {
+        showNotification: (msg, type = 'info') => {
             if (window.Helpers?.showNotification) {
                 Helpers.showNotification(msg, type);
             } else {
-                console.log(`🔔 ${type}: ${msg}`);
-                alert(msg);
+                // Создаем временное уведомление
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
+                notification.style.zIndex = '9999';
+                notification.innerHTML = msg;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('animate__fadeOutRight');
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
             }
         },
         getCategoryIcon: (cat) => {
             if (window.Helpers?.getCategoryIcon) return Helpers.getCategoryIcon(cat);
-            return 'fa-tag';
+            const icons = {
+                'Сантехника': 'fa-wrench',
+                'Электрика': 'fa-bolt',
+                'Уборка': 'fa-broom',
+                'Ремонт': 'fa-hammer',
+                'Сборка мебели': 'fa-couch',
+                'default': 'fa-tag'
+            };
+            return icons[cat] || icons.default;
         },
         pluralize: (count, words) => {
             if (window.Helpers?.pluralize) return Helpers.pluralize(count, words);
             const cases = [2, 0, 1, 1, 1, 2];
             return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
+        },
+        getStatusText: (status) => {
+            const texts = {
+                'open': 'Активен',
+                'in_progress': 'В работе',
+                'completed': 'Завершён',
+                'cancelled': 'Отменён'
+            };
+            return texts[status] || status;
+        },
+        getStatusColor: (status) => {
+            const colors = {
+                'open': '#3498db',
+                'in_progress': '#f39c12',
+                'completed': '#2ecc71',
+                'cancelled': '#e74c3c'
+            };
+            return colors[status] || '#95a5a6';
+        },
+        getStatusClass: (status) => {
+            const classes = {
+                'open': 'badge-primary',
+                'in_progress': 'badge-warning',
+                'completed': 'badge-success',
+                'cancelled': 'badge-danger'
+            };
+            return classes[status] || 'badge-secondary';
         }
     };
 
@@ -108,6 +160,9 @@
                 
                 const editEl = $('editProfileModal');
                 if (editEl) editProfileModal = new bootstrap.Modal(editEl);
+                
+                const achievementsEl = $('achievementsModal');
+                if (achievementsEl) achievementsModal = new bootstrap.Modal(achievementsEl);
             }
         } catch (error) {
             console.error('❌ Ошибка инициализации модалок:', error);
@@ -121,12 +176,14 @@
         const authRequired = $('authRequired');
         const clientCabinet = $('clientCabinet');
         const welcomeBanner = $('welcomeBanner');
+        const headerXPBadge = $('headerXPBadge');
         
         if (state.isAuthenticated && state.isClient) {
             // Показываем кабинет
             if (authRequired) authRequired.style.display = 'none';
             if (clientCabinet) clientCabinet.classList.remove('d-none');
             if (welcomeBanner) welcomeBanner.style.display = 'flex';
+            if (headerXPBadge) headerXPBadge.style.display = 'flex';
             
             // Заполняем профиль
             await loadClientProfile();
@@ -142,6 +199,9 @@
                 updateLevelProgress()
             ]);
             
+            // Инициализируем карту
+            initTrackingMap();
+            
         } else if (state.isAuthenticated && !state.isClient) {
             safeHelpers.showNotification('❌ Эта страница только для клиентов', 'warning');
             setTimeout(() => window.location.href = '/HomeWork/masters.html', 1500);
@@ -151,6 +211,7 @@
             if (authRequired) authRequired.style.display = 'block';
             if (clientCabinet) clientCabinet.classList.add('d-none');
             if (welcomeBanner) welcomeBanner.style.display = 'none';
+            if (headerXPBadge) headerXPBadge.style.display = 'none';
         }
     }
 
@@ -196,11 +257,28 @@
             // Дата регистрации
             const memberSince = $('memberSince');
             if (memberSince && userData.createdAt) {
-                const date = userData.createdAt.toDate?.() || new Date(userData.createdAt);
+                const date = GamificationBase?.safeGetDate(userData.createdAt) || new Date(userData.createdAt);
                 memberSince.textContent = date.toLocaleDateString('ru-RU', { 
                     month: 'long', 
                     year: 'numeric' 
                 });
+            }
+            
+            // Количество заказов
+            const ordersCount = $('ordersCount');
+            if (ordersCount && userData.ordersCount) {
+                ordersCount.textContent = userData.ordersCount;
+            }
+            
+            // Статистика
+            const statCompletedOrders = $('statCompletedOrders');
+            if (statCompletedOrders && userData.completedOrders) {
+                statCompletedOrders.textContent = userData.completedOrders;
+            }
+            
+            const statMastersCount = $('statMastersCount');
+            if (statMastersCount && userData.mastersCount) {
+                statMastersCount.textContent = userData.mastersCount;
             }
             
         } catch (error) {
@@ -217,31 +295,54 @@
             const user = Auth.getUser();
             if (!user) return;
             
-            const achievements = await ClientGamification.getUserAchievementsWithStatus(user.uid);
-            
-            // Показываем первые 8 достижений
-            const topAchievements = achievements.slice(0, 8);
-            
-            container.innerHTML = topAchievements.map(ach => `
-                <div class="achievement-icon-mini ${ach.earned ? 'earned' : ''}" 
-                     title="${ach.title}: ${ach.description}">
-                    <i class="fas ${ach.icon}"></i>
-                </div>
-            `).join('');
-            
-            // Обновляем статистику
-            const stats = await ClientGamification.getAchievementsStats(user.uid);
-            
-            // Обновляем счетчики если есть
-            const achievementsCount = $('achievementsCount');
-            if (achievementsCount) {
-                achievementsCount.textContent = `${stats.earned}/${stats.total}`;
+            // Используем кэш если данные свежие (менее 5 минут)
+            if (statsCache.achievements && Date.now() - statsCache.lastUpdate < 300000) {
+                renderAchievementsIcons(statsCache.achievements);
+                return;
             }
+            
+            const achievements = await ClientGamification.getUserAchievementsWithStatus(user.uid);
+            statsCache.achievements = achievements;
+            statsCache.lastUpdate = Date.now();
+            
+            renderAchievementsIcons(achievements);
             
         } catch (error) {
             console.error('❌ Ошибка загрузки достижений:', error);
-            container.innerHTML = '<div class="text-secondary">Нет достижений</div>';
+            container.innerHTML = '<div class="text-secondary small">Ошибка загрузки</div>';
         }
+    }
+
+    // ===== ОТРИСОВКА ИКОНОК ДОСТИЖЕНИЙ =====
+    function renderAchievementsIcons(achievements) {
+        const container = $('achievementsIcons');
+        if (!container) return;
+        
+        // Показываем первые 8 достижений
+        const earned = achievements.filter(a => a.earned);
+        const earnedCount = earned.length;
+        const totalCount = achievements.length;
+        
+        // Обновляем счетчик
+        const achievementsCount = $('achievementsCount');
+        if (achievementsCount) {
+            achievementsCount.textContent = `${earnedCount}/${totalCount}`;
+        }
+        
+        // Показываем первые 8 полученных, если их мало - добавляем неполученные
+        let displayAchievements = earned.slice(0, 8);
+        
+        if (displayAchievements.length < 8) {
+            const notEarned = achievements.filter(a => !a.earned).slice(0, 8 - displayAchievements.length);
+            displayAchievements = [...displayAchievements, ...notEarned];
+        }
+        
+        container.innerHTML = displayAchievements.map(ach => `
+            <div class="achievement-icon-mini ${ach.earned ? 'earned' : 'locked'}" 
+                 title="${ach.earned ? '✓ ' : '🔒 '}${ach.title}: ${ach.description}">
+                <i class="fas ${ach.icon}"></i>
+            </div>
+        `).join('');
     }
 
     // ===== ОБНОВЛЕНИЕ ПРОГРЕССА УРОВНЯ =====
@@ -271,16 +372,37 @@
                 }
             }
             
+            // Текст до следующего уровня
+            const xpToNextLevel = $('xpToNextLevel');
+            if (xpToNextLevel) {
+                if (progress.next) {
+                    xpToNextLevel.textContent = `${progress.xpToNext} XP`;
+                } else {
+                    xpToNextLevel.textContent = 'Макс. уровень';
+                }
+            }
+            
+            // Название уровня
+            const currentLevelName = $('currentLevelName');
+            if (currentLevelName) {
+                currentLevelName.textContent = progress.current.name;
+            }
+            
             // Бейдж уровня
             const levelBadge = $('levelBadge');
             if (levelBadge) {
                 levelBadge.textContent = progress.current.level;
             }
             
-            // Обновляем XP в статистике
-            const statXP = $('statXP');
-            if (statXP) {
-                statXP.textContent = `${xp} XP`;
+            // XP в шапке
+            const headerLevel = $('headerLevel');
+            if (headerLevel) {
+                headerLevel.textContent = progress.current.level;
+            }
+            
+            const headerXP = $('headerXP');
+            if (headerXP) {
+                headerXP.textContent = xp;
             }
             
         } catch (error) {
@@ -314,7 +436,20 @@
             }
             
             const orders = await Orders.getClientOrders(user.uid, filter);
-            allOrders = orders;
+            allOrders = orders || [];
+            
+            // Обновляем статистику
+            const userData = Auth.getUserData();
+            if (userData) {
+                const completedCount = allOrders.filter(o => o.status === 'completed').length;
+                const mastersCount = new Set(allOrders.filter(o => o.selectedMasterId).map(o => o.selectedMasterId)).size;
+                
+                await db.collection('users').doc(user.uid).update({
+                    ordersCount: allOrders.length,
+                    completedOrders: completedCount,
+                    mastersCount: mastersCount
+                }).catch(() => {});
+            }
             
             // Первые 5 заказов
             displayedOrders = orders.slice(0, 5);
@@ -325,7 +460,7 @@
             // Обновляем счетчик
             const ordersCount = $('ordersCount');
             if (ordersCount) {
-                ordersCount.textContent = orders.length;
+                ordersCount.textContent = allOrders.length;
             }
             
             // Показываем/скрываем кнопку "Показать ещё"
@@ -341,8 +476,8 @@
                     <i class="fas fa-exclamation-circle fa-3x mb-3" style="color: var(--danger);"></i>
                     <h5>Ошибка загрузки</h5>
                     <p class="text-secondary">${error.message}</p>
-                    <button class="btn btn-outline-secondary mt-3" onclick="loadClientOrders('${filter}')">
-                        <i class="fas fa-sync-alt me-2"></i>Повторить
+                    <button class="btn btn-outline-secondary mt-3" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Обновить страницу
                     </button>
                 </div>
             `;
@@ -383,13 +518,10 @@
         div.className = 'order-card mb-3 animate__animated animate__fadeIn';
         
         // Статус
-        const statusConfig = {
-            'open': { class: 'badge-warning', text: '🔵 Активен', icon: 'fa-clock' },
-            'in_progress': { class: 'badge-info', text: '🟢 В работе', icon: 'fa-cog fa-spin' },
-            'completed': { class: 'badge-success', text: '✅ Завершён', icon: 'fa-check-circle' }
-        };
-        
-        const status = statusConfig[order.status] || statusConfig.open;
+        const statusText = safeHelpers.getStatusText(order.status);
+        const statusClass = safeHelpers.getStatusClass(order.status);
+        const statusIcon = order.status === 'in_progress' ? 'fa-cog fa-spin' : 
+                          (order.status === 'completed' ? 'fa-check-circle' : 'fa-clock');
         
         // Фото
         let photosHtml = '';
@@ -413,17 +545,19 @@
                         <i class="fas fa-users me-2" style="color: var(--accent);"></i>
                         Отклики мастеров (${order.responses.length})
                     </h6>
-                    ${order.responses.map(resp => createResponseCard(order, resp)).join('')}
+                    <div class="responses-list">
+                        ${order.responses.map(resp => createResponseCard(order, resp)).join('')}
+                    </div>
                 </div>
             `;
         }
         
         div.innerHTML = `
             <div class="order-header">
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h4 class="order-title mb-0">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h4>
-                    <span class="badge ${status.class}">
-                        <i class="fas ${status.icon} me-1"></i>${status.text}
+                    <span class="badge ${statusClass}">
+                        <i class="fas ${statusIcon} me-1"></i>${statusText}
                     </span>
                 </div>
                 <span class="order-price">${safeHelpers.formatMoney(order.price)}</span>
@@ -450,6 +584,9 @@
         const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
         const isSelected = order.selectedMasterId === resp.masterId;
         
+        const rating = resp.masterRating || 0;
+        const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+        
         return `
             <div class="response-card ${isSelected ? 'selected' : ''}">
                 <div class="response-header">
@@ -460,7 +597,7 @@
                         <div>
                             <h6 class="mb-0">${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}</h6>
                             <div class="response-rating">
-                                <span class="rating-stars">${'★'.repeat(Math.floor(resp.masterRating || 0))}</span>
+                                <span class="rating-stars" style="color: gold;">${stars}</span>
                                 <span class="text-secondary ms-1">${resp.masterReviews || 0} отзывов</span>
                             </div>
                         </div>
@@ -522,16 +659,22 @@
             
             container.innerHTML = '';
             
-            for (const masterId of favorites) {
-                const masterDoc = await db.collection('users').doc(masterId).get();
-                if (masterDoc.exists) {
-                    const master = masterDoc.data();
+            // Загружаем мастеров параллельно
+            const masterPromises = favorites.map(masterId => 
+                db.collection('users').doc(masterId).get()
+            );
+            
+            const masterDocs = await Promise.all(masterPromises);
+            
+            masterDocs.forEach((doc, index) => {
+                if (doc.exists) {
+                    const master = doc.data();
                     const col = document.createElement('div');
                     col.className = 'col-md-6';
-                    col.innerHTML = createFavoriteCard(masterId, master);
+                    col.innerHTML = createFavoriteCard(favorites[index], master);
                     container.appendChild(col);
                 }
-            }
+            });
             
         } catch (error) {
             console.error('❌ Ошибка загрузки избранного:', error);
@@ -561,7 +704,7 @@
                         <h5 class="mb-1">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h5>
                         <p class="text-secondary mb-2">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
                         <div class="d-flex align-items-center gap-3">
-                            <span class="rating-stars">${stars}</span>
+                            <span class="rating-stars" style="color: gold;">${stars}</span>
                             <span class="text-secondary">${master.reviews || 0} отзывов</span>
                         </div>
                     </div>
@@ -700,7 +843,10 @@
                     <div class="text-center p-5">
                         <i class="fas fa-comments fa-4x mb-3" style="color: var(--border);"></i>
                         <h4>Нет активных чатов</h4>
-                        <p class="text-secondary">Начните общение с мастером после отклика</p>
+                        <p class="text-secondary mb-4">Начните общение с мастером после отклика</p>
+                        <a href="/HomeWork/" class="btn btn-outline-secondary">
+                            <i class="fas fa-plus-circle me-2"></i>Создать заказ
+                        </a>
                     </div>
                 `;
                 return;
@@ -708,36 +854,43 @@
             
             container.innerHTML = '';
             
-            for (const doc of chatsSnapshot.docs) {
+            // Загружаем данные собеседников параллельно
+            const chatPromises = chatsSnapshot.docs.map(async (doc) => {
                 const chat = doc.data();
                 const otherId = chat.participants.find(id => id !== user.uid);
                 
                 if (otherId) {
                     const otherDoc = await db.collection('users').doc(otherId).get();
                     const other = otherDoc.data();
-                    
-                    const card = document.createElement('div');
-                    card.className = 'chat-card mb-2';
-                    card.onclick = () => window.location.href = `/HomeWork/chat.html?chatId=${doc.id}`;
-                    
-                    card.innerHTML = `
-                        <div class="chat-avatar">
-                            <i class="fas ${other.role === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">${safeHelpers.escapeHtml(other.name || 'Пользователь')}</div>
-                            <div class="chat-last-message">${chat.lastMessage || 'Нет сообщений'}</div>
-                        </div>
-                        <div class="chat-time">${safeHelpers.formatDate(chat.lastMessageAt)}</div>
-                        ${chat.unreadCount ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
-                    `;
-                    
-                    container.appendChild(card);
+                    return { chat, other, chatId: doc.id };
                 }
-            }
+                return null;
+            });
+            
+            const chatData = await Promise.all(chatPromises);
+            
+            chatData.filter(c => c).forEach(({ chat, other, chatId }) => {
+                const card = document.createElement('div');
+                card.className = 'chat-card mb-2';
+                card.onclick = () => window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
+                
+                card.innerHTML = `
+                    <div class="chat-avatar">
+                        <i class="fas ${other.role === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name">${safeHelpers.escapeHtml(other.name || 'Пользователь')}</div>
+                        <div class="chat-last-message">${chat.lastMessage || 'Нет сообщений'}</div>
+                    </div>
+                    <div class="chat-time">${safeHelpers.formatDate(chat.lastMessageAt)}</div>
+                    ${chat.unreadCount ? `<span class="chat-unread">${chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>` : ''}
+                `;
+                
+                container.appendChild(card);
+            });
             
             // Обновляем бейдж непрочитанных
-            const unreadCount = chatsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().unreadCount || 0), 0);
+            const unreadCount = chatData.reduce((sum, c) => sum + (c?.chat.unreadCount || 0), 0);
             const badge = $('unreadMessagesBadge');
             if (badge) {
                 badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
@@ -794,24 +947,30 @@
             
             container.innerHTML = html;
             
-            // Инициализируем карту
-            initTrackingMap();
-            
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов для отслеживания:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Ошибка загрузки заказов
+                </div>
+            `;
         }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ ОТСЛЕЖИВАНИЯ =====
     function initTrackingMap() {
-        if (typeof ymaps === 'undefined') return;
+        if (typeof ymaps === 'undefined') {
+            console.warn('⚠️ Яндекс.Карты не загружены');
+            return;
+        }
         
         ymaps.ready(() => {
             const mapEl = $('trackingMap');
             if (!mapEl) return;
             
             const map = new ymaps.Map('trackingMap', {
-                center: [61.0, 69.0],
+                center: [55.76, 37.64], // Москва по умолчанию
                 zoom: 10
             });
             
@@ -820,49 +979,68 @@
             if (select) {
                 select.addEventListener('change', async (e) => {
                     const orderId = e.target.value;
-                    if (!orderId) return;
+                    if (!orderId) {
+                        map.geoObjects.removeAll();
+                        return;
+                    }
                     
-                    const orderDoc = await db.collection('orders').doc(orderId).get();
-                    const order = orderDoc.data();
-                    
-                    if (order.latitude && order.longitude) {
+                    try {
+                        const orderDoc = await db.collection('orders').doc(orderId).get();
+                        const order = orderDoc.data();
+                        
                         map.geoObjects.removeAll();
                         
-                        // Точка заказа
-                        const orderPlacemark = new ymaps.Placemark(
-                            [order.latitude, order.longitude],
-                            { hintContent: 'Ваш заказ', balloonContent: order.title },
-                            { preset: 'islands#greenIcon' }
-                        );
-                        map.geoObjects.add(orderPlacemark);
-                        
-                        // Точка мастера (если есть)
-                        if (order.masterLatitude && order.masterLongitude) {
-                            const masterPlacemark = new ymaps.Placemark(
-                                [order.masterLatitude, order.masterLongitude],
-                                { hintContent: 'Мастер', balloonContent: 'Мастер в пути' },
-                                { preset: 'islands#blueIcon' }
+                        if (order.latitude && order.longitude) {
+                            // Точка заказа
+                            const orderPlacemark = new ymaps.Placemark(
+                                [order.latitude, order.longitude],
+                                { 
+                                    hintContent: '📍 Ваш заказ',
+                                    balloonContent: `<b>${order.title || 'Заказ'}</b><br>${order.address || ''}`
+                                },
+                                { preset: 'islands#greenIcon' }
                             );
-                            map.geoObjects.add(masterPlacemark);
+                            map.geoObjects.add(orderPlacemark);
                             
-                            // Маршрут
-                            const multiRoute = new ymaps.multiRouter.MultiRoute({
-                                referencePoints: [
+                            // Точка мастера (если есть)
+                            if (order.masterLatitude && order.masterLongitude) {
+                                const masterPlacemark = new ymaps.Placemark(
                                     [order.masterLatitude, order.masterLongitude],
-                                    [order.latitude, order.longitude]
-                                ],
-                                params: { routingMode: 'auto' }
-                            }, {
-                                boundsAutoApply: true
-                            });
+                                    { 
+                                        hintContent: '🔧 Мастер',
+                                        balloonContent: `<b>${order.masterName || 'Мастер'}</b><br>В пути к вам`
+                                    },
+                                    { preset: 'islands#blueIcon' }
+                                );
+                                map.geoObjects.add(masterPlacemark);
+                                
+                                // Маршрут
+                                try {
+                                    const multiRoute = new ymaps.multiRouter.MultiRoute({
+                                        referencePoints: [
+                                            [order.masterLatitude, order.masterLongitude],
+                                            [order.latitude, order.longitude]
+                                        ],
+                                        params: { routingMode: 'auto' }
+                                    }, {
+                                        boundsAutoApply: true
+                                    });
+                                    
+                                    map.geoObjects.add(multiRoute);
+                                } catch (routeError) {
+                                    console.warn('⚠️ Ошибка построения маршрута:', routeError);
+                                }
+                                
+                                // Обновляем информацию
+                                await updateTrackingInfo(order);
+                            }
                             
-                            map.geoObjects.add(multiRoute);
-                            
-                            // Обновляем информацию
-                            await updateTrackingInfo(order);
+                            map.setCenter([order.latitude, order.longitude], 12);
                         }
                         
-                        map.setCenter([order.latitude, order.longitude], 12);
+                    } catch (error) {
+                        console.error('❌ Ошибка загрузки данных для карты:', error);
+                        safeHelpers.showNotification('Ошибка загрузки данных для карты', 'error');
                     }
                 });
             }
@@ -876,29 +1054,43 @@
         
         panel.style.display = 'block';
         
-        // Здесь можно добавить расчет ETA и расстояния
+        // Рассчитываем примерное время (для демо)
+        const eta = Math.floor(Math.random() * 30) + 15; // 15-45 минут
+        
         panel.innerHTML = `
             <div class="tracking-info-card">
-                <h6 class="mb-3"><i class="fas fa-info-circle me-2" style="color: var(--accent);"></i>Информация о заказе</h6>
+                <h6 class="mb-3">
+                    <i class="fas fa-info-circle me-2" style="color: var(--accent);"></i>
+                    Информация о заказе
+                </h6>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <div class="tracking-stat">
                             <span class="tracking-label">Мастер</span>
-                            <span class="tracking-value" id="trackingMasterName">${order.masterName || 'Неизвестно'}</span>
+                            <span class="tracking-value" id="trackingMasterName">${safeHelpers.escapeHtml(order.masterName || 'Неизвестно')}</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="tracking-stat">
                             <span class="tracking-label">Телефон мастера</span>
-                            <span class="tracking-value" id="trackingMasterPhone">${order.masterPhone || 'Скрыт'}</span>
+                            <span class="tracking-value" id="trackingMasterPhone">
+                                <a href="tel:${order.masterPhone}">${order.masterPhone || 'Скрыт'}</a>
+                            </span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="tracking-stat">
                             <span class="tracking-label">Ориентировочное время</span>
-                            <span class="tracking-value tracking-eta">≈ 30-40 минут</span>
+                            <span class="tracking-value tracking-eta">
+                                <i class="fas fa-clock me-1"></i>≈ ${eta} минут
+                            </span>
                         </div>
                     </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openChat('${order.id}', '${order.selectedMasterId}')">
+                        <i class="fas fa-comment me-1"></i> Написать мастеру
+                    </button>
                 </div>
             </div>
         `;
@@ -923,13 +1115,19 @@
                 if (user && window.ClientGamification) {
                     await ClientGamification.addXP(user.uid, 10, 'Выбор мастера');
                     await ClientGamification.checkAchievements(user.uid);
+                    
+                    // Обновляем прогресс
+                    await updateLevelProgress();
+                    await loadAchievements();
                 }
                 
                 // Перезагружаем заказы
                 await loadClientOrders(currentFilter);
                 
                 // Открываем чат
-                window.open(`/HomeWork/chat.html?orderId=${orderId}&masterId=${masterId}`);
+                setTimeout(() => {
+                    window.open(`/HomeWork/chat.html?orderId=${orderId}&masterId=${masterId}`, '_blank');
+                }, 500);
             } else {
                 safeHelpers.showNotification(result.error || '❌ Ошибка при выборе мастера', 'error');
             }
@@ -956,7 +1154,7 @@
             infoEl.innerHTML = `
                 <div class="d-flex align-items-center gap-3">
                     <div class="review-master-avatar">
-                        <i class="fas fa-user-tie"></i>
+                        <i class="fas fa-user-tie fa-2x"></i>
                     </div>
                     <div>
                         <h5 class="mb-1">${masterName}</h5>
@@ -978,19 +1176,20 @@
     // ===== ОТПРАВКА ОТЗЫВА =====
     async function submitReview() {
         if (!currentRating) {
-            alert('Пожалуйста, поставьте оценку!');
+            safeHelpers.showNotification('Пожалуйста, поставьте оценку!', 'warning');
             return;
         }
         
         try {
             const reviewText = $('reviewText')?.value || '';
             const user = Auth.getUser();
+            const userData = Auth.getUserData();
             
             if (!user) throw new Error('Не авторизован');
             
             const review = {
                 clientId: user.uid,
-                clientName: Auth.getUserData()?.name || 'Клиент',
+                clientName: userData?.name || 'Клиент',
                 masterId: currentMasterId,
                 rating: currentRating,
                 text: reviewText,
@@ -1027,10 +1226,14 @@
             if (window.ClientGamification) {
                 await ClientGamification.addXP(user.uid, 10, 'Оставил отзыв');
                 await ClientGamification.checkAchievements(user.uid);
+                
+                // Обновляем прогресс
+                await updateLevelProgress();
+                await loadAchievements();
             }
 
             if (reviewModal) reviewModal.hide();
-            safeHelpers.showNotification('✅ Спасибо за отзыв!', 'success');
+            safeHelpers.showNotification('✅ Спасибо за отзыв! +10 XP', 'success');
             
             // Обновляем заказы
             await loadClientOrders(currentFilter);
@@ -1052,6 +1255,61 @@
         document.querySelectorAll('.tab-content-modern').forEach(content => {
             content.classList.toggle('active', content.id === tabId + 'Tab');
         });
+        
+        // Если перешли на таб достижений, загружаем их
+        if (tabId === 'achievements') {
+            loadFullAchievements();
+        }
+    }
+
+    // ===== ЗАГРУЗКА ПОЛНОГО СПИСКА ДОСТИЖЕНИЙ =====
+    async function loadFullAchievements() {
+        try {
+            const user = Auth.getUser();
+            if (!user) return;
+            
+            const achievements = await ClientGamification.getUserAchievementsWithStatus(user.uid);
+            const stats = await ClientGamification.getAchievementsStats(user.uid);
+            
+            // Обновляем статистику
+            const earnedEl = $('achievementsEarned');
+            if (earnedEl) earnedEl.textContent = stats.earned;
+            
+            const totalEl = $('achievementsTotal');
+            if (totalEl) totalEl.textContent = stats.total;
+            
+            const progressEl = $('achievementsProgress');
+            if (progressEl) progressEl.textContent = stats.percent + '%';
+            
+            // Группируем по категориям
+            const groups = {
+                orders: achievements.filter(a => a.group === 'orders'),
+                budget: achievements.filter(a => a.group === 'budget'),
+                reviews: achievements.filter(a => a.group === 'reviews'),
+                categories: achievements.filter(a => a.group === 'categories'),
+                special: achievements.filter(a => a.group === 'special')
+            };
+            
+            // Отрисовываем каждую группу
+            Object.entries(groups).forEach(([group, items]) => {
+                const grid = $(`achievements${group.charAt(0).toUpperCase() + group.slice(1)}Grid`);
+                if (grid) {
+                    grid.innerHTML = items.map(ach => `
+                        <div class="achievement-card ${ach.earned ? 'earned' : ''}">
+                            <div class="achievement-icon">
+                                <i class="fas ${ach.icon}" style="color: ${ach.earned ? 'gold' : ach.color}"></i>
+                            </div>
+                            <div class="achievement-name">${ach.title}</div>
+                            <div class="achievement-description">${ach.description}</div>
+                            <div class="achievement-xp">+${ach.xp} XP</div>
+                        </div>
+                    `).join('');
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки достижений:', error);
+        }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
@@ -1099,6 +1357,13 @@
                 if (topupModal) topupModal.show();
             });
         }
+        
+        const showTopupModal = $('showTopupModal');
+        if (showTopupModal) {
+            showTopupModal.addEventListener('click', () => {
+                if (topupModal) topupModal.show();
+            });
+        }
 
         // Кнопка показать ещё
         const loadMoreBtn = $('loadMoreOrders');
@@ -1118,20 +1383,43 @@
         // Выход
         const logoutLink = $('logoutLink');
         if (logoutLink) {
-            logoutLink.addEventListener('click', (e) => {
+            logoutLink.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (window.Auth?.logout) {
-                    Auth.logout().then(() => {
-                        window.location.href = '/HomeWork/';
-                    });
+                    await Auth.logout();
+                    window.location.href = '/HomeWork/';
                 }
             });
         }
 
         // Темная тема
         const themeToggle = $('themeToggle');
-        if (themeToggle && window.Auth?.toggleTheme) {
-            themeToggle.addEventListener('click', Auth.toggleTheme);
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-theme');
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    if (document.body.classList.contains('dark-theme')) {
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                        localStorage.setItem('theme', 'dark');
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                        localStorage.setItem('theme', 'light');
+                    }
+                }
+            });
+            
+            // Устанавливаем сохраненную тему
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+            }
         }
 
         // Уведомления
@@ -1181,6 +1469,35 @@
                 safeHelpers.showNotification('Вывод средств будет доступен позже', 'info');
             });
         }
+
+        // Загрузка фото для отзыва
+        const uploadArea = $('reviewUploadArea');
+        const photoInput = $('reviewPhotoInput');
+        
+        if (uploadArea && photoInput) {
+            uploadArea.addEventListener('click', () => {
+                photoInput.click();
+            });
+            
+            photoInput.addEventListener('change', (e) => {
+                const preview = $('reviewPhotoPreview');
+                if (preview && e.target.files.length > 0) {
+                    preview.innerHTML = Array.from(e.target.files).map(file => `
+                        <img src="${URL.createObjectURL(file)}" class="review-photo-preview" 
+                             onclick="window.open('${URL.createObjectURL(file)}')">
+                    `).join('');
+                }
+            });
+        }
+        
+        // Показать все достижения
+        const showAllBtn = $('showAllAchievementsBtn');
+        if (showAllBtn) {
+            showAllBtn.addEventListener('click', async () => {
+                await loadFullAchievements();
+                if (achievementsModal) achievementsModal.show();
+            });
+        }
     }
 
     // ===== СОХРАНЕНИЕ ПРОФИЛЯ =====
@@ -1222,34 +1539,52 @@
         }
         
         try {
-            // Здесь будет интеграция с платежной системой
-            safeHelpers.showNotification(`Переход к оплате на сумму ${amount} ₽...`, 'info');
+            // Показываем загрузку
+            safeHelpers.showNotification(`⏳ Подготовка платежа на сумму ${amount} ₽...`, 'info');
             
+            // Здесь будет интеграция с платежной системой
             // Для демо просто добавляем баланс
             const user = Auth.getUser();
             if (user) {
                 const userData = Auth.getUserData();
                 const currentBalance = userData.balance || 0;
                 
+                // Добавляем бонус при пополнении от 1000
+                let bonus = 0;
+                if (amount >= 1000) {
+                    bonus = Math.floor(amount * 0.05); // 5% бонус
+                }
+                
+                const totalAmount = amount + bonus;
+                
                 await db.collection('users').doc(user.uid).update({
-                    balance: currentBalance + amount
+                    balance: currentBalance + totalAmount
                 });
                 
                 // Логируем платеж
                 await db.collection('payments').add({
                     userId: user.uid,
                     amount: amount,
+                    bonus: bonus,
+                    total: totalAmount,
                     type: 'topup',
                     status: 'completed',
-                    description: 'Пополнение баланса',
+                    description: bonus > 0 ? `Пополнение +${bonus} бонус` : 'Пополнение баланса',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Обновляем данные
-                Auth.refreshUserData();
+                if (Auth.refreshUserData) {
+                    await Auth.refreshUserData();
+                }
                 
                 if (topupModal) topupModal.hide();
-                safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽`, 'success');
+                
+                if (bonus > 0) {
+                    safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽ + ${bonus} ₽ бонус!`, 'success');
+                } else {
+                    safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽`, 'success');
+                }
                 
                 // Обновляем отображение
                 await loadClientProfile();
@@ -1304,6 +1639,8 @@
                 // Начисляем XP
                 if (window.ClientGamification) {
                     await ClientGamification.addXP(user.uid, 5, 'Добавил в избранное');
+                    await updateLevelProgress();
+                    await loadAchievements();
                 }
             }
             
@@ -1311,6 +1648,16 @@
             
         } catch (error) {
             console.error('❌ Ошибка:', error);
+            safeHelpers.showNotification('❌ Ошибка', 'error');
         }
     };
+    
+    // Обновляем данные каждые 5 минут
+    setInterval(async () => {
+        const user = Auth.getUser();
+        if (user) {
+            await updateLevelProgress();
+            await loadAchievements();
+        }
+    }, 300000);
 })();

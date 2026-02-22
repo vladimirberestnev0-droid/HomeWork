@@ -1,5 +1,5 @@
 // ===== js/services/client-gamification.js =====
-// ГЕЙМИФИКАЦИЯ ДЛЯ КЛИЕНТОВ (достижения, уровни, XP)
+// ГЕЙМИФИКАЦИЯ ДЛЯ КЛИЕНТОВ (достижения, уровни, XP) - ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 const ClientGamification = (function() {
     // ===== КОНСТАНТЫ =====
@@ -303,13 +303,14 @@ const ClientGamification = (function() {
                 progress: 100,
                 xpNeeded: 0,
                 xpInCurrent: xp - currentLevel.minXP,
-                next: null
+                next: null,
+                xpToNext: 0
             };
         }
 
         const xpInCurrent = xp - currentLevel.minXP;
         const xpNeededForNext = nextLevel.minXP - currentLevel.minXP;
-        const progress = (xpInCurrent / xpNeededForNext) * 100;
+        const progress = Math.min(100, (xpInCurrent / xpNeededForNext) * 100);
 
         return {
             current: currentLevel,
@@ -317,7 +318,8 @@ const ClientGamification = (function() {
             progress: Math.min(100, progress),
             xpNeeded: nextLevel.minXP - xp,
             xpInCurrent: xpInCurrent,
-            xpNeededForNext: xpNeededForNext
+            xpNeededForNext: xpNeededForNext,
+            xpToNext: nextLevel.minXP - xp
         };
     }
 
@@ -325,6 +327,9 @@ const ClientGamification = (function() {
      * Собрать статистику клиента
      */
     async function getClientStats(userId) {
+        // Проверка Firestore
+        if (!GamificationBase.checkFirestore()) return {};
+        
         try {
             // Получаем информацию о пользователе
             const userDoc = await db.collection('users').doc(userId).get();
@@ -347,15 +352,11 @@ const ClientGamification = (function() {
             let nightOrders = 0;
             let masterFrequency = {};
 
-            const now = new Date();
-            const nineAM = new Date(now).setHours(9, 0, 0, 0);
-            const elevenPM = new Date(now).setHours(23, 0, 0, 0);
-
             for (const doc of ordersSnapshot.docs) {
                 const order = doc.data();
                 totalOrders++;
                 
-                if (order.status === ORDER_STATUS.COMPLETED) {
+                if (order.status === GamificationBase.ORDER_STATUS.COMPLETED) {
                     completedOrders++;
                     totalSpent += order.price || 0;
                 }
@@ -366,14 +367,14 @@ const ClientGamification = (function() {
                 }
 
                 // Фото
-                if (order.photos && order.photos.length > 0) {
+                if (order.photos && Array.isArray(order.photos)) {
                     photosUploaded += order.photos.length;
                 }
 
                 // Быстрые решения
                 if (order.createdAt && order.selectedMasterId) {
-                    const createdTime = order.createdAt.toDate?.() || new Date(order.createdAt);
-                    const selectedTime = order.selectedAt?.toDate?.() || new Date(order.selectedAt || createdTime);
+                    const createdTime = GamificationBase.safeGetDate(order.createdAt);
+                    const selectedTime = order.selectedAt ? GamificationBase.safeGetDate(order.selectedAt) : createdTime;
                     const diffHours = (selectedTime - createdTime) / (1000 * 60 * 60);
                     
                     if (diffHours <= 1) {
@@ -383,7 +384,7 @@ const ClientGamification = (function() {
 
                 // Время создания заказа
                 if (order.createdAt) {
-                    const createdTime = order.createdAt.toDate?.() || new Date(order.createdAt);
+                    const createdTime = GamificationBase.safeGetDate(order.createdAt);
                     const hours = createdTime.getHours();
                     
                     if (hours < 9) earlyOrders++;
@@ -411,12 +412,13 @@ const ClientGamification = (function() {
             // Избранные мастера
             const favoritesCount = user.favorites?.length || 0;
 
-            // Любимый мастер
-            const favoriteMasterCount = Math.max(...Object.values(masterFrequency), 0);
+            // Любимый мастер (исправлено)
+            const frequencies = Object.values(masterFrequency);
+            const favoriteMasterCount = frequencies.length > 0 ? Math.max(...frequencies) : 0;
 
             // Дней на платформе
             const daysOnPlatform = user.createdAt ? 
-                Math.floor((Date.now() - (user.createdAt.toDate?.() || new Date(user.createdAt)).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                Math.floor((Date.now() - GamificationBase.safeGetDate(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
             return {
                 totalOrders,
@@ -444,7 +446,10 @@ const ClientGamification = (function() {
     /**
      * Проверить и выдать достижения
      */
-    async function checkAchievements(userId) {
+    async function checkAchievements(userId, skipXP = false) {
+        // Проверка Firestore
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) return [];
@@ -462,10 +467,10 @@ const ClientGamification = (function() {
                     if (ach.condition(stats)) {
                         newAchievements.push(key);
                         
-                        // Начисляем XP
+                        // Начисляем XP только если не skipXP
                         const xpReward = ach.xp || 0;
-                        if (xpReward > 0) {
-                            await addXP(userId, xpReward, `achievement_${key}`);
+                        if (!skipXP && xpReward > 0) {
+                            await addXP(userId, xpReward, `achievement_${key}`, true);
                         }
                         
                         // Создаем уведомление
@@ -483,6 +488,9 @@ const ClientGamification = (function() {
                             read: false,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+
+                        // Показываем уведомление в UI
+                        GamificationBase.showAchievementNotification(ach, xpReward);
 
                         console.log(`🏆 Клиент получил достижение: ${ach.title} (+${xpReward} XP)`);
                     }
@@ -508,7 +516,12 @@ const ClientGamification = (function() {
     /**
      * Добавить XP клиенту
      */
-    async function addXP(userId, amount, reason) {
+    async function addXP(userId, amount, reason, skipAchievements = false) {
+        // Проверка Firestore
+        if (!GamificationBase.checkFirestore()) {
+            return { success: false, error: 'Firestore не инициализирован' };
+        }
+        
         try {
             const userRef = db.collection('users').doc(userId);
             
@@ -549,6 +562,14 @@ const ClientGamification = (function() {
                 return { oldLevel, newLevel, newXP };
             });
 
+            // Проверяем ачивки только если не skipAchievements
+            if (!skipAchievements) {
+                await checkAchievements(userId, true);
+            }
+
+            // Обновляем UI
+            updateUI(userId);
+
             return { success: true, ...result };
             
         } catch (error) {
@@ -561,6 +582,9 @@ const ClientGamification = (function() {
      * Уведомление о повышении уровня
      */
     async function notifyLevelUp(userId, oldLevel, newLevel) {
+        // Проверка Firestore
+        if (!GamificationBase.checkFirestore()) return;
+        
         // Создаем уведомление
         await db.collection('notifications').add({
             userId: userId,
@@ -576,14 +600,20 @@ const ClientGamification = (function() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Дарим бонусные XP
-        await addXP(userId, 50, 'Бонус за повышение уровня');
+        // Показываем уведомление
+        GamificationBase.showLevelUpNotification(oldLevel, newLevel);
+
+        // Дарим бонусные XP (с флагом чтобы не зациклиться)
+        await addXP(userId, 50, 'Бонус за повышение уровня', true);
     }
 
     /**
      * Получить все достижения с статусом
      */
     async function getUserAchievementsWithStatus(userId) {
+        // Проверка Firestore
+        if (!GamificationBase.checkFirestore()) return [];
+        
         try {
             const userDoc = await db.collection('users').doc(userId).get();
             const earned = userDoc.exists ? (userDoc.data().achievements || []) : [];
@@ -622,7 +652,154 @@ const ClientGamification = (function() {
             }
         });
 
+        stats.percent = stats.total > 0 ? Math.round((stats.earned / stats.total) * 100) : 0;
+
         return stats;
+    }
+
+    /**
+     * Обновить UI
+     */
+    async function updateUI(userId) {
+        try {
+            const userData = Auth?.getUserData?.();
+            if (!userData) return;
+
+            const xp = userData.xp || 0;
+            const progress = getLevelProgress(xp);
+            const achievements = await getUserAchievementsWithStatus(userId);
+            const earnedCount = achievements.filter(a => a.earned).length;
+            const stats = await getAchievementsStats(userId);
+
+            // Обновляем заголовок
+            const headerLevel = document.getElementById('headerLevel');
+            const headerXP = document.getElementById('headerXP');
+            const headerXPBadge = document.getElementById('headerXPBadge');
+            
+            if (headerLevel) headerLevel.textContent = progress.current.level;
+            if (headerXP) headerXP.textContent = xp;
+            if (headerXPBadge) headerXPBadge.style.display = 'flex';
+
+            // Обновляем уровень в бейдже
+            const levelBadge = document.getElementById('levelBadge');
+            if (levelBadge) levelBadge.textContent = progress.current.level;
+
+            // Обновляем прогресс-бар
+            const xpProgressBar = document.getElementById('xpProgressBar');
+            const xpProgressText = document.getElementById('xpProgressText');
+            const currentLevelName = document.getElementById('currentLevelName');
+            const xpToNextLevel = document.getElementById('xpToNextLevel');
+
+            if (xpProgressBar) xpProgressBar.style.width = `${progress.progress}%`;
+            if (xpProgressText) {
+                if (progress.next) {
+                    xpProgressText.textContent = `${xp}/${progress.next.minXP} XP`;
+                } else {
+                    xpProgressText.textContent = `${xp} XP (макс)`;
+                }
+            }
+            if (currentLevelName) currentLevelName.textContent = progress.current.name;
+            if (xpToNextLevel) {
+                if (progress.next) {
+                    xpToNextLevel.textContent = `${progress.xpToNext} XP`;
+                } else {
+                    xpToNextLevel.textContent = 'Макс. уровень';
+                }
+            }
+
+            // Обновляем счетчик достижений
+            const achievementsCount = document.getElementById('achievementsCount');
+            if (achievementsCount) {
+                achievementsCount.textContent = `${earnedCount}/${stats.total}`;
+            }
+
+            // Обновляем мини-иконки достижений
+            const achievementsIcons = document.getElementById('achievementsIcons');
+            if (achievementsIcons) {
+                const earned = achievements.filter(a => a.earned).slice(0, 5);
+                const html = earned.map(ach => `
+                    <div class="achievement-icon-mini earned" title="${ach.title}\n${ach.description}">
+                        <i class="fas ${ach.icon}"></i>
+                    </div>
+                `).join('');
+                
+                if (earned.length === 0) {
+                    achievementsIcons.innerHTML = '<div class="text-secondary small">Нет достижений</div>';
+                } else {
+                    achievementsIcons.innerHTML = html;
+                }
+            }
+
+            // Обновляем статистику в табе достижений
+            const achievementsEarned = document.getElementById('achievementsEarned');
+            const achievementsTotal = document.getElementById('achievementsTotal');
+            const achievementsProgress = document.getElementById('achievementsProgress');
+            
+            if (achievementsEarned) achievementsEarned.textContent = stats.earned;
+            if (achievementsTotal) achievementsTotal.textContent = stats.total;
+            if (achievementsProgress) achievementsProgress.textContent = stats.percent + '%';
+
+            // Обновляем сетки достижений по группам
+            const groups = {
+                orders: document.getElementById('achievementsOrdersGrid'),
+                budget: document.getElementById('achievementsBudgetGrid'),
+                reviews: document.getElementById('achievementsReviewsGrid'),
+                categories: document.getElementById('achievementsCategoriesGrid'),
+                special: document.getElementById('achievementsSpecialGrid')
+            };
+
+            Object.entries(groups).forEach(([group, element]) => {
+                if (element) {
+                    const groupAchievements = achievements.filter(a => a.group === group);
+                    element.innerHTML = renderAchievementsGrid(groupAchievements);
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Ошибка обновления UI:', error);
+        }
+    }
+
+    /**
+     * Рендер сетки достижений
+     */
+    function renderAchievementsGrid(achievements) {
+        if (!achievements || achievements.length === 0) {
+            return '<div class="text-secondary p-3">Нет достижений в этой категории</div>';
+        }
+
+        return achievements.map(ach => `
+            <div class="achievement-card ${ach.earned ? 'earned' : ''}">
+                <div class="achievement-icon">
+                    <i class="fas ${ach.icon}" style="color: ${ach.earned ? 'gold' : ach.color}"></i>
+                </div>
+                <div class="achievement-name">${ach.title}</div>
+                <div class="achievement-description">${ach.description}</div>
+                <div class="achievement-xp">+${ach.xp} XP</div>
+            </div>
+        `).join('');
+    }
+
+    /**
+     * Инициализация
+     */
+    async function init(userId) {
+        if (!userId) return;
+        
+        // Первичная проверка достижений
+        await checkAchievements(userId);
+        
+        // Обновляем UI
+        await updateUI(userId);
+        
+        // Подписываемся на изменения пользователя
+        if (GamificationBase.checkFirestore()) {
+            db.collection('users').doc(userId).onSnapshot(() => {
+                updateUI(userId);
+            });
+        }
+        
+        console.log('✅ ClientGamification инициализирован для пользователя:', userId);
     }
 
     // Публичное API
@@ -636,7 +813,9 @@ const ClientGamification = (function() {
         checkAchievements,
         addXP,
         getUserAchievementsWithStatus,
-        getAchievementsStats
+        getAchievementsStats,
+        updateUI,
+        init
     };
 })();
 

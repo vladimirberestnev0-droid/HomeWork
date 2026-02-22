@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Animate.css для крутых анимаций -->
+    <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <!-- ===== CORE ===== -->
@@ -46,6 +46,9 @@
     <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/pages/client.css">
 
+    <!-- ===== GAMIFICATION STYLES ===== -->
+    <link rel="stylesheet" href="/HomeWork/css/components/gamification.css">
+
     <!-- ===== THEME ===== -->
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
 
@@ -54,7 +57,7 @@
 </head>
 <body>
     <div class="container py-4">
-        <!-- Шапка с улучшенным дизайном -->
+        <!-- Шапка -->
         <header class="animate__animated animate__fadeInDown">
             <a href="/HomeWork/" class="logo-link">
                 <i class="fas fa-house"></i>
@@ -65,7 +68,12 @@
                 <a href="/HomeWork/client.html" class="active">Мой кабинет</a>
                 <a href="/HomeWork/masters.html" id="masterLink" style="display: none;">Мастерам</a>
                 
-                <!-- Быстрые действия -->
+                <!-- XP в шапке -->
+                <div class="header-xp-badge" id="headerXPBadge" style="display: none;">
+                    <i class="fas fa-star"></i>
+                    <span id="headerLevel">1</span> ур. · <span id="headerXP">0</span> XP
+                </div>
+                
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="notificationsBtn" title="Уведомления">
                     <i class="fas fa-bell"></i>
                     <span class="nav-badge pulse" id="notificationsBadge">3</span>
@@ -79,7 +87,7 @@
             </nav>
         </header>
 
-        <!-- Приветственный баннер для авторизованных -->
+        <!-- Приветственный баннер -->
         <div id="welcomeBanner" class="welcome-banner animate__animated animate__fadeIn mb-4" style="display: none;">
             <div class="d-flex align-items-center gap-3">
                 <div class="avatar avatar-lg">
@@ -93,7 +101,7 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <span class="badge badge-primary animate__animated animate__pulse animate__infinite">
+                <span class="badge badge-primary animate__animated animate__pulse animate__infinite" id="levelBadgeContainer">
                     <i class="fas fa-star me-1"></i> Уровень <span id="levelBadge">1</span>
                 </span>
                 <span class="badge badge-success">
@@ -102,7 +110,7 @@
             </div>
         </div>
 
-        <!-- Блок авторизации (если не авторизован) -->
+        <!-- Блок авторизации -->
         <div id="authRequired" class="auth-required-card animate__animated animate__fadeIn">
             <div class="card p-5 text-center">
                 <i class="fas fa-user-circle fa-5x mb-4" style="color: var(--accent);"></i>
@@ -122,18 +130,24 @@
         <!-- Кабинет клиента -->
         <div id="clientCabinet" class="d-none">
             <!-- Прогресс-бар достижений -->
-            <div class="achievement-progress mb-4 animate__animated animate__fadeIn">
+            <div class="achievement-progress mb-4 animate__animated animate__fadeIn" id="achievementProgressBlock">
                 <div class="d-flex justify-content-between mb-2">
-                    <span><i class="fas fa-trophy me-2" style="color: gold;"></i> Прогресс до следующего уровня</span>
-                    <span id="xpProgressText">0/1000 XP</span>
+                    <span>
+                        <i class="fas fa-trophy me-2" style="color: gold;"></i>
+                        <span id="currentLevelName">Новичок</span>
+                    </span>
+                    <span id="xpProgressText">0/100 XP</span>
                 </div>
                 <div class="xp-bar">
                     <div class="xp-progress" id="xpProgressBar" style="width: 0%;"></div>
                 </div>
+                <div class="text-end text-secondary small mt-1">
+                    <span id="xpToNextLevel">100 XP</span> до следующего уровня
+                </div>
             </div>
 
             <div class="row g-4">
-                <!-- Левая колонка - Профиль -->
+                <!-- Левая колонка -->
                 <div class="col-lg-4">
                     <!-- Карточка профиля -->
                     <div class="profile-card animate__animated animate__fadeInLeft">
@@ -149,7 +163,7 @@
                         <h2 id="clientName" class="profile-name">Загрузка...</h2>
                         <p class="profile-role" id="clientRole">Клиент</p>
                         
-                        <!-- Рейтинг клиента -->
+                        <!-- Рейтинг -->
                         <div class="client-rating mb-3">
                             <div class="rating-stars" id="clientRatingStars">★★★★★</div>
                             <span class="text-secondary" id="clientReviews">0 отзывов</span>
@@ -189,11 +203,16 @@
                         <div class="achievements-mini mt-4">
                             <h6 class="mb-3">
                                 <i class="fas fa-medal me-2" style="color: gold;"></i>
-                                Мои достижения
+                                Мои достижения 
+                                <span class="badge bg-secondary" id="achievementsCount">0/20</span>
                             </h6>
                             <div class="achievements-icons" id="achievementsIcons">
                                 <!-- Заполняется JS -->
+                                <div class="text-center text-secondary small">Загрузка...</div>
                             </div>
+                            <button class="btn btn-link btn-sm w-100 mt-2" id="showAllAchievementsBtn">
+                                Посмотреть все
+                            </button>
                         </div>
                         
                         <!-- Быстрые действия -->
@@ -208,9 +227,9 @@
                     </div>
                 </div>
 
-                <!-- Правая колонка - Основной контент -->
+                <!-- Правая колонка -->
                 <div class="col-lg-8">
-                    <!-- Табы с иконками -->
+                    <!-- Табы -->
                     <div class="tabs-modern mb-4 animate__animated animate__fadeInRight">
                         <button class="tab-modern active" data-tab="orders">
                             <i class="fas fa-clipboard-list"></i>
@@ -232,6 +251,10 @@
                             <i class="fas fa-comment-dots"></i>
                             <span>Чаты</span>
                             <span class="tab-badge" id="unreadMessagesBadge">0</span>
+                        </button>
+                        <button class="tab-modern" data-tab="achievements">
+                            <i class="fas fa-trophy"></i>
+                            <span>Достижения</span>
                         </button>
                     </div>
 
@@ -257,7 +280,6 @@
                             </div>
                         </div>
                         
-                        <!-- Кнопка "Показать ещё" -->
                         <div id="loadMoreOrders" class="text-center mt-4" style="display: none;">
                             <button class="btn btn-outline-secondary">
                                 <i class="fas fa-chevron-down me-2"></i> Показать ещё
@@ -280,9 +302,7 @@
                             <div id="trackingMap" style="height: 300px; border-radius: 20px;"></div>
                         </div>
                         
-                        <div id="trackingInfoPanel" class="mt-4" style="display: none;">
-                            <!-- Информация о текущем отслеживании -->
-                        </div>
+                        <div id="trackingInfoPanel" class="mt-4" style="display: none;"></div>
                     </div>
 
                     <!-- Таб: Финансы -->
@@ -325,7 +345,7 @@
                         <div class="card p-4 mb-4">
                             <h5 class="mb-3">Последние операции</h5>
                             <div id="paymentsList">
-                                <!-- Заполняется JS -->
+                                <p class="text-secondary text-center">Нет операций</p>
                             </div>
                         </div>
                         
@@ -360,6 +380,73 @@
                             <!-- Заполняется JS -->
                         </div>
                     </div>
+
+                    <!-- Таб: Достижения -->
+                    <div id="achievementsTab" class="tab-content-modern">
+                        <h4 class="mb-4">
+                            <i class="fas fa-trophy me-2" style="color: gold;"></i>
+                            Мои достижения
+                        </h4>
+                        
+                        <!-- Статистика достижений -->
+                        <div class="achievements-stats mb-4">
+                            <div class="achievement-stat-card">
+                                <div class="achievement-stat-value" id="achievementsEarned">0</div>
+                                <div class="achievement-stat-label">Получено</div>
+                            </div>
+                            <div class="achievement-stat-card">
+                                <div class="achievement-stat-value" id="achievementsTotal">20</div>
+                                <div class="achievement-stat-label">Всего</div>
+                            </div>
+                            <div class="achievement-stat-card">
+                                <div class="achievement-stat-value" id="achievementsProgress">0%</div>
+                                <div class="achievement-stat-label">Прогресс</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Группы достижений -->
+                        <div class="achievements-groups">
+                            <div class="achievement-group mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-box me-2" style="color: var(--accent);"></i>
+                                    Заказы
+                                </h5>
+                                <div class="achievements-grid" id="achievementsOrdersGrid"></div>
+                            </div>
+                            
+                            <div class="achievement-group mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-coins me-2" style="color: gold;"></i>
+                                    Бюджет
+                                </h5>
+                                <div class="achievements-grid" id="achievementsBudgetGrid"></div>
+                            </div>
+                            
+                            <div class="achievement-group mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-pen me-2" style="color: #4CAF50;"></i>
+                                    Отзывы
+                                </h5>
+                                <div class="achievements-grid" id="achievementsReviewsGrid"></div>
+                            </div>
+                            
+                            <div class="achievement-group mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-tags me-2" style="color: #9C27B0;"></i>
+                                    Категории
+                                </h5>
+                                <div class="achievements-grid" id="achievementsCategoriesGrid"></div>
+                            </div>
+                            
+                            <div class="achievement-group mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-star me-2" style="color: #FF9800;"></i>
+                                    Специальные
+                                </h5>
+                                <div class="achievements-grid" id="achievementsSpecialGrid"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -367,7 +454,7 @@
 
     <!-- МОДАЛКИ -->
 
-    <!-- Модалка отзыва (улучшенная) -->
+    <!-- Модалка отзыва -->
     <div class="modal fade" id="reviewModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content modal-premium">
@@ -521,6 +608,29 @@
         </div>
     </div>
 
+    <!-- Модалка всех достижений -->
+    <div class="modal fade" id="achievementsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trophy me-2" style="color: gold;"></i>
+                        Все достижения
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="achievements-modal-stats mb-4">
+                        <!-- Статистика -->
+                    </div>
+                    <div class="achievements-modal-grid" id="achievementsModalGrid">
+                        <!-- Заполняется JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Футер -->
     <footer class="animate__animated animate__fadeInUp">
         <div class="footer-content">
@@ -550,14 +660,14 @@
         </div>
     </footer>
 
-        <!-- Скрипты -->
+    <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Яндекс.Карты для отслеживания -->
+    <!-- Яндекс.Карты -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU"></script>
     
     <script src="/HomeWork/js/core/constants-light.js"></script>
@@ -574,7 +684,8 @@
     <script src="/HomeWork/js/services/websocket.js"></script>
     <script src="/HomeWork/js/services/telegram-client.js"></script>
     
-    <!-- ==== ВОТ ЭТУ СТРОКУ ДОБАВЬ ==== -->
+    <!-- ГЕЙМИФИКАЦИЯ -->
+    <script src="/HomeWork/js/services/gamification-base.js"></script>
     <script src="/HomeWork/js/services/client-gamification.js"></script>
     
     <script src="/HomeWork/js/pages/client.js"></script>
