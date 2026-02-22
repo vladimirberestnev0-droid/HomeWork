@@ -2,6 +2,20 @@
 // ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ С FIREBASE
 
 (function() {
+    // ===== ПРОВЕРКА ГЛОБАЛЬНЫХ КОНСТАНТ =====
+    const ORDER_STATUS = window.ORDER_STATUS || {
+        OPEN: 'open',
+        IN_PROGRESS: 'in_progress',
+        COMPLETED: 'completed',
+        CANCELLED: 'cancelled'
+    };
+    
+    const USER_ROLE = window.USER_ROLE || {
+        MASTER: 'master',
+        CLIENT: 'client',
+        ADMIN: 'admin'
+    };
+
     // Состояние
     let calendar = null;
     let scheduleCalendar = null;
@@ -147,6 +161,7 @@
             
             const xp = userData.xp || 0;
             
+            // Проверяем, есть ли Gamification
             let level = { level: 1, name: 'Новичок' };
             let progress = { progress: 0, xpNeeded: 100 };
             
@@ -155,6 +170,7 @@
                 progress = Gamification.getLevelProgress(xp);
             }
             
+            // Обновляем UI с проверкой существования элементов
             const levelEl = $('masterLevel');
             if (levelEl) levelEl.textContent = `Уровень ${level.level}`;
             
@@ -176,12 +192,14 @@
                 }
             }
             
+            // Обновляем в шапке
             const headerLevel = $('headerLevelValue');
             if (headerLevel) headerLevel.textContent = level.level;
             
             const headerXP = $('headerXPValue');
             if (headerXP) headerXP.textContent = xp;
             
+            // Цвет уровня
             const levelBadge = $('headerLevel');
             if (levelBadge) {
                 levelBadge.className = `level-badge level-${level.level}`;
@@ -197,15 +215,18 @@
         try {
             const userData = state.userData;
             
+            // Имя
             const masterNameEl = $('masterName');
             if (masterNameEl) masterNameEl.innerText = userData?.name || 'Мастер';
             
+            // Роль/категория
             const masterRoleEl = $('masterRole');
             if (masterRoleEl) {
                 const categories = userData?.categories ? userData.categories.split(',')[0] : 'Строительный мастер';
                 masterRoleEl.innerText = categories;
             }
             
+            // Рейтинг
             const rating = userData?.rating || 0;
             const reviews = userData?.reviews || 0;
             
@@ -217,6 +238,7 @@
                 masterReviewsEl.innerHTML = `${reviews} ${safeHelpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
             }
             
+            // Звезды
             const starsElement = $('ratingStars');
             if (starsElement) {
                 const fullStars = Math.floor(rating);
@@ -230,6 +252,7 @@
                 starsElement.innerHTML = stars;
             }
             
+            // Опыт (если есть)
             if (userData?.experience) {
                 const expEl = $('masterExperience');
                 if (expEl) expEl.innerText = `${userData.experience} лет`;
@@ -251,6 +274,7 @@
             const user = Auth.getUser();
             if (!user) return;
             
+            // Проверяем, есть ли сервис бейджей
             if (!window.Badges) {
                 container.innerHTML = '<span class="badge badge-secondary">Скоро будут бейджи</span>';
                 return;
@@ -306,11 +330,11 @@
             
             let filtered = responses;
             if (filter === 'pending') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS?.OPEN || 'open');
+                filtered = responses.filter(r => r.status === ORDER_STATUS.OPEN);
             } else if (filter === 'accepted') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS?.IN_PROGRESS || 'in_progress');
+                filtered = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS);
             } else if (filter === 'completed') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS?.COMPLETED || 'completed');
+                filtered = responses.filter(r => r.status === ORDER_STATUS.COMPLETED);
             }
             
             updateStats(responses);
@@ -399,7 +423,7 @@
                         <i class="fas fa-comment me-2"></i>Чат
                     </button>
                     
-                    ${item.status === 'in_progress' ? `
+                    ${item.status === ORDER_STATUS.IN_PROGRESS ? `
                         <button onclick="window.mastersAPI.completeOrder('${item.orderId}')" class="btn btn-success">
                             <i class="fas fa-check-double me-2"></i>Заказ выполнен
                         </button>
@@ -412,8 +436,8 @@
     // ===== ОБНОВЛЕНИЕ СТАТИСТИКИ =====
     function updateStats(responses) {
         const total = responses.length;
-        const accepted = responses.filter(r => r.status === 'in_progress' || r.status === 'completed').length;
-        const completed = responses.filter(r => r.status === 'completed').length;
+        const accepted = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS || r.status === ORDER_STATUS.COMPLETED).length;
+        const completed = responses.filter(r => r.status === ORDER_STATUS.COMPLETED).length;
         
         const statResponses = $('statResponses');
         if (statResponses) statResponses.innerText = total;
@@ -524,7 +548,7 @@
                     
                     const orders = await db.collection('orders')
                         .where('selectedMasterId', '==', user.uid)
-                        .where('status', 'in', ['in_progress', 'completed'])
+                        .where('status', 'in', [ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.COMPLETED])
                         .get();
                     
                     const events = [];
@@ -787,7 +811,7 @@
             }
         },
 
-        // ОТКРЫТИЕ ЧАТА (ИСПРАВЛЕНО)
+        // ОТКРЫТИЕ ЧАТА
         openChat: (orderId, clientId) => {
             const user = Auth.getUser();
             if (!user) {
@@ -806,7 +830,8 @@
                 return;
             }
             // Здесь нужно получить заказ для этого клиента
-            window.location.href = `/HomeWork/chat.html?clientId=${clientId}&masterId=${user.uid}`;
+            // Для демо просто открываем главную
+            window.location.href = `/HomeWork/`;
         },
 
         // Просмотр портфолио
@@ -893,7 +918,7 @@
                 }
             } else {
                 await db.collection('orders').doc(currentOrderId).update({
-                    status: 'completed',
+                    status: ORDER_STATUS.COMPLETED,
                     completedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
@@ -992,6 +1017,8 @@
                 }
                 
                 try {
+                    if (!checkFirebase()) return;
+                    
                     await db.collection('users').doc(user.uid).update(updates);
                     
                     const modal = bootstrap.Modal.getInstance($('editProfileModal'));

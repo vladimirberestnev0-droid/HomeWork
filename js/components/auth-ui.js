@@ -1,12 +1,33 @@
 // ===== js/components/auth-ui.js =====
 // UI для авторизации (использует глобальный Auth из services/auth.js)
-// ВЕРСИЯ 3.0 — С КРАСИВЫМИ МОДАЛКАМИ И КНОПКАМИ СПРАВА
+// ВЕРСИЯ 3.1 — С КРАСИВЫМИ МОДАЛКАМИ И КНОПКАМИ СПРАВА
 
 const AuthUI = (function() {
     // Приватные переменные
     let loginModal = null;
     let registerModal = null;
     let currentAuthModal = null;
+
+    // ===== БЕЗОПАСНЫЙ HELPER ===== (ПЕРЕНЕСЕНО В НАЧАЛО!)
+    const safeHelpers = {
+        escapeHtml: (text) => {
+            if (!text) return '';
+            if (window.Helpers?.escapeHtml) return Helpers.escapeHtml(text);
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+        showNotification: (msg, type) => {
+            if (window.Helpers?.showNotification) {
+                Helpers.showNotification(msg, type);
+            } else {
+                console.log(`🔔 ${type}: ${msg}`);
+                if (type === 'error') alert(`❌ ${msg}`);
+                else if (type === 'success') alert(`✅ ${msg}`);
+                else alert(msg);
+            }
+        }
+    };
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
     
@@ -331,7 +352,7 @@ const AuthUI = (function() {
                 const userData = Auth.getUserData();
                 if (userData?.name) {
                     setTimeout(() => {
-                        safeHelpers.showNotification?.(`👋 С возвращением, ${userData.name}!`, 'success');
+                        safeHelpers.showNotification(`👋 С возвращением, ${userData.name}!`, 'success');
                     }, 500);
                 }
             } else {
@@ -422,7 +443,7 @@ const AuthUI = (function() {
                 
                 // Показываем приветственное сообщение
                 setTimeout(() => {
-                    safeHelpers.showNotification?.(
+                    safeHelpers.showNotification(
                         `✅ Добро пожаловать, ${name}!${role === 'master' ? ' Теперь вы можете откликаться на заказы' : ''}`, 
                         'success'
                     );
@@ -452,12 +473,12 @@ const AuthUI = (function() {
         const email = document.getElementById('loginEmail')?.value.trim();
         
         if (!email) {
-            safeHelpers.showNotification?.('Введите email в поле выше', 'warning');
+            safeHelpers.showNotification('Введите email в поле выше', 'warning');
             return;
         }
         
         // Здесь должен быть запрос на восстановление
-        safeHelpers.showNotification?.(
+        safeHelpers.showNotification(
             `📧 Инструкция по восстановлению пароля отправлена на ${email}`,
             'info'
         );
@@ -514,7 +535,7 @@ const AuthUI = (function() {
         setTimeout(() => {
             if (typeof Auth?.logout === 'function') {
                 Auth.logout().then(() => {
-                    safeHelpers.showNotification?.('👋 До свидания!', 'info');
+                    safeHelpers.showNotification('👋 До свидания!', 'info');
                     renderAuthBlock();
                 });
             }
@@ -617,27 +638,6 @@ const AuthUI = (function() {
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
     }
-    
-    // Безопасный Helpers (для уведомлений)
-    const safeHelpers = {
-        escapeHtml: (text) => {
-            if (!text) return '';
-            if (window.Helpers?.escapeHtml) return Helpers.escapeHtml(text);
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        },
-        showNotification: (msg, type) => {
-            if (window.Helpers?.showNotification) {
-                Helpers.showNotification(msg, type);
-            } else {
-                console.log(`🔔 ${type}: ${msg}`);
-                if (type === 'error') alert(`❌ ${msg}`);
-                else if (type === 'success') alert(`✅ ${msg}`);
-                else alert(msg);
-            }
-        }
-    };
     
     // Публичное API
     return {

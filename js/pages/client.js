@@ -2,6 +2,21 @@
 // ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КАБИНЕТ КЛИЕНТА
 
 (function() {
+    // ===== ПРОВЕРКА ГЛОБАЛЬНЫХ КОНСТАНТ =====
+    const ORDER_CATEGORIES = window.ORDER_CATEGORIES || [
+        { id: 'all', name: 'Все', icon: 'fa-list-ul' },
+        { id: 'Сантехника', name: 'Сантехника', icon: 'fa-wrench' },
+        { id: 'Электрика', name: 'Электрика', icon: 'fa-bolt' },
+        { id: 'Отделочные работы', name: 'Отделочные работы', icon: 'fa-paint-roller' }
+    ];
+    
+    const ORDER_STATUS = window.ORDER_STATUS || {
+        OPEN: 'open',
+        IN_PROGRESS: 'in_progress',
+        COMPLETED: 'completed',
+        CANCELLED: 'cancelled'
+    };
+
     // Состояние
     let currentRating = 0;
     let currentOrderId = null;
@@ -38,7 +53,9 @@
             if (window.Helpers?.formatDate) return Helpers.formatDate(timestamp);
             if (!timestamp) return 'только что';
             try {
-                const date = GamificationBase?.safeGetDate(timestamp) || new Date(timestamp);
+                const date = window.GamificationBase?.safeGetDate 
+                    ? GamificationBase.safeGetDate(timestamp) 
+                    : (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
                 return date.toLocaleString('ru-RU', { 
                     day: 'numeric', 
                     month: 'long', 
@@ -52,7 +69,9 @@
         formatShortDate: (timestamp) => {
             if (!timestamp) return '';
             try {
-                const date = GamificationBase?.safeGetDate(timestamp) || new Date(timestamp);
+                const date = window.GamificationBase?.safeGetDate 
+                    ? GamificationBase.safeGetDate(timestamp) 
+                    : (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
                 return date.toLocaleString('ru-RU', { 
                     day: 'numeric', 
                     month: 'short',
@@ -158,6 +177,21 @@
 
     // Получить элемент
     const $ = (id) => document.getElementById(id);
+
+    // ===== ПРОВЕРКА FIREBASE =====
+    function checkFirebase() {
+        if (typeof firebase === 'undefined') {
+            console.error('❌ Firebase не загружен');
+            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            return false;
+        }
+        if (typeof db === 'undefined' || !db) {
+            console.error('❌ Firestore не инициализирован');
+            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            return false;
+        }
+        return true;
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', async () => {
@@ -294,7 +328,9 @@
             // Дата регистрации
             const memberSince = $('memberSince');
             if (memberSince && userData.createdAt) {
-                const date = GamificationBase?.safeGetDate(userData.createdAt) || new Date(userData.createdAt);
+                const date = window.GamificationBase?.safeGetDate 
+                    ? GamificationBase.safeGetDate(userData.createdAt) 
+                    : (userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt));
                 memberSince.textContent = date.toLocaleDateString('ru-RU', { 
                     month: 'long', 
                     year: 'numeric' 
@@ -314,6 +350,11 @@
         try {
             const user = Auth.getUser();
             if (!user) return;
+            
+            if (!window.ClientGamification) {
+                container.innerHTML = '<div class="text-secondary small">Геймификация недоступна</div>';
+                return;
+            }
             
             if (statsCache.achievements && Date.now() - statsCache.lastUpdate < 300000) {
                 renderAchievementsIcons(statsCache.achievements);
@@ -368,6 +409,8 @@
             const userData = Auth.getUserData();
             
             if (!user || !userData) return;
+            
+            if (!window.ClientGamification) return;
             
             const xp = userData.xp || 0;
             const progress = ClientGamification.getLevelProgress(xp);
@@ -428,6 +471,8 @@
         `;
         
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -440,7 +485,7 @@
             
             const userData = Auth.getUserData();
             if (userData) {
-                const completedCount = allOrders.filter(o => o.status === 'completed').length;
+                const completedCount = allOrders.filter(o => o.status === ORDER_STATUS.COMPLETED).length;
                 const mastersCount = new Set(allOrders.filter(o => o.selectedMasterId).map(o => o.selectedMasterId)).size;
                 
                 await db.collection('users').doc(user.uid).update({
@@ -476,7 +521,7 @@
         }
     }
 
-    // ===== ОТРИСОВКА ЗАКАЗОВ (КРУТЫЕ КАРТОЧКИ) =====
+    // ===== ОТРИСОВКА ЗАКАЗОВ =====
     function renderOrders() {
         const ordersList = $('ordersList');
         if (!ordersList) return;
@@ -653,7 +698,7 @@
         return div;
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА (УЛУЧШЕННАЯ) =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
     function createResponseCard(order, resp) {
         const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
         const isSelected = order.selectedMasterId === resp.masterId;
@@ -697,13 +742,13 @@
                             <i class="fas fa-comment me-2"></i>Чат
                         </button>
                         
-                        ${order.status === 'open' && !isSelected ? `
+                        ${order.status === ORDER_STATUS.OPEN && !isSelected ? `
                             <button class="btn-response success" onclick="window.selectMaster('${order.id}', '${resp.masterId}', ${resp.price})">
                                 <i class="fas fa-check me-2"></i>Выбрать
                             </button>
                         ` : ''}
                         
-                        ${order.status === 'completed' && !hasReview ? `
+                        ${order.status === ORDER_STATUS.COMPLETED && !hasReview ? `
                             <button class="btn-response warning" onclick="window.openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
                                 <i class="fas fa-star me-2"></i>Оценить
                             </button>
@@ -745,6 +790,8 @@
         if (!container) return;
         
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -831,6 +878,8 @@
         if (!container) return;
         
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -891,6 +940,8 @@
     // ===== ОБНОВЛЕНИЕ ФИНАНСОВОЙ СТАТИСТИКИ =====
     async function updateFinanceStats() {
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -902,6 +953,8 @@
             
             const statTotalSpent = $('statTotalSpent');
             if (statTotalSpent) statTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
+            
+            if (!window.Orders) return;
             
             const orders = await Orders.getClientOrders(user.uid, 'all');
             const avgOrder = orders.length > 0 
@@ -922,6 +975,8 @@
         if (!container) return;
         
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -1010,12 +1065,14 @@
         if (!container) return;
         
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
             const ordersSnapshot = await db.collection('orders')
                 .where('clientId', '==', user.uid)
-                .where('status', '==', 'in_progress')
+                .where('status', '==', ORDER_STATUS.IN_PROGRESS)
                 .where('selectedMasterId', '!=', null)
                 .get();
             
@@ -1080,6 +1137,8 @@
                     }
                     
                     try {
+                        if (!checkFirebase()) return;
+                        
                         const orderDoc = await db.collection('orders').doc(orderId).get();
                         const order = orderDoc.data();
                         
@@ -1191,6 +1250,8 @@
         if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
         
         try {
+            if (!checkFirebase()) return;
+            
             if (!window.Orders?.selectMaster) {
                 throw new Error('Сервис заказов недоступен');
             }
@@ -1225,7 +1286,7 @@
         }
     };
 
-    // ===== ОТКРЫТИЕ ЧАТА (ИСПРАВЛЕНО) =====
+    // ===== ОТКРЫТИЕ ЧАТА =====
     window.openChat = (orderId, masterId) => {
         const user = Auth.getUser();
         if (!user) {
@@ -1273,6 +1334,8 @@
         }
         
         try {
+            if (!checkFirebase()) return;
+            
             const reviewText = $('reviewText')?.value || '';
             const user = Auth.getUser();
             const userData = Auth.getUserData();
@@ -1348,8 +1411,12 @@
     // ===== ЗАГРУЗКА ПОЛНОГО СПИСКА ДОСТИЖЕНИЙ =====
     async function loadFullAchievements() {
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
+            
+            if (!window.ClientGamification) return;
             
             const achievements = await ClientGamification.getUserAchievementsWithStatus(user.uid);
             const stats = await ClientGamification.getAchievementsStats(user.uid);
@@ -1566,6 +1633,8 @@
     // ===== СОХРАНЕНИЕ ПРОФИЛЯ =====
     async function saveProfile() {
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) throw new Error('Не авторизован');
             
@@ -1601,6 +1670,8 @@
         }
         
         try {
+            if (!checkFirebase()) return;
+            
             safeHelpers.showNotification(`⏳ Подготовка платежа на сумму ${amount} ₽...`, 'info');
             
             const user = Auth.getUser();
@@ -1653,6 +1724,8 @@
     // ===== УДАЛЕНИЕ ИЗ ИЗБРАННОГО =====
     window.removeFromFavorites = async (masterId) => {
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) return;
             
@@ -1672,6 +1745,8 @@
     // ===== ДОБАВЛЕНИЕ В ИЗБРАННОЕ =====
     window.toggleFavorite = async (masterId) => {
         try {
+            if (!checkFirebase()) return;
+            
             const user = Auth.getUser();
             if (!user) {
                 safeHelpers.showNotification('Войдите в систему', 'warning');

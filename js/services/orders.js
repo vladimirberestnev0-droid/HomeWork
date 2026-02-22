@@ -7,7 +7,7 @@ const Orders = (function() {
     let listeners = [];
 
     // Константы статусов
-    const ORDER_STATUS = {
+    const ORDER_STATUS = window.ORDER_STATUS || {
         OPEN: 'open',
         IN_PROGRESS: 'in_progress',
         COMPLETED: 'completed',
@@ -135,6 +135,8 @@ const Orders = (function() {
     // ===== СОЗДАНИЕ ЗАКАЗА =====
     async function create(orderData) {
         try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
             // Валидация
             if (!Auth.isAuthenticated()) {
                 throw new Error('Необходимо авторизоваться');
@@ -208,6 +210,8 @@ const Orders = (function() {
     // ===== УВЕДОМЛЕНИЕ МАСТЕРОВ =====
     async function notifyMasters(orderId, order) {
         try {
+            if (!checkFirebase()) return;
+            
             const mastersSnapshot = await db.collection('users')
                 .where('role', '==', 'master')
                 .where('banned', '==', false)
@@ -248,6 +252,8 @@ const Orders = (function() {
     // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ =====
     async function getOpenOrders(filters = {}) {
         try {
+            if (!checkFirebase()) return [];
+            
             const cacheKey = `open_orders_${filters.category || 'all'}`;
             
             // Проверяем кэш
@@ -304,6 +310,8 @@ const Orders = (function() {
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all') {
         try {
+            if (!checkFirebase()) return [];
+            
             let query = db.collection('orders')
                 .where('clientId', '==', clientId)
                 .orderBy('createdAt', 'desc');
@@ -333,6 +341,8 @@ const Orders = (function() {
     // ===== ПОЛУЧЕНИЕ ОТКЛИКОВ МАСТЕРА =====
     async function getMasterResponses(masterId) {
         try {
+            if (!checkFirebase()) return [];
+            
             console.log('🔍 Загружаем отклики для мастера:', masterId);
             
             const snapshot = await db.collection('orders').get();
@@ -364,9 +374,11 @@ const Orders = (function() {
         }
     }
 
-    // ===== ОТКЛИК НА ЗАКАЗ (с антиспамом) - ИСПРАВЛЕНО!!! =====
+    // ===== ОТКЛИК НА ЗАКАЗ (с антиспамом) =====
     async function respondToOrder(orderId, price, comment) {
         try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
             if (!Auth.isAuthenticated()) {
                 throw new Error('Необходимо авторизоваться');
             }
@@ -413,7 +425,7 @@ const Orders = (function() {
                 throw new Error('Вы уже откликались на этот заказ');
             }
 
-            // ✅ ИСПРАВЛЕНО: создаем объект без serverTimestamp() внутри
+            // Используем ISO строку вместо serverTimestamp() для arrayUnion
             const response = {
                 masterId: user.uid,
                 masterName: userData?.name || 'Мастер',
@@ -422,7 +434,7 @@ const Orders = (function() {
                 masterReviews: userData?.reviews || 0,
                 price: parseInt(price),
                 comment: comment || '',
-                createdAt: new Date().toISOString() // Используем ISO строку вместо serverTimestamp()
+                createdAt: new Date().toISOString()
             };
 
             await db.collection('orders').doc(orderId).update({
@@ -448,9 +460,68 @@ const Orders = (function() {
         }
     }
 
+    // ===== ОТМЕНА ОТКЛИКА (НОВАЯ ФУНКЦИЯ!) =====
+    async function cancelResponse(orderId) {
+        try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
+            if (!Auth.isAuthenticated()) {
+                throw new Error('Необходимо авторизоваться');
+            }
+
+            if (!Auth.isMaster()) {
+                throw new Error('Только мастера могут отменять отклики');
+            }
+
+            const user = Auth.getUser();
+
+            const orderDoc = await db.collection('orders').doc(orderId).get();
+            if (!orderDoc.exists) {
+                throw new Error('Заказ не найден');
+            }
+
+            const orderData = orderDoc.data();
+            
+            // Проверяем, что заказ еще открыт
+            if (orderData.status !== ORDER_STATUS.OPEN) {
+                throw new Error('Нельзя отменить отклик на неактивный заказ');
+            }
+
+            // Удаляем отклик из массива
+            const updatedResponses = (orderData.responses || []).filter(r => r.masterId !== user.uid);
+            
+            if (updatedResponses.length === orderData.responses?.length) {
+                throw new Error('Отклик не найден');
+            }
+
+            await db.collection('orders').doc(orderId).update({
+                responses: updatedResponses
+            });
+
+            // Обновляем статистику мастера
+            await db.collection('users').doc(user.uid).update({
+                totalResponses: firebase.firestore.FieldValue.increment(-1)
+            });
+
+            // Очищаем кэш
+            clearCache();
+
+            safeHelpers.showNotification('✅ Отклик отменен', 'info');
+            
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Ошибка отмены отклика:', error);
+            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
     // ===== ВЫБОР МАСТЕРА (с созданием чата!) =====
     async function selectMaster(orderId, masterId, price) {
         try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
             if (!Auth.isAuthenticated()) {
                 throw new Error('Необходимо авторизоваться');
             }
@@ -499,7 +570,7 @@ const Orders = (function() {
                 });
             });
 
-            // ✅ СОЗДАЕМ ЧАТ после успешного выбора мастера
+            // СОЗДАЕМ ЧАТ после успешного выбора мастера
             const chatResult = await createChatAfterSelection(
                 orderId, 
                 masterId, 
@@ -551,6 +622,8 @@ const Orders = (function() {
     // ===== ЗАВЕРШЕНИЕ ЗАКАЗА (с блокировкой чата) =====
     async function completeOrder(orderId) {
         try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
             console.log('🔄 Начинаем завершение заказа:', orderId);
             
             const orderDoc = await db.collection('orders').doc(orderId).get();
@@ -584,7 +657,7 @@ const Orders = (function() {
                 completedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // ✅ БЛОКИРУЕМ ЧАТ (только для чтения)
+            // БЛОКИРУЕМ ЧАТ (только для чтения)
             if (orderData.selectedMasterId) {
                 const chatId = `chat_${orderId}_${orderData.selectedMasterId}`;
                 const chatRef = db.collection('chats').doc(chatId);
@@ -646,6 +719,8 @@ const Orders = (function() {
     // ===== ОТМЕНА ЗАКАЗА =====
     async function cancelOrder(orderId) {
         try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            
             const orderDoc = await db.collection('orders').doc(orderId).get();
             
             if (!orderDoc.exists) {
@@ -683,6 +758,8 @@ const Orders = (function() {
     // ===== ПОИСК ЗАКАЗОВ =====
     async function searchOrders(query) {
         try {
+            if (!checkFirebase()) return [];
+            
             if (!query || query.length < 3) {
                 return [];
             }
@@ -720,6 +797,8 @@ const Orders = (function() {
     // ===== ДОБАВЛЕНИЕ ПРОСМОТРА =====
     async function addView(orderId) {
         try {
+            if (!checkFirebase()) return;
+            
             await db.collection('orders').doc(orderId).update({
                 views: firebase.firestore.FieldValue.increment(1)
             });
@@ -744,6 +823,8 @@ const Orders = (function() {
     // ===== СТАТИСТИКА МАСТЕРА =====
     async function getMasterStats(masterId) {
         try {
+            if (!checkFirebase()) return { total: 0, accepted: 0, completed: 0, conversion: 0 };
+            
             const responses = await getMasterResponses(masterId);
             
             const total = responses.length;
@@ -766,6 +847,8 @@ const Orders = (function() {
     // ===== ПОЛУЧЕНИЕ ЗАКАЗА ПО ID =====
     async function getOrderById(orderId) {
         try {
+            if (!checkFirebase()) return null;
+            
             const doc = await db.collection('orders').doc(orderId).get();
             if (!doc.exists) return null;
             return { id: doc.id, ...doc.data() };
@@ -795,6 +878,7 @@ const Orders = (function() {
         getClientOrders,
         getMasterResponses,
         respondToOrder,
+        cancelResponse, // НОВАЯ ФУНКЦИЯ!
         selectMaster,
         completeOrder,
         cancelOrder,

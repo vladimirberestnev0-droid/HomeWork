@@ -324,11 +324,44 @@ const ClientGamification = (function() {
     }
 
     /**
+     * Проверка Firestore
+     */
+    function checkFirestore() {
+        if (typeof db === 'undefined' || !db) {
+            console.error('❌ Firestore не инициализирован!');
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Безопасное получение даты
+     */
+    function safeGetDate(timestamp) {
+        if (!timestamp) return new Date();
+        try {
+            if (timestamp.toDate) {
+                return timestamp.toDate();
+            }
+            if (timestamp instanceof Date) {
+                return timestamp;
+            }
+            if (typeof timestamp === 'string') {
+                const date = new Date(timestamp);
+                return isNaN(date.getTime()) ? new Date() : date;
+            }
+            return new Date();
+        } catch {
+            return new Date();
+        }
+    }
+
+    /**
      * Собрать статистику клиента
      */
     async function getClientStats(userId) {
         // Проверка Firestore
-        if (!GamificationBase.checkFirestore()) return {};
+        if (!checkFirestore()) return {};
         
         try {
             // Получаем информацию о пользователе
@@ -356,7 +389,7 @@ const ClientGamification = (function() {
                 const order = doc.data();
                 totalOrders++;
                 
-                if (order.status === GamificationBase.ORDER_STATUS.COMPLETED) {
+                if (order.status === 'completed') {
                     completedOrders++;
                     totalSpent += order.price || 0;
                 }
@@ -373,8 +406,8 @@ const ClientGamification = (function() {
 
                 // Быстрые решения
                 if (order.createdAt && order.selectedMasterId) {
-                    const createdTime = GamificationBase.safeGetDate(order.createdAt);
-                    const selectedTime = order.selectedAt ? GamificationBase.safeGetDate(order.selectedAt) : createdTime;
+                    const createdTime = safeGetDate(order.createdAt);
+                    const selectedTime = order.selectedAt ? safeGetDate(order.selectedAt) : createdTime;
                     const diffHours = (selectedTime - createdTime) / (1000 * 60 * 60);
                     
                     if (diffHours <= 1) {
@@ -384,7 +417,7 @@ const ClientGamification = (function() {
 
                 // Время создания заказа
                 if (order.createdAt) {
-                    const createdTime = GamificationBase.safeGetDate(order.createdAt);
+                    const createdTime = safeGetDate(order.createdAt);
                     const hours = createdTime.getHours();
                     
                     if (hours < 9) earlyOrders++;
@@ -418,7 +451,7 @@ const ClientGamification = (function() {
 
             // Дней на платформе
             const daysOnPlatform = user.createdAt ? 
-                Math.floor((Date.now() - GamificationBase.safeGetDate(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                Math.floor((Date.now() - safeGetDate(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
             return {
                 totalOrders,
@@ -448,7 +481,7 @@ const ClientGamification = (function() {
      */
     async function checkAchievements(userId, skipXP = false) {
         // Проверка Firestore
-        if (!GamificationBase.checkFirestore()) return [];
+        if (!checkFirestore()) return [];
         
         try {
             const userDoc = await db.collection('users').doc(userId).get();
@@ -490,7 +523,7 @@ const ClientGamification = (function() {
                         });
 
                         // Показываем уведомление в UI
-                        GamificationBase.showAchievementNotification(ach, xpReward);
+                        showAchievementNotification(ach, xpReward);
 
                         console.log(`🏆 Клиент получил достижение: ${ach.title} (+${xpReward} XP)`);
                     }
@@ -518,7 +551,7 @@ const ClientGamification = (function() {
      */
     async function addXP(userId, amount, reason, skipAchievements = false) {
         // Проверка Firestore
-        if (!GamificationBase.checkFirestore()) {
+        if (!checkFirestore()) {
             return { success: false, error: 'Firestore не инициализирован' };
         }
         
@@ -568,7 +601,7 @@ const ClientGamification = (function() {
             }
 
             // Обновляем UI
-            updateUI(userId);
+            await updateUI(userId);
 
             return { success: true, ...result };
             
@@ -583,7 +616,7 @@ const ClientGamification = (function() {
      */
     async function notifyLevelUp(userId, oldLevel, newLevel) {
         // Проверка Firestore
-        if (!GamificationBase.checkFirestore()) return;
+        if (!checkFirestore()) return;
         
         // Создаем уведомление
         await db.collection('notifications').add({
@@ -601,10 +634,66 @@ const ClientGamification = (function() {
         });
 
         // Показываем уведомление
-        GamificationBase.showLevelUpNotification(oldLevel, newLevel);
+        showLevelUpNotification(oldLevel, newLevel);
 
         // Дарим бонусные XP (с флагом чтобы не зациклиться)
         await addXP(userId, 50, 'Бонус за повышение уровня', true);
+    }
+
+    /**
+     * Показать уведомление о достижении
+     */
+    function showAchievementNotification(achievement, xp) {
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification animate__animated animate__fadeInRight';
+        notification.innerHTML = `
+            <div class="achievement-notification-content">
+                <div class="achievement-notification-icon">
+                    <i class="fas ${achievement.icon || 'fa-trophy'}"></i>
+                </div>
+                <div class="achievement-notification-text">
+                    <h4>🏆 Новое достижение!</h4>
+                    <p>${achievement.title}</p>
+                    <span class="achievement-notification-xp">+${xp} XP</span>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('animate__fadeOutRight');
+            setTimeout(() => notification.remove(), 500);
+        }, 5000);
+    }
+
+    /**
+     * Показать уведомление о повышении уровня
+     */
+    function showLevelUpNotification(oldLevel, newLevel) {
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification animate__animated animate__fadeInRight';
+        notification.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)';
+        notification.style.color = '#333';
+        notification.innerHTML = `
+            <div class="achievement-notification-content">
+                <div class="achievement-notification-icon" style="background: white;">
+                    <i class="fas fa-arrow-up" style="color: gold;"></i>
+                </div>
+                <div class="achievement-notification-text">
+                    <h4>🎉 Уровень повышен!</h4>
+                    <p>${oldLevel.name} → ${newLevel.name}</p>
+                    <span class="achievement-notification-xp" style="background: rgba(0,0,0,0.1);">+50 XP бонус</span>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('animate__fadeOutRight');
+            setTimeout(() => notification.remove(), 500);
+        }, 5000);
     }
 
     /**
@@ -612,7 +701,7 @@ const ClientGamification = (function() {
      */
     async function getUserAchievementsWithStatus(userId) {
         // Проверка Firestore
-        if (!GamificationBase.checkFirestore()) return [];
+        if (!checkFirestore()) return [];
         
         try {
             const userDoc = await db.collection('users').doc(userId).get();
@@ -793,7 +882,7 @@ const ClientGamification = (function() {
         await updateUI(userId);
         
         // Подписываемся на изменения пользователя
-        if (GamificationBase.checkFirestore()) {
+        if (checkFirestore()) {
             db.collection('users').doc(userId).onSnapshot(() => {
                 updateUI(userId);
             });
