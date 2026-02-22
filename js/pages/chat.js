@@ -1,12 +1,12 @@
-// ===== CHAT-PAGE.JS — Логика страницы чата =====
+// ===== chat.js =====
+// ПРЕМИУМ ЧАТ С ГОЛОСОВЫМИ, ФАЙЛАМИ И ЭМОДЗИ
 
 (function() {
-    // Параметры URL
+    // ===== СОСТОЯНИЕ =====
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('orderId');
     const masterId = urlParams.get('masterId');
-
-    // Состояние
+    
     let chatId = null;
     let orderData = null;
     let partnerId = null;
@@ -17,93 +17,101 @@
     let audioChunks = [];
     let recordingInterval = null;
     let recordingSeconds = 0;
+    let unsubscribeMessages = null;
+    let unsubscribeTyping = null;
+    let unsubscribeStatus = null;
+    let typingTimeout = null;
     
-    // Кэш для данных пользователей
+    // Кэш для пользователей
     const userCache = new Map();
+    
+    // Эмодзи для панели
+    const EMOJIS = ['😊', '😂', '❤️', '👍', '🔥', '🎉', '🤔', '😢', '😡', '👋', '✅', '❌', '⭐', '💰', '🔨', '🛠️', '🚗', '📦', '⏰', '📍'];
 
-    // Инициализация
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!orderId || !masterId) {
-            alert('Ошибка: не указан заказ или мастер');
-            window.location.href = 'index.html';
-            return;
-        }
-
-        let authChecked = false;
-        
-        Auth.onAuthChange(async (state) => {
-            console.log('🔄 Статус авторизации в чате:', state);
-            
-            if (!authChecked) {
-                authChecked = true;
+    // ===== БЕЗОПАСНЫЕ HELPERЫ =====
+    const safeHelpers = {
+        escapeHtml: (text) => {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+        formatDate: (timestamp) => {
+            if (!timestamp) return 'только что';
+            try {
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
                 
-                if (!state.isAuthenticated) {
-                    console.log('⏳ Ожидаем авторизацию...');
-                    setTimeout(() => {
-                        if (!Auth.isAuthenticated()) {
-                            console.log('❌ Авторизация не загрузилась, редирект на главную');
-                            window.location.href = 'index.html';
-                        }
-                    }, 2000);
-                    return;
+                // Сегодня
+                if (diff < 86400000 && date.getDate() === now.getDate()) {
+                    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 }
-            }
-            
-            if (state.isAuthenticated) {
-                const startTime = Date.now();
-                await loadOrderData();
-                await initializeChat();
-                
-                // Подписываемся на сообщения
-                Chats.listenToMessages(chatId, displayMessages);
-                
-                // Настраиваем индикатор печати
-                Chats.setupTypingIndicator(chatId);
-                
-                // Слушаем печатание собеседника
-                Chats.listenToTyping(chatId, (isTyping) => {
-                    const indicator = document.getElementById('typingIndicator');
-                    if (indicator) {
-                        indicator.classList.toggle('hidden', !isTyping);
-                    }
+                // Вчера
+                if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
+                    return 'вчера ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                }
+                // Старше
+                return date.toLocaleString('ru-RU', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
                 });
-                
-                checkOnlineStatus();
-                
-                const endTime = Date.now();
-                console.log(`✅ Чат полностью загружен за ${endTime - startTime}мс`);
+            } catch {
+                return 'недавно';
             }
-        });
+        },
+        showNotification: (msg, type = 'info') => {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            notification.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+            notification.innerHTML = msg;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('animate__fadeOutRight');
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+    };
 
-        initEventListeners();
-    });
+    const $ = (id) => document.getElementById(id);
 
-    // Функция загрузки пользователя с кэшем
+    // ===== ПРОВЕРКА FIREBASE =====
+    function checkFirebase() {
+        if (typeof firebase === 'undefined' || typeof db === 'undefined') {
+            console.error('❌ Firebase не инициализирован');
+            safeHelpers.showNotification('❌ Ошибка подключения', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // ===== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ С КЭШЕМ =====
     async function getUserWithCache(userId) {
         if (!userId) return null;
         
-        // Проверяем кэш
         if (userCache.has(userId)) {
             const cached = userCache.get(userId);
-            // Кэш живёт 5 минут
             if (Date.now() - cached.timestamp < 300000) {
-                console.log('📦 Данные пользователя из кэша:', userId);
                 return cached.data;
             }
         }
         
-        // Грузим из Firebase
         try {
+            if (!checkFirebase()) return null;
+            
             const doc = await db.collection('users').doc(userId).get();
             const data = doc.exists ? doc.data() : null;
             
-            // Сохраняем в кэш
             userCache.set(userId, {
                 data: data,
                 timestamp: Date.now()
             });
             
-            console.log('📥 Загружено из Firebase:', userId);
             return data;
         } catch (error) {
             console.error('❌ Ошибка загрузки пользователя:', error);
@@ -111,18 +119,18 @@
         }
     }
 
-    // Загрузка данных заказа (ОПТИМИЗИРОВАННАЯ)
+    // ===== ЗАГРУЗКА ДАННЫХ ЗАКАЗА =====
     async function loadOrderData() {
         try {
-            console.log('📦 Загрузка данных чата...');
+            if (!checkFirebase()) return;
             
             const user = Auth.getUser();
+            if (!user) return;
             
-            // Загружаем заказ
             const orderDoc = await db.collection('orders').doc(orderId).get();
             if (!orderDoc.exists) {
-                alert('Заказ не найден');
-                window.location.href = 'index.html';
+                safeHelpers.showNotification('❌ Заказ не найден', 'error');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
                 return;
             }
 
@@ -130,88 +138,145 @@
             
             // Определяем собеседника
             if (orderData.clientId === user.uid) {
-                // Мы клиент - собеседник мастер
+                // Мы клиент
                 partnerId = masterId;
                 partnerRole = 'Мастер';
                 
-                // Используем кэш для загрузки мастера
                 const masterData = await getUserWithCache(masterId);
                 partnerName = masterData?.name || 'Мастер';
                 chatId = `chat_${orderId}_${partnerId}`;
             } else {
-                // Мы мастер - собеседник клиент
+                // Мы мастер
                 partnerId = orderData.clientId;
                 partnerRole = 'Клиент';
                 partnerName = orderData.clientName || 'Клиент';
                 chatId = `chat_${orderId}_${user.uid}`;
             }
 
-            // Обновляем интерфейс
-            document.getElementById('chatPartnerName').innerText = partnerName;
-            document.getElementById('chatPartnerRole').innerHTML = `${partnerRole} <span class="online-status"></span>`;
-            document.getElementById('orderInfo').innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
+            // Обновляем UI
+            const partnerNameEl = $('chatPartnerName');
+            if (partnerNameEl) partnerNameEl.innerText = partnerName;
+            
+            const partnerRoleEl = $('chatPartnerRole');
+            if (partnerRoleEl) partnerRoleEl.innerHTML = `${partnerRole} <span class="online-status" id="onlineStatus"></span>`;
+            
+            const orderInfoEl = $('orderInfo');
+            if (orderInfoEl) {
+                orderInfoEl.innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
+            }
             
             // Показываем закрепленный заказ
-            const pinnedOrder = document.getElementById('pinnedOrder');
-            if (orderData) {
-                document.getElementById('pinnedTitle').innerText = orderData.title || 'Заказ';
-                document.getElementById('pinnedPrice').innerText = orderData.price || '0';
-                document.getElementById('pinnedAddress').innerText = orderData.address || 'Адрес не указан';
+            const pinnedOrder = $('pinnedOrder');
+            if (orderData && pinnedOrder) {
+                $('pinnedTitle').innerText = orderData.title || 'Заказ';
+                $('pinnedPrice').innerText = orderData.price || '0';
+                $('pinnedAddress').innerText = orderData.address || 'Адрес не указан';
                 pinnedOrder.classList.remove('hidden');
             }
             
             // Быстрые ответы только для мастеров
-            const quickReplies = document.getElementById('quickReplies');
-            if (Auth.isMaster()) {
-                quickReplies.classList.remove('hidden');
-                console.log('✅ Быстрые ответы показаны (мастер)');
-            } else {
-                quickReplies.classList.add('hidden');
-                console.log('❌ Быстрые ответы скрыты (клиент)');
+            const quickReplies = $('quickReplies');
+            if (quickReplies) {
+                if (Auth.isMaster?.()) {
+                    quickReplies.classList.remove('hidden');
+                } else {
+                    quickReplies.classList.add('hidden');
+                }
             }
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказа:', error);
-            alert('Ошибка загрузки данных заказа');
+            safeHelpers.showNotification('❌ Ошибка загрузки данных', 'error');
         }
     }
 
-    // Инициализация чата
+    // ===== ИНИЦИАЛИЗАЦИЯ ЧАТА =====
     async function initializeChat() {
         try {
+            if (!checkFirebase() || !chatId) return;
+            
             const user = Auth.getUser();
-            await Chats.create(orderId, masterId, orderData.clientId);
+            if (!user) return;
+            
+            // Создаем или получаем чат
+            const chatRef = db.collection('chats').doc(chatId);
+            const chatDoc = await chatRef.get();
+            
+            if (!chatDoc.exists) {
+                await chatRef.set({
+                    participants: [user.uid, partnerId],
+                    orderId: orderId,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessage: 'Чат создан'
+                });
+            }
+            
+            // Подписываемся на сообщения
+            if (unsubscribeMessages) unsubscribeMessages();
+            unsubscribeMessages = chatRef.collection('messages')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot((snapshot) => {
+                    const messages = [];
+                    snapshot.forEach(doc => messages.push(doc.data()));
+                    displayMessages(messages);
+                }, (error) => {
+                    console.error('❌ Ошибка подписки на сообщения:', error);
+                });
+            
+            // Подписываемся на печатание
+            if (unsubscribeTyping) unsubscribeTyping();
+            unsubscribeTyping = chatRef.collection('typing').doc(partnerId)
+                .onSnapshot((doc) => {
+                    const typing = doc.data();
+                    const indicator = $('typingIndicator');
+                    if (indicator) {
+                        indicator.classList.toggle('hidden', !typing?.isTyping);
+                    }
+                });
+            
+            // Проверяем онлайн статус
+            checkOnlineStatus();
+            
         } catch (error) {
             console.error('❌ Ошибка инициализации чата:', error);
         }
     }
 
-    // Проверка онлайн статуса
+    // ===== ПРОВЕРКА ОНЛАЙН СТАТУСА =====
     function checkOnlineStatus() {
-        const statusRef = db.collection('status').doc(partnerId);
+        if (!checkFirebase() || !partnerId) return;
         
-        statusRef.onSnapshot((doc) => {
-            const status = doc.data();
-            const onlineDot = document.querySelector('.online-status');
-            
-            if (status && status.online && status.lastSeen) {
-                const lastSeen = status.lastSeen.toDate ? status.lastSeen.toDate() : new Date(status.lastSeen);
-                if (Date.now() - lastSeen.getTime() < 60000) {
-                    onlineDot.style.background = 'var(--success)';
+        if (unsubscribeStatus) unsubscribeStatus();
+        
+        unsubscribeStatus = db.collection('status').doc(partnerId)
+            .onSnapshot((doc) => {
+                const status = doc.data();
+                const onlineDot = $('onlineStatus');
+                if (!onlineDot) return;
+                
+                if (status?.online) {
+                    const lastSeen = status.lastSeen?.toDate ? status.lastSeen.toDate() : new Date(status.lastSeen);
+                    if (Date.now() - lastSeen.getTime() < 60000) {
+                        onlineDot.style.background = 'var(--success)';
+                        onlineDot.classList.add('online');
+                    } else {
+                        onlineDot.style.background = 'var(--text-soft)';
+                        onlineDot.classList.remove('online');
+                    }
                 } else {
                     onlineDot.style.background = 'var(--text-soft)';
+                    onlineDot.classList.remove('online');
                 }
-            } else {
-                onlineDot.style.background = 'var(--text-soft)';
-            }
-        }, (error) => {
-            console.error('❌ Ошибка отслеживания статуса:', error);
-        });
+            }, (error) => {
+                console.error('❌ Ошибка отслеживания статуса:', error);
+            });
     }
 
-    // Отображение сообщений
+    // ===== ОТОБРАЖЕНИЕ СООБЩЕНИЙ =====
     function displayMessages(messages) {
-        const messagesArea = document.getElementById('messagesArea');
+        const messagesArea = $('messagesArea');
+        if (!messagesArea) return;
         
         if (messages.length === 0) {
             messagesArea.innerHTML = `
@@ -229,7 +294,6 @@
             messagesArea.appendChild(createMessageElement(msg));
         });
         
-        // Плавный скролл вниз
         setTimeout(() => {
             messagesArea.scrollTo({
                 top: messagesArea.scrollHeight,
@@ -238,12 +302,13 @@
         }, 100);
     }
 
-    // Создание элемента сообщения
+    // ===== СОЗДАНИЕ ЭЛЕМЕНТА СООБЩЕНИЯ =====
     function createMessageElement(message) {
         const user = Auth.getUser();
         const div = document.createElement('div');
         div.className = `message ${message.senderId === user?.uid ? 'sent' : 'received'}`;
         
+        // Файлы
         let filesHtml = '';
         if (message.files?.length > 0) {
             filesHtml = '<div class="message-files">';
@@ -252,7 +317,7 @@
                     filesHtml += `<img src="${file.url}" class="message-image" onclick="window.open('${file.url}')" title="${file.name}" loading="lazy">`;
                 } else if (file.type?.startsWith('audio/')) {
                     filesHtml += `
-                        <audio controls style="max-width: 200px;" preload="none">
+                        <audio controls preload="none">
                             <source src="${file.url}" type="${file.type}">
                         </audio>
                     `;
@@ -260,17 +325,20 @@
                     const icon = file.type?.includes('pdf') ? 'fa-file-pdf' :
                                file.type?.includes('word') ? 'fa-file-word' :
                                file.type?.includes('excel') ? 'fa-file-excel' : 'fa-file';
-                    filesHtml += `<a href="${file.url}" target="_blank" class="message-file"><i class="fas ${icon}"></i>${file.name}</a>`;
+                    filesHtml += `
+                        <a href="${file.url}" target="_blank" class="message-file">
+                            <i class="fas ${icon}"></i>${file.name}
+                        </a>`;
                 }
             });
             filesHtml += '</div>';
         }
         
-        const time = Helpers.formatDate(message.timestamp);
+        const time = safeHelpers.formatDate(message.timestamp);
         
         div.innerHTML = `
             <div class="message-bubble">
-                ${Helpers.escapeHtml(message.text) || ''}
+                ${message.text ? safeHelpers.escapeHtml(message.text) : ''}
                 ${filesHtml}
             </div>
             <div class="message-time">${time}</div>
@@ -279,84 +347,117 @@
         return div;
     }
 
-    // Отправка сообщения (с проверкой chatId)
+    // ===== ОТПРАВКА СООБЩЕНИЯ =====
     async function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const text = input.value.trim();
+        const input = $('messageInput');
+        const text = input?.value.trim();
         
-        // Проверяем chatId
         if (!chatId) {
-            console.error('❌ chatId не определен!');
-            Helpers.showNotification('Ошибка: чат не инициализирован', 'error');
+            safeHelpers.showNotification('❌ Чат не инициализирован', 'error');
             return;
         }
         
         if ((!text || text === '') && selectedFiles.length === 0) return;
         
-        // Проверяем модерацию
-        if (text) {
+        // Модерация текста
+        if (text && window.Moderation) {
             const modResult = Moderation.check(text, 'chat_message');
             if (!modResult.isValid) {
-                Helpers.showNotification(`❌ ${modResult.reason}`, 'warning');
+                safeHelpers.showNotification(`❌ ${modResult.reason}`, 'warning');
                 return;
             }
         }
         
-        const result = await Chats.sendMessage(chatId, text, selectedFiles);
-        
-        if (result && result.success) {
+        try {
+            if (!checkFirebase()) return;
+            
+            const user = Auth.getUser();
+            if (!user) return;
+            
+            // Загружаем файлы
+            const filePromises = selectedFiles.map(async (file) => {
+                const fileName = `${Date.now()}_${file.name}`;
+                const storageRef = storage.ref(`chat_files/${chatId}/${fileName}`);
+                await storageRef.put(file);
+                const url = await storageRef.getDownloadURL();
+                return {
+                    name: file.name,
+                    url: url,
+                    type: file.type,
+                    size: file.size
+                };
+            });
+            
+            const files = await Promise.all(filePromises);
+            
+            // Отправляем сообщение
+            const message = {
+                senderId: user.uid,
+                text: text || '',
+                files: files,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await db.collection('chats').doc(chatId)
+                .collection('messages')
+                .add(message);
+            
+            // Обновляем последнее сообщение в чате
+            await db.collection('chats').doc(chatId).update({
+                lastMessage: text || '📎 Файл',
+                lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
             // Очищаем
             input.value = '';
             selectedFiles = [];
             updateFilePreview();
+            
+            // Отправляем уведомление собеседнику (если есть FCM)
+            if (window.Messaging) {
+                await Messaging.sendNotification(partnerId, {
+                    title: 'Новое сообщение',
+                    body: text || 'Файл',
+                    data: { chatId, orderId }
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка отправки:', error);
+            safeHelpers.showNotification('❌ Ошибка при отправке', 'error');
         }
     }
 
-    // Инициализация обработчиков
-    function initEventListeners() {
-        // Загрузка файлов
-        const attachButton = document.getElementById('attachButton');
-        const fileInput = document.getElementById('fileInput');
-
-        attachButton?.addEventListener('click', () => fileInput.click());
-
-        fileInput?.addEventListener('change', (e) => {
-            handleFileSelect(e.target.files);
+    // ===== ОТПРАВКА ТИПИНГ ИНДИКАТОРА =====
+    async function sendTyping() {
+        if (!chatId || !checkFirebase()) return;
+        
+        const user = Auth.getUser();
+        if (!user) return;
+        
+        const typingRef = db.collection('chats').doc(chatId)
+            .collection('typing').doc(user.uid);
+        
+        await typingRef.set({
+            isTyping: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        // Голосовые сообщения
-        document.getElementById('voiceButton')?.addEventListener('click', startRecording);
-
-        // Отправка по Enter
-        document.getElementById('sendButton')?.addEventListener('click', sendMessage);
-        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        // Быстрые ответы
-        document.querySelectorAll('.quick-reply-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                let text = this.dataset.text;
-                if (text.includes('[цена]') && orderData?.price) {
-                    text = text.replace('[цена]', orderData.price);
-                }
-                document.getElementById('messageInput').value = text;
-                document.getElementById('messageInput').focus();
-            });
-        });
-
-        // Темная тема
-        document.getElementById('themeToggle')?.addEventListener('click', Auth.toggleTheme);
+        
+        if (typingTimeout) clearTimeout(typingTimeout);
+        
+        typingTimeout = setTimeout(async () => {
+            await typingRef.delete();
+            typingTimeout = null;
+        }, 3000);
     }
 
-    // Обработка выбора файлов
+    // ===== ОБРАБОТКА ВЫБОРА ФАЙЛОВ =====
     function handleFileSelect(files) {
+        if (!files) return;
+        
         for (let file of files) {
             if (file.size > 10 * 1024 * 1024) {
-                Helpers.showNotification('Файл слишком большой (макс 10MB)', 'warning');
+                safeHelpers.showNotification('❌ Файл слишком большой (макс 10MB)', 'warning');
                 continue;
             }
             selectedFiles.push(file);
@@ -364,9 +465,9 @@
         updateFilePreview();
     }
 
-    // Обновление превью файлов
     function updateFilePreview() {
-        const filePreview = document.getElementById('filePreview');
+        const filePreview = $('filePreview');
+        if (!filePreview) return;
         
         if (selectedFiles.length === 0) {
             filePreview.classList.add('hidden');
@@ -390,19 +491,18 @@
             previewItem.innerHTML = `
                 <i class="fas ${icon}"></i>
                 <span>${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</span>
-                <span class="remove-file" onclick="removeFile(${index})">×</span>
+                <span class="remove-file" onclick="window.removeFile(${index})">×</span>
             `;
             filePreview.appendChild(previewItem);
         });
     }
 
-    // Удаление файла
     window.removeFile = function(index) {
         selectedFiles.splice(index, 1);
         updateFilePreview();
     };
 
-    // Запись голоса
+    // ===== ЗАПИСЬ ГОЛОСА =====
     async function startRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -425,57 +525,263 @@
             
             mediaRecorder.start();
             
-            // Показываем интерфейс записи
-            document.getElementById('voiceRecording').classList.remove('hidden');
+            $('voiceRecording')?.classList.remove('hidden');
             recordingSeconds = 0;
+            
+            if (recordingInterval) clearInterval(recordingInterval);
             recordingInterval = setInterval(() => {
                 recordingSeconds++;
                 const minutes = Math.floor(recordingSeconds / 60);
                 const seconds = recordingSeconds % 60;
-                document.getElementById('recordingTimer').innerText = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                const timer = $('recordingTimer');
+                if (timer) {
+                    timer.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
             }, 1000);
             
         } catch (error) {
             console.error('❌ Ошибка доступа к микрофону:', error);
-            Helpers.showNotification('Не удалось получить доступ к микрофону', 'error');
+            safeHelpers.showNotification('❌ Нет доступа к микрофону', 'error');
         }
     }
 
-    // Остановка записи
     window.stopRecording = function() {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
-            document.getElementById('voiceRecording').classList.add('hidden');
-            clearInterval(recordingInterval);
+            $('voiceRecording')?.classList.add('hidden');
+            if (recordingInterval) {
+                clearInterval(recordingInterval);
+                recordingInterval = null;
+            }
         }
     };
 
-    // Отмена записи
     window.cancelRecording = function() {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
             mediaRecorder.stream.getTracks().forEach(track => track.stop());
         }
-        document.getElementById('voiceRecording').classList.add('hidden');
-        clearInterval(recordingInterval);
+        $('voiceRecording')?.classList.add('hidden');
+        if (recordingInterval) {
+            clearInterval(recordingInterval);
+            recordingInterval = null;
+        }
     };
 
-    // Показать детали заказа
+    // ===== ЭМОДЗИ ПАНЕЛЬ =====
+    function toggleEmojiPanel() {
+        const panel = $('emojiPanel');
+        if (!panel) {
+            createEmojiPanel();
+        } else {
+            panel.classList.toggle('hidden');
+        }
+    }
+
+    function createEmojiPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'emojiPanel';
+        panel.className = 'emoji-panel hidden';
+        
+        EMOJIS.forEach(emoji => {
+            const btn = document.createElement('span');
+            btn.className = 'emoji-item';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                const input = $('messageInput');
+                input.value += emoji;
+                input.focus();
+                panel.classList.add('hidden');
+            };
+            panel.appendChild(btn);
+        });
+        
+        document.querySelector('.chat-container').appendChild(panel);
+    }
+
+    // ===== ПОКАЗ ДЕТАЛЕЙ ЗАКАЗА =====
     window.showOrderDetails = function() {
-        alert(`
-            Заказ: ${orderData?.title || 'Неизвестно'}
-            Описание: ${orderData?.description || 'Нет'}
-            Цена: ${orderData?.price || 0} ₽
-            Адрес: ${orderData?.address || 'Не указан'}
-            Категория: ${orderData?.category || 'Не указана'}
-        `);
+        const modal = new bootstrap.Modal($('orderDetailsModal'));
+        
+        const content = $('orderDetailsContent');
+        if (content && orderData) {
+            content.innerHTML = `
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-tag"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Название</div>
+                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.title || 'Не указано')}</div>
+                    </div>
+                </div>
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-align-left"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Описание</div>
+                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.description || 'Нет описания')}</div>
+                    </div>
+                </div>
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-ruble-sign"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Цена</div>
+                        <div class="order-detail-value">${orderData.price || 0} ₽</div>
+                    </div>
+                </div>
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Адрес</div>
+                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.address || 'Не указан')}</div>
+                    </div>
+                </div>
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-folder"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Категория</div>
+                        <div class="order-detail-value">${orderData.category || 'Не указана'}</div>
+                    </div>
+                </div>
+                <div class="order-detail-item">
+                    <div class="order-detail-icon"><i class="fas fa-clock"></i></div>
+                    <div class="order-detail-info">
+                        <div class="order-detail-label">Создан</div>
+                        <div class="order-detail-value">${safeHelpers.formatDate(orderData.createdAt)}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        modal.show();
     };
 
-    // Очистка при выходе
-    window.addEventListener('beforeunload', () => {
-        if (typeof Chats !== 'undefined' && Chats.unsubscribeAll) {
-            Chats.unsubscribeAll();
+    // ===== ОЧИСТКА ПРИ ВЫХОДЕ =====
+    function cleanup() {
+        if (unsubscribeMessages) unsubscribeMessages();
+        if (unsubscribeTyping) unsubscribeTyping();
+        if (unsubscribeStatus) unsubscribeStatus();
+        if (recordingInterval) clearInterval(recordingInterval);
+        if (typingTimeout) clearTimeout(typingTimeout);
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
+    function initEventListeners() {
+        // Загрузка файлов
+        const attachButton = $('attachButton');
+        const fileInput = $('fileInput');
+        
+        attachButton?.addEventListener('click', () => fileInput.click());
+        fileInput?.addEventListener('change', (e) => handleFileSelect(e.target.files));
+
+        // Голосовые сообщения
+        $('voiceButton')?.addEventListener('click', startRecording);
+
+        // Эмодзи
+        $('emojiButton')?.addEventListener('click', toggleEmojiPanel);
+
+        // Отправка сообщения
+        $('sendButton')?.addEventListener('click', sendMessage);
+        
+        const messageInput = $('messageInput');
+        messageInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        messageInput?.addEventListener('input', () => {
+            if (chatId) sendTyping();
+        });
+
+        // Быстрые ответы
+        document.querySelectorAll('.quick-reply-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                let text = this.dataset.text;
+                if (text.includes('[цена]') && orderData?.price) {
+                    text = text.replace('[цена]', orderData.price);
+                }
+                if (messageInput) {
+                    messageInput.value = text;
+                    messageInput.focus();
+                }
+            });
+        });
+
+        // Видеозвонок
+        $('videoCallBtn')?.addEventListener('click', () => {
+            safeHelpers.showNotification('🎥 Видеозвонки скоро будут доступны', 'info');
+        });
+
+        // Аудиозвонок
+        $('voiceCallBtn')?.addEventListener('click', () => {
+            safeHelpers.showNotification('📞 Аудиозвонки скоро будут доступны', 'info');
+        });
+
+        // Темная тема
+        $('themeToggle')?.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            const icon = $('themeToggle').querySelector('i');
+            if (icon) {
+                if (document.body.classList.contains('dark-theme')) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                    localStorage.setItem('theme', 'light');
+                }
+            }
+        });
+
+        // Закрытие панели эмодзи при клике вне
+        document.addEventListener('click', (e) => {
+            const panel = $('emojiPanel');
+            const btn = $('emojiButton');
+            if (panel && !panel.contains(e.target) && !btn?.contains(e.target)) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        // Очистка при выходе
+        window.addEventListener('beforeunload', cleanup);
+    }
+
+    // ===== ЗАПУСК =====
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!orderId || !masterId) {
+            safeHelpers.showNotification('❌ Не указан заказ или мастер', 'error');
+            setTimeout(() => window.location.href = '/HomeWork/', 2000);
+            return;
+        }
+
+        // Проверяем авторизацию
+        if (!window.Auth) {
+            safeHelpers.showNotification('❌ Ошибка авторизации', 'error');
+            return;
+        }
+
+        Auth.onAuthChange(async (state) => {
+            if (state.isAuthenticated) {
+                await loadOrderData();
+                await initializeChat();
+            } else {
+                safeHelpers.showNotification('❌ Требуется авторизация', 'warning');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
+            }
+        });
+
+        initEventListeners();
+        
+        // Загружаем сохраненную тему
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+            const icon = $('themeToggle')?.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
         }
     });
+
 })();
