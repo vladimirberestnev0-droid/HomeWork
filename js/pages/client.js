@@ -1,5 +1,5 @@
 // ===== js/pages/client.js =====
-// ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КАБИНЕТ КЛИЕНТА С ГЕЙМИФИКАЦИЕЙ
+// ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КАБИНЕТ КЛИЕНТА С КРУТЫМИ КАРТОЧКАМИ
 
 (function() {
     // Состояние
@@ -49,6 +49,20 @@
                 return 'недавно';
             }
         },
+        formatShortDate: (timestamp) => {
+            if (!timestamp) return '';
+            try {
+                const date = GamificationBase?.safeGetDate(timestamp) || new Date(timestamp);
+                return date.toLocaleString('ru-RU', { 
+                    day: 'numeric', 
+                    month: 'short',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }).replace('.', '');
+            } catch {
+                return '';
+            }
+        },
         formatMoney: (amount) => {
             return new Intl.NumberFormat('ru-RU', {
                 style: 'currency',
@@ -60,10 +74,11 @@
             if (window.Helpers?.showNotification) {
                 Helpers.showNotification(msg, type);
             } else {
-                // Создаем временное уведомление
                 const notification = document.createElement('div');
                 notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
                 notification.style.zIndex = '9999';
+                notification.style.minWidth = '300px';
+                notification.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
                 notification.innerHTML = msg;
                 document.body.appendChild(notification);
                 
@@ -74,48 +89,70 @@
             }
         },
         getCategoryIcon: (cat) => {
-            if (window.Helpers?.getCategoryIcon) return Helpers.getCategoryIcon(cat);
             const icons = {
                 'Сантехника': 'fa-wrench',
                 'Электрика': 'fa-bolt',
                 'Уборка': 'fa-broom',
                 'Ремонт': 'fa-hammer',
                 'Сборка мебели': 'fa-couch',
+                'Грузчики': 'fa-truck',
+                'Малярные работы': 'fa-paint-brush',
+                'Плиточные работы': 'fa-th',
                 'default': 'fa-tag'
             };
             return icons[cat] || icons.default;
+        },
+        getCategoryColor: (cat) => {
+            const colors = {
+                'Сантехника': '#3498db',
+                'Электрика': '#f39c12',
+                'Уборка': '#2ecc71',
+                'Ремонт': '#e74c3c',
+                'Сборка мебели': '#9b59b6',
+                'Грузчики': '#1abc9c',
+                'Малярные работы': '#e67e22',
+                'Плиточные работы': '#95a5a6',
+                'default': '#34495e'
+            };
+            return colors[cat] || colors.default;
         },
         pluralize: (count, words) => {
             if (window.Helpers?.pluralize) return Helpers.pluralize(count, words);
             const cases = [2, 0, 1, 1, 1, 2];
             return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
         },
-        getStatusText: (status) => {
-            const texts = {
-                'open': 'Активен',
-                'in_progress': 'В работе',
-                'completed': 'Завершён',
-                'cancelled': 'Отменён'
+        getStatusConfig: (status) => {
+            const configs = {
+                'open': {
+                    text: 'Активен',
+                    icon: 'fa-clock',
+                    color: '#3498db',
+                    bg: 'rgba(52, 152, 219, 0.1)',
+                    border: '#3498db'
+                },
+                'in_progress': {
+                    text: 'В работе',
+                    icon: 'fa-cog fa-spin',
+                    color: '#f39c12',
+                    bg: 'rgba(243, 156, 18, 0.1)',
+                    border: '#f39c12'
+                },
+                'completed': {
+                    text: 'Завершён',
+                    icon: 'fa-check-circle',
+                    color: '#2ecc71',
+                    bg: 'rgba(46, 204, 113, 0.1)',
+                    border: '#2ecc71'
+                },
+                'cancelled': {
+                    text: 'Отменён',
+                    icon: 'fa-times-circle',
+                    color: '#e74c3c',
+                    bg: 'rgba(231, 76, 60, 0.1)',
+                    border: '#e74c3c'
+                }
             };
-            return texts[status] || status;
-        },
-        getStatusColor: (status) => {
-            const colors = {
-                'open': '#3498db',
-                'in_progress': '#f39c12',
-                'completed': '#2ecc71',
-                'cancelled': '#e74c3c'
-            };
-            return colors[status] || '#95a5a6';
-        },
-        getStatusClass: (status) => {
-            const classes = {
-                'open': 'badge-primary',
-                'in_progress': 'badge-warning',
-                'completed': 'badge-success',
-                'cancelled': 'badge-danger'
-            };
-            return classes[status] || 'badge-secondary';
+            return configs[status] || configs.open;
         }
     };
 
@@ -264,23 +301,6 @@
                 });
             }
             
-            // Количество заказов
-            const ordersCount = $('ordersCount');
-            if (ordersCount && userData.ordersCount) {
-                ordersCount.textContent = userData.ordersCount;
-            }
-            
-            // Статистика
-            const statCompletedOrders = $('statCompletedOrders');
-            if (statCompletedOrders && userData.completedOrders) {
-                statCompletedOrders.textContent = userData.completedOrders;
-            }
-            
-            const statMastersCount = $('statMastersCount');
-            if (statMastersCount && userData.mastersCount) {
-                statMastersCount.textContent = userData.mastersCount;
-            }
-            
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
         }
@@ -295,7 +315,6 @@
             const user = Auth.getUser();
             if (!user) return;
             
-            // Используем кэш если данные свежие (менее 5 минут)
             if (statsCache.achievements && Date.now() - statsCache.lastUpdate < 300000) {
                 renderAchievementsIcons(statsCache.achievements);
                 return;
@@ -318,18 +337,15 @@
         const container = $('achievementsIcons');
         if (!container) return;
         
-        // Показываем первые 8 достижений
         const earned = achievements.filter(a => a.earned);
         const earnedCount = earned.length;
         const totalCount = achievements.length;
         
-        // Обновляем счетчик
         const achievementsCount = $('achievementsCount');
         if (achievementsCount) {
             achievementsCount.textContent = `${earnedCount}/${totalCount}`;
         }
         
-        // Показываем первые 8 полученных, если их мало - добавляем неполученные
         let displayAchievements = earned.slice(0, 8);
         
         if (displayAchievements.length < 8) {
@@ -356,13 +372,9 @@
             const xp = userData.xp || 0;
             const progress = ClientGamification.getLevelProgress(xp);
             
-            // Прогресс-бар
             const progressBar = $('xpProgressBar');
-            if (progressBar) {
-                progressBar.style.width = `${progress.progress}%`;
-            }
+            if (progressBar) progressBar.style.width = `${progress.progress}%`;
             
-            // Текст прогресса
             const progressText = $('xpProgressText');
             if (progressText) {
                 if (progress.next) {
@@ -372,7 +384,6 @@
                 }
             }
             
-            // Текст до следующего уровня
             const xpToNextLevel = $('xpToNextLevel');
             if (xpToNextLevel) {
                 if (progress.next) {
@@ -382,28 +393,17 @@
                 }
             }
             
-            // Название уровня
             const currentLevelName = $('currentLevelName');
-            if (currentLevelName) {
-                currentLevelName.textContent = progress.current.name;
-            }
+            if (currentLevelName) currentLevelName.textContent = progress.current.name;
             
-            // Бейдж уровня
             const levelBadge = $('levelBadge');
-            if (levelBadge) {
-                levelBadge.textContent = progress.current.level;
-            }
+            if (levelBadge) levelBadge.textContent = progress.current.level;
             
-            // XP в шапке
             const headerLevel = $('headerLevel');
-            if (headerLevel) {
-                headerLevel.textContent = progress.current.level;
-            }
+            if (headerLevel) headerLevel.textContent = progress.current.level;
             
             const headerXP = $('headerXP');
-            if (headerXP) {
-                headerXP.textContent = xp;
-            }
+            if (headerXP) headerXP.textContent = xp;
             
         } catch (error) {
             console.error('❌ Ошибка обновления прогресса:', error);
@@ -438,7 +438,6 @@
             const orders = await Orders.getClientOrders(user.uid, filter);
             allOrders = orders || [];
             
-            // Обновляем статистику
             const userData = Auth.getUserData();
             if (userData) {
                 const completedCount = allOrders.filter(o => o.status === 'completed').length;
@@ -451,23 +450,16 @@
                 }).catch(() => {});
             }
             
-            // Первые 5 заказов
             displayedOrders = orders.slice(0, 5);
             hasMore = orders.length > 5;
             
             renderOrders();
             
-            // Обновляем счетчик
             const ordersCount = $('ordersCount');
-            if (ordersCount) {
-                ordersCount.textContent = allOrders.length;
-            }
+            if (ordersCount) ordersCount.textContent = allOrders.length;
             
-            // Показываем/скрываем кнопку "Показать ещё"
             const loadMoreBtn = $('loadMoreOrders');
-            if (loadMoreBtn) {
-                loadMoreBtn.style.display = hasMore ? 'block' : 'none';
-            }
+            if (loadMoreBtn) loadMoreBtn.style.display = hasMore ? 'block' : 'none';
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
@@ -484,7 +476,7 @@
         }
     }
 
-    // ===== ОТРИСОВКА ЗАКАЗОВ =====
+    // ===== ОТРИСОВКА ЗАКАЗОВ (КРУТЫЕ КАРТОЧКИ) =====
     function renderOrders() {
         const ordersList = $('ordersList');
         if (!ordersList) return;
@@ -492,10 +484,12 @@
         if (displayedOrders.length === 0) {
             ordersList.innerHTML = `
                 <div class="text-center p-5">
-                    <i class="fas fa-clipboard-list fa-4x mb-3" style="color: var(--border);"></i>
-                    <h4>У вас пока нет заказов</h4>
-                    <p class="text-secondary mb-4">Создайте первую заявку</p>
-                    <a href="/HomeWork/" class="btn btn-lg">
+                    <div class="empty-state-illustration mb-4">
+                        <i class="fas fa-clipboard-list fa-5x" style="color: var(--border); opacity: 0.5;"></i>
+                    </div>
+                    <h4 class="mb-3">У вас пока нет заказов</h4>
+                    <p class="text-secondary mb-4">Создайте первую заявку и мастера сами найдут вас!</p>
+                    <a href="/HomeWork/" class="btn btn-lg" style="background: var(--accent); color: white; padding: 12px 40px;">
                         <i class="fas fa-plus-circle me-2"></i>Создать заказ
                     </a>
                 </div>
@@ -510,42 +504,127 @@
         });
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
+    // ===== СОЗДАНИЕ КРУТОЙ КАРТОЧКИ ЗАКАЗА =====
     function createOrderCard(order) {
         if (!order) return null;
         
         const div = document.createElement('div');
-        div.className = 'order-card mb-3 animate__animated animate__fadeIn';
+        div.className = 'order-card mb-4 animate__animated animate__fadeIn';
         
-        // Статус
-        const statusText = safeHelpers.getStatusText(order.status);
-        const statusClass = safeHelpers.getStatusClass(order.status);
-        const statusIcon = order.status === 'in_progress' ? 'fa-cog fa-spin' : 
-                          (order.status === 'completed' ? 'fa-check-circle' : 'fa-clock');
+        const status = safeHelpers.getStatusConfig(order.status);
+        const categoryColor = safeHelpers.getCategoryColor(order.category);
+        const categoryIcon = safeHelpers.getCategoryIcon(order.category);
         
-        // Фото
-        let photosHtml = '';
-        if (order.photos?.length > 0) {
-            photosHtml = `
-                <div class="order-photos mb-3">
-                    ${order.photos.slice(0, 3).map(url => `
-                        <img src="${url}" class="order-photo-thumb" onclick="window.open('${url}')" loading="lazy">
-                    `).join('')}
-                    ${order.photos.length > 3 ? `<span class="photo-count">+${order.photos.length-3}</span>` : ''}
+        // Определяем, есть ли отклики
+        const hasResponses = order.responses && order.responses.length > 0;
+        const responsesCount = order.responses?.length || 0;
+        
+        // Выбран ли мастер
+        const hasMaster = !!order.selectedMasterId;
+        
+        // Фото (если есть)
+        let photoPreview = '';
+        if (order.photos && order.photos.length > 0) {
+            photoPreview = `
+                <div class="order-photo-preview" onclick="window.open('${order.photos[0]}')">
+                    <img src="${order.photos[0]}" alt="Фото заказа">
+                    ${order.photos.length > 1 ? `<span class="photo-count">+${order.photos.length - 1}</span>` : ''}
                 </div>
             `;
         }
         
-        // Отклики мастеров
-        let responsesHtml = '';
-        if (order.responses?.length > 0) {
-            responsesHtml = `
-                <div class="responses-section mt-4">
-                    <h6 class="mb-3">
+        // Визуальный индикатор статуса
+        const statusIndicator = `
+            <div class="status-indicator" style="background: ${status.color}; box-shadow: 0 0 15px ${status.color}40;">
+                <i class="fas ${status.icon}"></i>
+            </div>
+        `;
+        
+        // Хедер с категорией и ценой
+        const header = `
+            <div class="order-card-header">
+                <div class="category-badge" style="background: ${categoryColor}15; color: ${categoryColor};">
+                    <i class="fas ${categoryIcon} me-1"></i>
+                    <span>${order.category || 'Услуга'}</span>
+                </div>
+                <div class="order-price-tag">
+                    <span class="price-amount">${safeHelpers.formatMoney(order.price)}</span>
+                    <span class="price-label">₽</span>
+                </div>
+            </div>
+        `;
+        
+        // Основная информация
+        const body = `
+            <div class="order-card-body">
+                <div class="order-title-section">
+                    <h4 class="order-title">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h4>
+                    ${order.urgent ? '<span class="urgent-badge"><i class="fas fa-exclamation-circle me-1"></i>Срочно</span>' : ''}
+                </div>
+                
+                <p class="order-description">${safeHelpers.escapeHtml(order.description || 'Нет описания').substring(0, 150)}${order.description?.length > 150 ? '...' : ''}</p>
+                
+                <div class="order-meta-grid">
+                    <div class="meta-item">
+                        <i class="fas fa-map-marker-alt" style="color: ${categoryColor};"></i>
+                        <span>${safeHelpers.escapeHtml(order.address || 'Адрес не указан')}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-calendar-alt" style="color: ${categoryColor};"></i>
+                        <span>${safeHelpers.formatShortDate(order.createdAt)}</span>
+                    </div>
+                    ${order.preferredDate ? `
+                    <div class="meta-item">
+                        <i class="fas fa-clock" style="color: ${categoryColor};"></i>
+                        <span>К ${safeHelpers.formatShortDate(order.preferredDate)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        // Статус и действия
+        const footer = `
+            <div class="order-card-footer">
+                <div class="order-status-wrapper">
+                    <div class="order-status" style="background: ${status.bg}; color: ${status.color}; border-left: 4px solid ${status.color};">
+                        <i class="fas ${status.icon} me-2"></i>
+                        <span>${status.text}</span>
+                    </div>
+                    
+                    ${hasMaster ? `
+                        <div class="master-status">
+                            <i class="fas fa-user-check" style="color: #2ecc71;"></i>
+                            <span>Мастер выбран</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="order-stats">
+                    ${hasResponses ? `
+                        <div class="responses-count" title="${responsesCount} ${safeHelpers.pluralize(responsesCount, ['отклик', 'отклика', 'откликов'])}">
+                            <i class="fas fa-users" style="color: ${status.color};"></i>
+                            <span>${responsesCount}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <button class="btn-action" onclick="event.stopPropagation(); toggleOrderDetails('${order.id}')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Секция с откликами (скрыта по умолчанию)
+        let responsesSection = '';
+        if (hasResponses) {
+            responsesSection = `
+                <div class="order-responses-section" id="responses-${order.id}" style="display: none;">
+                    <h6 class="responses-title">
                         <i class="fas fa-users me-2" style="color: var(--accent);"></i>
-                        Отклики мастеров (${order.responses.length})
+                        Отклики мастеров (${responsesCount})
                     </h6>
-                    <div class="responses-list">
+                    <div class="responses-grid">
                         ${order.responses.map(resp => createResponseCard(order, resp)).join('')}
                     </div>
                 </div>
@@ -553,33 +632,28 @@
         }
         
         div.innerHTML = `
-            <div class="order-header">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h4 class="order-title mb-0">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h4>
-                    <span class="badge ${statusClass}">
-                        <i class="fas ${statusIcon} me-1"></i>${statusText}
-                    </span>
+            <div class="order-card-inner">
+                ${statusIndicator}
+                <div class="order-card-content">
+                    <div class="order-card-main">
+                        <div class="order-card-left">
+                            ${photoPreview || `<div class="order-photo-placeholder" style="background: ${categoryColor}15; color: ${categoryColor};"><i class="fas ${categoryIcon} fa-2x"></i></div>`}
+                        </div>
+                        <div class="order-card-right">
+                            ${header}
+                            ${body}
+                            ${footer}
+                        </div>
+                    </div>
+                    ${responsesSection}
                 </div>
-                <span class="order-price">${safeHelpers.formatMoney(order.price)}</span>
             </div>
-            
-            <p class="order-description">${safeHelpers.escapeHtml(order.description || 'Нет описания')}</p>
-            
-            ${photosHtml}
-            
-            <div class="order-meta">
-                <span><i class="fas ${safeHelpers.getCategoryIcon(order.category)}"></i> ${order.category || 'Без категории'}</span>
-                <span><i class="fas fa-map-marker-alt"></i> ${safeHelpers.escapeHtml(order.address || 'Адрес не указан')}</span>
-                <span><i class="fas fa-clock"></i> ${safeHelpers.formatDate(order.createdAt)}</span>
-            </div>
-            
-            ${responsesHtml}
         `;
         
         return div;
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА (УЛУЧШЕННАЯ) =====
     function createResponseCard(order, resp) {
         const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
         const isSelected = order.selectedMasterId === resp.masterId;
@@ -587,50 +661,83 @@
         const rating = resp.masterRating || 0;
         const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
         
+        // Определяем время отклика
+        const responseTime = resp.createdAt ? safeHelpers.formatShortDate(resp.createdAt) : 'только что';
+        
         return `
             <div class="response-card ${isSelected ? 'selected' : ''}">
-                <div class="response-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="response-avatar">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}</h6>
-                            <div class="response-rating">
-                                <span class="rating-stars" style="color: gold;">${stars}</span>
-                                <span class="text-secondary ms-1">${resp.masterReviews || 0} отзывов</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="response-price">${safeHelpers.formatMoney(resp.price)}</div>
+                ${isSelected ? '<div class="selected-badge"><i class="fas fa-crown me-1"></i>Выбран</div>' : ''}
+                
+                <div class="response-avatar">
+                    <i class="fas fa-user-tie"></i>
                 </div>
                 
-                ${resp.comment ? `<p class="response-comment">${safeHelpers.escapeHtml(resp.comment)}</p>` : ''}
-                
-                <div class="response-actions">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="openChat('${order.id}', '${resp.masterId}')">
-                        <i class="fas fa-comment me-1"></i> Чат
-                    </button>
+                <div class="response-content">
+                    <div class="response-header">
+                        <div class="response-name">
+                            <h6>${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}</h6>
+                            <div class="response-rating">
+                                <span class="rating-stars" style="color: gold;">${stars}</span>
+                                <span class="rating-count">(${resp.masterReviews || 0})</span>
+                            </div>
+                        </div>
+                        <div class="response-price">${safeHelpers.formatMoney(resp.price)}</div>
+                    </div>
                     
-                    ${order.status === 'open' && !isSelected ? `
-                        <button class="btn btn-sm btn-success" onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})">
-                            <i class="fas fa-check me-1"></i> Выбрать
+                    ${resp.comment ? `<p class="response-comment">${safeHelpers.escapeHtml(resp.comment)}</p>` : ''}
+                    
+                    <div class="response-meta">
+                        <span class="response-time">
+                            <i class="fas fa-clock me-1"></i>${responseTime}
+                        </span>
+                    </div>
+                    
+                    <div class="response-actions">
+                        <button class="btn-response primary" onclick="openChat('${order.id}', '${resp.masterId}')">
+                            <i class="fas fa-comment me-2"></i>Чат
                         </button>
-                    ` : ''}
-                    
-                    ${order.status === 'completed' && !hasReview ? `
-                        <button class="btn btn-sm btn-outline-warning" onclick="openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
-                            <i class="fas fa-star me-1"></i> Оценить
+                        
+                        ${order.status === 'open' && !isSelected ? `
+                            <button class="btn-response success" onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})">
+                                <i class="fas fa-check me-2"></i>Выбрать
+                            </button>
+                        ` : ''}
+                        
+                        ${order.status === 'completed' && !hasReview ? `
+                            <button class="btn-response warning" onclick="openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
+                                <i class="fas fa-star me-2"></i>Оценить
+                            </button>
+                        ` : ''}
+                        
+                        <button class="btn-response favorite" onclick="toggleFavorite('${resp.masterId}')">
+                            <i class="fas fa-heart"></i>
                         </button>
-                    ` : ''}
-                    
-                    <button class="btn btn-sm btn-outline-danger" onclick="toggleFavorite('${resp.masterId}')">
-                        <i class="fas fa-heart"></i>
-                    </button>
+                    </div>
                 </div>
             </div>
         `;
     }
+
+    // ===== ПОКАЗ/СКРЫТИЕ ОТКЛИКОВ =====
+    window.toggleOrderDetails = (orderId) => {
+        const section = $(`responses-${orderId}`);
+        const btn = event.currentTarget;
+        const icon = btn.querySelector('i');
+        
+        if (section) {
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                btn.classList.add('active');
+            } else {
+                section.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                btn.classList.remove('active');
+            }
+        }
+    };
 
     // ===== ЗАГРУЗКА ИЗБРАННОГО =====
     async function loadFavorites() {
@@ -648,9 +755,9 @@
                 container.innerHTML = `
                     <div class="col-12">
                         <div class="text-center p-5">
-                            <i class="fas fa-heart fa-4x mb-3" style="color: var(--border);"></i>
-                            <h4>Нет избранных мастеров</h4>
-                            <p class="text-secondary">Добавляйте мастеров в избранное после заказов</p>
+                            <i class="fas fa-heart fa-4x mb-3" style="color: var(--border); opacity: 0.5;"></i>
+                            <h4 class="mb-3">Нет избранных мастеров</h4>
+                            <p class="text-secondary mb-4">Добавляйте мастеров в избранное после заказов</p>
                         </div>
                     </div>
                 `;
@@ -659,7 +766,6 @@
             
             container.innerHTML = '';
             
-            // Загружаем мастеров параллельно
             const masterPromises = favorites.map(masterId => 
                 db.collection('users').doc(masterId).get()
             );
@@ -696,26 +802,24 @@
         
         return `
             <div class="favorite-card">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="favorite-avatar">
-                        <i class="fas fa-user-tie"></i>
+                <div class="favorite-avatar">
+                    <i class="fas fa-user-tie fa-2x"></i>
+                </div>
+                <div class="favorite-info">
+                    <h5 class="favorite-name">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h5>
+                    <p class="favorite-category">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
+                    <div class="favorite-rating">
+                        <span class="rating-stars" style="color: gold;">${stars}</span>
+                        <span class="rating-text">${master.reviews || 0} отзывов</span>
                     </div>
-                    <div class="flex-grow-1">
-                        <h5 class="mb-1">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h5>
-                        <p class="text-secondary mb-2">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="rating-stars" style="color: gold;">${stars}</span>
-                            <span class="text-secondary">${master.reviews || 0} отзывов</span>
-                        </div>
-                    </div>
-                    <div class="d-flex flex-column gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="window.open('/HomeWork/master-profile.html?id=${id}')">
-                            <i class="fas fa-user"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="removeFromFavorites('${id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                </div>
+                <div class="favorite-actions">
+                    <button class="btn-icon" onclick="window.open('/HomeWork/master-profile.html?id=${id}')" title="Профиль">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button class="btn-icon danger" onclick="removeFromFavorites('${id}')" title="Удалить">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -739,7 +843,7 @@
             if (paymentsSnapshot.empty) {
                 container.innerHTML = `
                     <div class="text-center p-4">
-                        <i class="fas fa-credit-card fa-3x mb-3" style="color: var(--border);"></i>
+                        <i class="fas fa-credit-card fa-3x mb-3" style="color: var(--border); opacity: 0.5;"></i>
                         <p class="text-secondary">Нет операций</p>
                     </div>
                 `;
@@ -751,21 +855,19 @@
                 const payment = doc.data();
                 const isIncome = payment.type === 'topup';
                 const sign = isIncome ? '+' : '-';
-                const color = isIncome ? 'var(--success)' : 'var(--danger)';
+                const color = isIncome ? '#2ecc71' : '#e74c3c';
                 
                 html += `
                     <div class="payment-item">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="payment-icon" style="background: ${color}20; color: ${color};">
-                                <i class="fas ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold">${payment.description || (isIncome ? 'Пополнение' : 'Списание')}</div>
-                                <small class="text-secondary">${safeHelpers.formatDate(payment.createdAt)}</small>
-                            </div>
-                            <div class="fw-bold" style="color: ${color};">
-                                ${sign}${safeHelpers.formatMoney(payment.amount)}
-                            </div>
+                        <div class="payment-icon" style="background: ${color}15; color: ${color};">
+                            <i class="fas ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                        </div>
+                        <div class="payment-details">
+                            <div class="payment-title">${payment.description || (isIncome ? 'Пополнение баланса' : 'Списание')}</div>
+                            <div class="payment-date">${safeHelpers.formatDate(payment.createdAt)}</div>
+                        </div>
+                        <div class="payment-amount" style="color: ${color};">
+                            ${sign}${safeHelpers.formatMoney(payment.amount)}
                         </div>
                     </div>
                 `;
@@ -773,7 +875,6 @@
             
             container.innerHTML = html;
             
-            // Обновляем финансовую статистику
             await updateFinanceStats();
             
         } catch (error) {
@@ -795,28 +896,20 @@
             
             const userData = Auth.getUserData();
             
-            // Общая сумма потраченная
             const totalSpent = userData.totalSpent || 0;
             const financeTotalSpent = $('financeTotalSpent');
-            if (financeTotalSpent) {
-                financeTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
-            }
+            if (financeTotalSpent) financeTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
             
             const statTotalSpent = $('statTotalSpent');
-            if (statTotalSpent) {
-                statTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
-            }
+            if (statTotalSpent) statTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
             
-            // Средний чек
             const orders = await Orders.getClientOrders(user.uid, 'all');
             const avgOrder = orders.length > 0 
                 ? orders.reduce((sum, o) => sum + (o.price || 0), 0) / orders.length 
                 : 0;
             
             const financeAvgOrder = $('financeAvgOrder');
-            if (financeAvgOrder) {
-                financeAvgOrder.textContent = safeHelpers.formatMoney(avgOrder);
-            }
+            if (financeAvgOrder) financeAvgOrder.textContent = safeHelpers.formatMoney(avgOrder);
             
         } catch (error) {
             console.error('❌ Ошибка обновления финансовой статистики:', error);
@@ -841,8 +934,8 @@
             if (chatsSnapshot.empty) {
                 container.innerHTML = `
                     <div class="text-center p-5">
-                        <i class="fas fa-comments fa-4x mb-3" style="color: var(--border);"></i>
-                        <h4>Нет активных чатов</h4>
+                        <i class="fas fa-comments fa-4x mb-3" style="color: var(--border); opacity: 0.5;"></i>
+                        <h4 class="mb-3">Нет активных чатов</h4>
                         <p class="text-secondary mb-4">Начните общение с мастером после отклика</p>
                         <a href="/HomeWork/" class="btn btn-outline-secondary">
                             <i class="fas fa-plus-circle me-2"></i>Создать заказ
@@ -854,7 +947,6 @@
             
             container.innerHTML = '';
             
-            // Загружаем данные собеседников параллельно
             const chatPromises = chatsSnapshot.docs.map(async (doc) => {
                 const chat = doc.data();
                 const otherId = chat.participants.find(id => id !== user.uid);
@@ -874,22 +966,26 @@
                 card.className = 'chat-card mb-2';
                 card.onclick = () => window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
                 
+                const lastMessage = chat.lastMessage || 'Нет сообщений';
+                const truncatedMessage = lastMessage.length > 40 ? lastMessage.substring(0, 40) + '...' : lastMessage;
+                
                 card.innerHTML = `
-                    <div class="chat-avatar">
+                    <div class="chat-avatar" style="background: ${other.role === 'master' ? 'var(--accent-gradient)' : 'linear-gradient(135deg, #3498db, #2980b9)'};">
                         <i class="fas ${other.role === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
                     </div>
                     <div class="chat-info">
                         <div class="chat-name">${safeHelpers.escapeHtml(other.name || 'Пользователь')}</div>
-                        <div class="chat-last-message">${chat.lastMessage || 'Нет сообщений'}</div>
+                        <div class="chat-last-message">${truncatedMessage}</div>
                     </div>
-                    <div class="chat-time">${safeHelpers.formatDate(chat.lastMessageAt)}</div>
-                    ${chat.unreadCount ? `<span class="chat-unread">${chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>` : ''}
+                    <div class="chat-meta">
+                        <div class="chat-time">${safeHelpers.formatShortDate(chat.lastMessageAt)}</div>
+                        ${chat.unreadCount ? `<span class="chat-unread">${chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>` : ''}
+                    </div>
                 `;
                 
                 container.appendChild(card);
             });
             
-            // Обновляем бейдж непрочитанных
             const unreadCount = chatData.reduce((sum, c) => sum + (c?.chat.unreadCount || 0), 0);
             const badge = $('unreadMessagesBadge');
             if (badge) {
@@ -925,7 +1021,7 @@
             
             if (ordersSnapshot.empty) {
                 container.innerHTML = `
-                    <div class="alert alert-info">
+                    <div class="alert alert-info" style="border-radius: 20px; border: none;">
                         <i class="fas fa-info-circle me-2"></i>
                         Нет заказов в работе для отслеживания
                     </div>
@@ -934,9 +1030,9 @@
             }
             
             let html = '<div class="tracking-select mb-3">';
-            html += '<label class="form-label fw-bold">Выберите заказ для отслеживания:</label>';
-            html += '<select class="form-select" id="trackingOrderSelect">';
-            html += '<option value="">Выберите заказ</option>';
+            html += '<label class="form-label fw-bold mb-2">Выберите заказ для отслеживания:</label>';
+            html += '<select class="form-select" id="trackingOrderSelect" style="border-radius: 15px; padding: 12px;">';
+            html += '<option value="">📋 Выберите заказ</option>';
             
             ordersSnapshot.forEach(doc => {
                 const order = doc.data();
@@ -970,11 +1066,10 @@
             if (!mapEl) return;
             
             const map = new ymaps.Map('trackingMap', {
-                center: [55.76, 37.64], // Москва по умолчанию
+                center: [55.76, 37.64],
                 zoom: 10
             });
             
-            // Слушаем выбор заказа
             const select = $('trackingOrderSelect');
             if (select) {
                 select.addEventListener('change', async (e) => {
@@ -991,7 +1086,6 @@
                         map.geoObjects.removeAll();
                         
                         if (order.latitude && order.longitude) {
-                            // Точка заказа
                             const orderPlacemark = new ymaps.Placemark(
                                 [order.latitude, order.longitude],
                                 { 
@@ -1002,7 +1096,6 @@
                             );
                             map.geoObjects.add(orderPlacemark);
                             
-                            // Точка мастера (если есть)
                             if (order.masterLatitude && order.masterLongitude) {
                                 const masterPlacemark = new ymaps.Placemark(
                                     [order.masterLatitude, order.masterLongitude],
@@ -1014,7 +1107,6 @@
                                 );
                                 map.geoObjects.add(masterPlacemark);
                                 
-                                // Маршрут
                                 try {
                                     const multiRoute = new ymaps.multiRouter.MultiRoute({
                                         referencePoints: [
@@ -1031,7 +1123,6 @@
                                     console.warn('⚠️ Ошибка построения маршрута:', routeError);
                                 }
                                 
-                                // Обновляем информацию
                                 await updateTrackingInfo(order);
                             }
                             
@@ -1054,8 +1145,7 @@
         
         panel.style.display = 'block';
         
-        // Рассчитываем примерное время (для демо)
-        const eta = Math.floor(Math.random() * 30) + 15; // 15-45 минут
+        const eta = Math.floor(Math.random() * 30) + 15;
         
         panel.innerHTML = `
             <div class="tracking-info-card">
@@ -1067,22 +1157,22 @@
                     <div class="col-md-4">
                         <div class="tracking-stat">
                             <span class="tracking-label">Мастер</span>
-                            <span class="tracking-value" id="trackingMasterName">${safeHelpers.escapeHtml(order.masterName || 'Неизвестно')}</span>
+                            <span class="tracking-value">${safeHelpers.escapeHtml(order.masterName || 'Неизвестно')}</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="tracking-stat">
-                            <span class="tracking-label">Телефон мастера</span>
-                            <span class="tracking-value" id="trackingMasterPhone">
-                                <a href="tel:${order.masterPhone}">${order.masterPhone || 'Скрыт'}</a>
+                            <span class="tracking-label">Телефон</span>
+                            <span class="tracking-value">
+                                ${order.masterPhone ? `<a href="tel:${order.masterPhone}">${order.masterPhone}</a>` : 'Скрыт'}
                             </span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="tracking-stat">
-                            <span class="tracking-label">Ориентировочное время</span>
+                            <span class="tracking-label">Прибытие</span>
                             <span class="tracking-value tracking-eta">
-                                <i class="fas fa-clock me-1"></i>≈ ${eta} минут
+                                <i class="fas fa-clock me-1"></i>≈ ${eta} мин
                             </span>
                         </div>
                     </div>
@@ -1110,21 +1200,17 @@
             if (result.success) {
                 safeHelpers.showNotification('✅ Мастер выбран! Чат открыт', 'success');
                 
-                // Начисляем XP
                 const user = Auth.getUser();
                 if (user && window.ClientGamification) {
                     await ClientGamification.addXP(user.uid, 10, 'Выбор мастера');
                     await ClientGamification.checkAchievements(user.uid);
                     
-                    // Обновляем прогресс
                     await updateLevelProgress();
                     await loadAchievements();
                 }
                 
-                // Перезагружаем заказы
                 await loadClientOrders(currentFilter);
                 
-                // Открываем чат
                 setTimeout(() => {
                     window.open(`/HomeWork/chat.html?orderId=${orderId}&masterId=${masterId}`, '_blank');
                 }, 500);
@@ -1152,9 +1238,9 @@
         const infoEl = $('reviewMasterInfo');
         if (infoEl) {
             infoEl.innerHTML = `
-                <div class="d-flex align-items-center gap-3">
-                    <div class="review-master-avatar">
-                        <i class="fas fa-user-tie fa-2x"></i>
+                <div class="d-flex align-items-center gap-3 p-3" style="background: var(--bg-light); border-radius: 20px;">
+                    <div class="review-master-avatar" style="width: 60px; height: 60px; background: var(--accent-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px;">
+                        <i class="fas fa-user-tie"></i>
                     </div>
                     <div>
                         <h5 class="mb-1">${masterName}</h5>
@@ -1167,7 +1253,6 @@
         const textEl = $('reviewText');
         if (textEl) textEl.value = '';
         
-        // Сброс звезд
         document.querySelectorAll('.rating-star-lg').forEach(s => s.classList.remove('active'));
         
         if (reviewModal) reviewModal.show();
@@ -1196,12 +1281,10 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Добавляем отзыв к заказу
             await db.collection('orders').doc(currentOrderId).update({
                 reviews: firebase.firestore.FieldValue.arrayUnion(review)
             });
 
-            // Обновляем рейтинг мастера
             const masterDoc = await db.collection('users').doc(currentMasterId).get();
             if (masterDoc.exists) {
                 const masterData = masterDoc.data();
@@ -1216,18 +1299,15 @@
                 });
             }
 
-            // Добавляем отзыв в отдельную коллекцию
             await db.collection('reviews').add({
                 ...review,
                 orderId: currentOrderId
             });
 
-            // Начисляем XP клиенту
             if (window.ClientGamification) {
                 await ClientGamification.addXP(user.uid, 10, 'Оставил отзыв');
                 await ClientGamification.checkAchievements(user.uid);
                 
-                // Обновляем прогресс
                 await updateLevelProgress();
                 await loadAchievements();
             }
@@ -1235,7 +1315,6 @@
             if (reviewModal) reviewModal.hide();
             safeHelpers.showNotification('✅ Спасибо за отзыв! +10 XP', 'success');
             
-            // Обновляем заказы
             await loadClientOrders(currentFilter);
             
         } catch (error) {
@@ -1246,17 +1325,14 @@
 
     // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
     function switchTab(tabId) {
-        // Обновляем табы
         document.querySelectorAll('.tab-modern').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabId);
         });
         
-        // Обновляем контент
         document.querySelectorAll('.tab-content-modern').forEach(content => {
             content.classList.toggle('active', content.id === tabId + 'Tab');
         });
         
-        // Если перешли на таб достижений, загружаем их
         if (tabId === 'achievements') {
             loadFullAchievements();
         }
@@ -1271,7 +1347,6 @@
             const achievements = await ClientGamification.getUserAchievementsWithStatus(user.uid);
             const stats = await ClientGamification.getAchievementsStats(user.uid);
             
-            // Обновляем статистику
             const earnedEl = $('achievementsEarned');
             if (earnedEl) earnedEl.textContent = stats.earned;
             
@@ -1281,7 +1356,6 @@
             const progressEl = $('achievementsProgress');
             if (progressEl) progressEl.textContent = stats.percent + '%';
             
-            // Группируем по категориям
             const groups = {
                 orders: achievements.filter(a => a.group === 'orders'),
                 budget: achievements.filter(a => a.group === 'budget'),
@@ -1290,20 +1364,23 @@
                 special: achievements.filter(a => a.group === 'special')
             };
             
-            // Отрисовываем каждую группу
             Object.entries(groups).forEach(([group, items]) => {
                 const grid = $(`achievements${group.charAt(0).toUpperCase() + group.slice(1)}Grid`);
                 if (grid) {
-                    grid.innerHTML = items.map(ach => `
-                        <div class="achievement-card ${ach.earned ? 'earned' : ''}">
-                            <div class="achievement-icon">
-                                <i class="fas ${ach.icon}" style="color: ${ach.earned ? 'gold' : ach.color}"></i>
+                    if (items.length === 0) {
+                        grid.innerHTML = '<div class="text-secondary p-3">Нет достижений в этой категории</div>';
+                    } else {
+                        grid.innerHTML = items.map(ach => `
+                            <div class="achievement-card ${ach.earned ? 'earned' : ''}">
+                                <div class="achievement-icon">
+                                    <i class="fas ${ach.icon}" style="color: ${ach.earned ? 'gold' : ach.color}"></i>
+                                </div>
+                                <div class="achievement-name">${ach.title}</div>
+                                <div class="achievement-description">${ach.description}</div>
+                                <div class="achievement-xp">+${ach.xp} XP</div>
                             </div>
-                            <div class="achievement-name">${ach.title}</div>
-                            <div class="achievement-description">${ach.description}</div>
-                            <div class="achievement-xp">+${ach.xp} XP</div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                    }
                 }
             });
             
@@ -1346,24 +1423,14 @@
 
         // Отправка отзыва
         const submitBtn = $('submitReview');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', submitReview);
-        }
+        if (submitBtn) submitBtn.addEventListener('click', submitReview);
 
         // Кнопка пополнения баланса
         const topupBtn = $('topupBalanceBtn');
-        if (topupBtn) {
-            topupBtn.addEventListener('click', () => {
-                if (topupModal) topupModal.show();
-            });
-        }
-        
         const showTopupModal = $('showTopupModal');
-        if (showTopupModal) {
-            showTopupModal.addEventListener('click', () => {
-                if (topupModal) topupModal.show();
-            });
-        }
+        
+        if (topupBtn) topupBtn.addEventListener('click', () => topupModal?.show());
+        if (showTopupModal) showTopupModal.addEventListener('click', () => topupModal?.show());
 
         // Кнопка показать ещё
         const loadMoreBtn = $('loadMoreOrders');
@@ -1411,7 +1478,6 @@
                 }
             });
             
-            // Устанавливаем сохраненную тему
             if (localStorage.getItem('theme') === 'dark') {
                 document.body.classList.add('dark-theme');
                 const icon = themeToggle.querySelector('i');
@@ -1432,23 +1498,15 @@
 
         // Редактирование профиля
         const editProfileBtn = $('editProfileBtn');
-        if (editProfileBtn) {
-            editProfileBtn.addEventListener('click', () => {
-                if (editProfileModal) editProfileModal.show();
-            });
-        }
+        if (editProfileBtn) editProfileBtn.addEventListener('click', () => editProfileModal?.show());
 
         // Сохранение профиля
         const saveProfileBtn = $('saveProfileBtn');
-        if (saveProfileBtn) {
-            saveProfileBtn.addEventListener('click', saveProfile);
-        }
+        if (saveProfileBtn) saveProfileBtn.addEventListener('click', saveProfile);
 
         // Пополнение баланса
         const processTopupBtn = $('processTopupBtn');
-        if (processTopupBtn) {
-            processTopupBtn.addEventListener('click', processTopup);
-        }
+        if (processTopupBtn) processTopupBtn.addEventListener('click', processTopup);
 
         // Пресеты пополнения
         document.querySelectorAll('.topup-preset').forEach(preset => {
@@ -1475,9 +1533,7 @@
         const photoInput = $('reviewPhotoInput');
         
         if (uploadArea && photoInput) {
-            uploadArea.addEventListener('click', () => {
-                photoInput.click();
-            });
+            uploadArea.addEventListener('click', () => photoInput.click());
             
             photoInput.addEventListener('change', (e) => {
                 const preview = $('reviewPhotoPreview');
@@ -1520,7 +1576,6 @@
             if (editProfileModal) editProfileModal.hide();
             safeHelpers.showNotification('✅ Профиль обновлён!', 'success');
             
-            // Обновляем отображение
             await loadClientProfile();
             
         } catch (error) {
@@ -1539,20 +1594,16 @@
         }
         
         try {
-            // Показываем загрузку
             safeHelpers.showNotification(`⏳ Подготовка платежа на сумму ${amount} ₽...`, 'info');
             
-            // Здесь будет интеграция с платежной системой
-            // Для демо просто добавляем баланс
             const user = Auth.getUser();
             if (user) {
                 const userData = Auth.getUserData();
                 const currentBalance = userData.balance || 0;
                 
-                // Добавляем бонус при пополнении от 1000
                 let bonus = 0;
                 if (amount >= 1000) {
-                    bonus = Math.floor(amount * 0.05); // 5% бонус
+                    bonus = Math.floor(amount * 0.05);
                 }
                 
                 const totalAmount = amount + bonus;
@@ -1561,7 +1612,6 @@
                     balance: currentBalance + totalAmount
                 });
                 
-                // Логируем платеж
                 await db.collection('payments').add({
                     userId: user.uid,
                     amount: amount,
@@ -1573,10 +1623,7 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Обновляем данные
-                if (Auth.refreshUserData) {
-                    await Auth.refreshUserData();
-                }
+                if (Auth.refreshUserData) await Auth.refreshUserData();
                 
                 if (topupModal) topupModal.hide();
                 
@@ -1586,7 +1633,6 @@
                     safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽`, 'success');
                 }
                 
-                // Обновляем отображение
                 await loadClientProfile();
                 await loadPayments();
             }
@@ -1636,7 +1682,6 @@
                 });
                 safeHelpers.showNotification('✅ Мастер добавлен в избранное', 'success');
                 
-                // Начисляем XP
                 if (window.ClientGamification) {
                     await ClientGamification.addXP(user.uid, 5, 'Добавил в избранное');
                     await updateLevelProgress();
