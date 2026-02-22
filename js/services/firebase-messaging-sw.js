@@ -1,7 +1,9 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-const CACHE_NAME = 'workhom-v2';
+// Версионирование кэша с датой для автоматического обновления
+const CACHE_NAME = 'workhom-v' + new Date().toISOString().split('T')[0].replace(/-/g, ''); // например workhom-v20250321
+
 const urlsToCache = [
     '/',
     '/index.html',
@@ -44,6 +46,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Не кэшируем запросы к API
     if (event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('firebase') ||
         event.request.url.includes('yandex')) {

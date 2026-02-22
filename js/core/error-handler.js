@@ -449,12 +449,26 @@
     }
 
     /**
-     * Обработка ошибок загрузки чанков
+     * Обработка ошибок загрузки чанков (ИСПРАВЛЕНО)
      */
     function handleChunkLoadError() {
-        // Пробуем перезагрузить страницу через 2 секунды
-        showUserNotification('🔄 Обновляем приложение...', 'info');
-        setTimeout(() => window.location.reload(), 2000);
+        const CHUNK_KEY = 'chunk_reload_count';
+        const MAX_CHUNK_RELOADS = 2;
+        
+        let count = parseInt(sessionStorage.getItem(CHUNK_KEY) || '0');
+        count++;
+        
+        if (count <= MAX_CHUNK_RELOADS) {
+            sessionStorage.setItem(CHUNK_KEY, count);
+            showUserNotification('🔄 Обновляем приложение... (попытка ' + count + '/' + MAX_CHUNK_RELOADS + ')', 'info');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            sessionStorage.removeItem(CHUNK_KEY);
+            showUserNotification(
+                '❌ Не удалось загрузить часть приложения. Пожалуйста, очистите кэш браузера или свяжитесь с поддержкой.',
+                'error'
+            );
+        }
     }
 
     /**

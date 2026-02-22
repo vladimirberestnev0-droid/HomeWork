@@ -1,5 +1,33 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ВЕРСИЯ 13.2 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ
+// ВЕРСИЯ 13.2 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ + ЗАЩИТА ОТ РЕДИРЕКТОВ
+
+// ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
+(function() {
+    const REDIRECT_KEY = 'last_redirect';
+    const MAX_REDIRECTS = 3;
+    const TIME_WINDOW = 5000; // 5 секунд
+    
+    const now = Date.now();
+    const lastRedirect = sessionStorage.getItem(REDIRECT_KEY);
+    
+    if (lastRedirect) {
+        const data = JSON.parse(lastRedirect);
+        if (now - data.timestamp < TIME_WINDOW) {
+            data.count++;
+            if (data.count > MAX_REDIRECTS) {
+                console.error('⚠️ Обнаружен бесконечный редирект!');
+                alert('❌ Слишком много перенаправлений. Проверьте подключение к интернету или обратитесь в поддержку.');
+                window.stop();
+                return;
+            }
+            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify(data));
+        } else {
+            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
+        }
+    } else {
+        sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
+    }
+})();
 
 // Глобальные переменные
 let map = null;
@@ -124,38 +152,44 @@ function initFilters() {
     
     // ===== КАТЕГОРИИ =====
     const categoryFilter = document.getElementById('categoryFilter');
-    if (categoryFilter && window.ORDER_CATEGORIES) {
-        console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
-        
-        categoryFilter.innerHTML = window.ORDER_CATEGORIES.map(cat => `
-            <button class="filter-btn category-filter-btn ${cat.id === 'all' ? 'active' : ''}" 
-                    data-category="${cat.id}" 
-                    title="${cat.name}">
-                <i class="fas ${cat.icon} me-1"></i>
-                ${cat.name}
-            </button>
-        `).join('');
-        
-        // Добавляем обработчики для категорий
-        document.querySelectorAll('.category-filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                filters.category = this.dataset.category;
-                console.log('📋 Выбрана категория:', filters.category);
-                applyFilters(true);
-            });
-        });
-        
-        console.log('✅ Кнопки категорий сформированы');
-    } else {
-        console.error('❌ Категории не найдены в window.ORDER_CATEGORIES');
+    if (!categoryFilter) {
+        console.error('❌ categoryFilter не найден');
+        return;
     }
+    
+    if (!window.ORDER_CATEGORIES) {
+        console.error('❌ ORDER_CATEGORIES не определены');
+        return;
+    }
+    
+    console.log('📋 Категории загружены:', window.ORDER_CATEGORIES.length);
+    
+    categoryFilter.innerHTML = window.ORDER_CATEGORIES.map(cat => `
+        <button class="filter-btn category-filter-btn ${cat.id === 'all' ? 'active' : ''}" 
+                data-category="${cat.id}" 
+                title="${cat.name}">
+            <i class="fas ${cat.icon} me-1"></i>
+            ${cat.name}
+        </button>
+    `).join('');
+    
+    // Добавляем обработчики для категорий
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            filters.category = this.dataset.category;
+            console.log('📋 Выбрана категория:', filters.category);
+            applyFilters(true);
+        });
+    });
+    
+    console.log('✅ Кнопки категорий сформированы');
 }
 
 // ============================================
-// КОМБО-ПОИСК ПО ГОРОДАМ
+// КОМБО-ПОИСК ПО ГОРОДАМ (исправлено с проверками)
 // ============================================
 
 function initCityCombo() {
@@ -163,8 +197,13 @@ function initCityCombo() {
     const input = document.getElementById('citySearchInput');
     const dropdown = document.getElementById('cityDropdown');
     
-    if (!container || !input || !dropdown || !window.SORTED_CITIES_BY_DISTRICT) {
-        console.warn('⚠️ Не удалось инициализировать комбо-поиск');
+    if (!container || !input || !dropdown) {
+        console.warn('⚠️ Элементы для комбо-поиска не найдены, инициализация пропущена');
+        return;
+    }
+    
+    if (!window.SORTED_CITIES_BY_DISTRICT) {
+        console.warn('⚠️ SORTED_CITIES_BY_DISTRICT не определен, инициализация пропущена');
         return;
     }
     
@@ -323,7 +362,8 @@ async function loadAllOrders() {
         console.log(`📦 Загружено ${allOrders.length} заказов`);
         
         // Обновляем счетчик
-        document.getElementById('ordersCount').textContent = allOrders.length;
+        const ordersCountEl = document.getElementById('ordersCount');
+        if (ordersCountEl) ordersCountEl.textContent = allOrders.length;
         
         // Применяем фильтры
         applyFilters();

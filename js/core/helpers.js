@@ -189,6 +189,23 @@ const Helpers = (function() {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
 
+    /**
+     * Безопасная перезагрузка страницы с защитой от циклов
+     */
+    function safeReload(maxAttempts = 2) {
+        const RELOAD_KEY = 'safe_reload_count';
+        let count = parseInt(sessionStorage.getItem(RELOAD_KEY) || '0');
+        count++;
+        
+        if (count <= maxAttempts) {
+            sessionStorage.setItem(RELOAD_KEY, count);
+            window.location.reload();
+        } else {
+            sessionStorage.removeItem(RELOAD_KEY);
+            showNotification('Не удалось загрузить страницу. Попробуйте позже.', 'error');
+        }
+    }
+
     // Публичное API
     return {
         escapeHtml,
@@ -206,7 +223,8 @@ const Helpers = (function() {
         getStorage,
         formatPrice,
         truncate,
-        generateId
+        generateId,
+        safeReload
     };
 })();
 

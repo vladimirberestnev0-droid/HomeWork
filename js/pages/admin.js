@@ -1,4 +1,33 @@
 // ===== ADMIN.JS — Логика админ-панели =====
+// + ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ
+
+// ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
+(function() {
+    const REDIRECT_KEY = 'last_redirect';
+    const MAX_REDIRECTS = 3;
+    const TIME_WINDOW = 5000;
+    
+    const now = Date.now();
+    const lastRedirect = sessionStorage.getItem(REDIRECT_KEY);
+    
+    if (lastRedirect) {
+        const data = JSON.parse(lastRedirect);
+        if (now - data.timestamp < TIME_WINDOW) {
+            data.count++;
+            if (data.count > MAX_REDIRECTS) {
+                console.error('⚠️ Обнаружен бесконечный редирект!');
+                alert('❌ Слишком много перенаправлений. Проверьте подключение к интернету или обратитесь в поддержку.');
+                window.stop();
+                return;
+            }
+            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify(data));
+        } else {
+            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
+        }
+    } else {
+        sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
+    }
+})();
 
 (function() {
     // Графики
