@@ -100,6 +100,11 @@
             </div>
         </div>
 
+        <!-- Панель эмодзи (ДОБАВЛЕНО) -->
+        <div id="emojiPanel" class="emoji-panel hidden">
+            <!-- Заполняется JS -->
+        </div>
+
         <!-- Сообщения -->
         <div id="messagesArea" class="messages-area">
             <div class="empty-chat">
@@ -126,7 +131,7 @@
                 <button class="quick-reply-btn" data-text="🔧 Нужны дополнительные материалы">
                     <i class="fas fa-tools me-2"></i>Материалы
                 </button>
-                <button class="quick-reply-btn" data-text="💰 Смета: [сумма] ₽">
+                <button class="quick-reply-btn" data-text="💰 Смета: [цена] ₽">
                     <i class="fas fa-calculator me-2"></i>Смета
                 </button>
                 <button class="quick-reply-btn" data-text="📸 Отправьте фото проблемы">
@@ -143,7 +148,7 @@
             <button id="attachButton" class="attach-btn" title="Прикрепить файл">
                 <i class="fas fa-paperclip"></i>
             </button>
-            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx">
+            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
             
             <button id="voiceButton" class="voice-btn" title="Голосовое сообщение">
                 <i class="fas fa-microphone"></i>
@@ -170,10 +175,10 @@
             <span></span><span></span><span></span><span></span>
         </div>
         <div class="recording-timer" id="recordingTimer">00:00</div>
-        <button class="btn btn-sm btn-light rounded-pill" onclick="stopRecording()">
+        <button class="btn btn-sm btn-light rounded-pill" onclick="window.stopRecording()">
             <i class="fas fa-stop"></i>
         </button>
-        <button class="btn btn-sm btn-light rounded-pill" onclick="cancelRecording()">
+        <button class="btn btn-sm btn-light rounded-pill" onclick="window.cancelRecording()">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -207,6 +212,7 @@
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
+    <script src="/HomeWork/js/services/moderation.js"></script>
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/services/websocket.js"></script>
     <script src="/HomeWork/js/pages/chat.js"></script>
