@@ -559,5 +559,52 @@
         }
     });
     </script>
+
+    <script>
+// Исправление для дропдауна городов
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('citySearchInput');
+    const dropdown = document.getElementById('cityDropdown');
+    
+    if (searchInput && dropdown) {
+        // Добавляем класс на body при открытии дропдауна
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style') {
+                    if (dropdown.style.display === 'block') {
+                        document.body.classList.add('dropdown-open');
+                    } else {
+                        document.body.classList.remove('dropdown-open');
+                    }
+                }
+            });
+        });
+        
+        observer.observe(dropdown, { attributes: true });
+        
+        // Закрытие по клику вне дропдауна
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+                document.body.classList.remove('dropdown-open');
+            }
+        });
+    }
+    
+    // Показываем кнопку "Еще" если есть заказы (для теста)
+    setTimeout(function() {
+        const loadMoreContainer = document.getElementById('loadMoreContainer');
+        const ordersCount = document.getElementById('ordersCount');
+        
+        if (loadMoreContainer && ordersCount) {
+            const count = parseInt(ordersCount.textContent) || 5;
+            if (count > 3) {
+                loadMoreContainer.classList.remove('d-none');
+                document.getElementById('remainingOrdersCount').textContent = count - 3;
+            }
+        }
+    }, 2000);
+});
+</script>
 </body>
 </html>
