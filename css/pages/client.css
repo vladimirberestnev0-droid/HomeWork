@@ -474,3 +474,413 @@ body.dark-theme .client-history-price {
 .client-empty-state p {
     margin-bottom: 25px;
 }
+
+/* ===== УЛУЧШЕНИЯ ДЛЯ КАБИНЕТА КЛИЕНТА ===== */
+
+/* Приветственный баннер */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--accent-light), rgba(230,122,75,0.1));
+    border-radius: 30px;
+    padding: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+}
+
+/* Карточка авторизации */
+.auth-required-card {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Аватар с редактированием */
+.avatar-upload {
+    position: relative;
+    width: fit-content;
+    margin: 0 auto 20px;
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    border: 2px solid white;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+}
+
+.avatar-edit-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(230,122,75,0.4);
+}
+
+/* Мини-статистика */
+.stats-mini {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-light);
+    border-radius: 20px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.stat-mini-item {
+    text-align: center;
+}
+
+.stat-mini-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-mini-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+/* Современная карточка баланса */
+.balance-card-modern {
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-white));
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.balance-card-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.balance-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.balance-info {
+    flex: 1;
+}
+
+.balance-label {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    display: block;
+}
+
+/* Достижения мини */
+.achievements-icons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.achievement-icon-mini {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 18px;
+    transition: all 0.3s ease;
+    cursor: help;
+    border: 1px solid transparent;
+}
+
+.achievement-icon-mini.earned {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+    animation: achievementGlow 2s infinite;
+}
+
+.achievement-icon-mini:hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
+}
+
+/* Современные табы */
+.tabs-modern {
+    display: flex;
+    gap: 5px;
+    background: var(--bg-light);
+    padding: 5px;
+    border-radius: 50px;
+    flex-wrap: wrap;
+}
+
+.tab-modern {
+    flex: 1;
+    min-width: 100px;
+    padding: 12px 15px;
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: var(--text-soft);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+}
+
+.tab-modern i {
+    font-size: 1.1rem;
+}
+
+.tab-modern:hover {
+    background: var(--bg-white);
+    color: var(--accent);
+}
+
+.tab-modern.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+}
+
+.tab-badge {
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Контент табов */
+.tab-content-modern {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.tab-content-modern.active {
+    display: block;
+}
+
+/* Фильтр чипсы */
+.filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.filter-chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* Финансовая статистика */
+.finance-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.finance-stat-card {
+    background: var(--bg-white);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.finance-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.finance-stat-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.finance-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+}
+
+.finance-stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+/* Селектор рейтинга */
+.rating-selector {
+    text-align: center;
+}
+
+.rating-stars-lg {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rating-star-lg {
+    font-size: 40px;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.rating-star-lg:hover,
+.rating-star-lg.active {
+    color: #FFD700;
+    transform: scale(1.2);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.rating-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-soft);
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+/* Способы оплаты */
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.payment-method {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    background: var(--bg-light);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.payment-method:hover {
+    background: var(--bg-white);
+    border-color: var(--accent-light);
+}
+
+.payment-method input[type="radio"] {
+    display: none;
+}
+
+.payment-method input[type="radio"]:checked + i {
+    color: var(--accent);
+}
+
+.payment-method i {
+    font-size: 24px;
+    color: var(--text-soft);
+    transition: color 0.3s ease;
+}
+
+.payment-method span {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+/* Анимации */
+@keyframes achievementGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+    .welcome-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .tabs-modern {
+        flex-direction: column;
+        border-radius: 30px;
+    }
+    
+    .tab-modern {
+        width: 100%;
+    }
+    
+    .finance-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+}
