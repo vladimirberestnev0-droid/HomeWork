@@ -1,5 +1,5 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 14.0 — ФИНАЛЬНАЯ С ИДЕАЛЬНОЙ СТРУКТУРОЙ */
+/* Версия: 14.1 — ФИНАЛЬНАЯ С РАБОЧИМ СКРОЛЛОМ */
 
 /* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
 #orderFormRow {
@@ -357,7 +357,7 @@ body:not(.dark-theme) .filter-section:hover {
     filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
 }
 
-/* ===== 5. КАРТОЧКИ ЗАКАЗОВ (старые стили) ===== */
+/* ===== 5. КАРТОЧКИ ЗАКАЗОВ ===== */
 .order-item {
     background: var(--bg-white) !important;
     border-radius: var(--radius-lg) !important;
@@ -947,6 +947,30 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     }
 }
 
+/* ===== 16. СТИЛИ ДЛЯ ФУТЕРА ===== */
+footer {
+    margin-top: 3rem !important;
+    padding-top: 2rem !important;
+    border-top: 2px solid var(--border) !important;
+}
+
+footer a {
+    transition: color 0.2s ease !important;
+}
+
+footer a:hover {
+    color: var(--accent) !important;
+}
+
+footer .fab {
+    transition: transform 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+footer .fab:hover {
+    transform: translateY(-3px) !important;
+}
+
 /* ===== ФИНАЛЬНАЯ СТРУКТУРА: ФОРМА + ЗАКАЗЫ > РЕЙТИНГ > КАРТА ===== */
 #orderFormRow {
     margin-bottom: 40px !important;
@@ -973,8 +997,4 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     flex-direction: column !important;
 }
 
-.row:not(#orderFormRow) {
-    width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
+/* ❌ УДАЛЕНО: .row:not(#orderFormRow) { ... } — ЭТО ЛОМАЛО СЕТКУ */
