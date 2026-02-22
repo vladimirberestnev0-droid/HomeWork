@@ -1,17 +1,19 @@
 // ===== chat.js =====
-// ПРЕМИУМ ЧАТ С ГОЛОСОВЫМИ, ФАЙЛАМИ И ЭМОДЗИ
+// ЧАТ С ПРОВЕРКОЙ ПРАВ И АНТИСПАМОМ
 
 (function() {
     // ===== СОСТОЯНИЕ =====
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('orderId');
     const masterId = urlParams.get('masterId');
+    const chatIdParam = urlParams.get('chatId');
     
     let chatId = null;
     let orderData = null;
     let partnerId = null;
     let partnerRole = null;
     let partnerName = null;
+    let chatData = null;
     let selectedFiles = [];
     let mediaRecorder = null;
     let audioChunks = [];
@@ -21,11 +23,13 @@
     let unsubscribeTyping = null;
     let unsubscribeStatus = null;
     let typingTimeout = null;
+    let messageCount = 0;
+    let lastMessageTime = 0;
     
     // Кэш для пользователей
     const userCache = new Map();
     
-    // Эмодзи для панели
+    // Эмодзи
     const EMOJIS = ['😊', '😂', '❤️', '👍', '🔥', '🎉', '🤔', '😢', '😡', '👋', '✅', '❌', '⭐', '💰', '🔨', '🛠️', '🚗', '📦', '⏰', '📍'];
 
     // ===== БЕЗОПАСНЫЕ HELPERЫ =====
@@ -43,15 +47,14 @@
                 const now = new Date();
                 const diff = now - date;
                 
-                // Сегодня
+                if (diff < 60000) return 'только что';
+                if (diff < 3600000) return Math.floor(diff / 60000) + ' мин назад';
                 if (diff < 86400000 && date.getDate() === now.getDate()) {
                     return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 }
-                // Вчера
                 if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
                     return 'вчера ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 }
-                // Старше
                 return date.toLocaleString('ru-RU', { 
                     day: 'numeric', 
                     month: 'short', 
@@ -75,6 +78,24 @@
                 notification.classList.add('animate__fadeOutRight');
                 setTimeout(() => notification.remove(), 500);
             }, 3000);
+        },
+        checkSpam: () => {
+            const now = Date.now();
+            if (now - lastMessageTime < 1000) { // Не чаще 1 сообщения в секунду
+                return false;
+            }
+            messageCount++;
+            if (messageCount > 30) { // Не больше 30 сообщений
+                return false;
+            }
+            lastMessageTime = now;
+            
+            // Сбрасываем счетчик каждую минуту
+            setTimeout(() => {
+                messageCount = Math.max(0, messageCount - 10);
+            }, 60000);
+            
+            return true;
         }
     };
 
@@ -84,13 +105,12 @@
     function checkFirebase() {
         if (typeof firebase === 'undefined' || typeof db === 'undefined') {
             console.error('❌ Firebase не инициализирован');
-            safeHelpers.showNotification('❌ Ошибка подключения', 'error');
             return false;
         }
         return true;
     }
 
-    // ===== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ С КЭШЕМ =====
+    // ===== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ =====
     async function getUserWithCache(userId) {
         if (!userId) return null;
         
@@ -119,132 +139,195 @@
         }
     }
 
-    // ===== ЗАГРУЗКА ДАННЫХ ЗАКАЗА =====
-    async function loadOrderData() {
+    // ===== ПРОВЕРКА ДОСТУПА К ЧАТУ =====
+    async function checkChatAccess() {
         try {
-            if (!checkFirebase()) return;
+            if (!checkFirebase()) return false;
             
             const user = Auth.getUser();
-            if (!user) return;
+            if (!user) return false;
             
-            const orderDoc = await db.collection('orders').doc(orderId).get();
-            if (!orderDoc.exists) {
-                safeHelpers.showNotification('❌ Заказ не найден', 'error');
-                setTimeout(() => window.location.href = '/HomeWork/', 2000);
-                return;
+            if (!chatId) return false;
+            
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            if (!chatDoc.exists) {
+                safeHelpers.showNotification('❌ Чат не найден', 'error');
+                return false;
             }
+            
+            chatData = chatDoc.data();
+            
+            // Проверяем, является ли пользователь участником чата
+            if (!chatData.participants.includes(user.uid)) {
+                safeHelpers.showNotification('❌ У вас нет доступа к этому чату', 'error');
+                return false;
+            }
+            
+            // Проверяем статус заказа
+            const orderDoc = await db.collection('orders').doc(chatData.orderId).get();
+            if (orderDoc.exists) {
+                orderData = { id: orderDoc.id, ...orderDoc.data() };
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Ошибка проверки доступа:', error);
+            return false;
+        }
+    }
 
-            orderData = { id: orderDoc.id, ...orderDoc.data() };
+    // ===== ЗАГРУЗКА ДАННЫХ ЧАТА =====
+    async function loadChatData() {
+        try {
+            if (!checkFirebase()) return false;
+            
+            const user = Auth.getUser();
+            if (!user) return false;
+            
+            // Если передан chatId, используем его
+            if (chatIdParam) {
+                chatId = chatIdParam;
+            } else if (orderId && masterId) {
+                chatId = `chat_${orderId}_${masterId}`;
+            } else {
+                safeHelpers.showNotification('❌ Не указан чат', 'error');
+                return false;
+            }
+            
+            // Проверяем доступ
+            const hasAccess = await checkChatAccess();
+            if (!hasAccess) return false;
             
             // Определяем собеседника
-            if (orderData.clientId === user.uid) {
-                // Мы клиент
-                partnerId = masterId;
-                partnerRole = 'Мастер';
-                
-                const masterData = await getUserWithCache(masterId);
-                partnerName = masterData?.name || 'Мастер';
-                chatId = `chat_${orderId}_${partnerId}`;
-            } else {
-                // Мы мастер
-                partnerId = orderData.clientId;
-                partnerRole = 'Клиент';
-                partnerName = orderData.clientName || 'Клиент';
-                chatId = `chat_${orderId}_${user.uid}`;
+            partnerId = chatData.participants.find(id => id !== user.uid);
+            if (!partnerId) {
+                safeHelpers.showNotification('❌ Ошибка определения собеседника', 'error');
+                return false;
             }
-
+            
+            const partnerData = await getUserWithCache(partnerId);
+            partnerRole = partnerData?.role === 'master' ? 'Мастер' : 'Клиент';
+            partnerName = partnerData?.name || (partnerRole === 'Мастер' ? 'Мастер' : 'Клиент');
+            
             // Обновляем UI
-            const partnerNameEl = $('chatPartnerName');
-            if (partnerNameEl) partnerNameEl.innerText = partnerName;
-            
-            const partnerRoleEl = $('chatPartnerRole');
-            if (partnerRoleEl) partnerRoleEl.innerHTML = `${partnerRole} <span class="online-status" id="onlineStatus"></span>`;
-            
-            const orderInfoEl = $('orderInfo');
-            if (orderInfoEl) {
-                orderInfoEl.innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
-            }
-            
-            // Показываем закрепленный заказ
-            const pinnedOrder = $('pinnedOrder');
-            if (orderData && pinnedOrder) {
-                $('pinnedTitle').innerText = orderData.title || 'Заказ';
-                $('pinnedPrice').innerText = orderData.price || '0';
-                $('pinnedAddress').innerText = orderData.address || 'Адрес не указан';
-                pinnedOrder.classList.remove('hidden');
-            }
-            
-            // Быстрые ответы только для мастеров
-            const quickReplies = $('quickReplies');
-            if (quickReplies) {
-                if (Auth.isMaster?.()) {
-                    quickReplies.classList.remove('hidden');
-                } else {
-                    quickReplies.classList.add('hidden');
-                }
-            }
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки заказа:', error);
-            safeHelpers.showNotification('❌ Ошибка загрузки данных', 'error');
-        }
-    }
-
-    // ===== ИНИЦИАЛИЗАЦИЯ ЧАТА =====
-    async function initializeChat() {
-        try {
-            if (!checkFirebase() || !chatId) return;
-            
-            const user = Auth.getUser();
-            if (!user) return;
-            
-            // Создаем или получаем чат
-            const chatRef = db.collection('chats').doc(chatId);
-            const chatDoc = await chatRef.get();
-            
-            if (!chatDoc.exists) {
-                await chatRef.set({
-                    participants: [user.uid, partnerId],
-                    orderId: orderId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastMessage: 'Чат создан'
-                });
-            }
+            updateUI();
             
             // Подписываемся на сообщения
-            if (unsubscribeMessages) unsubscribeMessages();
-            unsubscribeMessages = chatRef.collection('messages')
-                .orderBy('timestamp', 'asc')
-                .onSnapshot((snapshot) => {
-                    const messages = [];
-                    snapshot.forEach(doc => messages.push(doc.data()));
-                    displayMessages(messages);
-                }, (error) => {
-                    console.error('❌ Ошибка подписки на сообщения:', error);
-                });
+            subscribeToMessages();
             
-            // Подписываемся на печатание
-            if (unsubscribeTyping) unsubscribeTyping();
-            unsubscribeTyping = chatRef.collection('typing').doc(partnerId)
-                .onSnapshot((doc) => {
-                    const typing = doc.data();
-                    const indicator = $('typingIndicator');
-                    if (indicator) {
-                        indicator.classList.toggle('hidden', !typing?.isTyping);
-                    }
-                });
+            // Подписываемся на статус
+            subscribeToStatus();
             
-            // Проверяем онлайн статус
-            checkOnlineStatus();
+            return true;
             
         } catch (error) {
-            console.error('❌ Ошибка инициализации чата:', error);
+            console.error('❌ Ошибка загрузки чата:', error);
+            return false;
         }
     }
 
-    // ===== ПРОВЕРКА ОНЛАЙН СТАТУСА =====
-    function checkOnlineStatus() {
+    // ===== ОБНОВЛЕНИЕ UI =====
+    function updateUI() {
+        const partnerNameEl = $('chatPartnerName');
+        if (partnerNameEl) partnerNameEl.innerText = partnerName;
+        
+        const partnerRoleEl = $('chatPartnerRole');
+        if (partnerRoleEl) {
+            partnerRoleEl.innerHTML = `${partnerRole} <span class="online-status" id="onlineStatus"></span>`;
+        }
+        
+        const orderInfoEl = $('orderInfo');
+        if (orderInfoEl && orderData) {
+            orderInfoEl.innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
+        }
+        
+        // Показываем закрепленный заказ
+        const pinnedOrder = $('pinnedOrder');
+        if (orderData && pinnedOrder) {
+            $('pinnedTitle').innerText = orderData.title || 'Заказ';
+            $('pinnedPrice').innerText = orderData.price || '0';
+            $('pinnedAddress').innerText = orderData.address || 'Адрес не указан';
+            pinnedOrder.classList.remove('hidden');
+        }
+        
+        // Блокируем ввод если заказ выполнен
+        const canWrite = checkCanWrite();
+        toggleInputState(canWrite);
+        
+        // Показываем статус чата
+        if (chatData?.status === 'completed') {
+            const messagesArea = $('messagesArea');
+            const banner = document.createElement('div');
+            banner.className = 'alert alert-info mb-0 text-center';
+            banner.innerHTML = '✅ Заказ выполнен. Чат только для чтения.';
+            messagesArea.parentNode.insertBefore(banner, messagesArea);
+        }
+    }
+
+    // ===== ПРОВЕРКА ПРАВА НА ПИСЬМО =====
+    function checkCanWrite() {
+        // Если заказ выполнен - нельзя писать
+        if (orderData?.status === 'completed' || chatData?.status === 'completed') {
+            return false;
+        }
+        
+        const user = Auth.getUser();
+        if (!user) return false;
+        
+        // Проверяем по роли
+        if (partnerRole === 'Мастер') {
+            // Я - клиент
+            return chatData?.settings?.canClientWrite !== false;
+        } else {
+            // Я - мастер
+            return chatData?.settings?.canMasterWrite !== false;
+        }
+    }
+
+    // ===== БЛОКИРОВКА/РАЗБЛОКИРОВКА ВВОДА =====
+    function toggleInputState(enabled) {
+        const input = $('messageInput');
+        const sendBtn = $('sendButton');
+        const attachBtn = $('attachButton');
+        const voiceBtn = $('voiceButton');
+        const emojiBtn = $('emojiButton');
+        
+        [input, sendBtn, attachBtn, voiceBtn, emojiBtn].forEach(el => {
+            if (el) {
+                el.disabled = !enabled;
+                el.style.opacity = enabled ? '1' : '0.5';
+                el.style.pointerEvents = enabled ? 'auto' : 'none';
+            }
+        });
+        
+        if (!enabled) {
+            input.placeholder = 'Чат закрыт для новых сообщений';
+        } else {
+            input.placeholder = 'Напишите сообщение...';
+        }
+    }
+
+    // ===== ПОДПИСКА НА СООБЩЕНИЯ =====
+    function subscribeToMessages() {
+        if (!checkFirebase() || !chatId) return;
+        
+        if (unsubscribeMessages) unsubscribeMessages();
+        
+        unsubscribeMessages = db.collection('chats').doc(chatId)
+            .collection('messages')
+            .orderBy('timestamp', 'asc')
+            .onSnapshot((snapshot) => {
+                const messages = [];
+                snapshot.forEach(doc => messages.push(doc.data()));
+                displayMessages(messages);
+            }, (error) => {
+                console.error('❌ Ошибка подписки на сообщения:', error);
+            });
+    }
+
+    // ===== ПОДПИСКА НА СТАТУС =====
+    function subscribeToStatus() {
         if (!checkFirebase() || !partnerId) return;
         
         if (unsubscribeStatus) unsubscribeStatus();
@@ -268,8 +351,6 @@
                     onlineDot.style.background = 'var(--text-soft)';
                     onlineDot.classList.remove('online');
                 }
-            }, (error) => {
-                console.error('❌ Ошибка отслеживания статуса:', error);
             });
     }
 
@@ -306,9 +387,22 @@
     function createMessageElement(message) {
         const user = Auth.getUser();
         const div = document.createElement('div');
+        
+        // Системное сообщение
+        if (message.type === 'system') {
+            div.className = 'system-message';
+            div.innerHTML = `
+                <div class="system-message-content">
+                    <i class="fas ${message.systemType === 'master_selected' ? 'fa-handshake' : 'fa-check-circle'}"></i>
+                    <span>${safeHelpers.escapeHtml(message.text)}</span>
+                </div>
+            `;
+            return div;
+        }
+        
+        // Обычное сообщение
         div.className = `message ${message.senderId === user?.uid ? 'sent' : 'received'}`;
         
-        // Файлы
         let filesHtml = '';
         if (message.files?.length > 0) {
             filesHtml = '<div class="message-files">';
@@ -347,17 +441,29 @@
         return div;
     }
 
-    // ===== ОТПРАВКА СООБЩЕНИЯ =====
+    // ===== ОТПРАВКА СООБЩЕНИЯ С АНТИСПАМОМ =====
     async function sendMessage() {
         const input = $('messageInput');
         const text = input?.value.trim();
         
         if (!chatId) {
-            safeHelpers.showNotification('❌ Чат не инициализирован', 'error');
+            safeHelpers.showNotification('❌ Чат не найден', 'error');
+            return;
+        }
+        
+        // Проверяем право на отправку
+        if (!checkCanWrite()) {
+            safeHelpers.showNotification('❌ Чат закрыт для новых сообщений', 'warning');
             return;
         }
         
         if ((!text || text === '') && selectedFiles.length === 0) return;
+        
+        // Антиспам проверка
+        if (!safeHelpers.checkSpam()) {
+            safeHelpers.showNotification('❌ Слишком много сообщений. Подождите немного.', 'warning');
+            return;
+        }
         
         // Модерация текста
         if (text && window.Moderation) {
@@ -376,7 +482,7 @@
             
             // Загружаем файлы
             const filePromises = selectedFiles.map(async (file) => {
-                const fileName = `${Date.now()}_${file.name}`;
+                const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
                 const storageRef = storage.ref(`chat_files/${chatId}/${fileName}`);
                 await storageRef.put(file);
                 const url = await storageRef.getDownloadURL();
@@ -393,6 +499,7 @@
             // Отправляем сообщение
             const message = {
                 senderId: user.uid,
+                senderName: Auth.getUserData()?.name || 'Пользователь',
                 text: text || '',
                 files: files,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -405,7 +512,8 @@
             // Обновляем последнее сообщение в чате
             await db.collection('chats').doc(chatId).update({
                 lastMessage: text || '📎 Файл',
-                lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+                lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+                [`unreadCount.${partnerId}`]: firebase.firestore.FieldValue.increment(1)
             });
             
             // Очищаем
@@ -413,46 +521,19 @@
             selectedFiles = [];
             updateFilePreview();
             
-            // Отправляем уведомление собеседнику (если есть FCM)
-            if (window.Messaging) {
-                await Messaging.sendNotification(partnerId, {
-                    title: 'Новое сообщение',
-                    body: text || 'Файл',
-                    data: { chatId, orderId }
-                });
-            }
-            
         } catch (error) {
             console.error('❌ Ошибка отправки:', error);
             safeHelpers.showNotification('❌ Ошибка при отправке', 'error');
         }
     }
 
-    // ===== ОТПРАВКА ТИПИНГ ИНДИКАТОРА =====
-    async function sendTyping() {
-        if (!chatId || !checkFirebase()) return;
-        
-        const user = Auth.getUser();
-        if (!user) return;
-        
-        const typingRef = db.collection('chats').doc(chatId)
-            .collection('typing').doc(user.uid);
-        
-        await typingRef.set({
-            isTyping: true,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        if (typingTimeout) clearTimeout(typingTimeout);
-        
-        typingTimeout = setTimeout(async () => {
-            await typingRef.delete();
-            typingTimeout = null;
-        }, 3000);
-    }
-
-    // ===== ОБРАБОТКА ВЫБОРА ФАЙЛОВ =====
+    // ===== ОБРАБОТКА ФАЙЛОВ =====
     function handleFileSelect(files) {
+        if (!checkCanWrite()) {
+            safeHelpers.showNotification('❌ Нельзя отправлять файлы в закрытом чате', 'warning');
+            return;
+        }
+        
         if (!files) return;
         
         for (let file of files) {
@@ -504,6 +585,11 @@
 
     // ===== ЗАПИСЬ ГОЛОСА =====
     async function startRecording() {
+        if (!checkCanWrite()) {
+            safeHelpers.showNotification('❌ Нельзя отправлять голосовые в закрытом чате', 'warning');
+            return;
+        }
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
@@ -589,8 +675,10 @@
             btn.textContent = emoji;
             btn.onclick = () => {
                 const input = $('messageInput');
-                input.value += emoji;
-                input.focus();
+                if (checkCanWrite()) {
+                    input.value += emoji;
+                    input.focus();
+                }
                 panel.classList.add('hidden');
             };
             panel.appendChild(btn);
@@ -601,10 +689,15 @@
 
     // ===== ПОКАЗ ДЕТАЛЕЙ ЗАКАЗА =====
     window.showOrderDetails = function() {
+        if (!orderData) {
+            safeHelpers.showNotification('Данные заказа не загружены', 'info');
+            return;
+        }
+        
         const modal = new bootstrap.Modal($('orderDetailsModal'));
         
         const content = $('orderDetailsContent');
-        if (content && orderData) {
+        if (content) {
             content.innerHTML = `
                 <div class="order-detail-item">
                     <div class="order-detail-icon"><i class="fas fa-tag"></i></div>
@@ -642,10 +735,14 @@
                     </div>
                 </div>
                 <div class="order-detail-item">
-                    <div class="order-detail-icon"><i class="fas fa-clock"></i></div>
+                    <div class="order-detail-icon"><i class="fas fa-user"></i></div>
                     <div class="order-detail-info">
-                        <div class="order-detail-label">Создан</div>
-                        <div class="order-detail-value">${safeHelpers.formatDate(orderData.createdAt)}</div>
+                        <div class="order-detail-label">Статус</div>
+                        <div class="order-detail-value">
+                            ${orderData.status === 'open' ? '🔵 Активен' : 
+                              orderData.status === 'in_progress' ? '🟢 В работе' : 
+                              '✅ Завершен'}
+                        </div>
                     </div>
                 </div>
             `;
@@ -654,7 +751,7 @@
         modal.show();
     };
 
-    // ===== ОЧИСТКА ПРИ ВЫХОДЕ =====
+    // ===== ОЧИСТКА =====
     function cleanup() {
         if (unsubscribeMessages) unsubscribeMessages();
         if (unsubscribeTyping) unsubscribeTyping();
@@ -663,7 +760,7 @@
         if (typingTimeout) clearTimeout(typingTimeout);
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     function initEventListeners() {
         // Загрузка файлов
         const attachButton = $('attachButton');
@@ -688,14 +785,15 @@
                 sendMessage();
             }
         });
-        
-        messageInput?.addEventListener('input', () => {
-            if (chatId) sendTyping();
-        });
 
         // Быстрые ответы
         document.querySelectorAll('.quick-reply-btn').forEach(btn => {
             btn.addEventListener('click', function() {
+                if (!checkCanWrite()) {
+                    safeHelpers.showNotification('❌ Нельзя отправлять сообщения', 'warning');
+                    return;
+                }
+                
                 let text = this.dataset.text;
                 if (text.includes('[цена]') && orderData?.price) {
                     text = text.replace('[цена]', orderData.price);
@@ -709,11 +807,19 @@
 
         // Видеозвонок
         $('videoCallBtn')?.addEventListener('click', () => {
+            if (orderData?.status === 'completed') {
+                safeHelpers.showNotification('❌ Заказ выполнен, звонок недоступен', 'warning');
+                return;
+            }
             safeHelpers.showNotification('🎥 Видеозвонки скоро будут доступны', 'info');
         });
 
         // Аудиозвонок
         $('voiceCallBtn')?.addEventListener('click', () => {
+            if (orderData?.status === 'completed') {
+                safeHelpers.showNotification('❌ Заказ выполнен, звонок недоступен', 'warning');
+                return;
+            }
             safeHelpers.showNotification('📞 Аудиозвонки скоро будут доступны', 'info');
         });
 
@@ -734,7 +840,7 @@
             }
         });
 
-        // Закрытие панели эмодзи при клике вне
+        // Закрытие панели эмодзи
         document.addEventListener('click', (e) => {
             const panel = $('emojiPanel');
             const btn = $('emojiButton');
@@ -748,23 +854,20 @@
     }
 
     // ===== ЗАПУСК =====
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!orderId || !masterId) {
-            safeHelpers.showNotification('❌ Не указан заказ или мастер', 'error');
-            setTimeout(() => window.location.href = '/HomeWork/', 2000);
-            return;
-        }
-
+    document.addEventListener('DOMContentLoaded', async () => {
         // Проверяем авторизацию
         if (!window.Auth) {
             safeHelpers.showNotification('❌ Ошибка авторизации', 'error');
+            setTimeout(() => window.location.href = '/HomeWork/', 2000);
             return;
         }
 
         Auth.onAuthChange(async (state) => {
             if (state.isAuthenticated) {
-                await loadOrderData();
-                await initializeChat();
+                const loaded = await loadChatData();
+                if (!loaded) {
+                    setTimeout(() => window.location.href = '/HomeWork/', 2000);
+                }
             } else {
                 safeHelpers.showNotification('❌ Требуется авторизация', 'warning');
                 setTimeout(() => window.location.href = '/HomeWork/', 2000);

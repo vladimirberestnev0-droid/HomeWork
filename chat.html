@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — Чат с мастером</title>
+    <title>ВоркХом — Чат</title>
 
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
@@ -73,13 +73,13 @@
             <div class="chat-info">
                 <h2 id="chatPartnerName">Загрузка...</h2>
                 <p id="chatPartnerRole">
-                    <span id="partnerRole">Мастер</span>
+                    <span id="partnerRole">...</span>
                     <span class="online-status" id="onlineStatus"></span>
                 </p>
             </div>
 
             <div class="order-badge" id="orderInfo" onclick="showOrderDetails()">
-                📋 Заказ #<span id="orderNumber">...</span>
+                📋 Загрузка...
             </div>
             
             <!-- Кнопки чата -->
@@ -100,7 +100,7 @@
             </div>
         </div>
 
-        <!-- Панель эмодзи (ДОБАВЛЕНО) -->
+        <!-- Панель эмодзи -->
         <div id="emojiPanel" class="emoji-panel hidden">
             <!-- Заполняется JS -->
         </div>
@@ -109,8 +109,8 @@
         <div id="messagesArea" class="messages-area">
             <div class="empty-chat">
                 <i class="fas fa-comments"></i>
-                <h3>Начните диалог</h3>
-                <p>Обсудите детали заказа с мастером</p>
+                <h3>Загрузка чата...</h3>
+                <p>Пожалуйста, подождите</p>
             </div>
         </div>
 
@@ -158,9 +158,9 @@
                 <i class="fas fa-smile"></i>
             </button>
             
-            <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
+            <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off" disabled>
             
-            <button id="sendButton" class="send-btn" title="Отправить">
+            <button id="sendButton" class="send-btn" title="Отправить" disabled>
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>

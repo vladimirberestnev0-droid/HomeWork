@@ -91,13 +91,11 @@
         
         // Показ уведомлений
         showNotification: (msg, type = 'info') => {
-            // Проверяем, есть ли глобальный Helpers
             if (window.Helpers?.showNotification) {
                 Helpers.showNotification(msg, type);
                 return;
             }
             
-            // Создаем свое уведомление
             const notification = document.createElement('div');
             notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
             notification.style.zIndex = '9999';
@@ -149,7 +147,6 @@
             
             const xp = userData.xp || 0;
             
-            // Проверяем, есть ли Gamification
             let level = { level: 1, name: 'Новичок' };
             let progress = { progress: 0, xpNeeded: 100 };
             
@@ -158,7 +155,6 @@
                 progress = Gamification.getLevelProgress(xp);
             }
             
-            // Обновляем UI с проверкой существования элементов
             const levelEl = $('masterLevel');
             if (levelEl) levelEl.textContent = `Уровень ${level.level}`;
             
@@ -180,14 +176,12 @@
                 }
             }
             
-            // Обновляем в шапке
             const headerLevel = $('headerLevelValue');
             if (headerLevel) headerLevel.textContent = level.level;
             
             const headerXP = $('headerXPValue');
             if (headerXP) headerXP.textContent = xp;
             
-            // Цвет уровня
             const levelBadge = $('headerLevel');
             if (levelBadge) {
                 levelBadge.className = `level-badge level-${level.level}`;
@@ -203,18 +197,15 @@
         try {
             const userData = state.userData;
             
-            // Имя
             const masterNameEl = $('masterName');
             if (masterNameEl) masterNameEl.innerText = userData?.name || 'Мастер';
             
-            // Роль/категория
             const masterRoleEl = $('masterRole');
             if (masterRoleEl) {
                 const categories = userData?.categories ? userData.categories.split(',')[0] : 'Строительный мастер';
                 masterRoleEl.innerText = categories;
             }
             
-            // Рейтинг
             const rating = userData?.rating || 0;
             const reviews = userData?.reviews || 0;
             
@@ -226,7 +217,6 @@
                 masterReviewsEl.innerHTML = `${reviews} ${safeHelpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
             }
             
-            // Звезды
             const starsElement = $('ratingStars');
             if (starsElement) {
                 const fullStars = Math.floor(rating);
@@ -240,7 +230,6 @@
                 starsElement.innerHTML = stars;
             }
             
-            // Опыт (если есть)
             if (userData?.experience) {
                 const expEl = $('masterExperience');
                 if (expEl) expEl.innerText = `${userData.experience} лет`;
@@ -262,7 +251,6 @@
             const user = Auth.getUser();
             if (!user) return;
             
-            // Проверяем, есть ли сервис бейджей
             if (!window.Badges) {
                 container.innerHTML = '<span class="badge badge-secondary">Скоро будут бейджи</span>';
                 return;
@@ -310,14 +298,12 @@
             const user = Auth.getUser();
             if (!user) return;
             
-            // Проверяем, есть ли сервис заказов
             if (!window.Orders) {
                 throw new Error('Сервис заказов недоступен');
             }
             
             const responses = await Orders.getMasterResponses(user.uid);
             
-            // Фильтрация
             let filtered = responses;
             if (filter === 'pending') {
                 filtered = responses.filter(r => r.status === ORDER_STATUS?.OPEN || 'open');
@@ -327,7 +313,6 @@
                 filtered = responses.filter(r => r.status === ORDER_STATUS?.COMPLETED || 'completed');
             }
             
-            // Обновляем статистику
             updateStats(responses);
             
             if (filtered.length === 0) {
@@ -365,7 +350,6 @@
         
         const status = statusConfig[item.status] || statusConfig.open;
         
-        // Фото
         let photosHtml = '';
         if (order.photos?.length > 0) {
             photosHtml = `
@@ -377,7 +361,6 @@
             `;
         }
         
-        // Время отклика
         const responseTime = response.createdAt ? safeHelpers.formatShortDate(response.createdAt) : 'только что';
         
         return `
@@ -511,7 +494,6 @@
         const calendarEl = $('calendar');
         if (!calendarEl) return;
         
-        // Проверяем, загружен ли FullCalendar
         if (typeof FullCalendar === 'undefined') {
             console.warn('⚠️ FullCalendar не загружен');
             return;
@@ -594,15 +576,13 @@
             const user = Auth.getUser();
             if (!user) return;
             
-            // Получаем все заказы мастера
             const ordersSnapshot = await db.collection('orders')
                 .where('selectedMasterId', '==', user.uid)
                 .get();
             
             const clientMap = new Map();
-            
-            // Собираем уникальные ID клиентов
             const clientIds = new Set();
+            
             ordersSnapshot.forEach(doc => {
                 const order = doc.data();
                 if (order.clientId) {
@@ -610,14 +590,12 @@
                 }
             });
             
-            // Загружаем данные клиентов
             for (const clientId of clientIds) {
                 try {
                     const clientDoc = await db.collection('users').doc(clientId).get();
                     if (clientDoc.exists) {
                         const client = clientDoc.data();
                         
-                        // Считаем заказы этого клиента у данного мастера
                         const clientOrders = ordersSnapshot.docs.filter(
                             doc => doc.data().clientId === clientId
                         );
@@ -795,16 +773,13 @@
             currentOrderId = orderId;
             currentRating = 0;
             
-            // Сброс звезд
             document.querySelectorAll('#completeOrderModal .rating-star').forEach(star => {
                 star.classList.remove('active');
             });
             
-            // Очистка комментария
             const commentEl = $('completeComment');
             if (commentEl) commentEl.value = '';
             
-            // Показ модалки
             const modalEl = $('completeOrderModal');
             if (modalEl) {
                 const modal = new bootstrap.Modal(modalEl);
@@ -812,14 +787,15 @@
             }
         },
 
-        // Открыть чат
+        // ОТКРЫТИЕ ЧАТА (ИСПРАВЛЕНО)
         openChat: (orderId, clientId) => {
             const user = Auth.getUser();
             if (!user) {
                 safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
                 return;
             }
-            window.location.href = `/HomeWork/chat.html?orderId=${orderId}&masterId=${user.uid}`;
+            const chatId = `chat_${orderId}_${user.uid}`;
+            window.location.href = `/HomeWork/chat.html?chatId=${chatId}&orderId=${orderId}&masterId=${user.uid}`;
         },
 
         // Открыть чат с клиентом
@@ -829,6 +805,7 @@
                 safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
                 return;
             }
+            // Здесь нужно получить заказ для этого клиента
             window.location.href = `/HomeWork/chat.html?clientId=${clientId}&masterId=${user.uid}`;
         },
 
@@ -864,7 +841,6 @@
             const orderData = orderDoc.data();
             const clientId = orderData.clientId;
             
-            // Сохраняем отзыв о клиенте
             if (currentRating > 0) {
                 const review = {
                     masterId: Auth.getUser().uid,
@@ -878,7 +854,6 @@
                     customerReviews: firebase.firestore.FieldValue.arrayUnion(review)
                 });
                 
-                // Обновляем рейтинг клиента
                 try {
                     const clientDoc = await db.collection('users').doc(clientId).get();
                     if (clientDoc.exists) {
@@ -898,30 +873,25 @@
                 }
             }
             
-            // Завершаем заказ
             if (window.Orders?.completeOrder) {
                 const result = await Orders.completeOrder(currentOrderId);
                 
                 if (result?.success) {
-                    // Начисляем XP
                     if (window.Gamification) {
                         await Gamification.addXP(Auth.getUser().uid, 50, 'Заказ выполнен');
                     }
                     
-                    // Закрываем модалку
                     const modal = bootstrap.Modal.getInstance($('completeOrderModal'));
                     if (modal) modal.hide();
                     
                     safeHelpers.showNotification('✅ Заказ выполнен! +50 XP', 'success');
                     
-                    // Обновляем данные
                     await updateMasterLevel();
                     await loadMasterResponses(currentFilter);
                 } else {
                     throw new Error(result?.error || 'Ошибка при завершении заказа');
                 }
             } else {
-                // Если нет сервиса заказов, просто обновляем статус
                 await db.collection('orders').doc(currentOrderId).update({
                     status: 'completed',
                     completedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -942,7 +912,6 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        // Табы
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -953,7 +922,6 @@
                 const contentEl = $(tabId);
                 if (contentEl) contentEl.classList.add('active');
                 
-                // Загружаем данные для соответствующих табов
                 if (this.dataset.tab === 'calendar' && calendar) {
                     calendar.render();
                 } else if (this.dataset.tab === 'crm') {
@@ -962,7 +930,6 @@
             });
         });
 
-        // Фильтры откликов
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -971,7 +938,6 @@
             });
         });
 
-        // Редактирование профиля
         const editProfileBtn = $('editProfileBtn');
         if (editProfileBtn) {
             editProfileBtn.addEventListener('click', () => {
@@ -997,7 +963,6 @@
             });
         }
 
-        // Сохранение профиля
         const saveProfileBtn = $('saveProfileBtn');
         if (saveProfileBtn) {
             saveProfileBtn.addEventListener('click', async () => {
@@ -1042,7 +1007,6 @@
             });
         }
 
-        // Добавление в портфолио
         const addPortfolioBtn = $('addPortfolioBtn');
         if (addPortfolioBtn) {
             addPortfolioBtn.addEventListener('click', () => {
@@ -1055,7 +1019,6 @@
             });
         }
 
-        // Загрузка фото для портфолио
         const portfolioUploadArea = $('portfolioUploadArea');
         const portfolioPhotoInput = $('portfolioPhotoInput');
 
@@ -1100,7 +1063,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Сохранение портфолио
         const savePortfolioBtn = $('savePortfolioBtn');
         if (savePortfolioBtn) {
             savePortfolioBtn.addEventListener('click', async () => {
@@ -1132,7 +1094,6 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
-                    // Начисляем XP за добавление фото
                     if (window.Gamification) {
                         await Gamification.addXP(user.uid, 10, 'Добавил фото в портфолио');
                         await updateMasterLevel();
@@ -1151,7 +1112,6 @@
             });
         }
 
-        // Верификация
         const verifyMasterBtn = $('verifyMasterBtn');
         if (verifyMasterBtn) {
             verifyMasterBtn.addEventListener('click', () => {
@@ -1160,13 +1120,11 @@
             });
         }
 
-        // Выход
         const logoutLink = $('logoutLink');
         if (logoutLink) {
             logoutLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 
-                // Очищаем интервал
                 if (statsInterval) {
                     clearInterval(statsInterval);
                     statsInterval = null;
@@ -1178,7 +1136,6 @@
             });
         }
 
-        // Темная тема
         const themeToggle = $('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', () => {
@@ -1198,7 +1155,6 @@
             });
         }
 
-        // Уведомления
         const notificationsBtn = $('notificationsBtn');
         if (notificationsBtn) {
             notificationsBtn.addEventListener('click', () => {
@@ -1206,7 +1162,6 @@
             });
         }
 
-        // Поиск клиентов
         const clientSearch = $('clientSearch');
         if (clientSearch) {
             clientSearch.addEventListener('input', (e) => {
@@ -1222,7 +1177,6 @@
             });
         }
 
-        // Экспорт клиентов
         const exportClientsBtn = $('exportClientsBtn');
         if (exportClientsBtn) {
             exportClientsBtn.addEventListener('click', () => {
@@ -1230,7 +1184,6 @@
             });
         }
 
-        // Создание договора
         const createContractBtn = $('createContractBtn');
         if (createContractBtn) {
             createContractBtn.addEventListener('click', () => {
@@ -1238,7 +1191,6 @@
             });
         }
 
-        // Добавление цены
         const addPriceBtn = $('addPriceBtn');
         if (addPriceBtn) {
             addPriceBtn.addEventListener('click', () => {
@@ -1247,7 +1199,6 @@
             });
         }
 
-        // Сохранение цены (новая услуга)
         const savePriceBtn = $('savePriceBtn');
         if (savePriceBtn) {
             savePriceBtn.addEventListener('click', async () => {
@@ -1289,7 +1240,6 @@
                     
                     safeHelpers.showNotification('✅ Услуга добавлена', 'success');
                     
-                    // Очищаем форму
                     const priceServiceName = $('priceServiceName');
                     if (priceServiceName) priceServiceName.value = '';
                     
@@ -1306,7 +1256,6 @@
             });
         }
 
-        // Видео-консультация
         const videoConsultBtn = $('videoConsultBtn');
         if (videoConsultBtn) {
             videoConsultBtn.addEventListener('click', () => {
@@ -1315,13 +1264,11 @@
             });
         }
 
-        // Подтверждение завершения заказа
         const confirmCompleteBtn = $('confirmCompleteBtn');
         if (confirmCompleteBtn) {
             confirmCompleteBtn.addEventListener('click', handleCompleteOrder);
         }
 
-        // Загрузка сохраненной темы
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark-theme');
             const icon = themeToggle?.querySelector('i');
@@ -1334,7 +1281,6 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
-        // Проверяем, есть ли Auth
         if (!window.Auth) {
             console.error('❌ Auth не загружен!');
             safeHelpers.showNotification('❌ Ошибка загрузки авторизации', 'error');
@@ -1346,11 +1292,9 @@
             const masterCabinet = $('masterCabinet');
             
             if (state.isAuthenticated && state.isMaster) {
-                // Скрываем блок авторизации, показываем кабинет
                 if (authRequired) authRequired.classList.add('d-none');
                 if (masterCabinet) masterCabinet.classList.remove('d-none');
                 
-                // Загружаем все данные
                 await Promise.all([
                     loadMasterData(state),
                     updateMasterLevel(),
@@ -1361,10 +1305,8 @@
                     loadClients()
                 ]);
                 
-                // Инициализируем календари
                 initCalendar();
                 
-                // Запускаем автообновление статистики (каждую минуту)
                 if (statsInterval) clearInterval(statsInterval);
                 statsInterval = setInterval(updateMasterLevel, 60000);
                 
@@ -1372,11 +1314,9 @@
                 safeHelpers.showNotification('❌ Эта страница только для мастеров', 'warning');
                 setTimeout(() => window.location.href = '/HomeWork/', 2000);
             } else {
-                // Показываем блок авторизации
                 if (authRequired) authRequired.classList.remove('d-none');
                 if (masterCabinet) masterCabinet.classList.add('d-none');
                 
-                // Очищаем интервал
                 if (statsInterval) {
                     clearInterval(statsInterval);
                     statsInterval = null;

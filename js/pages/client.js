@@ -1,5 +1,5 @@
 // ===== js/pages/client.js =====
-// ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КАБИНЕТ КЛИЕНТА С КРУТЫМИ КАРТОЧКАМИ
+// ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КАБИНЕТ КЛИЕНТА
 
 (function() {
     // Состояние
@@ -693,23 +693,23 @@
                     </div>
                     
                     <div class="response-actions">
-                        <button class="btn-response primary" onclick="openChat('${order.id}', '${resp.masterId}')">
+                        <button class="btn-response primary" onclick="window.openChat('${order.id}', '${resp.masterId}')">
                             <i class="fas fa-comment me-2"></i>Чат
                         </button>
                         
                         ${order.status === 'open' && !isSelected ? `
-                            <button class="btn-response success" onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})">
+                            <button class="btn-response success" onclick="window.selectMaster('${order.id}', '${resp.masterId}', ${resp.price})">
                                 <i class="fas fa-check me-2"></i>Выбрать
                             </button>
                         ` : ''}
                         
                         ${order.status === 'completed' && !hasReview ? `
-                            <button class="btn-response warning" onclick="openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
+                            <button class="btn-response warning" onclick="window.openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
                                 <i class="fas fa-star me-2"></i>Оценить
                             </button>
                         ` : ''}
                         
-                        <button class="btn-response favorite" onclick="toggleFavorite('${resp.masterId}')">
+                        <button class="btn-response favorite" onclick="window.toggleFavorite('${resp.masterId}')">
                             <i class="fas fa-heart"></i>
                         </button>
                     </div>
@@ -817,7 +817,7 @@
                     <button class="btn-icon" onclick="window.open('/HomeWork/master-profile.html?id=${id}')" title="Профиль">
                         <i class="fas fa-user"></i>
                     </button>
-                    <button class="btn-icon danger" onclick="removeFromFavorites('${id}')" title="Удалить">
+                    <button class="btn-icon danger" onclick="window.removeFromFavorites('${id}')" title="Удалить">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -936,7 +936,7 @@
                     <div class="text-center p-5">
                         <i class="fas fa-comments fa-4x mb-3" style="color: var(--border); opacity: 0.5;"></i>
                         <h4 class="mb-3">Нет активных чатов</h4>
-                        <p class="text-secondary mb-4">Начните общение с мастером после отклика</p>
+                        <p class="text-secondary mb-4">Начните общение с мастером после выбора мастера</p>
                         <a href="/HomeWork/" class="btn btn-outline-secondary">
                             <i class="fas fa-plus-circle me-2"></i>Создать заказ
                         </a>
@@ -979,14 +979,14 @@
                     </div>
                     <div class="chat-meta">
                         <div class="chat-time">${safeHelpers.formatShortDate(chat.lastMessageAt)}</div>
-                        ${chat.unreadCount ? `<span class="chat-unread">${chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>` : ''}
+                        ${chat.unreadCount && chat.unreadCount[user.uid] ? `<span class="chat-unread">${chat.unreadCount[user.uid] > 99 ? '99+' : chat.unreadCount[user.uid]}</span>` : ''}
                     </div>
                 `;
                 
                 container.appendChild(card);
             });
             
-            const unreadCount = chatData.reduce((sum, c) => sum + (c?.chat.unreadCount || 0), 0);
+            const unreadCount = chatData.reduce((sum, c) => sum + (c?.chat.unreadCount?.[user.uid] || 0), 0);
             const badge = $('unreadMessagesBadge');
             if (badge) {
                 badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
@@ -1178,7 +1178,7 @@
                     </div>
                 </div>
                 <div class="mt-3">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="openChat('${order.id}', '${order.selectedMasterId}')">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.openChat('${order.id}', '${order.selectedMasterId}')">
                         <i class="fas fa-comment me-1"></i> Написать мастеру
                     </button>
                 </div>
@@ -1211,8 +1211,9 @@
                 
                 await loadClientOrders(currentFilter);
                 
+                // Открываем чат через 500мс
                 setTimeout(() => {
-                    window.open(`/HomeWork/chat.html?orderId=${orderId}&masterId=${masterId}`, '_blank');
+                    window.location.href = `/HomeWork/chat.html?chatId=${result.chatId}&orderId=${orderId}&masterId=${masterId}`;
                 }, 500);
             } else {
                 safeHelpers.showNotification(result.error || '❌ Ошибка при выборе мастера', 'error');
@@ -1224,9 +1225,15 @@
         }
     };
 
-    // ===== ОТКРЫТИЕ ЧАТА =====
+    // ===== ОТКРЫТИЕ ЧАТА (ИСПРАВЛЕНО) =====
     window.openChat = (orderId, masterId) => {
-        window.location.href = `/HomeWork/chat.html?orderId=${orderId}&masterId=${masterId}`;
+        const user = Auth.getUser();
+        if (!user) {
+            safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
+            return;
+        }
+        const chatId = `chat_${orderId}_${masterId}`;
+        window.location.href = `/HomeWork/chat.html?chatId=${chatId}&orderId=${orderId}&masterId=${masterId}`;
     };
 
     // ===== ОТКРЫТИЕ ОТЗЫВА =====
