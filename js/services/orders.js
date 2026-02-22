@@ -364,7 +364,7 @@ const Orders = (function() {
         }
     }
 
-    // ===== ОТКЛИК НА ЗАКАЗ (с антиспамом) =====
+    // ===== ОТКЛИК НА ЗАКАЗ (с антиспамом) - ИСПРАВЛЕНО!!! =====
     async function respondToOrder(orderId, price, comment) {
         try {
             if (!Auth.isAuthenticated()) {
@@ -413,6 +413,7 @@ const Orders = (function() {
                 throw new Error('Вы уже откликались на этот заказ');
             }
 
+            // ✅ ИСПРАВЛЕНО: создаем объект без serverTimestamp() внутри
             const response = {
                 masterId: user.uid,
                 masterName: userData?.name || 'Мастер',
@@ -421,7 +422,7 @@ const Orders = (function() {
                 masterReviews: userData?.reviews || 0,
                 price: parseInt(price),
                 comment: comment || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: new Date().toISOString() // Используем ISO строку вместо serverTimestamp()
             };
 
             await db.collection('orders').doc(orderId).update({
