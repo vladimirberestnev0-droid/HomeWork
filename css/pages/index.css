@@ -35,9 +35,9 @@
     flex: 0 0 50% !important;
     max-width: 50% !important;
     width: 50% !important;
-    height: auto !important; /* УБРАЛИ жесткую высоту */
+    height: auto !important; /* УБИРАЕМ жесткую высоту */
     max-height: none !important;
-    overflow-y: visible !important;
+    overflow-y: visible !important; /* РАЗРЕШАЕМ скролл страницы */
     overflow-x: hidden !important;
     padding-right: 10px !important;
     position: sticky !important;
@@ -49,24 +49,14 @@
 
 /* Контейнер для списка и кнопки */
 .orders-content {
-    flex: 1 1 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    max-height: calc(100vh - 250px) !important; /* ОГРАНИЧИВАЕМ ТОЛЬКО КОНТЕЙНЕР СПИСКА */
-}
-
-/* Контейнер для списка и кнопки */
-.orders-content {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important; /* РАЗРЕШАЕМ скролл страницы */
 }
 
-/* Список заказов - скролл здесь */
+/* Список заказов - скролл ВНУТРИ списка */
 #ordersList {
     flex: 1 !important;
     overflow-y: auto !important;
@@ -77,6 +67,7 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
+    max-height: 500px !important;
 }
 
 /* Кнопка "Показать еще" */
@@ -85,6 +76,8 @@
     text-align: center !important;
     margin-top: 0 !important;
     padding: 10px 0 !important;
+    position: relative !important;
+    z-index: 2 !important;
 }
 
 #loadMoreBtn {
