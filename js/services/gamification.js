@@ -232,6 +232,9 @@ const Gamification = (function() {
         }
     };
 
+    // Хранилище функции отписки
+    let unsubscribeUser = null;
+
     /**
      * Получить уровень по XP
      */
@@ -684,18 +687,37 @@ const Gamification = (function() {
      */
     async function init(userId) {
         if (!userId) return;
-        
+
         await checkAchievements(userId);
         renderProgress(userId);
-        
+
+        // Отписываемся от предыдущей подписки, если она была
+        if (unsubscribeUser) {
+            unsubscribeUser();
+            unsubscribeUser = null;
+        }
+
         // Подписываемся на изменения
         if (GamificationBase.checkFirestore()) {
-            db.collection('users').doc(userId).onSnapshot(() => {
-                renderProgress(userId);
-            });
+            unsubscribeUser = db.collection('users').doc(userId)
+                .onSnapshot(() => {
+                    renderProgress(userId);
+                }, (error) => {
+                    console.error('Ошибка в подписке gamification:', error);
+                });
         }
-        
+
         console.log('✅ Gamification инициализирован для мастера:', userId);
+    }
+
+    /**
+     * Очистка ресурсов (вызывать при выходе со страницы)
+     */
+    function cleanup() {
+        if (unsubscribeUser) {
+            unsubscribeUser();
+            unsubscribeUser = null;
+        }
     }
 
     // Публичное API
@@ -710,7 +732,8 @@ const Gamification = (function() {
         getWeeklyLeaderboard,
         getUserAchievements,
         renderProgress,
-        init
+        init,
+        cleanup
     };
 })();
 

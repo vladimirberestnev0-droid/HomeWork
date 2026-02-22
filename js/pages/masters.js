@@ -1333,12 +1333,13 @@
             }
         }
 
-        // Очистка интервала при выходе
+        // Очистка интервала и подписок при выходе
         window.addEventListener('beforeunload', function() {
             if (statsInterval) {
                 clearInterval(statsInterval);
                 statsInterval = null;
             }
+            if (window.Gamification && Gamification.cleanup) Gamification.cleanup();
         });
     }
 
@@ -1354,33 +1355,41 @@
             const authRequired = $('authRequired');
             const masterCabinet = $('masterCabinet');
             
-            if (state.isAuthenticated && state.isMaster) {
-                if (authRequired) authRequired.classList.add('d-none');
-                if (masterCabinet) masterCabinet.classList.remove('d-none');
-                
-                await Promise.all([
-                    loadMasterData(state),
-                    updateMasterLevel(),
-                    loadBadges(),
-                    loadMasterResponses('all'),
-                    loadPortfolio(),
-                    loadPriceList(),
-                    loadClients()
-                ]);
-                
-                initCalendar();
-                
-                if (statsInterval) clearInterval(statsInterval);
-                statsInterval = setInterval(updateMasterLevel, 60000);
-                
-            } else if (state.isAuthenticated && !state.isMaster) {
-                safeHelpers.showNotification('❌ Эта страница только для мастеров', 'warning');
-                setTimeout(() => {
-                    if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
-                    }
-                }, 2000);
+            if (state.isAuthenticated && state.userData) {
+                // Данные загружены
+                if (state.isMaster) {
+                    if (authRequired) authRequired.classList.add('d-none');
+                    if (masterCabinet) masterCabinet.classList.remove('d-none');
+                    
+                    await Promise.all([
+                        loadMasterData(state),
+                        updateMasterLevel(),
+                        loadBadges(),
+                        loadMasterResponses('all'),
+                        loadPortfolio(),
+                        loadPriceList(),
+                        loadClients()
+                    ]);
+                    
+                    initCalendar();
+                    
+                    if (statsInterval) clearInterval(statsInterval);
+                    statsInterval = setInterval(updateMasterLevel, 60000);
+                    
+                } else if (!state.isMaster) {
+                    safeHelpers.showNotification('❌ Эта страница только для мастеров', 'warning');
+                    setTimeout(() => {
+                        if (window.location.pathname !== '/HomeWork/') {
+                            window.location.href = '/HomeWork/';
+                        }
+                    }, 2000);
+                }
+            } else if (state.isAuthenticated && !state.userData) {
+                // Данные ещё не загружены
+                console.log('⏳ Ожидание загрузки данных пользователя...');
+                return;
             } else {
+                // Не авторизован
                 if (authRequired) authRequired.classList.remove('d-none');
                 if (masterCabinet) masterCabinet.classList.add('d-none');
                 

@@ -280,40 +280,46 @@
         const welcomeBanner = $('welcomeBanner');
         const headerXPBadge = $('headerXPBadge');
         
-        if (state.isAuthenticated && state.isClient) {
-            // Показываем кабинет
-            if (authRequired) authRequired.style.display = 'none';
-            if (clientCabinet) clientCabinet.classList.remove('d-none');
-            if (welcomeBanner) welcomeBanner.style.display = 'flex';
-            if (headerXPBadge) headerXPBadge.style.display = 'flex';
-            
-            // Заполняем профиль
-            await loadClientProfile();
-            
-            // Загружаем данные
-            await Promise.all([
-                loadClientOrders('all'),
-                loadFavorites(),
-                loadPayments(),
-                loadChats(),
-                loadTrackingOrders(),
-                loadAchievements(),
-                updateLevelProgress()
-            ]);
-            
-            // Инициализируем карту
-            initTrackingMap();
-            
-        } else if (state.isAuthenticated && !state.isClient) {
-            safeHelpers.showNotification('❌ Эта страница только для клиентов', 'warning');
-            setTimeout(() => {
-                if (window.location.pathname !== '/HomeWork/masters.html') {
-                    window.location.href = '/HomeWork/masters.html';
-                }
-            }, 1500);
-            
+        if (state.isAuthenticated && state.userData) {
+            // Данные пользователя загружены
+            if (state.isClient) {
+                // Показываем кабинет
+                if (authRequired) authRequired.style.display = 'none';
+                if (clientCabinet) clientCabinet.classList.remove('d-none');
+                if (welcomeBanner) welcomeBanner.style.display = 'flex';
+                if (headerXPBadge) headerXPBadge.style.display = 'flex';
+                
+                // Заполняем профиль
+                await loadClientProfile();
+                
+                // Загружаем данные
+                await Promise.all([
+                    loadClientOrders('all'),
+                    loadFavorites(),
+                    loadPayments(),
+                    loadChats(),
+                    loadTrackingOrders(),
+                    loadAchievements(),
+                    updateLevelProgress()
+                ]);
+                
+                // Инициализируем карту
+                initTrackingMap();
+                
+            } else if (!state.isClient) {
+                safeHelpers.showNotification('❌ Эта страница только для клиентов', 'warning');
+                setTimeout(() => {
+                    if (window.location.pathname !== '/HomeWork/masters.html') {
+                        window.location.href = '/HomeWork/masters.html';
+                    }
+                }, 1500);
+            }
+        } else if (state.isAuthenticated && !state.userData) {
+            // Данные ещё не загружены – ждём следующего вызова
+            console.log('⏳ Ожидание загрузки данных пользователя...');
+            return;
         } else {
-            // Показываем блок авторизации
+            // Не авторизован – показываем блок входа
             if (authRequired) authRequired.style.display = 'block';
             if (clientCabinet) clientCabinet.classList.add('d-none');
             if (welcomeBanner) welcomeBanner.style.display = 'none';
@@ -1670,6 +1676,7 @@
                 clearInterval(statsInterval);
                 statsInterval = null;
             }
+            if (window.ClientGamification && ClientGamification.cleanup) ClientGamification.cleanup();
         });
     }
 
