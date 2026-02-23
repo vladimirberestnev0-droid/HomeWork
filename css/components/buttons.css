@@ -1,12 +1,12 @@
 /* ===== BUTTONS.CSS ===== */
-/* Версия: 3.0 — ВСЕ КНОПКИ В ОДНОМ МЕСТЕ */
+/* Версия: 4.0 — ВСЕ КНОПКИ С ПЕРЕМЕННЫМИ */
 
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px 28px;
+    padding: var(--btn-padding);
     border: none;
     border-radius: var(--radius-full);
     font-weight: 600;
@@ -20,6 +20,8 @@
     box-shadow: 0 8px 20px rgba(230,122,75,0.2);
     position: relative;
     overflow: hidden;
+    height: var(--btn-height);
+    line-height: 1;
 }
 
 .btn::after {
@@ -115,11 +117,13 @@
 .btn-sm {
     padding: 8px 20px;
     font-size: 0.9rem;
+    height: var(--btn-height-sm);
 }
 
 .btn-lg {
     padding: 16px 36px;
     font-size: 1.1rem;
+    height: calc(var(--btn-height) + 8px);
 }
 
 .btn-block {
@@ -130,11 +134,15 @@
 .btn-icon {
     padding: 12px;
     border-radius: 50%;
+    width: var(--btn-height);
+    height: var(--btn-height);
 }
 
 .btn-icon-sm {
     padding: 8px;
     border-radius: 50%;
+    width: var(--btn-height-sm);
+    height: var(--btn-height-sm);
 }
 
 /* Специальные кнопки */
@@ -148,6 +156,7 @@
     width: 100%;
     transition: var(--transition);
     cursor: pointer;
+    height: var(--btn-height);
 }
 
 .search-btn:hover {
@@ -234,7 +243,7 @@
     filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
 }
 
-/* Выход */
+/* Кнопка выхода */
 .header-logout-btn {
     background: transparent;
     border: 2px solid var(--danger);
@@ -254,7 +263,38 @@
     box-shadow: 0 8px 20px rgba(220,53,69,0.3);
 }
 
-/* Тёмная тема для кнопок */
+/* Кнопка бота */
+#deepseek-bro-button {
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 15px 25px !important;
+    border-radius: 60px !important;
+    cursor: pointer !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4) !important;
+    z-index: var(--z-tooltip) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    animation: float 3s ease-in-out infinite !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+
+#deepseek-bro-button:hover {
+    transform: translateY(-5px) scale(1.05) !important;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6) !important;
+}
+
+#deepseek-bro-button i {
+    font-size: 24px !important;
+    animation: pulse 2s infinite !important;
+}
+
+/* Темная тема */
 body.dark-theme .btn-outline-secondary {
     color: var(--text-dark);
     border-color: var(--border);
@@ -264,4 +304,87 @@ body.dark-theme .btn-outline-secondary:hover {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+
+    .btn-lg {
+        padding: 14px 30px;
+    }
+
+    #scrollToTop {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+    }
+
+    #scrollToTop i {
+        font-size: 22px;
+    }
+
+    #deepseek-bro-button {
+        padding: 12px 20px;
+    }
+
+    #deepseek-bro-button i {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+
+    #scrollToTop {
+        width: 45px;
+        height: 45px;
+    }
+
+    #scrollToTop i {
+        font-size: 20px;
+    }
+
+    #deepseek-bro-button {
+        padding: 10px 15px;
+    }
+
+    #deepseek-bro-button i {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: var(--mobile-sm)) {
+    #scrollToTop {
+        width: 40px;
+        height: 40px;
+    }
+
+    #scrollToTop i {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: var(--mobile-xs)) {
+    #scrollToTop {
+        width: 35px;
+        height: 35px;
+    }
 }

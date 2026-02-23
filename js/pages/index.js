@@ -1,5 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ВЕРСИЯ 13.2 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ + ЗАЩИТА ОТ РЕДИРЕКТОВ
+// ВЕРСИЯ 13.3 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ + ЗАЩИТА ОТ РЕДИРЕКТОВ
 
 // ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
 (function() {
@@ -59,49 +59,24 @@ let currentLeaderboardPeriod = 'week';
 // Модалка авторизации
 let authModal = null;
 
-// Безопасный Helpers
-const safeHelpers = {
-    escapeHtml: (text) => {
-        if (!text) return '';
-        if (window.Helpers?.escapeHtml) return Helpers.escapeHtml(text);
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-    showNotification: (msg, type) => {
-        if (window.Helpers?.showNotification) {
-            Helpers.showNotification(msg, type);
+// ===== ФУНКЦИЯ ОТОБРАЖЕНИЯ ЗВЕЗД РЕЙТИНГА =====
+function renderRatingStars(rating) {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating - fullStars >= 0.5;
+    let stars = '';
+    
+    for (let i = 0; i < 5; i++) {
+        if (i < fullStars) {
+            stars += '<i class="fas fa-star" style="color: gold;"></i>';
+        } else if (i === fullStars && hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt" style="color: gold;"></i>';
         } else {
-            console.log(`🔔 ${type}: ${msg}`);
-            if (type === 'error') alert(`❌ ${msg}`);
-            else if (type === 'success') alert(`✅ ${msg}`);
-            else alert(msg);
+            stars += '<i class="far fa-star" style="color: gold;"></i>';
         }
-    },
-    formatDate: (timestamp) => {
-        if (window.Helpers?.formatDate) return Helpers.formatDate(timestamp);
-        if (!timestamp) return 'только что';
-        try {
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        } catch {
-            return 'недавно';
-        }
-    },
-    validatePrice: (price) => {
-        if (window.Helpers?.validatePrice) return Helpers.validatePrice(price);
-        return price && !isNaN(price) && price >= 500 && price <= 1000000;
-    },
-    getCategoryIcon: (cat) => {
-        if (window.Helpers?.getCategoryIcon) return Helpers.getCategoryIcon(cat);
-        return window.CATEGORY_ICONS?.[cat] || 'fa-tag';
-    },
-    pluralize: (count, words) => {
-        if (window.Helpers?.pluralize) return Helpers.pluralize(count, words);
-        const cases = [2, 0, 1, 1, 1, 2];
-        return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
     }
-};
+    
+    return stars;
+}
 
 // ============================================
 // ФУНКЦИЯ ПРОВЕРКИ ПОЗИЦИОНИРОВАНИЯ
@@ -509,10 +484,10 @@ function createOrderCard(order) {
     
     div.innerHTML = `
         <div class="order-header">
-            <h5 class="order-title mb-0">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h5>
+            <h5 class="order-title mb-0">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
             <span class="order-price">${order.price || 0} ₽</span>
         </div>
-        <p class="text-secondary mb-3">${safeHelpers.escapeHtml(order.description || 'Нет описания')}</p>
+        <p class="text-secondary mb-3">${Utils.escapeHtml(order.description || 'Нет описания')}</p>
         ${photosHtml}
         <div class="order-meta">
             <span>
@@ -636,7 +611,7 @@ async function loadTopMasters(period = 'week') {
             const rating = startDate ? (master.periodRating || 0) : (master.rating || 0);
             const completedJobs = startDate ? (master.periodCompleted || 0) : (master.completedJobs || 0);
             
-            const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+            const ratingStars = renderRatingStars(rating);
             
             const col = document.createElement('div');
             col.className = 'col-md-4 col-lg-2';
@@ -645,13 +620,13 @@ async function loadTopMasters(period = 'week') {
                     <div class="master-avatar">
                         <i class="fas fa-user-tie"></i>
                     </div>
-                    <h6 class="fw-bold mb-1">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h6>
-                    <div class="rating-stars mb-2">${stars}</div>
+                    <h6 class="fw-bold mb-1">${Utils.escapeHtml(master.name || 'Мастер')}</h6>
+                    <div class="rating-stars mb-2">${ratingStars}</div>
                     <div class="mb-2">
                         <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
                         <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
                     </div>
-                    <p class="small text-secondary mb-2">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
+                    <p class="small text-secondary mb-2">${Utils.escapeHtml(master.categories || 'Специалист')}</p>
                     <button class="btn btn-sm w-100" onclick="handleViewMaster('${master.id}')">
                         Смотреть профиль
                     </button>
@@ -700,7 +675,7 @@ function showAuthRequiredModal() {
     const modalEl = document.getElementById('authRequiredModal');
     if (!modalEl) {
         console.error('❌ Модалка не найдена');
-        safeHelpers.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
+        Utils.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
         if (typeof AuthUI?.showLoginModal === 'function') {
             AuthUI.showLoginModal();
         }
@@ -709,7 +684,7 @@ function showAuthRequiredModal() {
     
     if (typeof bootstrap === 'undefined') {
         console.error('❌ Bootstrap не загружен');
-        safeHelpers.showNotification('Ошибка загрузки модального окна', 'error');
+        Utils.showNotification('Ошибка загрузки модального окна', 'error');
         return;
     }
     
@@ -738,7 +713,7 @@ function showAuthRequiredModal() {
         
     } catch (error) {
         console.error('❌ Ошибка модалки:', error);
-        safeHelpers.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
+        Utils.showNotification('Для просмотра профиля необходимо войти в систему', 'warning');
         
         if (typeof AuthUI?.showLoginModal === 'function') {
             AuthUI.showLoginModal();
@@ -1013,12 +988,12 @@ async function searchAddresses(query) {
 
 async function respondToOrder(orderId) {
     if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
-        safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
+        Utils.showNotification('❌ Сначала войдите в систему', 'warning');
         return;
     }
     
     if (typeof Auth.isMaster !== 'function' || !Auth.isMaster()) {
-        safeHelpers.showNotification('❌ Только мастера могут откликаться', 'warning');
+        Utils.showNotification('❌ Только мастера могут откликаться', 'warning');
         return;
     }
 
@@ -1026,8 +1001,8 @@ async function respondToOrder(orderId) {
     if (!price) return;
     
     const priceNum = parseInt(price);
-    if (isNaN(priceNum) || !safeHelpers.validatePrice(priceNum)) {
-        safeHelpers.showNotification('❌ Цена должна быть от 500 до 1 000 000 ₽', 'error');
+    if (isNaN(priceNum) || !Utils.validatePrice(priceNum)) {
+        Utils.showNotification('❌ Цена должна быть от 500 до 1 000 000 ₽', 'error');
         return;
     }
     
@@ -1036,13 +1011,13 @@ async function respondToOrder(orderId) {
     if (typeof Orders?.respondToOrder === 'function') {
         const result = await Orders.respondToOrder(orderId, priceNum, comment || '');
         if (result?.success) {
-            safeHelpers.showNotification('✅ Отклик отправлен!', 'success');
+            Utils.showNotification('✅ Отклик отправлен!', 'success');
             loadAllOrders();
         } else {
-            safeHelpers.showNotification(result?.error || '❌ Ошибка при отправке отклика', 'error');
+            Utils.showNotification(result?.error || '❌ Ошибка при отправке отклика', 'error');
         }
     } else {
-        safeHelpers.showNotification('❌ Функция отклика временно недоступна', 'error');
+        Utils.showNotification('❌ Функция отклика временно недоступна', 'error');
     }
 }
 
@@ -1052,7 +1027,7 @@ async function respondToOrder(orderId) {
 
 async function handleFiles(files) {
     if (uploadedPhotos.length + files.length > 5) {
-        safeHelpers.showNotification('Максимум 5 фото', 'warning');
+        Utils.showNotification('Максимум 5 фото', 'warning');
         return;
     }
     
@@ -1172,12 +1147,12 @@ function initEventListeners() {
         e.preventDefault();
         
         if (typeof Auth === 'undefined' || !Auth.isAuthenticated || !Auth.isAuthenticated()) {
-            safeHelpers.showNotification('Пожалуйста, войдите в систему', 'warning');
+            Utils.showNotification('Пожалуйста, войдите в систему', 'warning');
             return;
         }
         
         if (typeof Auth.isMaster === 'function' && Auth.isMaster()) {
-            safeHelpers.showNotification('Мастера не могут создавать заказы', 'warning');
+            Utils.showNotification('Мастера не могут создавать заказы', 'warning');
             return;
         }
 
@@ -1213,7 +1188,7 @@ function initEventListeners() {
                 loadOrdersMap();
             }
         } else {
-            safeHelpers.showNotification('❌ Функция создания заказа временно недоступна', 'error');
+            Utils.showNotification('❌ Функция создания заказа временно недоступна', 'error');
         }
     });
 
@@ -1318,12 +1293,12 @@ function initEventListeners() {
 
     // Notifications button
     document.getElementById('notificationsBtn')?.addEventListener('click', () => {
-        safeHelpers.showNotification('Уведомления пока в разработке', 'info');
+        Utils.showNotification('Уведомления пока в разработке', 'info');
     });
 
     // Analytics button
     document.getElementById('analyticsBtn')?.addEventListener('click', () => {
-        safeHelpers.showNotification('Аналитика заказов будет доступна позже', 'info');
+        Utils.showNotification('Аналитика заказов будет доступна позже', 'info');
     });
 
     // Tracking toggle
@@ -1358,14 +1333,14 @@ function initEventListeners() {
         const desc = descriptionEl?.value;
         
         if (!cat || !desc) {
-            safeHelpers.showNotification('Сначала выберите категорию и напишите описание', 'warning');
+            Utils.showNotification('Сначала выберите категорию и напишите описание', 'warning');
             return;
         }
         
         const price = priceAI?.calc(cat, desc);
         if (price && priceEl) {
             priceEl.value = price;
-            safeHelpers.showNotification(`✅ Рекомендуемая цена: ${price} ₽`, 'success');
+            Utils.showNotification(`✅ Рекомендуемая цена: ${price} ₽`, 'success');
         }
     });
 }
@@ -1431,6 +1406,7 @@ async function loadFullLeaderboard() {
         snapshot.forEach(doc => {
             const master = doc.data();
             const rankClass = position <= 3 ? `rank-${position}` : '';
+            const ratingStars = renderRatingStars(master.rating || 0);
             
             html += `
                 <div class="leaderboard-item" onclick="handleViewMaster('${doc.id}')">
@@ -1439,11 +1415,12 @@ async function loadFullLeaderboard() {
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="leaderboard-info">
-                        <div class="leaderboard-name">${safeHelpers.escapeHtml(master.name || 'Мастер')}</div>
+                        <div class="leaderboard-name">${Utils.escapeHtml(master.name || 'Мастер')}</div>
                         <div class="leaderboard-stats">
-                            <span><i class="fas fa-star me-1" style="color: gold;"></i>${(master.rating || 0).toFixed(1)}</span>
-                            <span><i class="fas fa-check-circle me-1" style="color: var(--success);"></i>${master.completedJobs || 0}</span>
-                            <span><i class="fas fa-comment me-1" style="color: var(--accent);"></i>${master.reviews || 0}</span>
+                            <span class="rating-stars">${ratingStars}</span>
+                            <span class="ms-2">${(master.rating || 0).toFixed(1)}</span>
+                            <span class="ms-2"><i class="fas fa-check-circle" style="color: var(--success);"></i> ${master.completedJobs || 0}</span>
+                            <span class="ms-2"><i class="fas fa-comment" style="color: var(--accent);"></i> ${master.reviews || 0}</span>
                         </div>
                     </div>
                     <div class="leaderboard-xp">${master.xp || 0} XP</div>
@@ -1523,21 +1500,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Инициализация кнопок рейтинга
     initLeaderboardButtons();
-    
-    // Обновляем счетчик уведомлений
-    if (typeof Chats?.getUnreadCount === 'function') {
-        Chats.getUnreadCount().then(count => {
-            const badge = document.getElementById('notificationsBadge');
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : count;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }).catch(() => {});
-    }
 });
 
 // Подписка на изменения авторизации

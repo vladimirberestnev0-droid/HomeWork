@@ -1,11 +1,11 @@
 /* ===== GRIDS.CSS ===== */
-/* Версия: 2.0 — СЕТКИ ДЛЯ РАЗНЫХ СТРАНИЦ */
+/* Версия: 3.0 — СЕТКИ ДЛЯ РАЗНЫХ СТРАНИЦ */
 
 /* Дашборд */
 .dashboard {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    gap: 30px;
+    gap: var(--grid-gap);
     margin-bottom: 30px;
 }
 
@@ -13,7 +13,7 @@
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    gap: var(--grid-gap);
     margin-bottom: 30px;
 }
 
@@ -21,15 +21,15 @@
 .achievements-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
+    gap: var(--grid-gap-sm);
     margin-top: 20px;
 }
 
 /* Сетка портфолио */
 .portfolio-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--grid-gap-sm);
     margin-top: 20px;
 }
 
@@ -37,7 +37,7 @@
 .charts-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 20px;
+    gap: var(--grid-gap);
     margin-bottom: 30px;
 }
 
@@ -45,9 +45,70 @@
 .video-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: var(--grid-gap);
     height: calc(100vh - 200px);
     padding: 20px;
     background: var(--bg-dark);
     border-radius: var(--radius-lg);
+}
+
+/* Топ мастеров */
+.top-masters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--grid-gap-sm);
+    margin-top: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: var(--desktop-md)) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .video-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+@media (max-width: var(--tablet)) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--grid-gap-sm);
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .portfolio-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .top-masters-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .top-masters-grid {
+        grid-template-columns: 1fr;
+    }
 }

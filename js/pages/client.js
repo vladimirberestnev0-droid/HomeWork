@@ -71,154 +71,38 @@
     // Интервал обновления
     let statsInterval = null;
 
-    // Безопасный Helpers
-    const safeHelpers = {
-        escapeHtml: (text) => {
-            if (!text) return '';
-            if (window.Helpers?.escapeHtml) return Helpers.escapeHtml(text);
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        },
-        formatDate: (timestamp) => {
-            if (window.Helpers?.formatDate) return Helpers.formatDate(timestamp);
-            if (!timestamp) return 'только что';
-            try {
-                const date = window.GamificationBase?.safeGetDate 
-                    ? GamificationBase.safeGetDate(timestamp) 
-                    : (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
-                return date.toLocaleString('ru-RU', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            } catch {
-                return 'недавно';
-            }
-        },
-        formatShortDate: (timestamp) => {
-            if (!timestamp) return '';
-            try {
-                const date = window.GamificationBase?.safeGetDate 
-                    ? GamificationBase.safeGetDate(timestamp) 
-                    : (timestamp.toDate ? timestamp.toDate() : new Date(timestamp));
-                return date.toLocaleString('ru-RU', { 
-                    day: 'numeric', 
-                    month: 'short',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                }).replace('.', '');
-            } catch {
-                return '';
-            }
-        },
-        formatMoney: (amount) => {
-            return new Intl.NumberFormat('ru-RU', {
-                style: 'currency',
-                currency: 'RUB',
-                minimumFractionDigits: 0
-            }).format(amount || 0);
-        },
-        showNotification: (msg, type = 'info') => {
-            if (window.Helpers?.showNotification) {
-                Helpers.showNotification(msg, type);
-            } else {
-                const notification = document.createElement('div');
-                notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
-                notification.style.zIndex = '9999';
-                notification.style.minWidth = '300px';
-                notification.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
-                notification.innerHTML = msg;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.classList.add('animate__fadeOutRight');
-                    setTimeout(() => notification.remove(), 500);
-                }, 3000);
-            }
-        },
-        getCategoryIcon: (cat) => {
-            const icons = {
-                'Сантехника': 'fa-wrench',
-                'Электрика': 'fa-bolt',
-                'Уборка': 'fa-broom',
-                'Ремонт': 'fa-hammer',
-                'Сборка мебели': 'fa-couch',
-                'Грузчики': 'fa-truck',
-                'Малярные работы': 'fa-paint-brush',
-                'Плиточные работы': 'fa-th',
-                'default': 'fa-tag'
-            };
-            return icons[cat] || icons.default;
-        },
-        getCategoryColor: (cat) => {
-            const colors = {
-                'Сантехника': '#3498db',
-                'Электрика': '#f39c12',
-                'Уборка': '#2ecc71',
-                'Ремонт': '#e74c3c',
-                'Сборка мебели': '#9b59b6',
-                'Грузчики': '#1abc9c',
-                'Малярные работы': '#e67e22',
-                'Плиточные работы': '#95a5a6',
-                'default': '#34495e'
-            };
-            return colors[cat] || colors.default;
-        },
-        pluralize: (count, words) => {
-            if (window.Helpers?.pluralize) return Helpers.pluralize(count, words);
-            const cases = [2, 0, 1, 1, 1, 2];
-            return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
-        },
-        getStatusConfig: (status) => {
-            const configs = {
-                'open': {
-                    text: 'Активен',
-                    icon: 'fa-clock',
-                    color: '#3498db',
-                    bg: 'rgba(52, 152, 219, 0.1)',
-                    border: '#3498db'
-                },
-                'in_progress': {
-                    text: 'В работе',
-                    icon: 'fa-cog fa-spin',
-                    color: '#f39c12',
-                    bg: 'rgba(243, 156, 18, 0.1)',
-                    border: '#f39c12'
-                },
-                'completed': {
-                    text: 'Завершён',
-                    icon: 'fa-check-circle',
-                    color: '#2ecc71',
-                    bg: 'rgba(46, 204, 113, 0.1)',
-                    border: '#2ecc71'
-                },
-                'cancelled': {
-                    text: 'Отменён',
-                    icon: 'fa-times-circle',
-                    color: '#e74c3c',
-                    bg: 'rgba(231, 76, 60, 0.1)',
-                    border: '#e74c3c'
-                }
-            };
-            return configs[status] || configs.open;
-        }
-    };
-
     // Получить элемент
     const $ = (id) => document.getElementById(id);
+
+    // ===== ФУНКЦИЯ ОТОБРАЖЕНИЯ ЗВЕЗД РЕЙТИНГА =====
+    function renderRatingStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        let stars = '';
+        
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+                stars += '<i class="fas fa-star" style="color: gold;"></i>';
+            } else if (i === fullStars && hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt" style="color: gold;"></i>';
+            } else {
+                stars += '<i class="far fa-star" style="color: gold;"></i>';
+            }
+        }
+        
+        return stars;
+    }
 
     // ===== ПРОВЕРКА FIREBASE =====
     function checkFirebase() {
         if (typeof firebase === 'undefined') {
             console.error('❌ Firebase не загружен');
-            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            Utils.showNotification('❌ Ошибка подключения к базе данных', 'error');
             return false;
         }
         if (typeof db === 'undefined' || !db) {
             console.error('❌ Firestore не инициализирован');
-            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            Utils.showNotification('❌ Ошибка подключения к базе данных', 'error');
             return false;
         }
         return true;
@@ -307,7 +191,7 @@
                 initTrackingMap();
                 
             } else if (!state.isClient) {
-                safeHelpers.showNotification('❌ Эта страница только для клиентов', 'warning');
+                Utils.showNotification('❌ Эта страница только для клиентов', 'warning');
                 setTimeout(() => {
                     if (window.location.pathname !== '/HomeWork/masters.html') {
                         window.location.href = '/HomeWork/masters.html';
@@ -361,17 +245,15 @@
             
             // Баланс
             const balanceEl = $('clientBalance');
-            if (balanceEl) balanceEl.textContent = safeHelpers.formatMoney(userData.balance || 0);
+            if (balanceEl) balanceEl.textContent = Utils.formatMoney(userData.balance || 0);
             
             const financeBalance = $('financeBalance');
-            if (financeBalance) financeBalance.textContent = safeHelpers.formatMoney(userData.balance || 0);
+            if (financeBalance) financeBalance.textContent = Utils.formatMoney(userData.balance || 0);
             
             // Дата регистрации
             const memberSince = $('memberSince');
             if (memberSince && userData.createdAt) {
-                const date = window.GamificationBase?.safeGetDate 
-                    ? GamificationBase.safeGetDate(userData.createdAt) 
-                    : (userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt));
+                const date = Utils.safeGetDate(userData.createdAt);
                 memberSince.textContent = date.toLocaleDateString('ru-RU', { 
                     month: 'long', 
                     year: 'numeric' 
@@ -597,9 +479,16 @@
         const div = document.createElement('div');
         div.className = 'order-card mb-4 animate__animated animate__fadeIn';
         
-        const status = safeHelpers.getStatusConfig(order.status);
-        const categoryColor = safeHelpers.getCategoryColor(order.category);
-        const categoryIcon = safeHelpers.getCategoryIcon(order.category);
+        const status = Utils.getStatusConfig?.(order.status) || {
+            text: 'Активен',
+            icon: 'fa-clock',
+            color: '#3498db',
+            bg: 'rgba(52, 152, 219, 0.1)',
+            border: '#3498db'
+        };
+        
+        const categoryColor = Utils.getCategoryColor?.(order.category) || '#34495e';
+        const categoryIcon = Utils.getCategoryIcon?.(order.category) || 'fa-tag';
         
         // Определяем, есть ли отклики
         const hasResponses = order.responses && order.responses.length > 0;
@@ -634,7 +523,7 @@
                     <span>${order.category || 'Услуга'}</span>
                 </div>
                 <div class="order-price-tag">
-                    <span class="price-amount">${safeHelpers.formatMoney(order.price)}</span>
+                    <span class="price-amount">${Utils.formatMoney(order.price)}</span>
                     <span class="price-label">₽</span>
                 </div>
             </div>
@@ -644,25 +533,25 @@
         const body = `
             <div class="order-card-body">
                 <div class="order-title-section">
-                    <h4 class="order-title">${safeHelpers.escapeHtml(order.title || 'Заказ')}</h4>
+                    <h4 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h4>
                     ${order.urgent ? '<span class="urgent-badge"><i class="fas fa-exclamation-circle me-1"></i>Срочно</span>' : ''}
                 </div>
                 
-                <p class="order-description">${safeHelpers.escapeHtml(order.description || 'Нет описания').substring(0, 150)}${order.description?.length > 150 ? '...' : ''}</p>
+                <p class="order-description">${Utils.escapeHtml(order.description || 'Нет описания').substring(0, 150)}${order.description?.length > 150 ? '...' : ''}</p>
                 
                 <div class="order-meta-grid">
                     <div class="meta-item">
                         <i class="fas fa-map-marker-alt" style="color: ${categoryColor};"></i>
-                        <span>${safeHelpers.escapeHtml(order.address || 'Адрес не указан')}</span>
+                        <span>${Utils.escapeHtml(order.address || 'Адрес не указан')}</span>
                     </div>
                     <div class="meta-item">
                         <i class="fas fa-calendar-alt" style="color: ${categoryColor};"></i>
-                        <span>${safeHelpers.formatShortDate(order.createdAt)}</span>
+                        <span>${Utils.formatDate(order.createdAt, 'short')}</span>
                     </div>
                     ${order.preferredDate ? `
                     <div class="meta-item">
                         <i class="fas fa-clock" style="color: ${categoryColor};"></i>
-                        <span>К ${safeHelpers.formatShortDate(order.preferredDate)}</span>
+                        <span>К ${Utils.formatDate(order.preferredDate, 'short')}</span>
                     </div>
                     ` : ''}
                 </div>
@@ -688,7 +577,7 @@
                 
                 <div class="order-stats">
                     ${hasResponses ? `
-                        <div class="responses-count" title="${responsesCount} ${safeHelpers.pluralize(responsesCount, ['отклик', 'отклика', 'откликов'])}">
+                        <div class="responses-count" title="${responsesCount} ${Utils.pluralize(responsesCount, ['отклик', 'отклика', 'откликов'])}">
                             <i class="fas fa-users" style="color: ${status.color};"></i>
                             <span>${responsesCount}</span>
                         </div>
@@ -745,10 +634,10 @@
         const isSelected = order.selectedMasterId === resp.masterId;
         
         const rating = resp.masterRating || 0;
-        const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+        const ratingStars = renderRatingStars(rating);
         
         // Определяем время отклика
-        const responseTime = resp.createdAt ? safeHelpers.formatShortDate(resp.createdAt) : 'только что';
+        const responseTime = resp.createdAt ? Utils.formatDate(resp.createdAt, 'short') : 'только что';
         
         return `
             <div class="response-card ${isSelected ? 'selected' : ''}">
@@ -761,16 +650,16 @@
                 <div class="response-content">
                     <div class="response-header">
                         <div class="response-name">
-                            <h6>${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}</h6>
+                            <h6>${Utils.escapeHtml(resp.masterName || 'Мастер')}</h6>
                             <div class="response-rating">
-                                <span class="rating-stars" style="color: gold;">${stars}</span>
-                                <span class="rating-count">(${resp.masterReviews || 0})</span>
+                                <span class="rating-stars">${ratingStars}</span>
+                                <span class="rating-count ms-1">${rating.toFixed(1)} (${resp.masterReviews || 0})</span>
                             </div>
                         </div>
-                        <div class="response-price">${safeHelpers.formatMoney(resp.price)}</div>
+                        <div class="response-price">${Utils.formatMoney(resp.price)}</div>
                     </div>
                     
-                    ${resp.comment ? `<p class="response-comment">${safeHelpers.escapeHtml(resp.comment)}</p>` : ''}
+                    ${resp.comment ? `<p class="response-comment">${Utils.escapeHtml(resp.comment)}</p>` : ''}
                     
                     <div class="response-meta">
                         <span class="response-time">
@@ -790,7 +679,7 @@
                         ` : ''}
                         
                         ${order.status === ORDER_STATUS.COMPLETED && !hasReview ? `
-                            <button class="btn-response warning" onclick="window.openReview('${order.id}', '${resp.masterId}', '${safeHelpers.escapeHtml(resp.masterName || 'Мастер')}')">
+                            <button class="btn-response warning" onclick="window.openReview('${order.id}', '${resp.masterId}', '${Utils.escapeHtml(resp.masterName || 'Мастер')}')">
                                 <i class="fas fa-star me-2"></i>Оценить
                             </button>
                         ` : ''}
@@ -886,7 +775,7 @@
     // ===== КАРТОЧКА ИЗБРАННОГО =====
     function createFavoriteCard(id, master) {
         const rating = master.rating || 0;
-        const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+        const ratingStars = renderRatingStars(rating);
         
         return `
             <div class="favorite-card">
@@ -894,11 +783,11 @@
                     <i class="fas fa-user-tie fa-2x"></i>
                 </div>
                 <div class="favorite-info">
-                    <h5 class="favorite-name">${safeHelpers.escapeHtml(master.name || 'Мастер')}</h5>
-                    <p class="favorite-category">${safeHelpers.escapeHtml(master.categories || 'Специалист')}</p>
+                    <h5 class="favorite-name">${Utils.escapeHtml(master.name || 'Мастер')}</h5>
+                    <p class="favorite-category">${Utils.escapeHtml(master.categories || 'Специалист')}</p>
                     <div class="favorite-rating">
-                        <span class="rating-stars" style="color: gold;">${stars}</span>
-                        <span class="rating-text">${master.reviews || 0} отзывов</span>
+                        <span class="rating-stars">${ratingStars}</span>
+                        <span class="rating-text ms-1">${rating.toFixed(1)} (${master.reviews || 0} отзывов)</span>
                     </div>
                 </div>
                 <div class="favorite-actions">
@@ -954,10 +843,10 @@
                         </div>
                         <div class="payment-details">
                             <div class="payment-title">${payment.description || (isIncome ? 'Пополнение баланса' : 'Списание')}</div>
-                            <div class="payment-date">${safeHelpers.formatDate(payment.createdAt)}</div>
+                            <div class="payment-date">${Utils.formatDate(payment.createdAt)}</div>
                         </div>
                         <div class="payment-amount" style="color: ${color};">
-                            ${sign}${safeHelpers.formatMoney(payment.amount)}
+                            ${sign}${Utils.formatMoney(payment.amount)}
                         </div>
                     </div>
                 `;
@@ -990,10 +879,10 @@
             
             const totalSpent = userData.totalSpent || 0;
             const financeTotalSpent = $('financeTotalSpent');
-            if (financeTotalSpent) financeTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
+            if (financeTotalSpent) financeTotalSpent.textContent = Utils.formatMoney(totalSpent);
             
             const statTotalSpent = $('statTotalSpent');
-            if (statTotalSpent) statTotalSpent.textContent = safeHelpers.formatMoney(totalSpent);
+            if (statTotalSpent) statTotalSpent.textContent = Utils.formatMoney(totalSpent);
             
             if (!window.Orders) return;
             
@@ -1003,7 +892,7 @@
                 : 0;
             
             const financeAvgOrder = $('financeAvgOrder');
-            if (financeAvgOrder) financeAvgOrder.textContent = safeHelpers.formatMoney(avgOrder);
+            if (financeAvgOrder) financeAvgOrder.textContent = Utils.formatMoney(avgOrder);
             
         } catch (error) {
             console.error('❌ Ошибка обновления финансовой статистики:', error);
@@ -1070,11 +959,11 @@
                         <i class="fas ${other.role === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
                     </div>
                     <div class="chat-info">
-                        <div class="chat-name">${safeHelpers.escapeHtml(other.name || 'Пользователь')}</div>
+                        <div class="chat-name">${Utils.escapeHtml(other.name || 'Пользователь')}</div>
                         <div class="chat-last-message">${truncatedMessage}</div>
                     </div>
                     <div class="chat-meta">
-                        <div class="chat-time">${safeHelpers.formatShortDate(chat.lastMessageAt)}</div>
+                        <div class="chat-time">${Utils.formatDate(chat.lastMessageAt, 'short')}</div>
                         ${chat.unreadCount && chat.unreadCount[user.uid] ? `<span class="chat-unread">${chat.unreadCount[user.uid] > 99 ? '99+' : chat.unreadCount[user.uid]}</span>` : ''}
                     </div>
                 `;
@@ -1231,7 +1120,7 @@
                         
                     } catch (error) {
                         console.error('❌ Ошибка загрузки данных для карты:', error);
-                        safeHelpers.showNotification('Ошибка загрузки данных для карты', 'error');
+                        Utils.showNotification('Ошибка загрузки данных для карты', 'error');
                     }
                 });
             }
@@ -1257,7 +1146,7 @@
                     <div class="col-md-4">
                         <div class="tracking-stat">
                             <span class="tracking-label">Мастер</span>
-                            <span class="tracking-value">${safeHelpers.escapeHtml(order.masterName || 'Неизвестно')}</span>
+                            <span class="tracking-value">${Utils.escapeHtml(order.masterName || 'Неизвестно')}</span>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -1300,7 +1189,7 @@
             const result = await Orders.selectMaster(orderId, masterId, price);
             
             if (result.success) {
-                safeHelpers.showNotification('✅ Мастер выбран! Чат открыт', 'success');
+                Utils.showNotification('✅ Мастер выбран! Чат открыт', 'success');
                 
                 const user = Auth.getUser();
                 if (user && window.ClientGamification) {
@@ -1318,12 +1207,12 @@
                     window.location.href = `/HomeWork/chat.html?chatId=${result.chatId}&orderId=${orderId}&masterId=${masterId}`;
                 }, 500);
             } else {
-                safeHelpers.showNotification(result.error || '❌ Ошибка при выборе мастера', 'error');
+                Utils.showNotification(result.error || '❌ Ошибка при выборе мастера', 'error');
             }
             
         } catch (error) {
             console.error('❌ Ошибка выбора мастера:', error);
-            safeHelpers.showNotification('❌ Ошибка при выборе мастера', 'error');
+            Utils.showNotification('❌ Ошибка при выборе мастера', 'error');
         }
     };
 
@@ -1331,7 +1220,7 @@
     window.openChat = (orderId, masterId) => {
         const user = Auth.getUser();
         if (!user) {
-            safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
+            Utils.showNotification('❌ Сначала войдите в систему', 'warning');
             return;
         }
         const chatId = `chat_${orderId}_${masterId}`;
@@ -1370,7 +1259,7 @@
     // ===== ОТПРАВКА ОТЗЫВА =====
     async function submitReview() {
         if (!currentRating) {
-            safeHelpers.showNotification('Пожалуйста, поставьте оценку!', 'warning');
+            Utils.showNotification('Пожалуйста, поставьте оценку!', 'warning');
             return;
         }
         
@@ -1424,13 +1313,13 @@
             }
 
             if (reviewModal) reviewModal.hide();
-            safeHelpers.showNotification('✅ Спасибо за отзыв! +10 XP', 'success');
+            Utils.showNotification('✅ Спасибо за отзыв! +10 XP', 'success');
             
             await loadClientOrders(currentFilter);
             
         } catch (error) {
             console.error('❌ Ошибка при отправке отзыва:', error);
-            safeHelpers.showNotification('❌ Ошибка при отправке отзыва', 'error');
+            Utils.showNotification('❌ Ошибка при отправке отзыва', 'error');
         }
     }
 
@@ -1607,7 +1496,7 @@
         const notificationsBtn = $('notificationsBtn');
         if (notificationsBtn) {
             notificationsBtn.addEventListener('click', () => {
-                safeHelpers.showNotification('Уведомления пока в разработке', 'info');
+                Utils.showNotification('Уведомления пока в разработке', 'info');
             });
         }
 
@@ -1639,7 +1528,7 @@
         const withdrawBtn = $('withdrawBtn');
         if (withdrawBtn) {
             withdrawBtn.addEventListener('click', () => {
-                safeHelpers.showNotification('Вывод средств будет доступен позже', 'info');
+                Utils.showNotification('Вывод средств будет доступен позже', 'info');
             });
         }
 
@@ -1700,13 +1589,13 @@
             await db.collection('users').doc(user.uid).update(updates);
             
             if (editProfileModal) editProfileModal.hide();
-            safeHelpers.showNotification('✅ Профиль обновлён!', 'success');
+            Utils.showNotification('✅ Профиль обновлён!', 'success');
             
             await loadClientProfile();
             
         } catch (error) {
             console.error('❌ Ошибка сохранения профиля:', error);
-            safeHelpers.showNotification('❌ Ошибка при сохранении', 'error');
+            Utils.showNotification('❌ Ошибка при сохранении', 'error');
         }
     }
 
@@ -1715,14 +1604,14 @@
         const amount = parseInt($('topupAmount')?.value);
         
         if (!amount || amount < 100) {
-            safeHelpers.showNotification('Минимальная сумма пополнения 100 ₽', 'warning');
+            Utils.showNotification('Минимальная сумма пополнения 100 ₽', 'warning');
             return;
         }
         
         try {
             if (!checkFirebase()) return;
             
-            safeHelpers.showNotification(`⏳ Подготовка платежа на сумму ${amount} ₽...`, 'info');
+            Utils.showNotification(`⏳ Подготовка платежа на сумму ${amount} ₽...`, 'info');
             
             const user = Auth.getUser();
             if (user) {
@@ -1756,9 +1645,9 @@
                 if (topupModal) topupModal.hide();
                 
                 if (bonus > 0) {
-                    safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽ + ${bonus} ₽ бонус!`, 'success');
+                    Utils.showNotification(`✅ Баланс пополнен на ${amount} ₽ + ${bonus} ₽ бонус!`, 'success');
                 } else {
-                    safeHelpers.showNotification(`✅ Баланс пополнен на ${amount} ₽`, 'success');
+                    Utils.showNotification(`✅ Баланс пополнен на ${amount} ₽`, 'success');
                 }
                 
                 await loadClientProfile();
@@ -1767,7 +1656,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка пополнения:', error);
-            safeHelpers.showNotification('❌ Ошибка при пополнении', 'error');
+            Utils.showNotification('❌ Ошибка при пополнении', 'error');
         }
     }
 
@@ -1783,12 +1672,12 @@
                 favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
             });
             
-            safeHelpers.showNotification('❌ Мастер удалён из избранного', 'info');
+            Utils.showNotification('❌ Мастер удалён из избранного', 'info');
             await loadFavorites();
             
         } catch (error) {
             console.error('❌ Ошибка удаления из избранного:', error);
-            safeHelpers.showNotification('❌ Ошибка', 'error');
+            Utils.showNotification('❌ Ошибка', 'error');
         }
     };
 
@@ -1799,7 +1688,7 @@
             
             const user = Auth.getUser();
             if (!user) {
-                safeHelpers.showNotification('Войдите в систему', 'warning');
+                Utils.showNotification('Войдите в систему', 'warning');
                 return;
             }
             
@@ -1812,7 +1701,7 @@
                 await db.collection('users').doc(user.uid).update({
                     favorites: firebase.firestore.FieldValue.arrayUnion(masterId)
                 });
-                safeHelpers.showNotification('✅ Мастер добавлен в избранное', 'success');
+                Utils.showNotification('✅ Мастер добавлен в избранное', 'success');
                 
                 if (window.ClientGamification) {
                     await ClientGamification.addXP(user.uid, 5, 'Добавил в избранное');
@@ -1825,7 +1714,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            safeHelpers.showNotification('❌ Ошибка', 'error');
+            Utils.showNotification('❌ Ошибка', 'error');
         }
     };
     

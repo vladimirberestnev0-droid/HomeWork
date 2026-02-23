@@ -1,11 +1,11 @@
 /* ===== CARDS.CSS ===== */
-/* Версия: 3.1 — ВСЕ КАРТОЧКИ С ДОБАВЛЕНИЕМ LINE-CLAMP */
+/* Версия: 4.0 — ВСЕ КАРТОЧКИ С ПЕРЕМЕННЫМИ */
 
 /* Базовые карточки */
 .card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: var(--card-padding);
     box-shadow: var(--shadow);
     transition: var(--transition-smooth);
     border: 1px solid transparent;
@@ -67,7 +67,7 @@ body:not(.dark-theme) .card:hover {
 .stat-card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: var(--card-padding);
     box-shadow: var(--shadow);
     transition: var(--transition-smooth);
     text-align: center;
@@ -223,17 +223,16 @@ body:not(.dark-theme) .card:hover {
     font-size: 0.9rem;
 }
 
-/* Дополнительные типы карточек */
-
 /* Карточка достижения */
 .achievement-card {
     background: var(--bg-white);
     border-radius: var(--radius-md);
     padding: 15px;
     text-align: center;
-    transition: var(--transition);
-    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
     position: relative;
+    overflow: hidden;
 }
 
 .achievement-card:hover {
@@ -263,16 +262,23 @@ body:not(.dark-theme) .card:hover {
     font-size: 0.9rem;
 }
 
-.achievement-xp {
+.achievement-description {
     font-size: 0.8rem;
     color: var(--text-soft);
+    margin-bottom: 8px;
 }
 
-.achievement-card.earned .achievement-xp {
-    color: rgba(255,255,255,0.8);
+.achievement-xp {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: gold;
+    background: rgba(0,0,0,0.1);
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: inline-block;
 }
 
-/* Карточка мастера (дополнение к master-card.css) */
+/* Карточка мастера компактная */
 .master-card-compact {
     background: var(--bg-white);
     border-radius: var(--radius-md);
@@ -306,7 +312,7 @@ body:not(.dark-theme) .card:hover {
     letter-spacing: 1px;
 }
 
-/* Карточка заказа (дополнение к orders.css) */
+/* Карточка заказа компактная */
 .order-card-compact {
     background: var(--bg-white);
     border-radius: var(--radius-md);
@@ -411,7 +417,7 @@ body:not(.dark-theme) .card:hover {
     color: var(--text-muted);
 }
 
-/* Тёмная тема для карточек */
+/* Темная тема */
 body.dark-theme .card,
 body.dark-theme .stat-card,
 body.dark-theme .profile-card,
@@ -446,47 +452,55 @@ body.dark-theme .profile-card::before {
     background: var(--accent-gradient);
 }
 
-/* Адаптив */
-@media (max-width: 768px) {
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
     .card {
-        padding: 20px;
+        padding: var(--card-padding-sm);
     }
-    
+
     .stat-card {
-        padding: 20px;
+        padding: var(--card-padding-sm);
     }
-    
+
     .stat-icon {
         font-size: 28px;
     }
-    
+
     .stat-value {
         font-size: 28px;
     }
-    
+
     .profile-card {
         padding: 20px;
     }
-    
+
     .profile-name {
         font-size: 20px;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: var(--mobile-md)) {
     .card {
-        padding: 15px;
+        padding: var(--card-padding-xs);
     }
-    
+
     .stat-card {
-        padding: 15px;
+        padding: var(--card-padding-xs);
     }
-    
+
     .stat-icon {
         font-size: 24px;
     }
-    
+
     .stat-value {
         font-size: 24px;
+    }
+
+    .profile-card {
+        padding: 15px;
+    }
+
+    .profile-name {
+        font-size: 18px;
     }
 }

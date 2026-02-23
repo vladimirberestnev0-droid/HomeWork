@@ -1,5 +1,5 @@
 /* ===== DROPDOWN.CSS ===== */
-/* Версия: 2.1 — КОМБО-ПОИСК И ДРОПДАУНЫ С ЗАЩИТОЙ */
+/* Версия: 4.0 — КОМБО-ПОИСК И ДРОПДАУНЫ (ИСПРАВЛЕНО) */
 
 #citySearchCombo {
     position: relative;
@@ -9,7 +9,7 @@
 }
 
 #citySearchInput {
-    border-radius: 40px;
+    border-radius: var(--radius-full);
     padding: 12px 20px;
     border: 2px solid var(--border);
     background: var(--bg-white);
@@ -17,6 +17,7 @@
     width: 100%;
     position: relative;
     z-index: 1;
+    height: var(--input-height);
 }
 
 #citySearchInput:focus {
@@ -35,19 +36,25 @@
     overflow-x: hidden;
     background: var(--bg-white);
     border: 2px solid var(--border);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     margin-top: 5px;
     box-shadow: var(--shadow-hover);
     z-index: calc(var(--z-dropdown) + 1);
     scrollbar-width: thin;
     scrollbar-color: var(--accent) var(--bg-light);
     scroll-behavior: smooth;
+    display: none; /* Управляем через JS */
+    will-change: transform, opacity;
+}
+
+#cityDropdown.visible {
+    display: block;
     animation: fadeSlideDown 0.25s var(--transition-slow);
 }
 
 /* Стилизация скролла */
 #cityDropdown::-webkit-scrollbar {
-    width: 8px;
+    width: var(--scrollbar-width-sm);
 }
 
 #cityDropdown::-webkit-scrollbar-track {
@@ -69,7 +76,7 @@
 #cityDropdown .dropdown-item {
     padding: 12px 20px;
     cursor: pointer;
-    transition: var(--transition-slow);
+    transition: all 0.2s ease;
     color: var(--text-dark);
     position: relative;
     overflow: hidden;
@@ -77,22 +84,8 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     border-bottom: 1px solid var(--border);
-    animation: fadeSlide 0.3s ease forwards;
-    opacity: 0;
     background: transparent;
 }
-
-/* Индексы появления */
-#cityDropdown .dropdown-item:nth-child(1) { animation-delay: 0.02s; }
-#cityDropdown .dropdown-item:nth-child(2) { animation-delay: 0.04s; }
-#cityDropdown .dropdown-item:nth-child(3) { animation-delay: 0.06s; }
-#cityDropdown .dropdown-item:nth-child(4) { animation-delay: 0.08s; }
-#cityDropdown .dropdown-item:nth-child(5) { animation-delay: 0.1s; }
-#cityDropdown .dropdown-item:nth-child(6) { animation-delay: 0.12s; }
-#cityDropdown .dropdown-item:nth-child(7) { animation-delay: 0.14s; }
-#cityDropdown .dropdown-item:nth-child(8) { animation-delay: 0.16s; }
-#cityDropdown .dropdown-item:nth-child(9) { animation-delay: 0.18s; }
-#cityDropdown .dropdown-item:nth-child(10) { animation-delay: 0.2s; }
 
 #cityDropdown .dropdown-item:last-child {
     border-bottom: none;
@@ -122,6 +115,7 @@
     transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
     opacity: 0;
     z-index: -1;
+    pointer-events: none;
 }
 
 #cityDropdown .dropdown-item:hover::before {
@@ -167,7 +161,6 @@
 
 #cityDropdown .dropdown-item:active {
     transform: scale(0.98);
-    transition: transform 0.1s;
 }
 
 /* Заголовки районов */
@@ -190,7 +183,7 @@
     color: var(--accent-dark);
 }
 
-/* Прозрачный дропдаун для светлой темы */
+/* Светлая тема */
 body:not(.dark-theme) #cityDropdown {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
@@ -211,33 +204,78 @@ body:not(.dark-theme) #citySearchInput:focus {
     box-shadow: 0 0 0 4px rgba(230, 122, 75, 0.15);
 }
 
-/* Тёмная тема дропдауна */
+/* Темная тема */
 body.dark-theme #cityDropdown {
-    background: #2d2d2d;
-    border-color: #404040;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: var(--shadow-dark);
 }
 
 body.dark-theme #cityDropdown .dropdown-item {
-    color: #e0e0e0;
+    color: var(--text-soft);
+    border-bottom-color: var(--border);
 }
 
 body.dark-theme #cityDropdown .dropdown-item:hover {
-    background: #E67A4B;
+    background: var(--accent-gradient);
     color: white;
 }
 
 body.dark-theme #cityDropdown .dropdown-district {
-    background: #1a1a1a;
-    color: #FF9F4B;
+    background: var(--bg-dark);
+    color: var(--accent);
 }
 
 body.dark-theme #citySearchInput {
-    background: #2d2d2d;
-    border-color: #404040;
-    color: #e0e0e0;
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-dark);
 }
 
 body.dark-theme #citySearchInput::placeholder {
-    color: #a0a0a0;
+    color: var(--text-muted);
+}
+
+body.dark-theme #citySearchInput:focus {
+    background: var(--bg-white);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    #cityDropdown {
+        max-height: 250px;
+    }
+
+    #citySearchInput {
+        height: var(--input-height-sm);
+        font-size: 0.95rem;
+    }
+
+    #cityDropdown .dropdown-item {
+        padding: 10px 16px;
+        font-size: 0.95rem;
+    }
+
+    #cityDropdown .dropdown-district {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    #cityDropdown {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: 300px;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: slideUp 0.3s ease;
+    }
+
+    #citySearchInput {
+        font-size: 16px;
+    }
 }

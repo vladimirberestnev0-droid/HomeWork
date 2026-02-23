@@ -689,5 +689,35 @@
     <script src="/HomeWork/js/services/client-gamification.js"></script>
     
     <script src="/HomeWork/js/pages/client.js"></script>
+
+<!-- Модалка подтверждения выхода (для единообразия) -->
+<div class="modal fade modal-logout" id="logoutConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #DC3545, #ff6b6b); color: white; border-bottom: none;">
+                <h5 class="modal-title">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    Подтверждение выхода
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-door-open fa-4x" style="color: #DC3545; opacity: 0.8; animation: bounce 1s ease-in-out infinite;"></i>
+                </div>
+                <h5 class="mb-3">Вы действительно хотите выйти?</h5>
+                <p class="text-secondary mb-0">Вы всегда можете войти снова</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Отмена
+                </button>
+                <button type="button" class="btn px-4" style="background: #DC3545; color: white;" onclick="window.confirmLogout()">
+                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

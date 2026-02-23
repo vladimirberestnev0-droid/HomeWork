@@ -5,23 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Главная</title>
 
+    <!-- SEO -->
+    <meta name="description" content="ВоркХом - маркетплейс строительных услуг. Найдите мастера для ремонта или предложите свои услуги.">
+    <meta name="keywords" content="строительство, ремонт, мастера, услуги, сантехник, электрик, отделка">
+    <meta name="author" content="ВоркХом">
+    
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#E67A4B">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="/HomeWork/icons/favicon.ico">
     <link rel="apple-touch-icon" href="/HomeWork/icons/icon-192x192.png">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="ВоркХом — Маркетплейс строительных услуг">
+    <meta property="og:description" content="Найдите мастера для ремонта или предложите свои услуги">
+    <meta property="og:image" content="/HomeWork/icons/og-image.png">
+    <meta property="og:url" content="https://воркхом.рф">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Яндекс.Карты -->
-    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU"></script>
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <!-- ===== CORE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
+    <link rel="stylesheet" href="/HomeWork/css/core/breakpoints.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
     <link rel="stylesheet" href="/HomeWork/css/core/typography.css">
     <link rel="stylesheet" href="/HomeWork/css/core/animations.css">
@@ -37,17 +48,15 @@
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/orders.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/master-card.css">
     <link rel="stylesheet" href="/HomeWork/css/components/badges.css">
     <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
     <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
     <link rel="stylesheet" href="/HomeWork/css/components/ratings.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/tracking.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/tabs.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/tables.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
     <link rel="stylesheet" href="/HomeWork/css/components/gamification.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/deepseek.css">
 
     <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/pages/index.css">
@@ -61,409 +70,322 @@
 <body>
     <div class="container py-4">
         <!-- Шапка -->
-        <header>
-            <a href="/HomeWork/" class="logo-link">
+        <header class="animate__animated animate__fadeInDown">
+            <a href="/HomeWork/index.html" class="logo-link">
                 <i class="fas fa-house"></i>
                 <span>ВоркХом</span>
             </a>
-            
             <nav>
-                <a href="/HomeWork/" class="active">Главная</a>
+                <a href="/HomeWork/index.html" class="active">Главная</a>
                 <a href="/HomeWork/client.html" id="clientLink">Мои заказы</a>
                 <a href="/HomeWork/masters.html" id="masterLink">Мастерам</a>
                 
-                <!-- Блок геймификации в шапке -->
-                <div class="d-flex align-items-center gap-2 ms-3">
-                    <div class="level-badge level-1" id="headerLevel" title="Уровень" style="display: none;">
-                        <span id="headerLevelValue">1</span>
-                    </div>
-                    <div class="badge badge-primary" id="headerXP" title="Опыт" style="display: none;">
-                        <i class="fas fa-star me-1"></i>
-                        <span id="headerXPValue">0</span>
-                    </div>
+                <!-- XP в шапке -->
+                <div class="header-xp-badge d-none" id="headerXPBadge">
+                    <i class="fas fa-star"></i>
+                    <span id="headerLevel">1</span> ур. · <span id="headerXP">0</span> XP
                 </div>
                 
-                <!-- Кнопки действий -->
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="telegramBtn" title="Telegram бот">
-                    <i class="fab fa-telegram"></i>
-                </button>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="notificationsBtn" title="Уведомления">
                     <i class="fas fa-bell"></i>
-                    <span class="nav-badge" id="notificationsBadge" style="display: none;">0</span>
+                    <span class="nav-badge pulse d-none" id="notificationsBadge">0</span>
                 </button>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button class="header-logout-btn" id="headerLogoutBtn" style="display: none;">
-                    <i class="fas fa-sign-out-alt"></i> Выйти
+                <button id="headerLogoutBtn" class="btn btn-sm btn-outline-danger rounded-pill d-none">
+                    <i class="fas fa-sign-out-alt me-1"></i> Выйти
                 </button>
             </nav>
         </header>
 
         <!-- Блок авторизации -->
-        <div id="authBlockContainer"></div>
+        <div id="authBlockContainer" class="mb-4 animate__animated animate__fadeIn"></div>
 
-        <!-- Блок прогресса пользователя -->
-        <div id="userProgress" class="card mb-4" style="display: none;">
-            <div class="row align-items-center">
-                <div class="col-md-2 text-center">
-                    <div class="level-badge level-1 mx-auto" id="userLevelBadge">1</div>
-                </div>
-                <div class="col-md-6">
-                    <h5 id="userLevelName">Новичок</h5>
-                    <div class="xp-bar">
-                        <div class="xp-progress" id="userXPProgress" style="width: 0%;"></div>
-                    </div>
-                    <div class="xp-text">
-                        <span id="userXPText">0 XP</span>
-                        <span id="userNextLevel">до уровня 2</span>
-                    </div>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button class="btn btn-outline-secondary btn-sm" id="achievementsBtn">
-                        <i class="fas fa-medal"></i> Достижения
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm ms-2" id="leaderboardBtn">
-                        <i class="fas fa-crown"></i> Топ мастеров
-                    </button>
-                </div>
-            </div>
+        <!-- КОМБО-ПОИСК ПО ГОРОДАМ -->
+        <div id="citySearchCombo" class="filter-section">
+            <label class="form-label fw-bold mb-2">
+                <i class="fas fa-map-marker-alt me-1" style="color: var(--accent);"></i>
+                Выберите город
+            </label>
+            <input type="text" id="citySearchInput" class="form-control" placeholder="🔍 Начните вводить название города...">
+            <div id="cityDropdown" class="dropdown-menu-custom" style="display: none;"></div>
         </div>
 
-        <!-- Фильтры -->
+        <!-- ФИЛЬТР ПО КАТЕГОРИЯМ -->
         <div class="filter-section">
-            <!-- Кнопка сброса справа -->
-            <div class="d-flex justify-content-end mb-3">
-                <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn">
-                    <i class="fas fa-times me-1"></i> Сбросить
-                </button>
-            </div>
-            
-            <!-- ===== КОМБО-ПОИСК ГОРОДОВ ===== -->
-            <div class="mb-4 position-relative" id="citySearchCombo">
-                <input type="text" 
-                       class="form-control" 
-                       id="citySearchInput" 
-                       placeholder="🔍 Найди свой город..." 
-                       autocomplete="off"
-                       style="border-radius: 40px; padding: 10px 16px;">
-                <div id="cityDropdown" class="position-absolute w-100" 
-                     style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000; background: white; border: 2px solid var(--border); border-radius: 20px; margin-top: 5px; box-shadow: var(--shadow-hover);">
-                </div>
-            </div>
-            
-            <!-- Фильтр по категориям (кнопки) -->
-            <div class="category-filter d-flex flex-wrap gap-2" id="categoryFilter">
-                <!-- Категории будут добавлены через JS -->
-            </div>
+            <label class="form-label fw-bold mb-2">
+                <i class="fas fa-tags me-1" style="color: var(--accent);"></i>
+                Категории
+            </label>
+            <div id="categoryFilter" class="filter-buttons"></div>
         </div>
 
-        <!-- Создание заказа -->
-        <div class="row g-4 mb-5" id="orderFormRow">
-            <div class="col-md-6" id="orderFormColumn">
-                <div class="card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">
-                            <i class="fas fa-plus-circle me-2" style="color: var(--accent);"></i>
-                            Оставить заявку
-                        </h3>
-                        <button class="btn btn-sm btn-outline-secondary" id="aiPriceHintBtn">
-                            <i class="fas fa-calculator"></i> Рассчитать цену
-                        </button>
-                    </div>
-                    
-                    <form id="orderForm">
-                        <div class="mb-3">
-                            <label class="form-label">Категория</label>
-                            <select id="category" class="form-select" required>
+        <!-- ОСНОВНОЙ КОНТЕЙНЕР: ФОРМА + ЗАКАЗЫ -->
+        <div id="orderFormRow" class="form-orders-row">
+            <!-- Левая колонка (форма) -->
+            <div id="orderFormColumn" class="form-column">
+                <div class="card form-card">
+                    <h3 class="card-title mb-4">
+                        <i class="fas fa-plus-circle me-2" style="color: var(--accent);"></i>
+                        Новая заявка
+                    </h3>
+                    <form id="orderForm" class="needs-validation" novalidate>
+                        <!-- Категория -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Категория <span class="text-danger">*</span></label>
+                            <select class="form-control" id="category" required>
                                 <option value="">Выберите категорию</option>
                                 <option value="Сантехника">🚰 Сантехника</option>
                                 <option value="Электрика">⚡ Электрика</option>
                                 <option value="Отделочные работы">🎨 Отделочные работы</option>
-                                <option value="Мебель">🪑 Мебель / сборка</option>
-                                <option value="Окна и двери">🪟 Окна и двери</option>
+                                <option value="Мебель">🪑 Мебель</option>
+                                <option value="Окна и двери">🚪 Окна и двери</option>
                                 <option value="Бытовой ремонт">🔧 Бытовой ремонт</option>
                                 <option value="Клининг">🧹 Клининг</option>
                                 <option value="Ремонт техники">📺 Ремонт техники</option>
                             </select>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Краткое описание</label>
-                            <input type="text" id="title" class="form-control" placeholder="Например: установить раковину" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Подробное описание</label>
-                            <textarea id="description" class="form-control" rows="3" placeholder="Опишите проблему подробнее..."></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Бюджет (₽)</label>
-                            <input type="number" id="price" class="form-control" min="500" value="3000" required>
-                            <div id="aiPriceHint" class="mt-2"></div>
+
+                        <!-- Название -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Название работы <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" placeholder="Например: Замена смесителя" required minlength="5">
+                            <div class="invalid-feedback">Минимум 5 символов</div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Фото проблемы (до 5 шт)</label>
+                        <!-- Описание -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Описание</label>
+                            <textarea class="form-control" id="description" rows="3" placeholder="Подробно опишите работу..."></textarea>
+                        </div>
+
+                        <!-- Цена -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Бюджет (₽) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="price" placeholder="3000" required min="500" max="1000000">
+                            <div class="invalid-feedback">От 500 до 1 000 000 ₽</div>
+                        </div>
+
+                        <!-- AI Price Hint -->
+                        <div id="aiPriceHint" class="mb-3"></div>
+
+                        <!-- Адрес -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Адрес <span class="text-danger">*</span></label>
+                            <div style="position: relative;">
+                                <input type="text" class="form-control" id="address" placeholder="Начните вводить адрес..." required>
+                                <i class="fas fa-spinner address-loading" id="addressLoading" style="display: none; position: absolute; right: 15px; top: 50%; transform: translateY(-50%);"></i>
+                            </div>
+                        </div>
+
+                        <!-- Скрытые поля координат -->
+                        <input type="hidden" id="latitude">
+                        <input type="hidden" id="longitude">
+
+                        <!-- Карта -->
+                        <div id="map" class="mb-3" style="height: 200px; border-radius: 15px;"></div>
+
+                        <!-- Фото -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Фото (до 5 шт)</label>
                             <div class="upload-area" id="uploadArea">
                                 <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
-                                <p>Нажмите или перетащите фото</p>
-                                <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+                                <p>Нажмите для загрузки или перетащите фото</p>
+                                <small class="text-secondary">Максимум 5 фото, до 10MB каждое</small>
+                                <input type="file" id="photoInput" accept="image/*" multiple style="display: none;">
                             </div>
-                            <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            <div id="photoPreview" class="photo-preview mt-2 d-flex gap-2 flex-wrap"></div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Адрес</label>
-                            <input type="text" id="address" class="form-control" placeholder="г. Сургут, ул. Ленина, д. 10" required>
+
+                        <!-- Контактные данные (автоматически из профиля) -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Ваше имя</label>
+                            <input type="text" class="form-control" id="clientName" readonly>
                         </div>
-                        
-                        <div class="mb-3">
-                            <div class="row g-2">
-                                <div class="col">
-                                    <input type="text" id="latitude" class="form-control" placeholder="Широта" readonly>
-                                </div>
-                                <div class="col">
-                                    <input type="text" id="longitude" class="form-control" placeholder="Долгота" readonly>
-                                </div>
-                            </div>
-                            <div id="map" class="mt-2" style="height: 250px;"></div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" id="phone" readonly>
                         </div>
-                        
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Ваше имя</label>
-                                <input type="text" id="clientName" class="form-control" placeholder="Имя" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Телефон</label>
-                                <input type="tel" id="phone" class="form-control" placeholder="+7 (999) 123-45-67" required>
-                            </div>
-                        </div>
-                        
-                        <!-- Новые опции -->
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="telegramNotify">
-                                <label class="form-check-label" for="telegramNotify">
-                                    <i class="fab fa-telegram me-1"></i> Получать уведомления в Telegram
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Способ оплаты</label>
-                            <select class="form-select" id="paymentMethod">
-                                <option value="cash">💵 Наличные</option>
-                                <option value="card">💳 Карта онлайн</option>
-                                <option value="hold">🔒 Безопасная сделка</option>
-                            </select>
-                        </div>
-                        
+
+                        <!-- Кнопка отправки -->
                         <button type="submit" class="btn w-100 py-3">
-                            <i class="fas fa-paper-plane me-2"></i> Опубликовать заявку
+                            <i class="fas fa-paper-plane me-2"></i> Опубликовать заказ
                         </button>
+
+                        <!-- Сообщение об успехе -->
+                        <div id="successMessage" class="alert alert-success mt-3 d-none animate__animated animate__fadeIn">
+                            ✅ Заказ создан! Мастера скоро откликнутся.
+                        </div>
                     </form>
-                    
-                    <div id="successMessage" class="alert alert-success mt-3 d-none">
-                        <i class="fas fa-check-circle me-2"></i>
-                        ✅ Заявка создана! Мастера увидят её в течение 5 минут.
-                    </div>
                 </div>
             </div>
-            
-            <!-- Список заказов -->
-            <div class="col-md-6" id="ordersColumn">
-                <div class="card">
+
+            <!-- Правая колонка (заказы) -->
+            <div id="ordersColumn" class="orders-column">
+                <div class="card orders-card">
                     <div class="orders-header">
-                        <h3 class="mb-0">
-                            <i class="fas fa-list me-2" style="color: var(--accent);"></i>
-                            Свежие заявки
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-clipboard-list me-2" style="color: var(--accent);"></i>
+                            Актуальные заказы
                         </h3>
-                        <div>
-                            <span class="badge badge-primary me-2" id="ordersCount">0</span>
-                            <button class="btn btn-sm btn-outline-secondary" id="analyticsBtn" title="Аналитика">
-                                <i class="fas fa-chart-line"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary ms-2" id="refreshBtn">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
+                        <div class="orders-count-badge">
+                            <i class="fas fa-file"></i>
+                            <span id="ordersCount">0</span>
                         </div>
                     </div>
-                    
+
                     <div class="orders-content">
-                        <div id="ordersList">
-                            <div class="text-center p-5">
-                                <div class="spinner mb-3"></div>
-                                <p class="text-secondary">Загрузка заказов...</p>
-                            </div>
-                        </div>
+                        <div id="ordersList" class="orders-list"></div>
                         
-                        <!-- Кнопка "Показать еще" -->
-                        <div id="loadMoreContainer" class="d-none">
-                            <button class="btn" id="loadMoreBtn">
+                        <div id="loadMoreContainer" class="load-more-container">
+                            <button id="loadMoreBtn" class="load-more-btn">
                                 <i class="fas fa-chevron-down me-2"></i>
-                                Показать еще <span id="remainingOrdersCount">0</span>
+                                Показать ещё <span id="remainingOrdersCount">0</span>
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- ✅ ВАЖНО: Закрытие orderFormRow -->
-
-        <!-- Рейтинги мастеров -->
-        <div class="row g-4 mb-5">
-            <div class="col-12">
-                <div class="card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">
-                            <i class="fas fa-trophy me-2" style="color: var(--accent);"></i>
-                            Рейтинг мастеров
-                        </h3>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardDaily">
-                                <i class="fas fa-sun"></i> День
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary active" id="leaderboardWeekly">
-                                <i class="fas fa-calendar-week"></i> Неделя
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardMonthly">
-                                <i class="fas fa-calendar-alt"></i> Месяц
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" id="leaderboardAll">
-                                <i class="fas fa-infinity"></i> Все
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="topMastersList" class="row g-4">
-                        <!-- Заполняется JS -->
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Карта заказов -->
-        <div class="col-12 mb-5">
+        <!-- ТОП МАСТЕРОВ -->
+        <div class="rating-section mb-5">
             <div class="card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="rating-header">
                     <h3 class="mb-0">
-                        <i class="fas fa-map-marked-alt me-2" style="color: var(--accent);"></i>
-                        Заявки на карте
+                        <i class="fas fa-trophy"></i>
+                        Топ мастеров
                     </h3>
-                    <button class="btn btn-sm btn-outline-secondary" id="trackingToggle">
-                        <i class="fas fa-location-dot me-1"></i> Показать мастеров онлайн
-                    </button>
-                </div>
-                <div id="ordersMap" style="width: 100%; height: 450px;"></div>
-                
-                <!-- Панель трекинга -->
-                <div id="trackingPanel" class="mt-3 d-none">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <select class="form-select" id="trackingMasterSelect">
-                                <option value="">Выберите мастера для отслеживания</option>
-                            </select>
-                        </div>
-                        <div class="col-md-8">
-                            <div id="masterEta" class="tracking-info-item p-2"></div>
-                        </div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary active" id="leaderboardWeekly">🏆 Неделя</button>
+                        <button class="btn btn-outline-secondary" id="leaderboardMonthly">📅 Месяц</button>
+                        <button class="btn btn-outline-secondary" id="leaderboardAll">⭐ Все время</button>
                     </div>
                 </div>
+                <div id="topMastersList" class="top-masters-grid"></div>
             </div>
         </div>
-    </div> <!-- закрытие container -->
 
-    <!-- Модалка достижений -->
-    <div class="modal fade" id="achievementsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-medal me-2" style="color: var(--accent);"></i>
-                        Достижения
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3" id="achievementsList"></div>
-                </div>
-            </div>
+        <!-- КАРТА ЗАКАЗОВ -->
+        <div id="ordersMap" class="orders-map mb-5"></div>
+    </div>
+
+    <!-- Кнопка бота -->
+    <div id="deepseek-bro-button" onclick="window.DeepSeek?.toggle()">
+        <i class="fas fa-robot"></i>
+        <span>ИИ Помощник</span>
+    </div>
+
+    <!-- Окно чата с ИИ -->
+    <div id="deepseek-chat-window" class="hidden">
+        <div class="deepseek-header">
+            <span>
+                <i class="fas fa-robot"></i>
+                ИИ Помощник ВоркХом
+            </span>
+            <button onclick="window.DeepSeek?.toggle()">×</button>
+        </div>
+        <div class="deepseek-messages" id="deepseek-messages"></div>
+        <div class="deepseek-input-area">
+            <input type="text" id="deepseek-input" placeholder="Задайте вопрос...">
+            <button onclick="window.DeepSeek?.send()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
-    <!-- Модалка топа мастеров -->
-    <div class="modal fade" id="leaderboardModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-crown me-2" style="color: var(--accent);"></i>
-                        Топ мастеров
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="leaderboard" id="leaderboardList"></div>
-                </div>
-            </div>
-        </div>
+    <!-- Кнопка наверх -->
+    <div id="scrollToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-arrow-up"></i>
     </div>
 
-    <!-- Модалка QR-кода -->
-    <div class="modal fade" id="qrModal" tabindex="-1">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-qrcode me-2"></i> QR-код заказа</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div id="qrCode" style="padding: 20px;"></div>
-                    <p class="mt-3 text-secondary" id="qrOrderInfo"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка "Требуется авторизация" -->
+    <!-- Модалка авторизации -->
     <div class="modal fade" id="authRequiredModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 30px; overflow: hidden;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #E67A4B, #FF9F4B); color: white; border-bottom: none;">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--accent); color: white;">
                     <h5 class="modal-title">
                         <i class="fas fa-lock me-2"></i>
-                        Требуется вход
+                        Требуется авторизация
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <div class="mb-4">
-                        <i class="fas fa-user-shield fa-4x" style="color: var(--accent); opacity: 0.8;"></i>
-                    </div>
-                    <h5 class="mb-3">Чтобы увидеть профиль мастера,</h5>
+                    <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>
+                    <h5 class="mb-3">Для просмотра профиля мастера</h5>
                     <p class="text-secondary mb-4">войдите в систему или зарегистрируйтесь</p>
-                    
-                    <div class="d-flex gap-3 justify-content-center mb-3">
-                        <button class="btn px-4" onclick="AuthUI.showLoginModal(); closeAuthModal();" style="background: var(--accent); color: white;">
-                            <i class="fas fa-sign-in-alt me-2"></i>Вход
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button class="btn" onclick="window.AuthUI?.showLoginModal(); bootstrap.Modal.getInstance(document.getElementById('authRequiredModal'))?.hide();">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти
                         </button>
-                        <button class="btn btn-outline-secondary px-4" onclick="AuthUI.showRegisterModal(); closeAuthModal();">
+                        <button class="btn btn-outline-secondary" onclick="window.AuthUI?.showRegisterModal(); bootstrap.Modal.getInstance(document.getElementById('authRequiredModal'))?.hide();">
                             <i class="fas fa-user-plus me-2"></i>Регистрация
                         </button>
                     </div>
-                    
-                    <div class="mt-3">
-                        <small class="text-secondary">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Просмотр профиля доступен только авторизованным пользователям
-                        </small>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Модалка подтверждения выхода -->
+    <div class="modal fade" id="logoutConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #DC3545, #ff6b6b); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Подтверждение выхода
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-4">
+                        <i class="fas fa-door-open fa-4x" style="color: #DC3545; opacity: 0.8;"></i>
+                    </div>
+                    <h5 class="mb-3">Вы действительно хотите выйти?</h5>
+                    <p class="text-secondary mb-0">Вы всегда можете войти снова</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Отмена
+                    </button>
+                    <button type="button" class="btn px-4" style="background: #DC3545; color: white;" onclick="window.Auth?.logout()">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>ВоркХом</h4>
+                <p>Маркетплейс строительных услуг</p>
+            </div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="/HomeWork/index.html">Главная</a></li>
+                    <li><a href="/HomeWork/client.html">Клиентам</a></li>
+                    <li><a href="/HomeWork/masters.html">Мастерам</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Поддержка</h4>
+                <ul>
+                    <li><i class="fas fa-phone me-2"></i> 8 (800) 123-45-67</li>
+                    <li><i class="fas fa-envelope me-2"></i> support@workhom.ru</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 ВоркХом. Все права защищены.</p>
+        </div>
+    </footer>
 
     <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -472,138 +394,35 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Базовые -->
+    <!-- Яндекс.Карты -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU"></script>
+    
+    <!-- Core (исправленные пути) -->
+    <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants.js"></script>
-    <script src="/HomeWork/js/core/helpers.js"></script>
-    <script src="/HomeWork/js/core/firebase.js"></script>
+    <script src="/HomeWork/js/core/base-utils.js"></script>
+    <script src="/HomeWork/js/core/redirect-protection.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
-
-    <!-- Сервисы -->
+    <script src="/HomeWork/js/core/firebase.js"></script>
+    
+    <!-- Services (исправленные пути) -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
-    <script src="/HomeWork/js/services/gamification.js"></script>
+    <script src="/HomeWork/js/services/chat.js"></script>
+    <script src="/HomeWork/js/services/moderation.js"></script>
+    <script src="/HomeWork/js/services/payments.js"></script>
     <script src="/HomeWork/js/services/gamification-base.js"></script>
+    <script src="/HomeWork/js/services/client-gamification.js"></script>
+    <script src="/HomeWork/js/services/gamification.js"></script>
     <script src="/HomeWork/js/services/badges.js"></script>
-    <script src="/HomeWork/js/services/tracking.js"></script>
+    <script src="/HomeWork/js/services/websocket.js"></script>
     <script src="/HomeWork/js/services/telegram-client.js"></script>
-    <!-- Если нужны уведомления, оставить websocket.js, иначе удалить -->
-
-    <!-- Компоненты -->
+    <script src="/HomeWork/js/services/deepseek.js"></script>
+    
+    <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
-
-    <!-- Страница -->
+    
+    <!-- Pages -->
     <script src="/HomeWork/js/pages/index.js"></script>
-
-    <!-- DeepSeek (единственное подключение) -->
-    <script src="/HomeWork/js/deepseek.js"></script>
-
-    <!-- Service Worker -->
-    <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/HomeWork/sw.js')
-                .then(reg => console.log('✅ Service Worker зарегистрирован'))
-                .catch(err => console.log('❌ Ошибка Service Worker:', err));
-        });
-    }
-    </script>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 Проверка Bootstrap:', typeof bootstrap !== 'undefined' ? '✅' : '❌');
-        
-        document.body.addEventListener('click', function(e) {
-            const target = e.target.closest('[onclick*="showLoginModal"], [onclick*="showRegisterModal"]');
-            if (target) {
-                console.log('👆 Нажата кнопка авторизации');
-            }
-        });
-    });
-    </script>
-
-    <!-- DeepSeek ИИ Помощник -->
-    <div id="deepseek-bro-button" onclick="toggleDeepSeekChat()">
-        <i class="fas fa-robot"></i>
-        <span>ИИ помощник</span>
-    </div>
-
-    <div id="deepseek-chat-window" class="hidden">
-        <div class="deepseek-header">
-            <span><i class="fas fa-robot"></i> ИИ помощник</span>
-            <button onclick="toggleDeepSeekChat()">×</button>
-        </div>
-        <div id="deepseek-messages" class="deepseek-messages">
-            <div class="deepseek-message bro-message">
-                <i class="fas fa-robot"></i> Привет! Я ИИ помощник ВоркХом. Могу помочь подобрать мастера, рассчитать цену или ответить на вопросы о сервисе! 🤖
-            </div>
-        </div>
-        <div class="deepseek-input-area">
-            <input type="text" id="deepseek-input" placeholder="Задайте вопрос...">
-            <button onclick="sendToDeepSeek()"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-
-    <!-- Кнопка "Наверх" -->
-    <div id="scrollToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
-        <i class="fas fa-arrow-up"></i>
-    </div>
-
-    <script>
-    window.addEventListener('scroll', function() {
-        const btn = document.getElementById('scrollToTop');
-        if (window.scrollY > 500) {
-            btn.classList.add('visible');
-        } else {
-            btn.classList.remove('visible');
-        }
-    });
-    </script>
-
-    <script>
-// Исправление для дропдауна городов
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('citySearchInput');
-    const dropdown = document.getElementById('cityDropdown');
-    
-    if (searchInput && dropdown) {
-        // Добавляем класс на body при открытии дропдауна
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.attributeName === 'style') {
-                    if (dropdown.style.display === 'block') {
-                        document.body.classList.add('dropdown-open');
-                    } else {
-                        document.body.classList.remove('dropdown-open');
-                    }
-                }
-            });
-        });
-        
-        observer.observe(dropdown, { attributes: true });
-        
-        // Закрытие по клику вне дропдауна
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.style.display = 'none';
-                document.body.classList.remove('dropdown-open');
-            }
-        });
-    }
-    
-    // Показываем кнопку "Еще" если есть заказы (для теста)
-    setTimeout(function() {
-        const loadMoreContainer = document.getElementById('loadMoreContainer');
-        const ordersCount = document.getElementById('ordersCount');
-        
-        if (loadMoreContainer && ordersCount) {
-            const count = parseInt(ordersCount.textContent) || 5;
-            if (count > 3) {
-                loadMoreContainer.classList.remove('d-none');
-                document.getElementById('remainingOrdersCount').textContent = count - 3;
-            }
-        }
-    }, 2000);
-});
-</script>
 </body>
 </html>

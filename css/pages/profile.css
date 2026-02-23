@@ -1,7 +1,7 @@
-/* ===== masters.css ===== */
-/* Версия: 1.0 — КАБИНЕТ МАСТЕРА ПРЕМИУМ КЛАССА */
+/* ===== MASTERS.CSS ===== */
+/* Версия: 4.0 — КАБИНЕТ МАСТЕРА */
 
-/* ===== ДАШБОРД ===== */
+/* Дашборд */
 .dashboard {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -12,7 +12,7 @@
 /* Карточка профиля */
 .profile-card {
     background: var(--bg-white);
-    border-radius: 30px;
+    border-radius: var(--radius-lg);
     padding: 30px 25px;
     box-shadow: var(--shadow);
     position: relative;
@@ -65,17 +65,17 @@
     margin-bottom: 20px;
     background: var(--accent-light);
     padding: 8px 20px;
-    border-radius: 40px;
+    border-radius: var(--radius-full);
     display: inline-block;
     width: auto;
     margin-left: auto;
     margin-right: auto;
 }
 
-/* ===== ПРОГРЕСС УРОВНЯ ===== */
+/* Прогресс уровня */
 .level-progress-container {
     background: linear-gradient(135deg, var(--bg-light), var(--bg-white));
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     padding: 20px;
     margin: 20px 0;
     border: 1px solid var(--border);
@@ -99,6 +99,7 @@
     color: white;
     font-size: 28px;
     box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+    flex-shrink: 0;
 }
 
 .level-info h3 {
@@ -149,7 +150,7 @@
     margin-top: 8px;
 }
 
-/* ===== РЕЙТИНГ ===== */
+/* Рейтинг */
 .rating-badge {
     display: flex;
     align-items: center;
@@ -176,10 +177,10 @@
     }
 }
 
-/* ===== СТАТИСТИКА ===== */
+/* Карточка статистики */
 .stats-card {
     background: var(--bg-white);
-    border-radius: 30px;
+    border-radius: var(--radius-lg);
     padding: 25px;
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
@@ -249,7 +250,7 @@
     letter-spacing: 0.5px;
 }
 
-/* ===== КОНВЕРСИЯ ===== */
+/* Конверсия */
 .conversion-box {
     background: var(--bg-light);
     border-radius: 16px;
@@ -269,59 +270,7 @@
     transition: width 0.3s ease;
 }
 
-/* ===== ТАБЫ ===== */
-.tabs {
-    display: flex;
-    gap: 5px;
-    background: var(--bg-light);
-    padding: 5px;
-    border-radius: 50px;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-}
-
-.tab {
-    flex: 1;
-    min-width: 100px;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 50px;
-    background: transparent;
-    color: var(--text-soft);
-    font-weight: 600;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.tab i {
-    font-size: 16px;
-}
-
-.tab:hover {
-    background: var(--bg-white);
-    color: var(--accent);
-}
-
-.tab.active {
-    background: var(--accent-gradient);
-    color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
-}
-
-.tab-content {
-    display: none;
-    animation: fadeIn 0.5s ease;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ===== ОТКЛИКИ ===== */
+/* Карточка отклика */
 .response-item {
     background: var(--bg-white);
     border-radius: 24px;
@@ -360,35 +309,10 @@
     color: var(--accent);
     background: var(--accent-light);
     padding: 5px 20px;
-    border-radius: 40px;
+    border-radius: var(--radius-full);
 }
 
-.response-item .badge {
-    font-size: 13px;
-    padding: 6px 16px;
-}
-
-.order-meta {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    color: var(--text-soft);
-    font-size: 14px;
-    margin: 15px 0;
-}
-
-.order-meta span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.order-meta i {
-    color: var(--accent);
-    width: 16px;
-}
-
-/* ===== ПОРТФОЛИО ===== */
+/* Портфолио */
 .portfolio-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -448,7 +372,7 @@
     opacity: 0.8;
 }
 
-/* ===== CRM ТАБЛИЦА ===== */
+/* CRM таблица */
 .clients-table {
     background: var(--bg-white);
     border-radius: 20px;
@@ -480,10 +404,10 @@
     background: var(--bg-hover);
 }
 
-/* ===== КАЛЕНДАРЬ ===== */
+/* Календарь */
 .fc {
     background: var(--bg-white);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     padding: 20px;
 }
 
@@ -506,7 +430,7 @@
     background: var(--accent-light) !important;
 }
 
-/* ===== ПРАЙС-ЛИСТ ===== */
+/* Прайс-лист */
 .price-card {
     background: var(--bg-white);
     border-radius: 24px;
@@ -585,7 +509,7 @@
     box-shadow: 0 8px 20px rgba(230,122,75,0.3);
 }
 
-/* ===== БЕЙДЖИ ===== */
+/* Бейджи */
 #badgesContainer {
     display: flex;
     flex-wrap: wrap;
@@ -598,7 +522,7 @@
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     padding: 6px 16px;
-    border-radius: 30px;
+    border-radius: var(--radius-full);
     font-size: 13px;
     font-weight: 600;
     display: inline-flex;
@@ -626,115 +550,107 @@
     }
 }
 
-/* ===== УВЕДОМЛЕНИЯ ===== */
-.nav-badge {
+/* Видео-бокс */
+.video-box {
+    background: #1a1a1a;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-dark);
+    height: 100%;
+    min-height: 300px;
+}
+
+.video-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-label {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    background: var(--danger);
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.5);
     color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    font-size: 14px;
+    backdrop-filter: blur(5px);
+}
+
+.video-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.video-control-btn {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
+    border: none;
+    background: var(--bg-light);
+    color: var(--text-dark);
+    font-size: 20px;
+    cursor: pointer;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: pulse 2s infinite;
 }
 
-/* ===== АНИМАЦИИ ===== */
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%);
-    }
-    100% {
-        transform: translateX(100%);
-    }
+.video-control-btn:hover {
+    transform: scale(1.1);
+    background: var(--accent);
+    color: white;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.video-control-btn.danger {
+    background: var(--danger);
+    color: white;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.video-control-btn.danger:hover {
+    background: #bd2130;
 }
 
-/* ===== АДАПТИВ ===== */
-@media (max-width: 992px) {
-    .dashboard {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+/* Умное расписание */
+.optimal-slots {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid var(--border);
 }
 
-@media (max-width: 768px) {
-    .tabs {
-        flex-direction: column;
-        border-radius: 30px;
-    }
-    
-    .tab {
-        width: 100%;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .portfolio-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .order-price {
-        align-self: flex-start;
-    }
+.recommended-slot {
+    padding: 10px 15px;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
-@media (max-width: 480px) {
-    .portfolio-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .rating-badge {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .profile-name {
-        font-size: 20px;
-    }
-    
-    .stat-value {
-        font-size: 28px;
-    }
+.recommended-slot:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
 }
 
-/* ===== ТЕМНАЯ ТЕМА ===== */
+.recommended-slot i {
+    color: gold;
+}
+
+/* Темная тема */
 body.dark-theme .profile-card,
 body.dark-theme .stats-card,
 body.dark-theme .response-item,
@@ -760,4 +676,153 @@ body.dark-theme .tabs {
 
 body.dark-theme .tab:hover {
     background: var(--bg-card);
+}
+
+body.dark-theme .fc {
+    background: var(--bg-card);
+}
+
+body.dark-theme .optimal-slots {
+    background: var(--bg-card);
+}
+
+body.dark-theme .video-control-btn {
+    background: var(--bg-dark);
+    color: var(--text-soft);
+}
+
+/* Адаптивность */
+@media (max-width: var(--desktop-md)) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: var(--tablet)) {
+    .tabs {
+        flex-direction: column;
+        border-radius: var(--radius-lg);
+    }
+
+    .tab {
+        width: 100%;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolio-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .response-item .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .response-item .order-price {
+        align-self: flex-start;
+    }
+
+    .rating-badge {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .profile-name {
+        font-size: 20px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+
+    .video-box {
+        min-height: 250px;
+    }
+
+    .video-controls {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-name {
+        font-size: 18px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .level-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+
+    .level-info h3 {
+        font-size: 16px;
+    }
+
+    .level-info p {
+        font-size: 12px;
+    }
+
+    .response-item {
+        padding: 15px;
+    }
+
+    .response-item .order-title {
+        font-size: 16px;
+    }
+
+    .response-item .order-price {
+        font-size: 18px;
+        padding: 4px 12px;
+    }
+
+    .order-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .clients-table th,
+    .clients-table td {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .price-card {
+        padding: 20px;
+    }
+
+    .price-card h5 {
+        font-size: 18px;
+    }
+
+    .video-box {
+        min-height: 200px;
+    }
+
+    .video-control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+
+    .recommended-slot {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
 }

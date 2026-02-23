@@ -1,7 +1,5 @@
 /* ===== CLIENT.CSS ===== */
-/* Версия: 3.1 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА */
-
-/* ===== ОСНОВНЫЕ СТИЛИ КАБИНЕТА ===== */
+/* Версия: 4.0 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА */
 
 /* Аватар в профиле */
 .client-avatar {
@@ -25,26 +23,7 @@
     box-shadow: 0 15px 40px rgba(230,122,75,0.4);
 }
 
-/* XP в шапке */
-.header-xp-badge {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
-    padding: 5px 15px;
-    border-radius: 30px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-    animation: glow 2s infinite;
-}
-
-.header-xp-badge i {
-    color: #333;
-}
-
-/* ===== КАРТОЧКА БАЛАНСА ===== */
+/* Карточка баланса */
 .balance-card {
     background: linear-gradient(135deg, var(--accent-light), rgba(230,122,75,0.1));
     border-radius: var(--radius-lg);
@@ -113,37 +92,38 @@
     font-size: 0.9rem;
 }
 
-/* ===== КАРТОЧКА ИНФОРМАЦИИ ===== */
-.balance-info {
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
+/* Современная карточка баланса */
+.balance-card-modern {
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-white));
+    border-radius: 20px;
     padding: 20px;
-    box-shadow: var(--shadow);
-    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
     border: 1px solid var(--border);
+    transition: all 0.3s ease;
 }
 
-.balance-info:hover {
+.balance-card-modern:hover {
+    transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
-    border-color: var(--accent-light);
+    border-color: var(--accent);
 }
 
-/* ===== СТИЛИ ДЛЯ ПРОЗРАЧНЫХ КАРТОЧЕК ===== */
-body:not(.dark-theme) .balance-card {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: var(--card-glow);
+.balance-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
 }
 
-body:not(.dark-theme) .balance-card:hover {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(15px);
-    box-shadow: var(--card-glow-hover);
-    border-color: var(--accent-light);
-}
-
-/* ===== СТАТИСТИКА КЛИЕНТА ===== */
+/* Статистика клиента */
 .client-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -182,7 +162,32 @@ body:not(.dark-theme) .balance-card:hover {
     letter-spacing: 0.5px;
 }
 
-/* ===== ИСТОРИЯ ЗАКАЗОВ ===== */
+/* Мини-статистика */
+.stats-mini {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-light);
+    border-radius: 20px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.stat-mini-item {
+    text-align: center;
+}
+
+.stat-mini-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-mini-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+/* История заказов */
 .client-history-item {
     background: var(--bg-white);
     border-radius: var(--radius-md);
@@ -232,24 +237,7 @@ body:not(.dark-theme) .balance-card:hover {
     border-radius: var(--radius-full);
 }
 
-/* ===== ПРОЗРАЧНЫЕ КАРТОЧКИ ===== */
-body:not(.dark-theme) .client-history-item {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-left: 4px solid var(--accent);
-    box-shadow: var(--card-glow);
-}
-
-body:not(.dark-theme) .client-history-item:hover {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(15px);
-    box-shadow: var(--card-glow-hover);
-    border-color: var(--accent-light);
-    border-left-color: var(--accent);
-}
-
-/* ===== КНОПКИ ДЕЙСТВИЙ ===== */
+/* Кнопки действий */
 .client-action-btn {
     background: transparent;
     border: 2px solid var(--accent);
@@ -283,7 +271,7 @@ body:not(.dark-theme) .client-history-item:hover {
     box-shadow: 0 10px 20px rgba(0,168,107,0.3);
 }
 
-/* ===== ПОПОЛНЕНИЕ БАЛАНСА ===== */
+/* Пополнение баланса */
 .topup-presets {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -315,113 +303,6 @@ body:not(.dark-theme) .client-history-item:hover {
     border-color: transparent;
     box-shadow: 0 5px 15px rgba(230,122,75,0.3);
 }
-
-/* ===== ТЁМНАЯ ТЕМА ===== */
-body.dark-theme .balance-card {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.dark-theme .balance-card:hover {
-    border-color: var(--accent);
-}
-
-body.dark-theme .client-stat-item {
-    background: var(--bg-card);
-}
-
-body.dark-theme .client-stat-item:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent);
-}
-
-body.dark-theme .client-history-item {
-    background: var(--bg-card);
-    border-left-color: var(--accent);
-}
-
-body.dark-theme .client-history-item:hover {
-    background: var(--bg-hover);
-    border-left-color: var(--accent-dark);
-}
-
-body.dark-theme .client-history-price {
-    background: var(--accent-light);
-    color: var(--accent);
-}
-
-/* ===== АНИМАЦИИ ===== */
-@keyframes balancePulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-        color: var(--accent-dark);
-    }
-}
-
-.balance-updated {
-    animation: balancePulse 0.5s ease;
-}
-
-@keyframes glow {
-    0%, 100% {
-        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-    }
-    50% {
-        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
-    }
-}
-
-/* ===== АДАПТИВ ===== */
-@media (max-width: 768px) {
-    .client-avatar {
-        width: 100px;
-        height: 100px;
-        font-size: 50px;
-    }
-    
-    .balance-amount {
-        font-size: 2rem;
-    }
-    
-    .client-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .client-history-item {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .client-history-price {
-        align-self: flex-end;
-    }
-}
-
-@media (max-width: 480px) {
-    .client-avatar {
-        width: 80px;
-        height: 80px;
-        font-size: 40px;
-    }
-    
-    .balance-amount {
-        font-size: 1.8rem;
-    }
-    
-    .client-stats {
-        grid-template-columns: 1fr;
-    }
-    
-    .client-history-meta {
-        flex-direction: column;
-        gap: 8px;
-    }
-}
-
-/* ===== ДОПОЛНИТЕЛЬНЫЕ ФИШКИ ===== */
 
 /* Прогресс-бар уровня */
 .client-level-progress {
@@ -503,12 +384,10 @@ body.dark-theme .client-history-price {
     margin-bottom: 25px;
 }
 
-/* ===== УЛУЧШЕНИЯ ДЛЯ КАБИНЕТА КЛИЕНТА ===== */
-
 /* Приветственный баннер */
 .welcome-banner {
     background: linear-gradient(135deg, var(--accent-light), rgba(230,122,75,0.1));
-    border-radius: 30px;
+    border-radius: var(--radius-lg);
     padding: 25px;
     display: flex;
     justify-content: space-between;
@@ -555,173 +434,6 @@ body.dark-theme .client-history-price {
     box-shadow: 0 6px 16px rgba(230,122,75,0.4);
 }
 
-/* Мини-статистика */
-.stats-mini {
-    display: flex;
-    justify-content: space-around;
-    background: var(--bg-light);
-    border-radius: 20px;
-    padding: 15px;
-    margin-top: 20px;
-}
-
-.stat-mini-item {
-    text-align: center;
-}
-
-.stat-mini-value {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--accent);
-}
-
-.stat-mini-label {
-    font-size: 0.8rem;
-    color: var(--text-soft);
-}
-
-/* Современная карточка баланса */
-.balance-card-modern {
-    background: linear-gradient(135deg, var(--bg-card), var(--bg-white));
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border: 1px solid var(--border);
-    transition: all 0.3s ease;
-}
-
-.balance-card-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent);
-}
-
-.balance-icon {
-    width: 50px;
-    height: 50px;
-    background: var(--accent-gradient);
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-}
-
-.balance-info {
-    flex: 1;
-}
-
-.balance-label {
-    font-size: 0.85rem;
-    color: var(--text-soft);
-    display: block;
-}
-
-/* Достижения мини */
-.achievements-icons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.achievement-icon-mini {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: var(--bg-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    font-size: 18px;
-    transition: all 0.3s ease;
-    cursor: help;
-    border: 1px solid transparent;
-}
-
-.achievement-icon-mini.earned {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
-    animation: achievementGlow 2s infinite;
-}
-
-.achievement-icon-mini:hover {
-    transform: scale(1.1);
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
-}
-
-/* Современные табы */
-.tabs-modern {
-    display: flex;
-    gap: 5px;
-    background: var(--bg-light);
-    padding: 5px;
-    border-radius: 50px;
-    flex-wrap: wrap;
-}
-
-.tab-modern {
-    flex: 1;
-    min-width: 100px;
-    padding: 12px 15px;
-    border: none;
-    border-radius: 50px;
-    background: transparent;
-    color: var(--text-soft);
-    font-weight: 600;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: relative;
-}
-
-.tab-modern i {
-    font-size: 1.1rem;
-}
-
-.tab-modern:hover {
-    background: var(--bg-white);
-    color: var(--accent);
-}
-
-.tab-modern.active {
-    background: var(--accent-gradient);
-    color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
-}
-
-.tab-badge {
-    position: absolute;
-    top: -5px;
-    right: 10px;
-    background: var(--danger);
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Контент табов */
-.tab-content-modern {
-    display: none;
-    animation: fadeIn 0.5s ease;
-}
-
-.tab-content-modern.active {
-    display: block;
-}
-
 /* Фильтр чипсы */
 .filter-chips {
     display: flex;
@@ -732,7 +444,7 @@ body.dark-theme .client-history-price {
 .filter-chip {
     padding: 8px 20px;
     border: 1px solid var(--border);
-    border-radius: 40px;
+    border-radius: var(--radius-full);
     background: transparent;
     color: var(--text-soft);
     font-size: 0.9rem;
@@ -786,6 +498,7 @@ body.dark-theme .client-history-price {
     justify-content: center;
     color: white;
     font-size: 20px;
+    flex-shrink: 0;
 }
 
 .finance-stat-label {
@@ -797,40 +510,6 @@ body.dark-theme .client-history-price {
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--text-dark);
-}
-
-/* Селектор рейтинга */
-.rating-selector {
-    text-align: center;
-}
-
-.rating-stars-lg {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.rating-star-lg {
-    font-size: 40px;
-    color: #ddd;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.rating-star-lg:hover,
-.rating-star-lg.active {
-    color: #FFD700;
-    transform: scale(1.2);
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-.rating-labels {
-    display: flex;
-    justify-content: space-between;
-    color: var(--text-soft);
-    font-size: 0.8rem;
-    margin-top: 5px;
 }
 
 /* Способы оплаты */
@@ -878,96 +557,872 @@ body.dark-theme .client-history-price {
     color: var(--text-soft);
 }
 
-/* Статистика достижений */
-.achievements-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+/* Карточка заказа в списке */
+.order-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+.order-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.order-card-inner {
+    position: relative;
+}
+
+.status-indicator {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    z-index: 2;
+}
+
+.order-card-content {
+    padding: 20px;
+}
+
+.order-card-main {
+    display: flex;
     gap: 15px;
 }
 
-.achievement-stat-card {
-    background: var(--bg-white);
-    border-radius: 20px;
-    padding: 20px;
-    text-align: center;
-    border: 1px solid var(--border);
-    transition: all 0.3s ease;
+.order-card-left {
+    flex-shrink: 0;
 }
 
-.achievement-stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    border-color: gold;
+.order-photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
 }
 
-.achievement-stat-value {
-    font-size: 2rem;
-    font-weight: 800;
-    color: gold;
-    line-height: 1.2;
-    margin-bottom: 5px;
+.order-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
 }
 
-.achievement-stat-label {
+.order-photo-preview:hover img {
+    transform: scale(1.1);
+}
+
+.photo-count {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.order-photo-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.order-card-right {
+    flex: 1;
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.category-badge {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.order-price-tag {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.price-amount {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.price-label {
     font-size: 0.9rem;
     color: var(--text-soft);
 }
 
-/* Сетка достижений */
-.achievements-grid {
+.order-title-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.urgent-badge {
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.order-description {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.order-meta-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+}
+
+.meta-item i {
+    width: 16px;
+    font-size: 14px;
+}
+
+.order-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.order-status-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-status {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.master-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--success);
+}
+
+.order-stats {
+    display: flex;
+    align-items: center;
     gap: 15px;
 }
 
+.responses-count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+.btn-action {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-light);
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-action.active {
+    background: var(--accent);
+    color: white;
+    transform: rotate(180deg);
+}
+
+/* Секция откликов */
+.order-responses-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
+}
+
+.responses-title {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.responses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+/* Карточка отклика */
+.response-card {
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    padding: 15px;
+    position: relative;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.response-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--accent);
+}
+
+.response-card.selected {
+    border-left: 4px solid var(--success);
+}
+
+.selected-badge {
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    background: var(--success);
+    color: white;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,168,107,0.3);
+}
+
+.response-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.response-content {
+    flex: 1;
+}
+
+.response-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.response-name h6 {
+    margin: 0 0 4px 0;
+    font-size: 1rem;
+}
+
+.response-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.rating-stars {
+    color: #FFD700;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+}
+
+.rating-count {
+    font-size: 0.75rem;
+    color: var(--text-soft);
+}
+
+.response-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.response-comment {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+}
+
+.response-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+.response-time {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.response-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-response {
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-response.primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-response.primary:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+}
+
+.btn-response.success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-response.success:hover {
+    background: #00875A;
+}
+
+.btn-response.warning {
+    background: var(--warning);
+    color: white;
+}
+
+.btn-response.warning:hover {
+    background: #e6a01d;
+}
+
+.btn-response.favorite {
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+}
+
+.btn-response.favorite:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
+/* Карточка избранного */
+.favorite-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.favorite-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.favorite-avatar {
+    width: 60px;
+    height: 60px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 30px;
+    flex-shrink: 0;
+}
+
+.favorite-info {
+    flex: 1;
+}
+
+.favorite-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.favorite-category {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.favorite-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rating-text {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+}
+
+.favorite-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-light);
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-icon.danger:hover {
+    background: var(--danger);
+}
+
+/* Карточка чата */
+.chat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+.chat-card:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent);
+    background: var(--bg-light);
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-name {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.chat-last-message {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.chat-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.chat-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.chat-unread {
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Анимации */
-@keyframes achievementGlow {
+@keyframes balancePulse {
     0%, 100% {
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        transform: scale(1);
     }
     50% {
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        transform: scale(1.05);
+        color: var(--accent-dark);
     }
 }
 
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%);
+.balance-updated {
+    animation: balancePulse 0.5s ease;
+}
+
+/* Темная тема */
+body.dark-theme .balance-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .balance-card:hover {
+    border-color: var(--accent);
+}
+
+body.dark-theme .client-stat-item {
+    background: var(--bg-card);
+}
+
+body.dark-theme .client-stat-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+body.dark-theme .client-history-item {
+    background: var(--bg-card);
+    border-left-color: var(--accent);
+}
+
+body.dark-theme .client-history-item:hover {
+    background: var(--bg-hover);
+    border-left-color: var(--accent-dark);
+}
+
+body.dark-theme .client-history-price {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+body.dark-theme .order-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .response-card {
+    background: var(--bg-dark);
+}
+
+body.dark-theme .response-comment {
+    background: var(--bg-card);
+}
+
+body.dark-theme .favorite-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .chat-card {
+    background: var(--bg-card);
+}
+
+body.dark-theme .chat-card:hover {
+    background: var(--bg-hover);
+}
+
+body.dark-theme .stats-mini {
+    background: var(--bg-dark);
+}
+
+/* Адаптивность */
+@media (max-width: var(--desktop-md)) {
+    .client-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
     }
-    100% {
-        transform: translateX(100%);
+
+    .balance-amount {
+        font-size: 2rem;
+    }
+
+    .client-stats {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* Адаптив */
-@media (max-width: 768px) {
+@media (max-width: var(--tablet)) {
+    .client-avatar {
+        width: 90px;
+        height: 90px;
+        font-size: 45px;
+    }
+
+    .balance-amount {
+        font-size: 1.8rem;
+    }
+
+    .client-history-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .client-history-price {
+        align-self: flex-end;
+    }
+
     .welcome-banner {
         flex-direction: column;
         text-align: center;
     }
-    
-    .tabs-modern {
-        flex-direction: column;
-        border-radius: 30px;
-    }
-    
-    .tab-modern {
-        width: 100%;
-    }
-    
+
     .finance-stats {
         grid-template-columns: 1fr;
     }
-    
+
     .payment-methods {
         grid-template-columns: 1fr;
     }
-    
-    .achievements-stats {
+
+    .order-card-main {
+        flex-direction: column;
+    }
+
+    .order-photo-preview {
+        width: 100%;
+        height: 150px;
+    }
+
+    .order-photo-placeholder {
+        width: 100%;
+        height: 150px;
+    }
+
+    .order-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .order-price-tag {
+        align-self: flex-start;
+    }
+
+    .order-meta-grid {
         grid-template-columns: 1fr;
     }
-    
-    .achievements-grid {
+
+    .order-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .order-status-wrapper {
+        flex-wrap: wrap;
+    }
+
+    .response-card {
+        padding: 12px;
+    }
+
+    .response-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .response-actions {
+        flex-wrap: wrap;
+    }
+
+    .btn-response {
+        flex: 1;
+    }
+
+    .favorite-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .favorite-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .client-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+
+    .balance-amount {
+        font-size: 1.6rem;
+    }
+
+    .client-stats {
         grid-template-columns: 1fr;
+    }
+
+    .client-history-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .stats-mini {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .stat-mini-item {
+        width: 100%;
+    }
+
+    .finance-stat-card {
+        padding: 15px;
+    }
+
+    .finance-stat-value {
+        font-size: 1.1rem;
+    }
+
+    .payment-method {
+        padding: 12px;
+    }
+
+    .response-card {
+        padding: 10px;
+    }
+
+    .response-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .response-price {
+        font-size: 1rem;
+    }
+
+    .response-actions {
+        flex-direction: column;
+    }
+
+    .btn-response {
+        width: 100%;
+    }
+
+    .chat-card {
+        padding: 12px;
+    }
+
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .chat-name {
+        font-size: 0.95rem;
+    }
+
+    .chat-last-message {
+        font-size: 0.8rem;
     }
 }

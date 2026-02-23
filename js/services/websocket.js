@@ -1,105 +1,97 @@
 // ===== js/services/websocket.js =====
-// WEBSOCKET РЕАЛЬНОГО ВРЕМЕНИ — ИСПРАВЛЕННАЯ ВЕРСИЯ
+// WEBSOCKET С ПЕРЕПОДКЛЮЧЕНИЕМ
 
 const WebSocketService = (function() {
     let ws = null;
     let reconnectAttempts = 0;
-    const maxReconnect = 10;
-    let reconnectDelay = 1000;
-    let listeners = new Map();
-    let heartbeatInterval = null;
     let reconnectTimer = null;
+    let heartbeatInterval = null;
+    let listeners = new Map();
+    let intentionalClose = false;
+
+    const CONFIG = window.CONFIG?.api || {
+        websocket: 'wss://api.workhom.ru/ws',
+        timeouts: { websocket: 5000 }
+    };
+
+    const MAX_RECONNECT = 10;
+    const BASE_DELAY = 1000;
 
     /**
-     * Проверка наличия Auth
+     * Получение URL
      */
-    function checkAuth() {
-        if (!window.Auth || typeof window.Auth.getUser !== 'function') {
-            console.warn('⚠️ Auth не доступен');
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Получение URL WebSocket
-     */
-    function getWebSocketUrl() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    function getUrl() {
         if (window.location.hostname.includes('github.io')) {
             return 'wss://echo.websocket.org';
         }
-        const host = window.location.hostname === 'localhost' 
-            ? 'localhost:8080'
-            : 'api.workhom.ru';
-        return `${protocol}//${host}/ws`;
+        return CONFIG.websocket;
     }
 
     /**
-     * Подключение к WebSocket
+     * Подключение
      */
     function connect() {
         return new Promise((resolve, reject) => {
             try {
-                const wsUrl = getWebSocketUrl();
-                console.log('🔌 Подключение к WebSocket:', wsUrl);
-                
-                ws = new WebSocket(wsUrl);
-                
+                const url = getUrl();
+                console.log('🔌 Подключение к WebSocket:', url);
+
+                ws = new WebSocket(url);
+
                 ws.onopen = () => {
                     console.log('✅ WebSocket подключен');
                     reconnectAttempts = 0;
-                    reconnectDelay = 1000;
-                    
-                    // Отправляем приветствие
-                    const userId = checkAuth() ? window.Auth.getUser()?.uid : null;
-                    send({
+                    intentionalClose = false;
+
+                    // Отправка auth
+                    const userId = Auth?.getUser?.()?.uid;
+                    ws.send(JSON.stringify({
                         type: 'auth',
                         userId: userId,
-                        sessionId: getSessionId(),
+                        sessionId: Utils.getSessionId(),
                         timestamp: Date.now()
-                    });
-                    
-                    // Запускаем heartbeat
+                    }));
+
                     startHeartbeat();
-                    
                     resolve();
                 };
 
                 ws.onmessage = (event) => {
                     try {
-                        // Пробуем распарсить как JSON
                         const data = JSON.parse(event.data);
                         handleMessage(data);
-                    } catch (e) {
-                        // Если не JSON — просто логируем как текст (без ошибки)
-                        if (event.data === 'ping' || event.data.includes('ping')) {
-                            // Отвечаем на ping текстовым pong
-                            if (ws && ws.readyState === WebSocket.OPEN) {
-                                ws.send('pong');
-                            }
-                        } else {
-                            // Для отладки — можно закомментировать
-                            console.log('📩 WebSocket (текст):', event.data.substring(0, 50));
+                    } catch {
+                        // Текстовые сообщения (ping/pong)
+                        if (event.data === 'ping') {
+                            ws.send('pong');
                         }
                     }
                 };
 
                 ws.onerror = (error) => {
-                    // Не выводим ошибку в консоль, если это echo.websocket.org
-                    if (!wsUrl.includes('echo.websocket.org')) {
+                    if (!url.includes('echo.websocket.org')) {
                         console.error('❌ WebSocket ошибка:', error);
+                        
+                        // Передаем в error-handler
+                        if (window.handleError) {
+                            window.handleError({
+                                type: 'WEBSOCKET_ERROR',
+                                message: error.message || 'WebSocket error',
+                                timestamp: new Date().toISOString()
+                            });
+                        }
                     }
                     reject(error);
                 };
 
                 ws.onclose = (event) => {
-                    if (!wsUrl.includes('echo.websocket.org')) {
-                        console.log(`🔌 WebSocket отключен: ${event.code} ${event.reason}`);
+                    if (!url.includes('echo.websocket.org')) {
+                        console.log(`🔌 WebSocket отключен: ${event.code}`);
                     }
+
                     stopHeartbeat();
-                    
-                    if (event.code !== 1000) {
+
+                    if (!intentionalClose && event.code !== 1000) {
                         reconnect();
                     }
                 };
@@ -112,38 +104,42 @@ const WebSocketService = (function() {
     }
 
     /**
-     * Переподключение с экспоненциальной задержкой
+     * Переподключение
      */
     function reconnect() {
-        if (reconnectAttempts >= maxReconnect) {
+        if (reconnectAttempts >= MAX_RECONNECT) {
             console.log('❌ Достигнут лимит переподключений');
             return;
         }
 
         reconnectAttempts++;
-        const delay = reconnectDelay * Math.pow(2, reconnectAttempts - 1);
-        
-        console.log(`🔄 Переподключение через ${delay}ms... попытка ${reconnectAttempts}`);
-        
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-        }
-        
+        const delay = BASE_DELAY * Math.pow(2, reconnectAttempts - 1);
+
+        console.log(`🔄 Переподключение через ${delay}ms... (${reconnectAttempts}/${MAX_RECONNECT})`);
+
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+
         reconnectTimer = setTimeout(() => {
             connect().catch(() => {});
         }, delay);
     }
 
     /**
-     * Получение сессии
+     * Отключение
      */
-    function getSessionId() {
-        let sessionId = sessionStorage.getItem('ws_session');
-        if (!sessionId) {
-            sessionId = 'ws_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('ws_session', sessionId);
+    function disconnect() {
+        intentionalClose = true;
+        stopHeartbeat();
+
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
         }
-        return sessionId;
+
+        if (ws) {
+            ws.close(1000, 'Штатное отключение');
+            ws = null;
+        }
     }
 
     /**
@@ -169,139 +165,82 @@ const WebSocketService = (function() {
     }
 
     /**
-     * Обработка входящих сообщений
-     */
-    function handleMessage(message) {
-        // Не логируем ping/pong чтобы не засорять консоль
-        if (message.type !== 'pong' && message.type !== 'ping') {
-            console.log('📩 WebSocket сообщение:', message.type);
-        }
-
-        switch(message.type) {
-            case 'pong':
-                break;
-            case 'notification':
-                showNotification(message.data);
-                break;
-            case 'typing':
-                emit('typing', message.data);
-                break;
-            case 'status':
-                emit('status', message.data);
-                break;
-            case 'message':
-                emit('message', message.data);
-                break;
-            default:
-                emit(message.type, message.data);
-        }
-
-        emit('*', message);
-    }
-
-    /**
-     * Отправка сообщения
-     */
-    function send(message) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            return false;
-        }
-
-        try {
-            ws.send(JSON.stringify(message));
-            return true;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    /**
-     * Подписка на события
-     */
-    function on(eventType, callback) {
-        if (!listeners.has(eventType)) {
-            listeners.set(eventType, new Set());
-        }
-        listeners.get(eventType).add(callback);
-        return () => off(eventType, callback);
-    }
-
-    /**
-     * Отписка
-     */
-    function off(eventType, callback) {
-        if (listeners.has(eventType)) {
-            listeners.get(eventType).delete(callback);
-        }
-    }
-
-    /**
-     * Вызов событий
-     */
-    function emit(eventType, data) {
-        if (listeners.has(eventType)) {
-            listeners.get(eventType).forEach(callback => {
-                try {
-                    callback(data);
-                } catch (e) {
-                    console.error(`Ошибка в слушателе ${eventType}:`, e);
-                }
-            });
-        }
-    }
-
-    /**
-     * Показать уведомление
-     */
-    function showNotification(data) {
-        if (!data) return;
-        
-        if (Notification.permission === 'granted') {
-            new Notification(data.title || 'ВоркХом', {
-                body: data.body,
-                icon: '/HomeWork/icons/icon-192x192.png',
-                badge: '/HomeWork/icons/badge.png',
-                data: data
-            });
-        } else if (Notification.permission !== 'denied') {
-            Notification.requestPermission();
-        }
-    }
-
-    /**
-     * Отключение
-     */
-    function disconnect() {
-        stopHeartbeat();
-        
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
-        }
-        
-        if (ws) {
-            ws.close(1000, 'Штатное отключение');
-            ws = null;
-        }
-    }
-
-    /**
-     * Проверка статуса
+     * Проверка соединения
      */
     function isConnected() {
         return ws && ws.readyState === WebSocket.OPEN;
     }
 
     /**
-     * Отправка статуса печати в чате
+     * Отправка сообщения
+     */
+    function send(message) {
+        if (!isConnected()) return false;
+
+        try {
+            ws.send(JSON.stringify(message));
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Обработка сообщений
+     */
+    function handleMessage(message) {
+        if (message.type !== 'pong') {
+            console.log('📩 WebSocket:', message.type);
+        }
+
+        emit(message.type, message.data);
+        emit('*', message);
+    }
+
+    /**
+     * Подписка на события
+     */
+    function on(event, callback) {
+        if (!listeners.has(event)) {
+            listeners.set(event, new Set());
+        }
+        listeners.get(event).add(callback);
+        return () => off(event, callback);
+    }
+
+    /**
+     * Отписка
+     */
+    function off(event, callback) {
+        if (listeners.has(event)) {
+            listeners.get(event).delete(callback);
+        }
+    }
+
+    /**
+     * Вызов событий
+     */
+    function emit(event, data) {
+        if (listeners.has(event)) {
+            listeners.get(event).forEach(cb => {
+                try {
+                    cb(data);
+                } catch (e) {
+                    console.error(`Ошибка в слушателе ${event}:`, e);
+                }
+            });
+        }
+    }
+
+    /**
+     * Отправка статуса печати
      */
     function sendTyping(chatId, isTyping) {
-        const userId = checkAuth() ? window.Auth.getUser()?.uid : null;
         send({
             type: 'typing',
             data: {
                 chatId,
-                userId: userId,
+                userId: Auth?.getUser?.()?.uid,
                 isTyping,
                 timestamp: Date.now()
             }
@@ -312,11 +251,10 @@ const WebSocketService = (function() {
      * Отправка онлайн статуса
      */
     function sendOnlineStatus(isOnline) {
-        const userId = checkAuth() ? window.Auth.getUser()?.uid : null;
         send({
             type: 'status',
             data: {
-                userId: userId,
+                userId: Auth?.getUser?.()?.uid,
                 online: isOnline,
                 timestamp: Date.now()
             }
@@ -328,43 +266,33 @@ const WebSocketService = (function() {
      */
     function getOnlineUsers() {
         return new Promise((resolve) => {
-            const requestId = 'online_' + Date.now();
-            
+            const requestId = Utils.generateId('online_');
+
             const handler = (data) => {
-                off('online_users_' + requestId, handler);
+                off('online_users', handler);
                 resolve(data);
             };
-            
-            on('online_users_' + requestId, handler);
-            
+
+            on('online_users', handler);
+
             send({
                 type: 'get_online_users',
                 requestId
             });
 
             setTimeout(() => {
-                off('online_users_' + requestId, handler);
+                off('online_users', handler);
                 resolve([]);
             }, 5000);
         });
     }
 
-    /**
-     * Запрос разрешения на уведомления
-     */
-    function requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-    }
-
-    // Автоподключение при авторизации
-    if (checkAuth() && typeof window.Auth.onAuthChange === 'function') {
-        window.Auth.onAuthChange((state) => {
+    // Автоподключение
+    if (window.Auth?.onAuthChange) {
+        Auth.onAuthChange((state) => {
             if (state.isAuthenticated) {
                 connect();
-                requestNotificationPermission();
-                
+
                 setTimeout(() => {
                     if (isConnected()) {
                         sendOnlineStatus(true);

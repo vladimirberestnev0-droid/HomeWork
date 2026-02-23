@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
     <!-- ===== CORE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
@@ -24,17 +27,13 @@
     <!-- ===== LAYOUTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
     <link rel="stylesheet" href="/HomeWork/css/layouts/footer.css">
-    <link rel="stylesheet" href="/HomeWork/css/layouts/grids.css">
 
     <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
     <link rel="stylesheet" href="/HomeWork/css/components/badges.css">
     <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
     <link rel="stylesheet" href="/HomeWork/css/components/ratings.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
 
@@ -152,30 +151,87 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Core -->
+    <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants-light.js"></script>
-    <script src="/HomeWork/js/core/helpers.js"></script>
-    <script src="/HomeWork/js/core/firebase.js"></script>
+    <script src="/HomeWork/js/core/base-utils.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
+    <script src="/HomeWork/js/core/firebase.js"></script>
+    
+    <!-- Services -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
+    
+    <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     
+    <!-- Profile Script (встроенный для надежности) -->
     <script>
+        // Глобальные переменные
+        let currentMasterId = null;
+        let currentUser = null;
+        let currentUserData = null;
+
         // Получаем ID мастера из URL
         const urlParams = new URLSearchParams(window.location.search);
-        const masterId = urlParams.get('id');
+        currentMasterId = urlParams.get('id');
         
-        if (!masterId) {
+        if (!currentMasterId) {
             window.location.href = '/HomeWork/';
         }
-        
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            // Подписываемся на изменения авторизации
+            if (window.Auth?.onAuthChange) {
+                Auth.onAuthChange((state) => {
+                    currentUser = state.user;
+                    currentUserData = state.userData;
+                    loadMasterProfile();
+                });
+            } else {
+                // Если Auth не готов, пробуем через секунду
+                setTimeout(() => {
+                    if (window.Auth?.onAuthChange) {
+                        Auth.onAuthChange((state) => {
+                            currentUser = state.user;
+                            currentUserData = state.userData;
+                            loadMasterProfile();
+                        });
+                    } else {
+                        loadMasterProfile(); // Загружаем без авторизации
+                    }
+                }, 1000);
+            }
+        });
+
+        // Функция показа звезд рейтинга
+        function renderRatingStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating - fullStars >= 0.5;
+            let stars = '';
+            
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    stars += '<i class="fas fa-star" style="color: gold;"></i>';
+                } else if (i === fullStars && hasHalfStar) {
+                    stars += '<i class="fas fa-star-half-alt" style="color: gold;"></i>';
+                } else {
+                    stars += '<i class="far fa-star" style="color: gold;"></i>';
+                }
+            }
+            
+            return stars;
+        }
+
+        // Основная функция загрузки профиля
         async function loadMasterProfile() {
             const container = document.getElementById('profileContent');
             
             try {
                 // Загружаем данные мастера
-                const masterDoc = await db.collection('users').doc(masterId).get();
+                const masterDoc = await db.collection('users').doc(currentMasterId).get();
                 
                 if (!masterDoc.exists) {
                     container.innerHTML = '<div class="text-center p-5 text-danger">Мастер не найден</div>';
@@ -186,7 +242,7 @@
                 
                 // Загружаем портфолио
                 const portfolioSnapshot = await db.collection('portfolio')
-                    .where('masterId', '==', masterId)
+                    .where('masterId', '==', currentMasterId)
                     .orderBy('createdAt', 'desc')
                     .get();
                 
@@ -195,8 +251,8 @@
                 
                 // Загружаем отзывы
                 const ordersSnapshot = await db.collection('orders')
-                    .where('selectedMasterId', '==', masterId)
-                    .where('status', '==', ORDER_STATUS.COMPLETED)
+                    .where('selectedMasterId', '==', currentMasterId)
+                    .where('status', '==', 'completed')
                     .get();
                 
                 const reviews = [];
@@ -204,7 +260,7 @@
                     const order = doc.data();
                     if (order.reviews) {
                         order.reviews.forEach(review => {
-                            if (review.masterId === masterId) {
+                            if (review.masterId === currentMasterId) {
                                 reviews.push({
                                     ...review,
                                     orderId: doc.id,
@@ -216,10 +272,13 @@
                 });
                 
                 // Формируем HTML
-                const stars = '★'.repeat(Math.floor(master.rating || 0)) + 
-                             '☆'.repeat(5 - Math.floor(master.rating || 0));
+                const rating = master.rating || 0;
+                const ratingStars = renderRatingStars(rating);
                 
-                // Портфолио
+                // Категории
+                const categories = master.categories ? master.categories.split(',').map(c => c.trim()) : ['Строительные работы'];
+                
+                // Портфолио HTML
                 let portfolioHtml = '';
                 if (portfolio.length > 0) {
                     portfolioHtml = `
@@ -235,28 +294,58 @@
                     portfolioHtml = '<p class="text-secondary">Портфолио пока пусто</p>';
                 }
                 
-                // Отзывы
+                // Отзывы HTML
                 let reviewsHtml = '';
                 if (reviews.length > 0) {
-                    reviewsHtml = reviews.map(review => `
-                        <div class="review-card">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-bold">${Helpers.escapeHtml(review.clientName || 'Клиент')}</span>
-                                <span class="review-rating">${'★'.repeat(review.rating)}</span>
+                    reviewsHtml = reviews.map(review => {
+                        const reviewDate = review.createdAt ? Utils.formatDate(review.createdAt) : 'недавно';
+                        return `
+                            <div class="review-card">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold">${Utils.escapeHtml(review.clientName || 'Клиент')}</span>
+                                    <span class="review-rating">${renderRatingStars(review.rating)}</span>
+                                </div>
+                                <p class="text-secondary mb-2">${Utils.escapeHtml(review.text || '')}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">${reviewDate}</small>
+                                    <small class="text-muted">Заказ: ${Utils.escapeHtml(review.orderTitle || 'Неизвестно')}</small>
+                                </div>
                             </div>
-                            <p class="text-secondary mb-2">${Helpers.escapeHtml(review.text || '')}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">${Helpers.formatDate(review.createdAt)}</small>
-                                <small class="text-muted">Заказ: ${review.orderTitle || 'Неизвестно'}</small>
-                            </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
                     reviewsHtml = '<p class="text-secondary">Пока нет отзывов</p>';
                 }
                 
-                // Категории
-                const categories = master.categories ? master.categories.split(',').map(c => c.trim()) : ['Строительные работы'];
+                // Бейджи
+                const badges = master.badges || [];
+                const badgesHtml = badges.length > 0 
+                    ? badges.map(badge => `
+                        <span class="badge" style="background: var(--accent); color: white;">
+                            <i class="fas fa-check-circle me-1"></i>${badge}
+                        </span>
+                    `).join('')
+                    : '<span class="badge bg-secondary">Нет бейджей</span>';
+                
+                // Определяем, показывать ли контакты
+                const showContacts = currentUser && currentUser.uid !== currentMasterId;
+                const phoneHtml = showContacts 
+                    ? `<p class="mb-1"><i class="fas fa-phone-alt me-2" style="color: var(--accent);"></i> <a href="tel:${master.phone || ''}">${master.phone || 'Не указан'}</a></p>`
+                    : `
+                        <div class="contact-protected">
+                            <div class="protected-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h6 class="mb-2">Телефон скрыт</h6>
+                            <p class="small text-secondary mb-3">
+                                <i class="fas fa-lock me-1"></i>
+                                Чтобы увидеть телефон, войдите или создайте заказ
+                            </p>
+                            <button class="btn btn-sm w-100" onclick="showContactAuth()">
+                                <i class="fas fa-eye me-2"></i>Показать контакты
+                            </button>
+                        </div>
+                    `;
                 
                 container.innerHTML = `
                     <!-- Шапка профиля -->
@@ -265,10 +354,13 @@
                             <div class="profile-avatar">
                                 <i class="fas fa-user-tie"></i>
                             </div>
-                            <h1 class="display-5 fw-bold">${Helpers.escapeHtml(master.name || 'Мастер')}</h1>
-                            <p class="lead">${master.specialization || 'Строительные работы'}</p>
-                            <div class="d-flex justify-content-center gap-3 mt-3">
-                                <span class="badge badge-primary">⭐ ${(master.rating || 0).toFixed(1)}</span>
+                            <h1 class="display-5 fw-bold">${Utils.escapeHtml(master.name || 'Мастер')}</h1>
+                            <p class="lead">${Utils.escapeHtml(master.specialization || categories[0])}</p>
+                            <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+                                <span class="badge badge-primary">
+                                    <span class="rating-display">${ratingStars}</span>
+                                    <span class="ms-1">${rating.toFixed(1)}</span>
+                                </span>
                                 <span class="badge badge-success">📦 ${master.completedJobs || 0} работ</span>
                                 <span class="badge badge-info">📋 ${reviews.length} отзывов</span>
                                 ${master.verified ? '<span class="badge" style="background: #4CAF50; color: white;">✅ Верифицирован</span>' : ''}
@@ -276,13 +368,13 @@
                         </div>
                     </div>
                     
-                    <div class="row g-4">
+                    <div class="row g-4 mt-2">
                         <!-- Основная информация -->
                         <div class="col-md-8">
                             <!-- О себе -->
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-info-circle me-2" style="color: var(--accent);"></i>О себе</h5>
-                                <p>${Helpers.escapeHtml(master.bio || 'Профессиональный мастер с опытом работы. Выполняю качественный ремонт и строительные работы.')}</p>
+                                <p>${Utils.escapeHtml(master.bio || 'Профессиональный мастер с опытом работы. Выполняю качественный ремонт и строительные работы.')}</p>
                             </div>
                             
                             <!-- Категории -->
@@ -310,43 +402,28 @@
                         
                         <!-- Боковая панель -->
                         <div class="col-md-4">
-                            <!-- Контакты (без телефона!) -->
+                            <!-- Контакты -->
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-address-card me-2" style="color: var(--accent);"></i>Контакты</h5>
-                                <div class="contact-protected">
-                                    <div class="protected-icon">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </div>
-                                    <h6 class="mb-2">Телефон скрыт</h6>
-                                    <p class="small text-secondary mb-3">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Чтобы увидеть телефон, войдите или создайте заказ
-                                    </p>
-                                    <button class="btn btn-sm w-100" onclick="showContactAuth()">
-                                        <i class="fas fa-eye me-2"></i>Показать контакты
-                                    </button>
-                                </div>
+                                ${phoneHtml}
+                                <p class="mb-0 mt-2"><i class="fas fa-envelope me-2" style="color: var(--accent);"></i> ${master.email || 'Email не указан'}</p>
                             </div>
                             
                             <!-- Бейджи -->
                             <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-medal me-2" style="color: var(--accent);"></i>Награды</h5>
                                 <div id="badgesContainer" class="d-flex flex-wrap gap-2">
-                                    ${(master.badges || ['Профессионал', 'Опытный мастер']).map(badge => 
-                                        `<span class="badge" style="background: var(--accent); color: white;">
-                                            <i class="fas fa-check-circle me-1"></i>${badge}
-                                        </span>`
-                                    ).join('')}
+                                    ${badgesHtml}
                                 </div>
                             </div>
                             
                             <!-- Статистика -->
-                            <div class="card">
+                            <div class="card mb-4">
                                 <h5 class="mb-3"><i class="fas fa-chart-line me-2" style="color: var(--accent);"></i>Статистика</h5>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>На платформе:</span>
                                     <span class="fw-bold">${master.createdAt ? 
-                                        Math.floor((Date.now() - master.createdAt.toDate()) / (1000*60*60*24)) + ' дней' 
+                                        Math.floor((Date.now() - Utils.safeGetDate(master.createdAt).getTime()) / (1000*60*60*24)) + ' дней' 
                                         : 'Новый'}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
@@ -364,9 +441,18 @@
                             </div>
                             
                             <!-- Кнопка для связи -->
-                            <button class="btn w-100 mt-3" onclick="startChat('${masterId}')">
-                                <i class="fas fa-comment me-2"></i> Написать мастеру
-                            </button>
+                            ${currentUser && currentUser.uid !== currentMasterId ? 
+                                `<button class="btn w-100 mt-3" onclick="startChat('${currentMasterId}')">
+                                    <i class="fas fa-comment me-2"></i> Написать мастеру
+                                </button>` : 
+                                currentUser && currentUser.uid === currentMasterId ?
+                                `<button class="btn btn-outline-secondary w-100 mt-3" onclick="window.location.href='/HomeWork/masters.html'">
+                                    <i class="fas fa-tachometer-alt me-2"></i> Перейти в кабинет
+                                </button>` :
+                                `<button class="btn w-100 mt-3" onclick="showContactAuth()">
+                                    <i class="fas fa-comment me-2"></i> Написать мастеру
+                                </button>`
+                            }
                         </div>
                     </div>
                 `;
@@ -392,11 +478,17 @@
                 showContactAuth();
                 return;
             }
-            window.location.href = `/HomeWork/chat.html?masterId=${masterId}`;
+            
+            // Создаем или открываем чат
+            const user = Auth.getUser();
+            if (user && user.uid === masterId) {
+                Utils.showNotification('Это ваш собственный профиль', 'info');
+                return;
+            }
+            
+            // Здесь можно создать чат или перейти к существующему
+            Utils.showNotification('Чат будет доступен после выбора мастера в заказе', 'info');
         }
-        
-        // Загружаем профиль при старте
-        document.addEventListener('DOMContentLoaded', loadMasterProfile);
     </script>
 </body>
 </html>

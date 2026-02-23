@@ -1,5 +1,5 @@
 /* ===== MODALS.CSS ===== */
-/* Версия: 3.0 — МОДАЛЬНЫЕ ОКНА */
+/* Версия: 5.0 — МОДАЛЬНЫЕ ОКНА (ИСПРАВЛЕНО) */
 
 .modal-backdrop {
     position: fixed;
@@ -9,7 +9,7 @@
     bottom: 0;
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(3px);
-    z-index: 9990;
+    z-index: calc(var(--z-modal) - 1);
     display: none;
 }
 
@@ -26,7 +26,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: var(--z-modal);
 }
 
 .modal.show {
@@ -39,7 +39,7 @@
     max-width: 500px;
     max-height: 90vh;
     margin: auto;
-    z-index: 10001;
+    z-index: calc(var(--z-modal) + 1);
     pointer-events: auto;
 }
 
@@ -60,6 +60,7 @@
     box-shadow: var(--shadow-dark);
     position: relative;
     animation: scaleIn 0.3s ease;
+    border: 1px solid var(--border);
 }
 
 .modal-header {
@@ -76,6 +77,9 @@
     font-weight: 700;
     color: var(--primary);
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .modal-close {
@@ -123,8 +127,9 @@
     opacity: 1;
 }
 
+/* Стиль для модалок ВоркХом */
 .modal-workhom .modal-content {
-    border-radius: 30px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
 }
 
@@ -152,110 +157,129 @@
     padding: 15px 25px 25px;
 }
 
+/* Светлая тема */
 body:not(.dark-theme) .modal-content {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.9);
 }
 
-/* ===== MODALS.CSS ===== */
-/* Версия: 3.1 — УЛУЧШЕННЫЕ МОДАЛКИ */
-
-/* ... существующие стили ... */
-
 /* Модалка подтверждения выхода */
 .modal-logout .modal-header {
-    background: linear-gradient(135deg, #DC3545, #ff6b6b) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #DC3545, #ff6b6b);
+    color: white;
 }
 
 .modal-logout .modal-header i {
-    animation: bounce 1s ease-in-out infinite !important;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+    animation: bounce 1s ease-in-out infinite;
 }
 
 /* Модалка успеха */
 .modal-success .modal-header {
-    background: linear-gradient(135deg, #00A86B, #2ecc71) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #00A86B, #2ecc71);
+    color: white;
 }
 
 .modal-success .modal-header i {
-    animation: checkPop 0.5s ease !important;
+    animation: checkPop 0.5s ease;
 }
 
 /* Модалка предупреждения */
 .modal-warning .modal-header {
-    background: linear-gradient(135deg, #FFB020, #f39c12) !important;
-    color: white !important;
-}
-
-/* Анимация появления */
-.modal.fade .modal-dialog {
-    transform: scale(0.9) translateY(-30px);
-    opacity: 0;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-}
-
-.modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
-    opacity: 1;
+    background: linear-gradient(135deg, #FFB020, #f39c12);
+    color: white;
 }
 
 /* Красивые кнопки в модалках */
 .modal-footer .btn {
-    min-width: 120px !important;
-    padding: 10px 20px !important;
-    border-radius: 40px !important;
-    transition: all 0.3s ease !important;
+    min-width: 120px;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    transition: all 0.3s ease;
 }
 
 .modal-footer .btn:hover {
-    transform: translateY(-2px) scale(1.02) !important;
+    transform: translateY(-2px) scale(1.02);
 }
 
 .modal-footer .btn-outline-secondary:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }
 
 /* Затемнение фона */
 .modal-backdrop {
-    backdrop-filter: blur(3px) !important;
-    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(3px);
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .modal-backdrop.show {
-    opacity: 1 !important;
+    opacity: 1;
 }
 
 /* Убираем мигание скролла */
 body.modal-open {
-    padding-right: 0 !important;
-    overflow: hidden !important;
+    padding-right: 0;
+    overflow: hidden;
 }
 
-/* Адаптив для модалок */
-@media (max-width: 576px) {
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
     .modal-dialog {
-        margin: 10px !important;
+        margin: 10px;
     }
-    
+
     .modal-content {
-        border-radius: 20px !important;
+        padding: 20px;
+        border-radius: var(--radius-lg);
     }
-    
+
     .modal-footer {
-        flex-direction: column !important;
-        gap: 10px !important;
+        flex-direction: column;
+        gap: 10px;
     }
-    
+
     .modal-footer .btn {
-        width: 100% !important;
+        width: 100%;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .modal-content {
+        padding: 15px;
+    }
+
+    .modal-title {
+        font-size: 1.3rem;
+    }
+
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        font-size: 20px;
+    }
+
+    .modal-workhom .modal-header {
+        padding: 15px 20px;
+    }
+}
+
+@media (max-width: var(--mobile-sm)) {
+    .modal-dialog {
+        margin: 5px;
+    }
+
+    .modal-content {
+        padding: 12px;
+    }
+
+    .modal-title {
+        font-size: 1.2rem;
+    }
+
+    .modal-footer .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
 }

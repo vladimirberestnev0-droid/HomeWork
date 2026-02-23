@@ -52,6 +52,7 @@
     let currentOrderId = null;
     let statsInterval = null;
     let currentFilter = 'all';
+    let unsubscribeRating = null;
     
     // Кэш для статистики
     let statsCache = {
@@ -60,121 +61,113 @@
         lastUpdate: 0
     };
 
-    // ===== БЕЗОПАСНЫЙ HELPER =====
-    const safeHelpers = {
-        // Экранирование HTML
-        escapeHtml: (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        },
-        
-        // Безопасное получение даты из Firestore Timestamp
-        safeGetDate: (timestamp) => {
-            if (!timestamp) return new Date();
-            try {
-                if (timestamp.toDate) {
-                    return timestamp.toDate();
-                }
-                if (timestamp instanceof Date) {
-                    return timestamp;
-                }
-                if (typeof timestamp === 'string') {
-                    const date = new Date(timestamp);
-                    return isNaN(date.getTime()) ? new Date() : date;
-                }
-                return new Date();
-            } catch {
-                return new Date();
-            }
-        },
-        
-        // Форматирование даты
-        formatDate: (timestamp) => {
-            if (!timestamp) return 'только что';
-            try {
-                const date = safeHelpers.safeGetDate(timestamp);
-                return date.toLocaleString('ru-RU', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            } catch {
-                return 'недавно';
-            }
-        },
-        
-        // Короткое форматирование даты
-        formatShortDate: (timestamp) => {
-            if (!timestamp) return '';
-            try {
-                const date = safeHelpers.safeGetDate(timestamp);
-                return date.toLocaleString('ru-RU', { 
-                    day: 'numeric', 
-                    month: 'short',
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                }).replace('.', '');
-            } catch {
-                return '';
-            }
-        },
-        
-        // Форматирование денег
-        formatMoney: (amount) => {
-            return new Intl.NumberFormat('ru-RU', {
-                style: 'currency',
-                currency: 'RUB',
-                minimumFractionDigits: 0
-            }).format(amount || 0);
-        },
-        
-        // Показ уведомлений
-        showNotification: (msg, type = 'info') => {
-            if (window.Helpers?.showNotification) {
-                Helpers.showNotification(msg, type);
-                return;
-            }
-            
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
-            notification.style.zIndex = '9999';
-            notification.style.minWidth = '300px';
-            notification.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
-            notification.innerHTML = msg;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('animate__fadeOutRight');
-                setTimeout(() => notification.remove(), 500);
-            }, 3000);
-        },
-        
-        // Плюрализация
-        pluralize: (count, words) => {
-            const cases = [2, 0, 1, 1, 1, 2];
-            return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
-        }
-    };
-
     // Короткая функция для получения элемента
     const $ = (id) => document.getElementById(id);
+
+    // ===== ФУНКЦИЯ ОТОБРАЖЕНИЯ ЗВЕЗД РЕЙТИНГА =====
+    function renderRatingStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        let stars = '';
+        
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+                stars += '<i class="fas fa-star" style="color: gold;"></i>';
+            } else if (i === fullStars && hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt" style="color: gold;"></i>';
+            } else {
+                stars += '<i class="far fa-star" style="color: gold;"></i>';
+            }
+        }
+        
+        return stars;
+    }
 
     // ===== ПРОВЕРКА FIREBASE =====
     function checkFirebase() {
         if (typeof firebase === 'undefined') {
             console.error('❌ Firebase не загружен!');
-            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            Utils.showNotification('❌ Ошибка подключения к базе данных', 'error');
             return false;
         }
         if (typeof db === 'undefined' || !db) {
             console.error('❌ Firestore не инициализирован!');
-            safeHelpers.showNotification('❌ Ошибка подключения к базе данных', 'error');
+            Utils.showNotification('❌ Ошибка подключения к базе данных', 'error');
             return false;
         }
         return true;
+    }
+
+    // ===== ПОДПИСКА НА ОБНОВЛЕНИЯ РЕЙТИНГА =====
+    function subscribeToRatingUpdates() {
+        const user = Auth.getUser();
+        if (!user) return;
+
+        // Отписываемся от предыдущей подписки
+        if (unsubscribeRating) {
+            unsubscribeRating();
+        }
+
+        // Подписываемся на изменения документа пользователя
+        unsubscribeRating = db.collection('users').doc(user.uid)
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    
+                    // Обновляем рейтинг
+                    const rating = userData.rating || 0;
+                    const reviews = userData.reviews || 0;
+                    
+                    const masterRatingEl = $('masterRating');
+                    if (masterRatingEl) masterRatingEl.innerText = rating.toFixed(1);
+                    
+                    const masterReviewsEl = $('masterReviews');
+                    if (masterReviewsEl) masterReviewsEl.innerText = `${reviews} ${Utils.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
+                    
+                    // Обновляем звезды
+                    const starsElement = $('ratingStars');
+                    if (starsElement) {
+                        starsElement.innerHTML = renderRatingStars(rating);
+                    }
+                    
+                    // Обновляем XP
+                    const xp = userData.xp || 0;
+                    const statXP = $('statXP');
+                    if (statXP) statXP.innerText = xp;
+                    
+                    // Обновляем уровень
+                    if (window.Gamification) {
+                        const level = Gamification.getLevelFromXP(xp);
+                        const masterLevel = $('masterLevel');
+                        if (masterLevel) masterLevel.innerText = `Уровень ${level.level}`;
+                        
+                        const masterLevelName = $('masterLevelName');
+                        if (masterLevelName) masterLevelName.innerText = level.name;
+                        
+                        const headerLevelValue = $('headerLevelValue');
+                        if (headerLevelValue) headerLevelValue.innerText = level.level;
+                        
+                        const headerXPValue = $('headerXPValue');
+                        if (headerXPValue) headerXPValue.innerText = xp;
+                        
+                        // Обновляем прогресс
+                        const progress = Gamification.getLevelProgress(xp);
+                        const masterXPProgress = $('masterXPProgress');
+                        if (masterXPProgress) masterXPProgress.style.width = `${progress.progress}%`;
+                        
+                        const masterNextLevel = $('masterNextLevel');
+                        if (masterNextLevel) {
+                            if (progress.next) {
+                                masterNextLevel.innerText = `до уровня ${progress.next.level} (${progress.xpNeeded} XP)`;
+                            } else {
+                                masterNextLevel.innerText = 'максимальный уровень';
+                            }
+                        }
+                    }
+                }
+            }, (error) => {
+                console.error('Ошибка подписки на рейтинг:', error);
+            });
     }
 
     // ===== ГЕЙМИФИКАЦИЯ =====
@@ -263,21 +256,13 @@
             
             const masterReviewsEl = $('masterReviews');
             if (masterReviewsEl) {
-                masterReviewsEl.innerHTML = `${reviews} ${safeHelpers.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
+                masterReviewsEl.innerHTML = `${reviews} ${Utils.pluralize(reviews, ['отзыв', 'отзыва', 'отзывов'])}`;
             }
             
             // Звезды
             const starsElement = $('ratingStars');
             if (starsElement) {
-                const fullStars = Math.floor(rating);
-                const hasHalfStar = rating - fullStars >= 0.5;
-                let stars = '';
-                for (let i = 0; i < 5; i++) {
-                    if (i < fullStars) stars += '★';
-                    else if (i === fullStars && hasHalfStar) stars += '½';
-                    else stars += '☆';
-                }
-                starsElement.innerHTML = stars;
+                starsElement.innerHTML = renderRatingStars(rating);
             }
             
             // Опыт (если есть)
@@ -413,16 +398,16 @@
             `;
         }
         
-        const responseTime = response.createdAt ? safeHelpers.formatShortDate(response.createdAt) : 'только что';
+        const responseTime = response.createdAt ? Utils.formatDate(response.createdAt, 'short') : 'только что';
         
         return `
             <div class="response-item animate__animated animate__fadeIn">
                 <div class="order-header">
                     <div>
-                        <span class="order-title">${safeHelpers.escapeHtml(order.title || 'Заказ')}</span>
+                        <span class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</span>
                         <span class="badge badge-info ms-2">${order.category || 'Без категории'}</span>
                     </div>
-                    <span class="order-price">${safeHelpers.formatMoney(response.price)}</span>
+                    <span class="order-price">${Utils.formatMoney(response.price)}</span>
                 </div>
                 
                 <span class="badge ${status.class} mb-3">
@@ -432,8 +417,8 @@
                 ${photosHtml}
                 
                 <div class="order-meta">
-                    <span><i class="fas fa-user"></i> ${safeHelpers.escapeHtml(order.clientName || 'Клиент')}</span>
-                    <span><i class="fas fa-map-marker-alt"></i> ${safeHelpers.escapeHtml(order.address || 'Адрес не указан')}</span>
+                    <span><i class="fas fa-user"></i> ${Utils.escapeHtml(order.clientName || 'Клиент')}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> ${Utils.escapeHtml(order.address || 'Адрес не указан')}</span>
                     <span><i class="fas fa-calendar"></i> ${responseTime}</span>
                 </div>
                 
@@ -441,7 +426,7 @@
                     <div class="card bg-light p-3 mb-3">
                         <p class="mb-0">
                             <i class="fas fa-comment me-2" style="color: var(--accent);"></i>
-                            ${safeHelpers.escapeHtml(response.comment)}
+                            ${Utils.escapeHtml(response.comment)}
                         </p>
                     </div>
                 ` : ''}
@@ -523,10 +508,10 @@
             snapshot.forEach(doc => {
                 const work = doc.data();
                 html += `
-                    <div class="portfolio-item" onclick="window.mastersAPI.viewPortfolio('${work.imageUrl}', '${safeHelpers.escapeHtml(work.title)}', '${safeHelpers.escapeHtml(work.description)}')">
+                    <div class="portfolio-item" onclick="window.mastersAPI.viewPortfolio('${work.imageUrl}', '${Utils.escapeHtml(work.title)}', '${Utils.escapeHtml(work.description)}')">
                         <img src="${work.imageUrl}" alt="${work.title}">
                         <div class="portfolio-info">
-                            <h6>${safeHelpers.escapeHtml(work.title)}</h6>
+                            <h6>${Utils.escapeHtml(work.title)}</h6>
                             <small>${work.category}</small>
                         </div>
                     </div>
@@ -606,9 +591,9 @@
             },
             eventClick: (info) => {
                 const props = info.event.extendedProps;
-                safeHelpers.showNotification(`
+                Utils.showNotification(`
                     Заказ: ${info.event.title}<br>
-                    Цена: ${safeHelpers.formatMoney(props.price)}<br>
+                    Цена: ${Utils.formatMoney(props.price)}<br>
                     Адрес: ${props.address || 'Не указан'}
                 `, 'info');
             }
@@ -682,10 +667,10 @@
             clientMap.forEach((client, id) => {
                 html += `
                     <tr>
-                        <td class="fw-bold">${safeHelpers.escapeHtml(client.name)}</td>
+                        <td class="fw-bold">${Utils.escapeHtml(client.name)}</td>
                         <td>${client.phone}</td>
                         <td>${client.orders}</td>
-                        <td>${safeHelpers.formatMoney(client.total)}</td>
+                        <td>${Utils.formatMoney(client.total)}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-secondary" onclick="window.mastersAPI.openChatWithClient('${id}')">
                                 <i class="fas fa-comment"></i>
@@ -799,11 +784,11 @@
                     prices: prices
                 });
                 
-                safeHelpers.showNotification(`✅ Цены на ${category.toLowerCase()} сохранены`, 'success');
+                Utils.showNotification(`✅ Цены на ${category.toLowerCase()} сохранены`, 'success');
                 
             } catch (error) {
                 console.error('❌ Ошибка сохранения цены:', error);
-                safeHelpers.showNotification('❌ Ошибка при сохранении', 'error');
+                Utils.showNotification('❌ Ошибка при сохранении', 'error');
             }
         },
 
@@ -843,7 +828,7 @@
         openChat: (orderId, clientId) => {
             const user = Auth.getUser();
             if (!user) {
-                safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
+                Utils.showNotification('❌ Сначала войдите в систему', 'warning');
                 return;
             }
             const chatId = `chat_${orderId}_${user.uid}`;
@@ -854,7 +839,7 @@
         openChatWithClient: (clientId) => {
             const user = Auth.getUser();
             if (!user) {
-                safeHelpers.showNotification('❌ Сначала войдите в систему', 'warning');
+                Utils.showNotification('❌ Сначала войдите в систему', 'warning');
                 return;
             }
             // Здесь нужно получить заказ для этого клиента
@@ -881,7 +866,7 @@
     // ===== ОБРАБОТЧИК ЗАВЕРШЕНИЯ ЗАКАЗА =====
     async function handleCompleteOrder() {
         if (!currentOrderId) {
-            safeHelpers.showNotification('❌ Ошибка: заказ не выбран', 'error');
+            Utils.showNotification('❌ Ошибка: заказ не выбран', 'error');
             return;
         }
         
@@ -937,7 +922,7 @@
                     const modal = bootstrap.Modal.getInstance($('completeOrderModal'));
                     if (modal) modal.hide();
                     
-                    safeHelpers.showNotification('✅ Заказ выполнен! +50 XP', 'success');
+                    Utils.showNotification('✅ Заказ выполнен! +50 XP', 'success');
                     
                     await updateMasterLevel();
                     await loadMasterResponses(currentFilter);
@@ -953,13 +938,13 @@
                 const modal = bootstrap.Modal.getInstance($('completeOrderModal'));
                 if (modal) modal.hide();
                 
-                safeHelpers.showNotification('✅ Заказ выполнен!', 'success');
+                Utils.showNotification('✅ Заказ выполнен!', 'success');
                 await loadMasterResponses(currentFilter);
             }
             
         } catch (error) {
             console.error('❌ Ошибка:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
         }
     }
 
@@ -1040,7 +1025,7 @@
                 if (editExperience) updates.experience = parseInt(editExperience.value) || 0;
                 
                 if (Object.keys(updates).length === 0) {
-                    safeHelpers.showNotification('Нет данных для сохранения', 'warning');
+                    Utils.showNotification('Нет данных для сохранения', 'warning');
                     return;
                 }
                 
@@ -1053,11 +1038,11 @@
                     if (modal) modal.hide();
                     
                     await loadMasterData({ userData: { ...Auth.getUserData(), ...updates } });
-                    safeHelpers.showNotification('✅ Профиль обновлён', 'success');
+                    Utils.showNotification('✅ Профиль обновлён', 'success');
                     
                 } catch (error) {
                     console.error('❌ Ошибка сохранения профиля:', error);
-                    safeHelpers.showNotification('❌ Ошибка при сохранении', 'error');
+                    Utils.showNotification('❌ Ошибка при сохранении', 'error');
                 }
             });
         }
@@ -1158,11 +1143,11 @@
                     if (modal) modal.hide();
                     
                     await loadPortfolio();
-                    safeHelpers.showNotification('✅ Работа добавлена! +10 XP', 'success');
+                    Utils.showNotification('✅ Работа добавлена! +10 XP', 'success');
                     
                 } catch (error) {
                     console.error('❌ Ошибка:', error);
-                    safeHelpers.showNotification('❌ Ошибка при добавлении', 'error');
+                    Utils.showNotification('❌ Ошибка при добавлении', 'error');
                 }
             });
         }
@@ -1183,6 +1168,11 @@
                 if (statsInterval) {
                     clearInterval(statsInterval);
                     statsInterval = null;
+                }
+                
+                if (unsubscribeRating) {
+                    unsubscribeRating();
+                    unsubscribeRating = null;
                 }
                 
                 Auth.logout().then(() => {
@@ -1213,7 +1203,7 @@
         const notificationsBtn = $('notificationsBtn');
         if (notificationsBtn) {
             notificationsBtn.addEventListener('click', () => {
-                safeHelpers.showNotification('Уведомления пока в разработке', 'info');
+                Utils.showNotification('Уведомления пока в разработке', 'info');
             });
         }
 
@@ -1235,14 +1225,14 @@
         const exportClientsBtn = $('exportClientsBtn');
         if (exportClientsBtn) {
             exportClientsBtn.addEventListener('click', () => {
-                safeHelpers.showNotification('Функция экспорта будет доступна позже', 'info');
+                Utils.showNotification('Функция экспорта будет доступна позже', 'info');
             });
         }
 
         const createContractBtn = $('createContractBtn');
         if (createContractBtn) {
             createContractBtn.addEventListener('click', () => {
-                safeHelpers.showNotification('Генерация договоров в разработке', 'info');
+                Utils.showNotification('Генерация договоров в разработке', 'info');
             });
         }
 
@@ -1264,7 +1254,7 @@
                 const description = $('priceDescription')?.value;
                 
                 if (!name || !price) {
-                    safeHelpers.showNotification('Заполните название и цену', 'warning');
+                    Utils.showNotification('Заполните название и цену', 'warning');
                     return;
                 }
                 
@@ -1293,7 +1283,7 @@
                     const modal = bootstrap.Modal.getInstance($('addPriceModal'));
                     if (modal) modal.hide();
                     
-                    safeHelpers.showNotification('✅ Услуга добавлена', 'success');
+                    Utils.showNotification('✅ Услуга добавлена', 'success');
                     
                     const priceServiceName = $('priceServiceName');
                     if (priceServiceName) priceServiceName.value = '';
@@ -1306,7 +1296,7 @@
                     
                 } catch (error) {
                     console.error('❌ Ошибка:', error);
-                    safeHelpers.showNotification('❌ Ошибка при сохранении', 'error');
+                    Utils.showNotification('❌ Ошибка при сохранении', 'error');
                 }
             });
         }
@@ -1339,6 +1329,10 @@
                 clearInterval(statsInterval);
                 statsInterval = null;
             }
+            if (unsubscribeRating) {
+                unsubscribeRating();
+                unsubscribeRating = null;
+            }
             if (window.Gamification && Gamification.cleanup) Gamification.cleanup();
         });
     }
@@ -1347,7 +1341,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (!window.Auth) {
             console.error('❌ Auth не загружен!');
-            safeHelpers.showNotification('❌ Ошибка загрузки авторизации', 'error');
+            Utils.showNotification('❌ Ошибка загрузки авторизации', 'error');
             return;
         }
         
@@ -1373,11 +1367,14 @@
                     
                     initCalendar();
                     
+                    // Подписываемся на обновления рейтинга
+                    subscribeToRatingUpdates();
+                    
                     if (statsInterval) clearInterval(statsInterval);
                     statsInterval = setInterval(updateMasterLevel, 60000);
                     
                 } else if (!state.isMaster) {
-                    safeHelpers.showNotification('❌ Эта страница только для мастеров', 'warning');
+                    Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
                     setTimeout(() => {
                         if (window.location.pathname !== '/HomeWork/') {
                             window.location.href = '/HomeWork/';
@@ -1396,6 +1393,10 @@
                 if (statsInterval) {
                     clearInterval(statsInterval);
                     statsInterval = null;
+                }
+                if (unsubscribeRating) {
+                    unsubscribeRating();
+                    unsubscribeRating = null;
                 }
             }
         });

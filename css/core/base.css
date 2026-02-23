@@ -1,5 +1,5 @@
 /* ===== BASE.CSS ===== */
-/* Версия: 2.0 — БАЗОВЫЕ СТИЛИ */
+/* Версия: 3.0 — БАЗОВЫЕ СТИЛИ С ИСПОЛЬЗОВАНИЕМ ПЕРЕМЕННЫХ */
 
 * {
     margin: 0;
@@ -44,9 +44,9 @@ body:not(.dark-theme)::before {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: 20px;
+    padding: var(--container-padding);
     width: 100%;
     position: relative;
     z-index: 1;
@@ -54,12 +54,13 @@ body:not(.dark-theme)::before {
 
 /* Скроллбар */
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
 }
 
 ::-webkit-scrollbar-track {
     background: var(--bg-light);
+    border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -83,4 +84,17 @@ body.dark-theme ::-webkit-scrollbar-thumb {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+}
+
+/* Адаптивность */
+@media (max-width: var(--desktop-md)) {
+    .container {
+        padding: var(--container-padding-sm);
+    }
+}
+
+@media (max-width: var(--tablet)) {
+    .container {
+        padding: var(--container-padding-xs);
+    }
 }

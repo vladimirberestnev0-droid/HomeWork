@@ -1,18 +1,22 @@
 /* ===== TRACKING.CSS ===== */
-/* Версия: 2.0 — ТРЕКИНГ */
+/* Версия: 4.0 — ТРЕКИНГ (ИСПРАВЛЕНО) */
 
 .tracking-card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
     padding: 20px;
     margin-bottom: 20px;
+    box-shadow: var(--shadow);
 }
 
 .tracking-map {
-    height: 300px;
+    min-height: 300px;
+    height: auto;
+    width: 100%;
     border-radius: var(--radius-md);
     overflow: hidden;
     margin-bottom: 15px;
+    border: 1px solid var(--border);
 }
 
 .tracking-info {
@@ -47,6 +51,7 @@
     color: var(--success);
 }
 
+/* Позиция мастера */
 .master-position {
     display: flex;
     align-items: center;
@@ -67,4 +72,124 @@
     justify-content: center;
     color: white;
     animation: float 3s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+/* Карта для отслеживания */
+.tracking-map-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 15px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+/* Информационная панель */
+.tracking-info-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--accent);
+}
+
+.tracking-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.tracking-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.tracking-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.tracking-value a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.tracking-value a:hover {
+    text-decoration: underline;
+}
+
+/* Селектор заказа для отслеживания */
+.tracking-select {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 15px;
+    box-shadow: var(--shadow);
+}
+
+.tracking-select select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+    color: var(--text-dark);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tracking-select select:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230,122,75,0.1);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .tracking-map {
+        min-height: 250px;
+    }
+
+    .tracking-info {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .tracking-map {
+        min-height: 200px;
+    }
+
+    .tracking-info {
+        grid-template-columns: 1fr;
+    }
+
+    .tracking-info-item {
+        padding: 8px;
+    }
+
+    .tracking-info-value {
+        font-size: 1rem;
+    }
+
+    .tracking-eta {
+        font-size: 1.2rem;
+    }
+
+    .master-position-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .tracking-info-card {
+        padding: 15px;
+    }
+
+    .tracking-value {
+        font-size: 0.95rem;
+    }
 }

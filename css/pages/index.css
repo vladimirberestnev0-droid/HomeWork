@@ -1,762 +1,388 @@
 /* ===== INDEX.CSS ===== */
-/* Версия: 14.1 — ФИНАЛЬНАЯ С РАБОЧИМ СКРОЛЛОМ */
+/* Версия: 16.0 — ФИНАЛЬНАЯ БЕЗ !IMPORTANT */
 
-/* Контейнер формы и заказов - ГЛАВНЫЙ ФИКС */
+/* Контейнер формы и заказов */
 #orderFormRow {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: flex-start !important;
-    gap: 20px !important;
-    position: relative !important;
-    min-height: 600px !important;
-    width: 100% !important;
-    isolation: isolate !important;
-    z-index: 1 !important;
-    flex-wrap: nowrap !important;
-    margin-bottom: 40px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+    position: relative;
+    min-height: 600px;
+    width: 100%;
+    isolation: isolate;
+    z-index: 1;
+    flex-wrap: nowrap;
+    margin-bottom: 40px;
 }
 
 /* Левая колонка (форма) */
 #orderFormColumn {
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
-    width: 50% !important;
-    position: sticky !important;
-    top: 90px !important;
-    align-self: flex-start !important;
-    height: fit-content !important;
-    max-height: none !important;
-    z-index: var(--z-form) !important;
-    isolation: isolate !important;
+    flex: 0 0 50%;
+    max-width: 50%;
+    width: 50%;
+    position: sticky;
+    top: 90px;
+    align-self: flex-start;
+    height: fit-content;
+    z-index: var(--z-form);
+    isolation: isolate;
 }
 
-/* Правая колонка (заказы) - ИСПРАВЛЕНО */
+/* Правая колонка (заказы) */
 #ordersColumn {
-    flex: 0 0 50% !important;
-    max-width: 50% !important;
-    width: 50% !important;
-    height: auto !important; /* УБИРАЕМ жесткую высоту */
-    max-height: none !important;
-    overflow-y: visible !important; /* РАЗРЕШАЕМ скролл страницы */
-    overflow-x: hidden !important;
-    padding-right: 10px !important;
-    position: sticky !important;
-    top: 90px !important;
-    z-index: var(--z-orders) !important;
-    display: flex !important;
-    flex-direction: column !important;
+    flex: 0 0 50%;
+    max-width: 50%;
+    width: 50%;
+    height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
+    padding-right: 10px;
+    position: sticky;
+    top: 90px;
+    z-index: var(--z-orders);
+    display: flex;
+    flex-direction: column;
 }
 
 /* Контейнер для списка и кнопки */
 .orders-content {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-    overflow: visible !important; /* РАЗРЕШАЕМ скролл страницы */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: visible;
 }
 
-/* Список заказов - скролл ВНУТРИ списка */
+/* Список заказов */
 #ordersList {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 10px !important;
-    margin-bottom: 15px !important;
-    min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    max-height: 500px !important;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 500px;
 }
 
 /* Кнопка "Показать еще" */
 #loadMoreContainer {
-    flex-shrink: 0 !important;
-    text-align: center !important;
-    margin-top: 0 !important;
-    padding: 10px 0 !important;
-    position: relative !important;
-    z-index: 2 !important;
+    flex-shrink: 0;
+    text-align: center;
+    margin-top: 0;
+    padding: 10px 0;
+    position: relative;
+    z-index: 2;
 }
 
 #loadMoreBtn {
-    background: var(--bg-white) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-dark) !important;
-    padding: 10px 25px !important;
-    border-radius: 40px !important;
-    transition: all 0.2s ease !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    display: inline-block !important;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    color: var(--text-dark);
+    padding: 10px 25px;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-block;
 }
 
 #loadMoreBtn:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
 }
 
 /* Стилизация скролла */
 #ordersList::-webkit-scrollbar {
-    width: 6px !important;
+    width: var(--scrollbar-width-sm);
 }
 
 #ordersList::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
+    background: var(--bg-light);
+    border-radius: 10px;
 }
 
 #ordersList::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
+    background: var(--accent);
+    border-radius: 10px;
 }
 
 #ordersList::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark) !important;
+    background: var(--accent-dark);
 }
 
-/* ===== РЕЙТИНГ МАСТЕРОВ - ИСПРАВЛЕННЫЙ СЕЛЕКТОР ===== */
-#ordersMap ~ .row.g-4.mb-5:has(> div > .card h3 i.fa-trophy) {
-    margin-top: 40px !important;
-    margin-bottom: 40px !important;
-    position: relative !important;
-    clear: both !important;
-    z-index: 2 !important;
-}
-
-/* ===== 1. ОБЩИЙ КОНТЕЙНЕР ДЛЯ ФИЛЬТРОВ ===== */
+/* Фильтр-секция */
 .filter-section {
-    background: var(--bg-white) !important;
-    border-radius: var(--radius-lg) !important;
-    padding: 20px !important;
-    margin-bottom: 30px !important;
-    box-shadow: var(--shadow) !important;
-    border: 1px solid var(--border) !important;
-    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .filter-section:hover {
-    box-shadow: var(--shadow-hover) !important;
-    border-color: var(--accent-light) !important;
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);
 }
 
-body:not(.dark-theme) .filter-section {
-    background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    box-shadow: var(--card-glow) !important;
-}
-
-body:not(.dark-theme) .filter-section:hover {
-    background: rgba(255, 255, 255, 0.95) !important;
-    box-shadow: var(--card-glow-hover) !important;
-    border-color: var(--accent-light) !important;
-}
-
-/* ===== 2. СКРЫВАЕМ ШИРОТУ И ДОЛГОТУ ===== */
+/* Скрытие полей координат */
 #latitude,
 #longitude,
 .form-group:has(#latitude),
-.form-group:has(#longitude),
-.row:has(#latitude):has(#longitude) {
-    display: none !important;
+.form-group:has(#longitude) {
+    display: none;
 }
 
-.hide-lat-lng #latitude,
-.hide-lat-lng #longitude,
-.hide-lat-lng .latitude-field,
-.hide-lat-lng .longitude-field {
-    display: none !important;
-}
-
+/* Карта */
 #map {
-    width: 100% !important;
-    height: 250px !important;
-    border-radius: var(--radius-md) !important;
-    overflow: hidden !important;
-    margin-top: 10px !important;
+    width: 100%;
+    height: 250px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 10px;
 }
 
-/* ===== 3. УЛУЧШЕННЫЙ КУБОК ДЛЯ РЕЙТИНГА МАСТЕРОВ ===== */
+#ordersMap {
+    width: 100%;
+    height: 450px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+/* Трофей для рейтинга */
 .card h3 i.fa-trophy {
-    background: linear-gradient(135deg, #FFD700, #FFA500) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3)) !important;
-    animation: trophyGlow 2s ease-in-out infinite !important;
-    display: inline-block !important;
-    margin-right: 8px !important;
-    font-size: 1.8rem !important;
-}
-
-@keyframes trophyGlow {
-    0%, 100% {
-        filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
-        transform: scale(1);
-    }
-    50% {
-        filter: drop-shadow(0 8px 16px rgba(255, 215, 0, 0.6));
-        transform: scale(1.05);
-    }
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
+    animation: trophyGlow 2s ease-in-out infinite;
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.8rem;
 }
 
 .rating-header {
-    position: relative !important;
-    overflow: hidden !important;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .rating-header::after {
-    content: '' !important;
-    position: absolute !important;
-    bottom: -10px !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 4px !important;
-    background: linear-gradient(90deg, transparent, #FFD700, #FFA500, #FFD700, transparent) !important;
-    animation: goldLine 3s ease-in-out infinite !important;
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #FFD700, #FFA500, #FFD700, transparent);
+    animation: goldLine 3s ease-in-out infinite;
 }
 
-@keyframes goldLine {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-}
-
-.btn-group .btn-outline-secondary {
-    border-color: var(--border) !important;
-    transition: all 0.3s ease !important;
-    position: relative !important;
-    overflow: hidden !important;
-}
-
-.btn-group .btn-outline-secondary:hover {
-    border-color: #FFD700 !important;
-    color: #FFD700 !important;
-    background: rgba(255, 215, 0, 0.1) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
-}
-
-.btn-group .btn-outline-secondary.active {
-    background: linear-gradient(135deg, #FFD700, #FFA500) !important;
-    color: #333 !important;
-    border-color: transparent !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
-}
-
-.btn-group .btn-outline-secondary.active::before {
-    content: '👑' !important;
-    position: absolute !important;
-    left: -20px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    font-size: 16px !important;
-    animation: crownFloat 2s ease-in-out infinite !important;
-}
-
-@keyframes crownFloat {
-    0%, 100% { left: -20px; }
-    50% { left: -25px; }
-}
-
-/* ===== 4. КНОПКА БОТА И КНОПКА НАВЕРХ ===== */
-#deepseek-bro-button {
-    position: fixed !important;
-    bottom: 30px !important;
-    right: 30px !important;
-    background: var(--accent) !important;
-    color: white !important;
-    padding: 15px 25px !important;
-    border-radius: 60px !important;
-    cursor: pointer !important;
-    box-shadow: 0 10px 30px rgba(230,122,75,0.4) !important;
-    z-index: var(--z-tooltip) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    animation: float 3s ease-in-out infinite !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-    border: none !important;
-}
-
-#deepseek-bro-button:hover {
-    transform: translateY(-5px) scale(1.05) !important;
-    box-shadow: 0 20px 40px rgba(230,122,75,0.6) !important;
-}
-
-#deepseek-bro-button img {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    border: 2px solid white !important;
-}
-
-#deepseek-chat-window {
-    position: fixed !important;
-    bottom: 100px !important;
-    right: 30px !important;
-    width: 350px !important;
-    height: 500px !important;
-    background: var(--bg-white) !important;
-    border-radius: 20px !important;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2) !important;
-    z-index: calc(var(--z-tooltip) - 1) !important;
-    display: none !important;
-    flex-direction: column !important;
-    transition: all 0.3s !important;
-    border: 1px solid var(--border) !important;
-}
-
-#deepseek-chat-window:not(.hidden) {
-    display: flex !important;
-}
-
-#scrollToTop {
-    position: fixed !important;
-    bottom: 100px !important;
-    right: 30px !important;
-    width: 55px !important;
-    height: 55px !important;
-    background: var(--accent-gradient) !important;
-    color: white !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 5px 20px rgba(230,122,75,0.3) !important;
-    z-index: var(--z-tooltip) !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-    border: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transform: scale(0.8) !important;
-}
-
-#scrollToTop.visible {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: scale(1) !important;
-    animation: pulse 2s infinite !important;
-}
-
-#scrollToTop:hover {
-    background: var(--accent-dark) !important;
-    transform: scale(1.15) translateY(-5px) !important;
-    box-shadow: 0 15px 30px rgba(230,122,75,0.6) !important;
-}
-
-#scrollToTop i {
-    font-size: 24px !important;
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
-}
-
-/* ===== 5. КАРТОЧКИ ЗАКАЗОВ ===== */
-.order-item {
-    background: var(--bg-white) !important;
-    border-radius: var(--radius-lg) !important;
-    padding: 20px !important;
-    box-shadow: var(--shadow) !important;
-    border-left: 4px solid var(--accent) !important;
-    transition: box-shadow 0.2s ease, border-left-color 0.2s ease !important;
-    transform: translateZ(0) !important;
-    backface-visibility: hidden !important;
-    will-change: box-shadow, border-color !important;
-    animation: fadeSlide 0.3s ease-out !important;
-    cursor: default !important;
-    position: relative !important;
-    z-index: var(--z-card) !important;
-    margin-bottom: 15px !important;
-    width: 100% !important;
-}
-
-.order-item:hover {
-    box-shadow: var(--shadow-hover) !important;
-    border-left-color: var(--accent-dark) !important;
-    transform: none !important;
-    z-index: var(--z-card-hover) !important;
-}
-
-.order-item:nth-child(1) { animation-delay: 0.05s !important; }
-.order-item:nth-child(2) { animation-delay: 0.1s !important; }
-.order-item:nth-child(3) { animation-delay: 0.15s !important; }
-.order-item:nth-child(4) { animation-delay: 0.2s !important; }
-.order-item:nth-child(5) { animation-delay: 0.25s !important; }
-.order-item:nth-child(6) { animation-delay: 0.3s !important; }
-
-.order-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    margin-bottom: 12px !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
-}
-
-.order-title {
-    font-size: 1.2rem !important;
-    font-weight: 700 !important;
-    color: var(--text-dark) !important;
-    margin: 0 !important;
-}
-
-.order-price {
-    font-size: 1.4rem !important;
-    font-weight: 800 !important;
-    color: var(--accent) !important;
-    background: var(--accent-light) !important;
-    padding: 4px 16px !important;
-    border-radius: var(--radius-full) !important;
-    white-space: nowrap !important;
-}
-
-.order-meta {
-    display: flex !important;
-    gap: 20px !important;
-    flex-wrap: wrap !important;
-    color: var(--text-soft) !important;
-    font-size: 0.9rem !important;
-    margin-top: 12px !important;
-    padding-top: 12px !important;
-    border-top: 1px solid var(--border) !important;
-}
-
-.order-meta span {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-}
-
-.order-meta i {
-    color: var(--accent) !important;
-    width: 16px !important;
-}
-
-/* ===== 6. ФОРМА ===== */
-#orderFormColumn .card {
-    height: fit-content !important;
-    background: var(--bg-white) !important;
-    box-shadow: var(--shadow) !important;
-    border: 1px solid var(--border) !important;
-    pointer-events: auto !important;
-    isolation: isolate !important;
-    max-height: none !important;
-    overflow: visible !important;
-    position: relative !important;
-    z-index: var(--z-form-card) !important;
-    width: 100% !important;
-}
-
-#orderFormColumn .card::-webkit-scrollbar {
-    display: none !important;
-}
-
-#orderForm input,
-#orderForm select,
-#orderForm textarea {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-#orderForm input:hover,
-#orderForm select:hover,
-#orderForm textarea:hover {
-    transform: none !important;
-    border-color: var(--accent) !important;
-}
-
-/* ===== 7. ИНДИКАТОР КОЛИЧЕСТВА ЗАКАЗОВ ===== */
-.orders-count-badge {
-    background: var(--accent-light) !important;
-    color: var(--accent-dark) !important;
-    padding: 5px 15px !important;
-    border-radius: 30px !important;
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-}
-
-.orders-count-badge i {
-    margin-right: 5px !important;
-}
-
-/* ===== 8. КАРТА ЗАКАЗОВ ===== */
-#ordersMap {
-    width: 100% !important;
-    height: 450px !important;
-    border-radius: var(--radius-md) !important;
-    overflow: hidden !important;
-    margin-top: 20px !important;
-}
-
-/* ===== 9. AI ПОДСКАЗКА ===== */
-.ai-price-hint {
-    background: var(--accent-light) !important;
-    color: var(--accent-dark) !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    border-radius: var(--radius-md) !important;
-}
-
-.ai-price-hint:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(230,122,75,0.2) !important;
-}
-
-/* ===== 10. СКРЫТИЕ ФОРМЫ ДЛЯ МАСТЕРОВ ===== */
-body.master-mode #orderFormColumn {
-    display: none !important;
-}
-
-body.master-mode #ordersColumn {
-    flex: 0 0 100% !important;
-    max-width: 100% !important;
-    width: 100% !important;
-}
-
-/* ===== 11. ПРОЗРАЧНЫЕ ЭЛЕМЕНТЫ ДЛЯ СВЕТЛОЙ ТЕМЫ ===== */
-body:not(.dark-theme) .order-item {
-    background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-left: 4px solid var(--accent) !important;
-    box-shadow: var(--card-glow) !important;
-}
-
-body:not(.dark-theme) .order-item:hover {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(15px) !important;
-    box-shadow: var(--card-glow-hover) !important;
-    border-color: var(--accent-light) !important;
-    border-left-color: var(--accent) !important;
-}
-
-body:not(.dark-theme) .order-meta {
-    border-top-color: rgba(230, 122, 75, 0.2) !important;
-}
-
-body:not(.dark-theme) .filter-section {
-    background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    box-shadow: var(--card-glow) !important;
-}
-
-body:not(.dark-theme) .filter-section:hover {
-    background: rgba(255, 255, 255, 0.95) !important;
-    box-shadow: var(--card-glow-hover) !important;
-    border-color: var(--accent-light) !important;
-}
-
-/* ===== 12. СТИЛИ ДЛЯ САДЖЕСТОВ АДРЕСА ===== */
+/* Саджесты адреса */
 .address-suggestions {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: 0 !important;
-    background: var(--bg-white) !important;
-    border: 2px solid var(--border) !important;
-    border-radius: var(--radius-md) !important;
-    box-shadow: var(--shadow-hover) !important;
-    z-index: var(--z-dropdown) !important;
-    max-height: 300px !important;
-    overflow-y: auto !important;
-    margin-top: 5px !important;
-    animation: fadeSlideDown 0.3s ease !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-hover);
+    z-index: var(--z-dropdown);
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 5px;
+    animation: fadeSlideDown 0.3s ease;
 }
 
 .address-suggestion-item {
-    padding: 12px 16px !important;
-    cursor: pointer !important;
-    border-bottom: 1px solid var(--border) !important;
-    transition: all 0.2s ease !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .address-suggestion-item:last-child {
-    border-bottom: none !important;
+    border-bottom: none;
 }
 
 .address-suggestion-item:hover {
-    background: var(--accent-light) !important;
-    padding-left: 20px !important;
+    background: var(--accent-light);
+    padding-left: 20px;
 }
 
 .address-suggestion-item i {
-    color: var(--accent) !important;
-    width: 20px !important;
-    font-size: 14px !important;
+    color: var(--accent);
+    width: 20px;
+    font-size: 14px;
 }
 
 .address-suggestion-item .address-text {
-    flex: 1 !important;
-    color: var(--text-dark) !important;
+    flex: 1;
+    color: var(--text-dark);
 }
 
 .address-suggestion-item .address-type {
-    font-size: 0.8rem !important;
-    color: var(--text-muted) !important;
-    background: var(--bg-light) !important;
-    padding: 2px 8px !important;
-    border-radius: var(--radius-full) !important;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-light);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
 }
 
 .address-loading {
-    position: absolute !important;
-    right: 15px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    color: var(--accent) !important;
-    animation: spin 1s linear infinite !important;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    animation: spin 1s linear infinite;
 }
 
 #address {
-    padding-right: 40px !important;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23E67A4B" viewBox="0 0 16 16"%3E%3Cpath d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/%3E%3C/svg%3E') !important;
-    background-repeat: no-repeat !important;
-    background-position: right 15px center !important;
-    background-size: 16px !important;
+    padding-right: 40px;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23E67A4B" viewBox="0 0 16 16"%3E%3Cpath d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
 }
 
 #address:focus {
-    background-image: none !important;
+    background-image: none;
 }
 
-.address-suggestions::-webkit-scrollbar {
-    width: 6px !important;
+/* Карточка формы */
+.form-card {
+    height: fit-content;
+    background: var(--bg-white);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    pointer-events: auto;
+    isolation: isolate;
+    max-height: none;
+    overflow: visible;
+    position: relative;
+    z-index: var(--z-form-card);
+    width: 100%;
 }
 
-.address-suggestions::-webkit-scrollbar-track {
-    background: var(--bg-light) !important;
-    border-radius: 10px !important;
+/* Карточка заказов */
+.orders-card {
+    height: auto;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-white);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
-.address-suggestions::-webkit-scrollbar-thumb {
-    background: var(--accent) !important;
-    border-radius: 10px !important;
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
 }
 
-body.dark-theme .address-suggestions {
-    background: var(--bg-card) !important;
-    border-color: var(--border) !important;
+.orders-count-badge {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
-body.dark-theme .address-suggestion-item {
-    border-bottom-color: var(--border) !important;
+.orders-count-badge i {
+    margin-right: 5px;
 }
 
-body.dark-theme .address-suggestion-item:hover {
-    background: var(--accent-light) !important;
+/* AI Price Hint */
+.ai-price-hint {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
 }
 
-body.dark-theme .address-suggestion-item .address-text {
-    color: var(--text-dark) !important;
+.ai-price-hint:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
 }
 
-body.dark-theme .address-suggestion-item .address-type {
-    background: var(--bg-dark) !important;
-    color: var(--text-muted) !important;
+/* Сетка топ мастеров */
+.top-masters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
 }
 
-/* ===== 13. УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КАРТ ===== */
-#map, #ordersMap {
-    border-radius: var(--radius-md) !important;
-    overflow: hidden !important;
-    box-shadow: var(--shadow) !important;
-    transition: box-shadow 0.3s ease !important;
+/* Превью фото */
+.photo-preview {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-#map:hover, #ordersMap:hover {
-    box-shadow: var(--shadow-hover) !important;
+.photo-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
-.ymaps-2-1-79-balloon {
-    border-radius: var(--radius-md) !important;
-    box-shadow: var(--shadow-hover) !important;
+.photo-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.ymaps-2-1-79-balloon__content {
-    font-family: 'Inter', sans-serif !important;
-    padding: 15px !important;
-    color: var(--text-dark) !important;
+.photo-preview-item .remove-photo {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.ymaps-2-1-79-balloon__close {
-    right: 10px !important;
-    top: 10px !important;
-    color: var(--text-soft) !important;
+.photo-preview-item .remove-photo:hover {
+    background: var(--danger);
+    transform: scale(1.1);
 }
 
-body.dark-theme .ymaps-2-1-79-balloon {
-    background: var(--bg-card) !important;
-    border-color: var(--border) !important;
-}
-
-body.dark-theme .ymaps-2-1-79-balloon__content {
-    color: var(--text-dark) !important;
-}
-
-body.dark-theme .ymaps-2-1-79-balloon__close {
-    color: var(--text-soft) !important;
-}
-
-/* ===== 14. АНИМАЦИИ ===== */
-@keyframes fadeSlide {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeSlideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(230,122,75,0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 15px rgba(230,122,75,0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(230,122,75,0);
-    }
-}
-
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-@keyframes spin {
-    from { transform: translateY(-50%) rotate(0deg); }
-    to { transform: translateY(-50%) rotate(360deg); }
-}
-
+/* Анимации */
 @keyframes goldLine {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
@@ -773,323 +399,195 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
     }
 }
 
-@keyframes crownFloat {
-    0%, 100% { left: -20px; }
-    50% { left: -25px; }
+/* Светлая тема */
+body:not(.dark-theme) .order-item {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-left: 4px solid var(--accent);
+    box-shadow: var(--card-glow);
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
+body:not(.dark-theme) .order-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+    border-left-color: var(--accent);
 }
 
-/* ===== 15. АДАПТИВ ===== */
-@media (max-width: 1200px) {
+body:not(.dark-theme) .filter-section {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--card-glow);
+}
+
+body:not(.dark-theme) .filter-section:hover {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    box-shadow: var(--card-glow-hover);
+    border-color: var(--accent-light);
+}
+
+/* Темная тема */
+body.dark-theme .address-suggestions {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .address-suggestion-item {
+    border-bottom-color: var(--border);
+}
+
+body.dark-theme .address-suggestion-item:hover {
+    background: var(--accent-light);
+}
+
+body.dark-theme .address-suggestion-item .address-text {
+    color: var(--text-dark);
+}
+
+body.dark-theme .address-suggestion-item .address-type {
+    background: var(--bg-dark);
+    color: var(--text-muted);
+}
+
+body.dark-theme .ymaps-2-1-79-map {
+    filter: brightness(0.8) contrast(1.2);
+}
+
+body.dark-theme .ymaps-2-1-79-balloon {
+    background: var(--bg-card);
+    color: var(--text-dark);
+}
+
+/* Адаптивность */
+@media (max-width: var(--desktop-md)) {
     #orderFormColumn,
     #ordersColumn {
-        flex: 0 0 50% !important;
-        max-width: 50% !important;
+        flex: 0 0 50%;
+        max-width: 50%;
     }
 }
 
-@media (max-width: 992px) {
-    #orderFormColumn,
-    #ordersColumn {
-        flex: 0 0 50% !important;
-        max-width: 50% !important;
-    }
-    
-    .btn-group {
-        flex-wrap: wrap !important;
-        gap: 5px !important;
-    }
-}
-
-@media (max-width: 768px) {
+@media (max-width: var(--tablet)) {
     #orderFormRow {
-        flex-direction: column !important;
-        flex-wrap: wrap !important;
-        margin-bottom: 30px !important;
+        flex-direction: column;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
     }
-    
+
     #orderFormColumn,
     #ordersColumn {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-        width: 100% !important;
-        position: static !important;
-        height: auto !important;
-        max-height: none !important;
-        overflow-y: visible !important;
-        z-index: auto !important;
+        flex: 0 0 100%;
+        max-width: 100%;
+        width: 100%;
+        position: static;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+        z-index: auto;
     }
-    
+
     #orderFormColumn {
-        z-index: calc(var(--z-form) + 10) !important;
-        margin-bottom: 20px !important;
+        z-index: calc(var(--z-form) + 10);
+        margin-bottom: 20px;
     }
-    
-    #orderFormColumn .card {
-        max-height: none !important;
-        overflow-y: visible !important;
-    }
-    
+
     #ordersColumn {
-        scrollbar-gutter: auto !important;
-        height: auto !important;
-        max-height: 500px !important;
-        margin-bottom: 20px !important;
+        max-height: 500px;
+        scrollbar-gutter: auto;
+        margin-bottom: 20px;
     }
-    
-    #scrollToTop {
-        bottom: 80px !important;
-        right: 20px !important;
-        width: 45px !important;
-        height: 45px !important;
-    }
-    
-    #scrollToTop i {
-        font-size: 20px !important;
-    }
-    
-    #deepseek-bro-button {
-        bottom: 20px !important;
-        right: 20px !important;
-        padding: 12px 20px !important;
-    }
-    
-    #deepseek-chat-window {
-        bottom: 90px !important;
-        right: 20px !important;
-        width: 300px !important;
-        height: 450px !important;
-    }
-    
+
     .filter-section {
-        padding: 15px !important;
+        padding: var(--mobile-padding);
     }
-    
-    .order-price {
-        font-size: 1.2rem !important;
-    }
-    
-    .address-suggestions {
-        position: fixed !important;
-        top: auto !important;
-        bottom: 0 !important;
-        left: 10px !important;
-        right: 10px !important;
-        max-height: 50vh !important;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-        animation: slideUp 0.3s ease !important;
-    }
-}
 
-@media (max-width: 576px) {
+    .rating-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .btn-group {
-        width: 100% !important;
-        display: flex !important;
-        justify-content: center !important;
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
-    
+
     .btn-group .btn {
-        flex: 1 !important;
-        font-size: 0.9rem !important;
-        padding: 6px 10px !important;
+        flex: 1;
+    }
+
+    .address-suggestions {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 10px;
+        right: 10px;
+        max-height: 50vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: slideUp 0.3s ease;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: var(--mobile-md)) {
     #ordersColumn {
-        max-height: 450px !important;
+        max-height: 450px;
     }
-    
-    .order-item {
-        padding: 15px !important;
+
+    #ordersList {
+        max-height: 350px;
     }
-    
+
+    .btn-group .btn {
+        font-size: var(--mobile-font-size);
+        padding: 6px 10px;
+    }
+
+    .top-masters-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+    }
+
     .order-price {
-        font-size: 1.1rem !important;
-    }
-    
-    #scrollToTop {
-        bottom: 70px !important;
-        right: 15px !important;
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    #scrollToTop i {
-        font-size: 18px !important;
-    }
-    
-    #deepseek-bro-button {
-        padding: 10px 15px !important;
-        font-size: 0.9rem !important;
-    }
-    
-    #deepseek-bro-button img {
-        width: 30px !important;
-        height: 30px !important;
+        font-size: 1.2rem;
     }
 }
 
-@media (max-width: 360px) {
-    #scrollToTop {
-        width: 35px !important;
-        height: 35px !important;
-        bottom: 65px !important;
-        right: 10px !important;
-    }
-}
-
-/* ===== 16. СТИЛИ ДЛЯ ФУТЕРА ===== */
-footer {
-    margin-top: 3rem !important;
-    padding-top: 2rem !important;
-    border-top: 2px solid var(--border) !important;
-}
-
-footer a {
-    transition: color 0.2s ease !important;
-}
-
-footer a:hover {
-    color: var(--accent) !important;
-}
-
-footer .fab {
-    transition: transform 0.2s ease !important;
-    cursor: pointer !important;
-}
-
-footer .fab:hover {
-    transform: translateY(-3px) !important;
-}
-
-/* ===== ФИНАЛЬНАЯ СТРУКТУРА: ФОРМА + ЗАКАЗЫ > РЕЙТИНГ > КАРТА ===== */
-#orderFormRow {
-    margin-bottom: 40px !important;
-}
-
-.row.g-4.mb-5:has(.card h3 i.fa-trophy) {
-    margin-top: 20px !important;
-    margin-bottom: 20px !important;
-    clear: both !important;
-    display: block !important;
-    width: 100% !important;
-}
-
-#ordersMap {
-    margin-top: 30px !important;
-    margin-bottom: 30px !important;
-    clear: both !important;
-    display: block !important;
-    width: 100% !important;
-}
-
-.container.py-4 {
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* ❌ УДАЛЕНО: .row:not(#orderFormRow) { ... } — ЭТО ЛОМАЛО СЕТКУ */
-
-/* ===== ИСПРАВЛЕНИЕ ДРОПДАУНА ===== */
-#citySearchCombo {
-    z-index: 9999 !important; /* Поднимаем выше всего */
-}
-
-#cityDropdown {
-    z-index: 10000 !important; /* Ещё выше */
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
-    border: 2px solid var(--accent) !important;
-}
-
-/* Затемнение фона при открытом дропдауне */
-body.dropdown-open::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.3);
-    z-index: 9998;
-    pointer-events: none;
-}
-
-/* ===== ИСПРАВЛЕНИЕ ВЫСОТЫ КОНТЕЙНЕРОВ ===== */
-#orderFormColumn .card,
-#ordersColumn .card {
-    height: auto !important;
-    min-height: 600px !important; /* Фиксированная минимальная высота */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-#ordersColumn .orders-content {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-}
-
-#ordersList {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    max-height: 450px !important; /* Увеличено, чтобы поместилось больше заказов */
-    margin-bottom: 15px !important;
-}
-
-#loadMoreContainer {
-    flex-shrink: 0 !important;
-    margin-top: auto !important;
-    padding-top: 10px !important;
-    border-top: 1px solid var(--border) !important;
-}
-
-#loadMoreBtn {
-    background: var(--accent-light) !important;
-    color: var(--accent-dark) !important;
-    border: 2px solid var(--accent) !important;
-    font-weight: 600 !important;
-    padding: 12px !important;
-    border-radius: 40px !important;
-    transition: all 0.3s ease !important;
-}
-
-#loadMoreBtn:hover {
-    background: var(--accent) !important;
-    color: white !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 5px 15px rgba(230,122,75,0.3) !important;
-}
-
-/* ===== УБИРАЕМ ПРИЛИПАНИЕ НА МОБИЛКАХ ===== */
-@media (max-width: 768px) {
-    #orderFormColumn,
+@media (max-width: var(--mobile-sm)) {
     #ordersColumn {
-        position: static !important; /* Отключаем sticky */
-        top: auto !important;
+        max-height: 400px;
     }
-    
-    #orderFormColumn .card,
-    #ordersColumn .card {
-        min-height: auto !important; /* Убираем минимальную высоту */
-    }
-    
-    #ordersList {
-        max-height: 400px !important;
-    }
-}
 
-@media (max-width: 480px) {
     #ordersList {
-        max-height: 350px !important;
+        max-height: 300px;
+    }
+
+    .order-item {
+        padding: var(--mobile-padding);
+    }
+
+    .order-price {
+        font-size: 1.1rem;
+    }
+
+    .order-meta {
+        gap: var(--mobile-gap);
+        font-size: 0.8rem;
+    }
+
+    .btn-group {
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+        font-size: 0.8rem;
+        padding: 5px 8px;
     }
 }

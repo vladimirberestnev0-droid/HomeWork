@@ -1,33 +1,5 @@
 // ===== chat.js =====
-// ЧАТ С ПРОВЕРКОЙ ПРАВ И ПРАВИЛЬНЫМИ ПАРАМЕТРАМИ + ЗАЩИТА ОТ РЕДИРЕКТОВ
-
-// ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
-(function() {
-    const REDIRECT_KEY = 'last_redirect';
-    const MAX_REDIRECTS = 3;
-    const TIME_WINDOW = 5000;
-    
-    const now = Date.now();
-    const lastRedirect = sessionStorage.getItem(REDIRECT_KEY);
-    
-    if (lastRedirect) {
-        const data = JSON.parse(lastRedirect);
-        if (now - data.timestamp < TIME_WINDOW) {
-            data.count++;
-            if (data.count > MAX_REDIRECTS) {
-                console.error('⚠️ Обнаружен бесконечный редирект!');
-                alert('❌ Слишком много перенаправлений. Проверьте подключение к интернету или обратитесь в поддержку.');
-                window.stop();
-                return;
-            }
-            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify(data));
-        } else {
-            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
-        }
-    } else {
-        sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
-    }
-})();
+// ЧАТ С ПРОВЕРКОЙ ПРАВ И ПРАВИЛЬНЫМИ ПАРАМЕТРАМИ
 
 (function() {
     // ===== ПАРАМЕТРЫ ИЗ URL =====
@@ -48,6 +20,8 @@
     let partnerId = null;
     let partnerRole = null;
     let partnerName = null;
+    let partnerRating = 0;
+    let partnerReviews = 0;
     let chatData = null;
     let selectedFiles = [];
     let mediaRecorder = null;
@@ -57,6 +31,7 @@
     let unsubscribeMessages = null;
     let unsubscribeStatus = null;
     let unsubscribeChat = null;
+    let unsubscribePartner = null;
     let messageCount = 0;
     let lastMessageTime = 0;
     
@@ -66,73 +41,26 @@
     // Эмодзи
     const EMOJIS = ['😊', '😂', '❤️', '👍', '🔥', '🎉', '🤔', '😢', '😡', '👋', '✅', '❌', '⭐', '💰', '🔨', '🛠️', '🚗', '📦', '⏰', '📍'];
 
-    // ===== БЕЗОПАСНЫЕ HELPERЫ =====
-    const safeHelpers = {
-        escapeHtml: (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        },
-        formatDate: (timestamp) => {
-            if (!timestamp) return 'только что';
-            try {
-                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-                const now = new Date();
-                const diff = now - date;
-                
-                if (diff < 60000) return 'только что';
-                if (diff < 3600000) return Math.floor(diff / 60000) + ' мин назад';
-                if (diff < 86400000 && date.getDate() === now.getDate()) {
-                    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                }
-                if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
-                    return 'вчера ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                }
-                return date.toLocaleString('ru-RU', { 
-                    day: 'numeric', 
-                    month: 'short', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            } catch (e) {
-                return 'недавно';
-            }
-        },
-        showNotification: (msg, type = 'info') => {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3 animate__animated animate__fadeInRight`;
-            notification.style.zIndex = '9999';
-            notification.style.minWidth = '300px';
-            notification.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
-            notification.innerHTML = msg;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('animate__fadeOutRight');
-                setTimeout(() => notification.remove(), 500);
-            }, 3000);
-        },
-        checkSpam: () => {
-            const now = Date.now();
-            if (now - lastMessageTime < 1000) {
-                return false;
-            }
-            messageCount++;
-            if (messageCount > 30) {
-                return false;
-            }
-            lastMessageTime = now;
-            
-            setTimeout(() => {
-                messageCount = Math.max(0, messageCount - 10);
-            }, 60000);
-            
-            return true;
-        }
-    };
-
     const $ = (id) => document.getElementById(id);
+
+    // ===== ФУНКЦИЯ ОТОБРАЖЕНИЯ ЗВЕЗД РЕЙТИНГА =====
+    function renderRatingStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        let stars = '';
+        
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+                stars += '★';
+            } else if (i === fullStars && hasHalfStar) {
+                stars += '½';
+            } else {
+                stars += '☆';
+            }
+        }
+        
+        return stars;
+    }
 
     // ===== ПРОВЕРКА FIREBASE =====
     function checkFirebase() {
@@ -176,6 +104,53 @@
         }
     }
 
+    // ===== ПОДПИСКА НА ОБНОВЛЕНИЯ РЕЙТИНГА СОБЕСЕДНИКА =====
+    function subscribeToPartnerRating() {
+        if (!partnerId) return;
+        
+        if (unsubscribePartner) {
+            unsubscribePartner();
+        }
+        
+        unsubscribePartner = db.collection('users').doc(partnerId)
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    partnerRating = data.rating || 0;
+                    partnerReviews = data.reviews || 0;
+                    
+                    // Обновляем отображение рейтинга в шапке
+                    updatePartnerRatingDisplay();
+                }
+            }, (error) => {
+                console.error('Ошибка подписки на рейтинг собеседника:', error);
+            });
+    }
+
+    // ===== ОБНОВЛЕНИЕ ОТОБРАЖЕНИЯ РЕЙТИНГА В ШАПКЕ =====
+    function updatePartnerRatingDisplay() {
+        // Удаляем старый рейтинг, если есть
+        const oldRating = document.querySelector('.partner-rating');
+        if (oldRating) oldRating.remove();
+        
+        if (!partnerRating && partnerRating !== 0) return;
+        
+        // Создаем новый элемент
+        const ratingEl = document.createElement('span');
+        ratingEl.className = 'partner-rating ms-2 badge bg-warning text-dark';
+        
+        const stars = renderRatingStars(partnerRating);
+        
+        ratingEl.innerHTML = `${stars} ${partnerRating.toFixed(1)} (${partnerReviews})`;
+        ratingEl.title = `Рейтинг: ${partnerRating.toFixed(1)}, отзывов: ${partnerReviews}`;
+        
+        // Добавляем в шапку чата
+        const chatInfo = document.querySelector('.chat-info');
+        if (chatInfo) {
+            chatInfo.appendChild(ratingEl);
+        }
+    }
+
     // ===== ЗАГРУЗКА ДАННЫХ ЧАТА =====
     async function loadChatData() {
         try {
@@ -184,12 +159,8 @@
             const user = Auth.getUser();
             if (!user) {
                 console.log('❌ Пользователь не авторизован');
-                safeHelpers.showNotification('❌ Требуется авторизация', 'warning');
-                setTimeout(() => {
-                    if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
-                    }
-                }, 2000);
+                Utils.showNotification('❌ Требуется авторизация', 'warning');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
                 return false;
             }
 
@@ -200,12 +171,8 @@
                 chatId = `chat_${orderIdParam}_${masterIdParam}`;
             } else {
                 console.error('❌ Не указаны параметры чата');
-                safeHelpers.showNotification('❌ Неверная ссылка на чат', 'error');
-                setTimeout(() => {
-                    if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
-                    }
-                }, 2000);
+                Utils.showNotification('❌ Неверная ссылка на чат', 'error');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
                 return false;
             }
 
@@ -216,25 +183,17 @@
             
             if (!chatDoc.exists) {
                 console.error('❌ Чат не найден:', chatId);
-                safeHelpers.showNotification('❌ Чат не найден', 'error');
+                Utils.showNotification('❌ Чат не найден', 'error');
                 
                 // Пробуем восстановить чат
                 if (orderIdParam && masterIdParam) {
                     const restored = await tryRestoreChat();
                     if (!restored) {
-                        setTimeout(() => {
-                            if (window.location.pathname !== '/HomeWork/') {
-                                window.location.href = '/HomeWork/';
-                            }
-                        }, 2000);
+                        setTimeout(() => window.location.href = '/HomeWork/', 2000);
                         return false;
                     }
                 } else {
-                    setTimeout(() => {
-                        if (window.location.pathname !== '/HomeWork/') {
-                            window.location.href = '/HomeWork/';
-                        }
-                    }, 2000);
+                    setTimeout(() => window.location.href = '/HomeWork/', 2000);
                     return false;
                 }
             } else {
@@ -245,12 +204,8 @@
             // Проверяем, является ли пользователь участником чата
             if (!chatData.participants.includes(user.uid)) {
                 console.error('❌ Нет доступа к чату');
-                safeHelpers.showNotification('❌ У вас нет доступа к этому чату', 'error');
-                setTimeout(() => {
-                    if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
-                    }
-                }, 2000);
+                Utils.showNotification('❌ У вас нет доступа к этому чату', 'error');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
                 return false;
             }
 
@@ -274,6 +229,8 @@
             if (partnerData) {
                 partnerRole = partnerData.role === 'master' ? 'Мастер' : 'Клиент';
                 partnerName = partnerData.name || (partnerRole === 'Мастер' ? 'Мастер' : 'Клиент');
+                partnerRating = partnerData.rating || 0;
+                partnerReviews = partnerData.reviews || 0;
             } else {
                 partnerName = 'Пользователь';
                 partnerRole = 'Участник';
@@ -283,6 +240,7 @@
             subscribeToMessages();
             subscribeToStatus();
             subscribeToChatUpdates();
+            subscribeToPartnerRating();
 
             // Обновляем UI
             updateUI();
@@ -291,7 +249,7 @@
 
         } catch (error) {
             console.error('❌ Ошибка загрузки чата:', error);
-            safeHelpers.showNotification('❌ Ошибка загрузки чата', 'error');
+            Utils.showNotification('❌ Ошибка загрузки чата', 'error');
             return false;
         }
     }
@@ -435,6 +393,9 @@
             partnerRoleEl.innerHTML = `${partnerRole || '...'} <span class="online-status" id="onlineStatus"></span>`;
         }
         
+        // Обновляем отображение рейтинга
+        updatePartnerRatingDisplay();
+        
         const orderInfoEl = $('orderInfo');
         if (orderInfoEl && orderData) {
             orderInfoEl.innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
@@ -552,7 +513,7 @@
             div.innerHTML = `
                 <div class="system-message-content">
                     <i class="fas ${message.systemType === 'master_selected' ? 'fa-handshake' : 'fa-info-circle'}"></i>
-                    <span>${safeHelpers.escapeHtml(message.text)}</span>
+                    <span>${Utils.escapeHtml(message.text)}</span>
                 </div>
             `;
             return div;
@@ -586,11 +547,11 @@
             filesHtml += '</div>';
         }
         
-        const time = safeHelpers.formatDate(message.timestamp);
+        const time = Utils.formatDate(message.timestamp);
         
         div.innerHTML = `
             <div class="message-bubble">
-                ${message.text ? safeHelpers.escapeHtml(message.text) : ''}
+                ${message.text ? Utils.escapeHtml(message.text) : ''}
                 ${filesHtml}
             </div>
             <div class="message-time">${time}</div>
@@ -605,26 +566,38 @@
         const text = input?.value.trim();
         
         if (!chatId) {
-            safeHelpers.showNotification('❌ Чат не найден', 'error');
+            Utils.showNotification('❌ Чат не найден', 'error');
             return;
         }
         
         if (!checkCanWrite()) {
-            safeHelpers.showNotification('❌ Чат закрыт для новых сообщений', 'warning');
+            Utils.showNotification('❌ Чат закрыт для новых сообщений', 'warning');
             return;
         }
         
         if ((!text || text === '') && selectedFiles.length === 0) return;
         
-        if (!safeHelpers.checkSpam()) {
-            safeHelpers.showNotification('❌ Слишком много сообщений', 'warning');
+        // Простая проверка спама
+        const now = Date.now();
+        if (now - lastMessageTime < 1000) {
+            Utils.showNotification('❌ Слишком часто', 'warning');
             return;
         }
+        messageCount++;
+        if (messageCount > 30) {
+            Utils.showNotification('❌ Превышен лимит сообщений', 'warning');
+            return;
+        }
+        lastMessageTime = now;
+        
+        setTimeout(() => {
+            messageCount = Math.max(0, messageCount - 10);
+        }, 60000);
         
         if (text && window.Moderation) {
             const modResult = Moderation.check(text, 'chat_message');
             if (!modResult.isValid) {
-                safeHelpers.showNotification(`❌ ${modResult.reason}`, 'warning');
+                Utils.showNotification(`❌ ${modResult.reason}`, 'warning');
                 return;
             }
         }
@@ -678,14 +651,14 @@
             
         } catch (error) {
             console.error('❌ Ошибка отправки:', error);
-            safeHelpers.showNotification('❌ Ошибка при отправке', 'error');
+            Utils.showNotification('❌ Ошибка при отправке', 'error');
         }
     }
 
     // ===== ОБРАБОТКА ФАЙЛОВ =====
     function handleFileSelect(files) {
         if (!checkCanWrite()) {
-            safeHelpers.showNotification('❌ Нельзя отправлять файлы', 'warning');
+            Utils.showNotification('❌ Нельзя отправлять файлы', 'warning');
             return;
         }
         
@@ -693,7 +666,7 @@
         
         for (let file of files) {
             if (file.size > 10 * 1024 * 1024) {
-                safeHelpers.showNotification('❌ Файл слишком большой (макс 10MB)', 'warning');
+                Utils.showNotification('❌ Файл слишком большой (макс 10MB)', 'warning');
                 continue;
             }
             selectedFiles.push(file);
@@ -741,7 +714,7 @@
     // ===== ЗАПИСЬ ГОЛОСА =====
     async function startRecording() {
         if (!checkCanWrite()) {
-            safeHelpers.showNotification('❌ Нельзя отправлять голосовые', 'warning');
+            Utils.showNotification('❌ Нельзя отправлять голосовые', 'warning');
             return;
         }
         
@@ -781,7 +754,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка микрофона:', error);
-            safeHelpers.showNotification('❌ Нет доступа к микрофону', 'error');
+            Utils.showNotification('❌ Нет доступа к микрофону', 'error');
         }
     }
 
@@ -844,7 +817,7 @@
     // ===== ДЕТАЛИ ЗАКАЗА =====
     window.showOrderDetails = function() {
         if (!orderData) {
-            safeHelpers.showNotification('Данные заказа не загружены', 'info');
+            Utils.showNotification('Данные заказа не загружены', 'info');
             return;
         }
         
@@ -857,14 +830,14 @@
                     <div class="order-detail-icon"><i class="fas fa-tag"></i></div>
                     <div class="order-detail-info">
                         <div class="order-detail-label">Название</div>
-                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.title || 'Не указано')}</div>
+                        <div class="order-detail-value">${Utils.escapeHtml(orderData.title || 'Не указано')}</div>
                     </div>
                 </div>
                 <div class="order-detail-item">
                     <div class="order-detail-icon"><i class="fas fa-align-left"></i></div>
                     <div class="order-detail-info">
                         <div class="order-detail-label">Описание</div>
-                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.description || 'Нет описания')}</div>
+                        <div class="order-detail-value">${Utils.escapeHtml(orderData.description || 'Нет описания')}</div>
                     </div>
                 </div>
                 <div class="order-detail-item">
@@ -878,7 +851,7 @@
                     <div class="order-detail-icon"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="order-detail-info">
                         <div class="order-detail-label">Адрес</div>
-                        <div class="order-detail-value">${safeHelpers.escapeHtml(orderData.address || 'Не указан')}</div>
+                        <div class="order-detail-value">${Utils.escapeHtml(orderData.address || 'Не указан')}</div>
                     </div>
                 </div>
                 <div class="order-detail-item">
@@ -910,6 +883,7 @@
         if (unsubscribeMessages) unsubscribeMessages();
         if (unsubscribeStatus) unsubscribeStatus();
         if (unsubscribeChat) unsubscribeChat();
+        if (unsubscribePartner) unsubscribePartner();
         if (recordingInterval) clearInterval(recordingInterval);
     }
 
@@ -937,7 +911,7 @@
         document.querySelectorAll('.quick-reply-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 if (!checkCanWrite()) {
-                    safeHelpers.showNotification('❌ Нельзя отправлять сообщения', 'warning');
+                    Utils.showNotification('❌ Нельзя отправлять сообщения', 'warning');
                     return;
                 }
                 
@@ -955,18 +929,18 @@
         // Звонки
         $('videoCallBtn')?.addEventListener('click', () => {
             if (orderData?.status === 'completed') {
-                safeHelpers.showNotification('❌ Заказ выполнен', 'warning');
+                Utils.showNotification('❌ Заказ выполнен', 'warning');
                 return;
             }
-            safeHelpers.showNotification('🎥 Видеозвонки скоро', 'info');
+            Utils.showNotification('🎥 Видеозвонки скоро', 'info');
         });
 
         $('voiceCallBtn')?.addEventListener('click', () => {
             if (orderData?.status === 'completed') {
-                safeHelpers.showNotification('❌ Заказ выполнен', 'warning');
+                Utils.showNotification('❌ Заказ выполнен', 'warning');
                 return;
             }
-            safeHelpers.showNotification('📞 Аудиозвонки скоро', 'info');
+            Utils.showNotification('📞 Аудиозвонки скоро', 'info');
         });
 
         // Темная тема
@@ -1002,7 +976,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (!window.Auth) {
             console.error('❌ Auth не загружен');
-            safeHelpers.showNotification('❌ Ошибка авторизации', 'error');
+            Utils.showNotification('❌ Ошибка авторизации', 'error');
             return;
         }
 
@@ -1013,12 +987,8 @@
                     console.error('❌ Не удалось загрузить чат');
                 }
             } else {
-                safeHelpers.showNotification('❌ Требуется авторизация', 'warning');
-                setTimeout(() => {
-                    if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
-                    }
-                }, 2000);
+                Utils.showNotification('❌ Требуется авторизация', 'warning');
+                setTimeout(() => window.location.href = '/HomeWork/', 2000);
             }
         });
 

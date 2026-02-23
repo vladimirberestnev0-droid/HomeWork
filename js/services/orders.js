@@ -2,8 +2,8 @@
 // РАБОТА С ЗАКАЗАМИ (УЛУЧШЕННАЯ ВЕРСИЯ) + ЧАТ ПРИ ВЫБОРЕ МАСТЕРА
 
 const Orders = (function() {
-    // Кэш заказов
-    const cache = new Map();
+    // Кэш заказов с TTL
+    const CACHE_TTL = 300000; // 5 минут
     let listeners = [];
 
     // Константы статусов
@@ -17,47 +17,32 @@ const Orders = (function() {
     // Антиспам: храним время последнего отклика для каждого мастера
     const spamPrevention = new Map();
 
-    // Безопасный Helpers
-    const safeHelpers = {
-        showNotification: (msg, type) => {
-            if (window.Helpers && Helpers.showNotification) {
-                Helpers.showNotification(msg, type);
-            } else {
-                console.log(`🔔 ${type}: ${msg}`);
-                if (type === 'error') alert(`❌ ${msg}`);
-                else if (type === 'success') alert(`✅ ${msg}`);
-                else alert(msg);
-            }
-        },
-        validatePrice: (price) => {
-            if (window.Helpers && Helpers.validatePrice) {
-                return Helpers.validatePrice(price);
-            }
-            return price && !isNaN(price) && price >= 500 && price <= 1000000;
-        },
-        checkSpam: (masterId) => {
-            const now = Date.now();
-            const lastResponse = spamPrevention.get(masterId) || 0;
-            
-            // Не чаще 1 отклика в 5 секунд
-            if (now - lastResponse < 5000) {
-                return false;
-            }
-            
-            spamPrevention.set(masterId, now);
-            
-            // Очищаем старые записи через 10 секунд
-            setTimeout(() => {
-                if (spamPrevention.get(masterId) === now) {
-                    spamPrevention.delete(masterId);
-                }
-            }, 10000);
-            
-            return true;
-        }
-    };
+    // ===== РАБОТА С КЭШЕМ =====
 
-    // Проверка модерации (с fallback)
+    function getCacheKey(key) {
+        return `orders_cache_${key}`;
+    }
+
+    function getCached(key) {
+        return Utils.getStorage(getCacheKey(key), null);
+    }
+
+    function setCached(key, data) {
+        Utils.setStorage(getCacheKey(key), data, CACHE_TTL);
+    }
+
+    function clearCache() {
+        // Очищаем только наши ключи
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.startsWith('orders_cache_')) {
+                localStorage.removeItem(key);
+            }
+        });
+        console.log('🧹 Кэш заказов очищен');
+    }
+
+    // Проверка модерации
     async function checkModeration(text, context) {
         if (window.Moderation && Moderation.check) {
             return Moderation.check(text, context);
@@ -154,7 +139,7 @@ const Orders = (function() {
                 throw new Error('Выберите категорию');
             }
 
-            if (!safeHelpers.validatePrice(orderData.price)) {
+            if (!Utils.validatePrice(orderData.price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
@@ -196,13 +181,13 @@ const Orders = (function() {
             // Очищаем кэш
             clearCache();
             
-            safeHelpers.showNotification('✅ Заказ создан!', 'success');
+            Utils.showNotification('✅ Заказ создан!', 'success');
             
             return { success: true, orderId: docRef.id };
             
         } catch (error) {
             console.error('Ошибка создания заказа:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -254,15 +239,13 @@ const Orders = (function() {
         try {
             if (!checkFirebase()) return [];
             
-            const cacheKey = `open_orders_${filters.category || 'all'}`;
+            const cacheKey = `open_orders_${filters.category || 'all'}_${filters.minPrice || 0}_${filters.maxPrice || 0}`;
             
             // Проверяем кэш
-            if (cache.has(cacheKey)) {
-                const cached = cache.get(cacheKey);
-                if (Date.now() - cached.timestamp < 300000) { // 5 минут
-                    console.log('📦 Загружено из кэша:', cacheKey);
-                    return cached.data;
-                }
+            const cached = getCached(cacheKey);
+            if (cached) {
+                console.log('📦 Загружено из кэша:', cacheKey);
+                return cached;
             }
 
             let query = db.collection('orders')
@@ -292,17 +275,14 @@ const Orders = (function() {
             });
 
             // Сохраняем в кэш
-            cache.set(cacheKey, {
-                data: orders,
-                timestamp: Date.now()
-            });
+            setCached(cacheKey, orders);
 
             console.log(`📦 Загружено ${orders.length} открытых заказов`);
             return orders;
             
         } catch (error) {
             console.error('Ошибка загрузки заказов:', error);
-            safeHelpers.showNotification('❌ Ошибка загрузки заказов', 'error');
+            Utils.showNotification('❌ Ошибка загрузки заказов', 'error');
             return [];
         }
     }
@@ -311,6 +291,14 @@ const Orders = (function() {
     async function getClientOrders(clientId, filter = 'all') {
         try {
             if (!checkFirebase()) return [];
+            
+            const cacheKey = `client_orders_${clientId}_${filter}`;
+            
+            // Проверяем кэш
+            const cached = getCached(cacheKey);
+            if (cached) {
+                return cached;
+            }
             
             let query = db.collection('orders')
                 .where('clientId', '==', clientId)
@@ -330,6 +318,9 @@ const Orders = (function() {
                 });
             });
 
+            // Сохраняем в кэш
+            setCached(cacheKey, orders);
+
             return orders;
             
         } catch (error) {
@@ -342,6 +333,14 @@ const Orders = (function() {
     async function getMasterResponses(masterId) {
         try {
             if (!checkFirebase()) return [];
+            
+            const cacheKey = `master_responses_${masterId}`;
+            
+            // Проверяем кэш
+            const cached = getCached(cacheKey);
+            if (cached) {
+                return cached;
+            }
             
             console.log('🔍 Загружаем отклики для мастера:', masterId);
             
@@ -364,6 +363,9 @@ const Orders = (function() {
                     }
                 }
             });
+
+            // Сохраняем в кэш
+            setCached(cacheKey, responses);
 
             console.log(`📊 Загружено ${responses.length} откликов`);
             return responses;
@@ -390,11 +392,11 @@ const Orders = (function() {
             const user = Auth.getUser();
             
             // Антиспам проверка
-            if (!safeHelpers.checkSpam(user.uid)) {
+            if (!checkSpam(user.uid)) {
                 throw new Error('Слишком частые отклики. Подождите несколько секунд.');
             }
 
-            if (!safeHelpers.validatePrice(price)) {
+            if (!Utils.validatePrice(price)) {
                 throw new Error('Цена должна быть от 500 до 1 000 000 ₽');
             }
 
@@ -449,18 +451,40 @@ const Orders = (function() {
             // Очищаем кэш
             clearCache();
 
-            safeHelpers.showNotification('✅ Отклик отправлен!', 'success');
+            Utils.showNotification('✅ Отклик отправлен!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка отклика:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
 
-    // ===== ОТМЕНА ОТКЛИКА (НОВАЯ ФУНКЦИЯ!) =====
+    // Антиспам проверка
+    function checkSpam(masterId) {
+        const now = Date.now();
+        const lastResponse = spamPrevention.get(masterId) || 0;
+        
+        // Не чаще 1 отклика в 5 секунд
+        if (now - lastResponse < 5000) {
+            return false;
+        }
+        
+        spamPrevention.set(masterId, now);
+        
+        // Очищаем старые записи через 10 секунд
+        setTimeout(() => {
+            if (spamPrevention.get(masterId) === now) {
+                spamPrevention.delete(masterId);
+            }
+        }, 10000);
+        
+        return true;
+    }
+
+    // ===== ОТМЕНА ОТКЛИКА =====
     async function cancelResponse(orderId) {
         try {
             if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
@@ -487,6 +511,11 @@ const Orders = (function() {
                 throw new Error('Нельзя отменить отклик на неактивный заказ');
             }
 
+            // Проверяем, что мастер уже выбран (если выбран - нельзя отменить)
+            if (orderData.selectedMasterId === user.uid) {
+                throw new Error('Нельзя отменить отклик - вы уже выбраны мастером');
+            }
+
             // Удаляем отклик из массива
             const updatedResponses = (orderData.responses || []).filter(r => r.masterId !== user.uid);
             
@@ -506,13 +535,13 @@ const Orders = (function() {
             // Очищаем кэш
             clearCache();
 
-            safeHelpers.showNotification('✅ Отклик отменен', 'info');
+            Utils.showNotification('✅ Отклик отменен', 'info');
             
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка отмены отклика:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -604,7 +633,7 @@ const Orders = (function() {
 
             clearCache();
 
-            safeHelpers.showNotification('✅ Мастер выбран! Чат создан.', 'success');
+            Utils.showNotification('✅ Мастер выбран! Чат создан.', 'success');
             
             return { 
                 success: true, 
@@ -614,7 +643,7 @@ const Orders = (function() {
             
         } catch (error) {
             console.error('Ошибка выбора мастера:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -705,13 +734,13 @@ const Orders = (function() {
             clearCache();
 
             console.log('✅ Заказ завершен:', orderId);
-            safeHelpers.showNotification('✅ Заказ завершен!', 'success');
+            Utils.showNotification('✅ Заказ завершен!', 'success');
             
             return { success: true };
             
         } catch (error) {
             console.error('❌ Ошибка завершения заказа:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -745,12 +774,12 @@ const Orders = (function() {
 
             clearCache();
 
-            safeHelpers.showNotification('✅ Заказ отменен', 'info');
+            Utils.showNotification('✅ Заказ отменен', 'info');
             return { success: true };
             
         } catch (error) {
             console.error('Ошибка отмены заказа:', error);
-            safeHelpers.showNotification(`❌ ${error.message}`, 'error');
+            Utils.showNotification(`❌ ${error.message}`, 'error');
             return { success: false, error: error.message };
         }
     }
@@ -858,12 +887,6 @@ const Orders = (function() {
         }
     }
 
-    // ===== ОЧИСТКА КЭША =====
-    function clearCache() {
-        cache.clear();
-        console.log('🧹 Кэш заказов очищен');
-    }
-
     // ===== ПОДПИСКА НА ИЗМЕНЕНИЯ =====
     function onOrderChange(callback) {
         if (typeof callback === 'function') {
@@ -878,7 +901,7 @@ const Orders = (function() {
         getClientOrders,
         getMasterResponses,
         respondToOrder,
-        cancelResponse, // НОВАЯ ФУНКЦИЯ!
+        cancelResponse,
         selectMaster,
         completeOrder,
         cancelOrder,

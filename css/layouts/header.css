@@ -1,5 +1,5 @@
 /* ===== HEADER.CSS ===== */
-/* Версия: 3.0 — ШАПКА САЙТА */
+/* Версия: 4.0 — ШАПКА САЙТА С ПЕРЕМЕННЫМИ */
 
 header {
     background: var(--bg-white);
@@ -13,7 +13,7 @@ header {
     flex-wrap: wrap;
     gap: 20px;
     position: sticky;
-    top: 10px;
+    top: var(--header-sticky-top);
     z-index: var(--z-sticky);
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.9);
@@ -95,6 +95,43 @@ nav a.active:hover {
     box-shadow: 0 12px 30px rgba(230, 122, 75, 0.4);
 }
 
+/* XP бейдж в шапке */
+.header-xp-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+    animation: glow 2s infinite;
+}
+
+.header-xp-badge i {
+    color: #333;
+}
+
+/* Бейдж уведомлений */
+.nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+/* Светлая тема */
 body:not(.dark-theme) header {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
@@ -102,17 +139,12 @@ body:not(.dark-theme) header {
     box-shadow: 0 10px 30px -10px rgba(230, 122, 75, 0.2);
 }
 
-body:not(.dark-theme) .nav a.active {
-    background: linear-gradient(135deg, rgba(230,122,75,0.1), rgba(255,159,75,0.1));
-    color: var(--accent-dark);
-    border: 1px solid rgba(230,122,75,0.3);
-}
-
+/* Темная тема */
 body.dark-theme header {
     background: rgba(30, 30, 30, 0.95);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--border);
-    border-color: var(--border);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
 }
 
 body.dark-theme .logo-link {
@@ -136,4 +168,68 @@ body.dark-theme nav a.active {
     background: var(--accent-gradient);
     color: white;
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Анимации */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    header {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+        position: static;
+        gap: 15px;
+    }
+
+    nav {
+        justify-content: center;
+    }
+
+    .logo-link {
+        margin: 0 auto;
+    }
+
+    .header-xp-badge {
+        font-size: 0.8rem;
+        padding: 4px 12px;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    header {
+        padding: 12px;
+    }
+
+    nav a {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: var(--mobile-sm)) {
+    nav {
+        gap: 5px;
+    }
+
+    nav a {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .logo i {
+        font-size: 28px;
+    }
+
+    .logo span {
+        font-size: 20px;
+    }
 }

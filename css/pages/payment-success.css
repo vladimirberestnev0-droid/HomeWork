@@ -1,14 +1,15 @@
 /* ===== PAYMENT-SUCCESS.CSS ===== */
-/* Версия: 2.0 — УСПЕШНАЯ ОПЛАТА */
+/* Версия: 3.0 — УСПЕШНАЯ ОПЛАТА */
 
 .success-container {
     max-width: 400px;
     text-align: center;
-    background: white;
+    background: var(--bg-white);
     padding: 50px 40px;
-    border-radius: 40px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     animation: scaleIn 0.5s ease;
+    margin: 50px auto;
 }
 
 .success-icon {
@@ -33,15 +34,38 @@
 }
 
 .success-container p {
-    color: #666;
+    color: var(--text-soft);
     margin-bottom: 30px;
     line-height: 1.6;
+}
+
+.order-details {
+    background: var(--bg-light);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+}
+
+.order-details h6 {
+    margin-bottom: 10px;
+    color: var(--text-dark);
+}
+
+#orderNumber {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-soft);
+}
+
+#orderAmount {
+    font-size: 1.5rem;
+    color: var(--accent);
 }
 
 .progress-bar {
     width: 100%;
     height: 4px;
-    background: #f0f0f0;
+    background: var(--border);
     border-radius: 2px;
     margin-top: 30px;
     overflow: hidden;
@@ -52,4 +76,51 @@
     background: var(--accent);
     animation: progress 3s linear forwards;
     width: 100%;
+}
+
+/* Темная тема */
+body.dark-theme .success-container {
+    background: var(--bg-card);
+}
+
+body.dark-theme .order-details {
+    background: var(--bg-dark);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .success-container {
+        padding: 40px 30px;
+        margin: 30px 20px;
+    }
+
+    .success-icon {
+        width: 90px;
+        height: 90px;
+        font-size: 45px;
+    }
+
+    .success-container h1 {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .success-container {
+        padding: 30px 20px;
+    }
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+
+    .success-container h1 {
+        font-size: 1.6rem;
+    }
+
+    #orderAmount {
+        font-size: 1.3rem;
+    }
 }
