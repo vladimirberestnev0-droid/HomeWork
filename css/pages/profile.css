@@ -826,3 +826,209 @@ body.dark-theme .video-control-btn {
         font-size: 0.8rem;
     }
 }
+
+/* ===== УЛУЧШЕННЫЕ КАРТОЧКИ ОТКЛИКОВ ===== */
+
+.response-item {
+    background: var(--bg-white);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-light);
+    transition: all 0.25s ease;
+    position: relative;
+    animation: fadeSlideUp 0.3s ease;
+}
+
+.response-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px -8px rgba(230, 122, 75, 0.15);
+    border-color: var(--accent-light);
+}
+
+/* Шапка карточки: заказ и цена */
+.response-item .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.response-item .order-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    flex: 1;
+}
+
+.response-item .order-price {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 5px 16px;
+    border-radius: 40px;
+    white-space: nowrap;
+}
+
+/* Блок с информацией о клиенте */
+.client-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    padding: 12px;
+    background: var(--bg-light);
+    border-radius: 20px;
+}
+
+.client-avatar-small {
+    width: 40px;
+    height: 40px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.client-details {
+    flex: 1;
+}
+
+.client-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+}
+
+.client-address {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Мета-информация (дата, комментарий) */
+.response-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 12px 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+.response-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.response-meta i {
+    color: var(--accent);
+    width: 16px;
+}
+
+.response-comment {
+    background: var(--bg-light);
+    border-radius: 18px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-style: italic;
+    color: var(--text-soft);
+    border-left: 3px solid var(--accent);
+}
+
+/* Статус отклика */
+.response-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+.status-pending {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.status-accepted {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-rejected {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.status-completed {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+/* Кнопки действий */
+.response-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.response-actions .btn {
+    flex: 1 1 auto;
+    min-width: 100px;
+    padding: 8px 12px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-accept {
+    background: var(--success);
+    color: white;
+    border: none;
+}
+
+.btn-accept:hover {
+    background: #00875A;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 168, 107, 0.3);
+}
+
+.btn-reject {
+    background: transparent;
+    border: 2px solid var(--danger);
+    color: var(--danger);
+}
+
+.btn-reject:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-chat {
+    background: var(--accent);
+    color: white;
+    border: none;
+}
+
+.btn-chat:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+}

@@ -195,3 +195,17 @@ body.dark-theme .ymaps-2-1-79-balloon__close {
 body.dark-theme .pulse {
     animation: darkPulse 2s infinite;
 }
+
+body.dark-theme .response-item {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .client-info {
+    background: var(--bg-dark);
+}
+
+body.dark-theme .response-comment {
+    background: var(--bg-dark);
+    border-left-color: var(--accent);
+}
