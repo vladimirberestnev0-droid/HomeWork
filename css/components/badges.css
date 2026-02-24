@@ -1,0 +1,246 @@
+/* ===== BADGES.CSS ===== */
+/* Версия: 4.0 — БЕЙДЖИ И ИНДИКАТОРЫ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--bg-light);
+    color: var(--text-dark);
+}
+
+.badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.badge-success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.badge-info {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+/* Статусы */
+.badge-open,
+.status-open {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.badge-progress,
+.status-progress {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.badge-completed,
+.status-completed {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-pending {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-approved {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.badge-rejected {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+/* Бейдж уровня */
+.level-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.level-1 { background: var(--level-1); }
+.level-2 { background: var(--level-2); }
+.level-3 { background: var(--level-3); }
+.level-4 { background: var(--level-4); color: var(--text-dark); }
+.level-5 { background: var(--level-5); }
+.level-6 { background: var(--level-6); }
+.level-7 { background: var(--level-7); }
+.level-8 { background: var(--level-8); }
+
+/* Бейдж достижения */
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.9rem;
+}
+
+.achievement-badge i {
+    font-size: 1.2rem;
+}
+
+.achievement-locked {
+    opacity: 0.5;
+    filter: grayscale(1);
+}
+
+/* Бейдж профиля */
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.profile-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(230,122,75,0.2);
+}
+
+.profile-badge i {
+    margin-right: 5px;
+}
+
+.profile-badge.gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+}
+
+/* Навигационный бейдж */
+.nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+/* Бейдж XP в шапке */
+.header-xp-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+    animation: glow 2s infinite;
+}
+
+.header-xp-badge i {
+    color: #333;
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .badge {
+        padding: 5px 12px;
+        font-size: 0.8rem;
+    }
+
+    .level-badge {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .profile-badge {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .badge {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .level-badge {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+
+    .nav-badge {
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+    }
+
+    .header-xp-badge {
+        padding: 4px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: var(--mobile-sm)) {
+    .badge {
+        padding: 3px 8px;
+        font-size: 0.7rem;
+    }
+
+    .level-badge {
+        width: 25px;
+        height: 25px;
+        font-size: 11px;
+    }
+}
+
+/* Анимации */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6);
+    }
+}

@@ -1,0 +1,127 @@
+/* ===== FOOTER.CSS ===== */
+/* Версия: 3.0 — ПОДВАЛ */
+
+footer {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    margin-top: 40px;
+    box-shadow: var(--shadow);
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+}
+
+.footer-section h4 {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 8px;
+}
+
+.footer-section ul li a {
+    color: var(--text-soft);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.footer-section ul li a:hover {
+    color: var(--accent);
+    padding-left: 5px;
+}
+
+.footer-section ul li i {
+    width: 20px;
+    color: var(--accent);
+}
+
+.footer-bottom {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Светлая тема */
+body:not(.dark-theme) footer {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Темная тема */
+body.dark-theme footer {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .footer-section ul li a {
+    color: var(--text-muted);
+}
+
+body.dark-theme .footer-section ul li a:hover {
+    color: var(--accent);
+}
+
+body.dark-theme .footer-bottom {
+    border-top-color: var(--border);
+    color: var(--text-muted);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    footer {
+        padding: 20px;
+        margin-top: 30px;
+    }
+
+    .footer-content {
+        gap: 20px;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 25px;
+        text-align: center;
+    }
+
+    .footer-section ul li a:hover {
+        padding-left: 0;
+    }
+
+    .footer-section ul li i {
+        display: inline-block;
+    }
+}
+
+@media (max-width: var(--mobile-sm)) {
+    footer {
+        padding: 15px;
+    }
+
+    .footer-section h4 {
+        font-size: 1rem;
+    }
+
+    .footer-section ul li {
+        font-size: 0.9rem;
+    }
+
+    .footer-bottom {
+        font-size: 0.8rem;
+    }
+}

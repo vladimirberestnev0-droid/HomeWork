@@ -1,0 +1,181 @@
+/* ===== NOTIFICATIONS.CSS ===== */
+/* Версия: 3.0 — УВЕДОМЛЕНИЯ */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-white);
+    border-left: 4px solid var(--accent);
+    padding: 16px 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-hover);
+    z-index: var(--z-notification);
+    min-width: 300px;
+    max-width: 400px;
+    animation: fadeInRight 0.3s ease;
+    cursor: pointer;
+}
+
+.notification:hover {
+    transform: translateX(-5px);
+}
+
+.notification.success { border-left-color: var(--success); }
+.notification.error { border-left-color: var(--danger); }
+.notification.warning { border-left-color: var(--warning); }
+.notification.info { border-left-color: var(--accent); }
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-icon {
+    font-size: 24px;
+}
+
+.notification-message {
+    flex: 1;
+    font-size: 14px;
+}
+
+.notification-close {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+.notification-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    animation: progress 3s linear forwards;
+}
+
+/* Контейнер уведомлений */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: var(--z-notification);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+#notification-container .notification {
+    pointer-events: auto;
+    position: relative;
+    top: auto;
+    right: auto;
+}
+
+/* Уведомление о достижении */
+.achievement-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    z-index: calc(var(--z-notification) + 1);
+    max-width: 350px;
+    animation: fadeInRight 0.5s ease;
+    border: 2px solid gold;
+}
+
+.achievement-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.achievement-notification-icon {
+    width: 60px;
+    height: 60px;
+    background: gold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-size: 30px;
+    animation: rotate 10s linear infinite;
+}
+
+.achievement-notification-text h4 {
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.achievement-notification-text p {
+    margin-bottom: 5px;
+    opacity: 0.9;
+    color: white;
+}
+
+.achievement-notification-xp {
+    background: rgba(255,255,255,0.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+/* Темная тема */
+body.dark-theme .notification {
+    background: var(--bg-card);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .notification {
+        min-width: 280px;
+        max-width: 350px;
+        padding: 14px 20px;
+    }
+
+    .achievement-notification {
+        max-width: 320px;
+        padding: 15px;
+    }
+
+    .achievement-notification-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+        min-width: auto;
+        width: auto;
+    }
+
+    .achievement-notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+
+    .achievement-notification-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}

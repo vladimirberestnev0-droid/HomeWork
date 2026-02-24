@@ -1,0 +1,186 @@
+/* ===== 404.CSS ===== */
+/* Версия: 3.0 — СТРАНИЦА 404 */
+
+.error-container {
+    max-width: 600px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 50px 40px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    animation: float 3s ease-in-out infinite;
+    margin: 50px auto;
+}
+
+.error-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 30px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 40px rgba(230,122,75,0.3);
+}
+
+.error-icon i {
+    font-size: 60px;
+    color: white;
+}
+
+.error-container h1 {
+    font-size: 120px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 10px;
+    text-shadow: 5px 5px 0 rgba(230,122,75,0.2);
+}
+
+.error-container h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+}
+
+.error-message {
+    font-size: 18px;
+    color: var(--text-soft);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.master-emoji {
+    font-size: 24px;
+    margin: 20px 0;
+    animation: wave 2s infinite;
+}
+
+.master-emoji i {
+    margin: 0 5px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.master-emoji i:hover {
+    transform: scale(1.2) rotate(10deg);
+}
+
+.btn-group-404 {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.fun-fact {
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(230,122,75,0.1);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-soft);
+    transition: all 0.3s ease;
+}
+
+.fun-fact:hover {
+    background: rgba(230,122,75,0.15);
+    transform: translateY(-2px);
+}
+
+.logo-text {
+    margin-top: 30px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.logo-text i {
+    margin-right: 8px;
+}
+
+/* Темная тема */
+body.dark-theme .error-container {
+    background: var(--bg-card);
+    color: var(--text-dark);
+}
+
+body.dark-theme .fun-fact {
+    background: rgba(230,122,75,0.2);
+}
+
+/* Адаптивность */
+@media (max-width: var(--tablet)) {
+    .error-container {
+        padding: 40px 30px;
+        margin: 30px 20px;
+    }
+
+    .error-icon {
+        width: 100px;
+        height: 100px;
+    }
+
+    .error-icon i {
+        font-size: 50px;
+    }
+
+    .error-container h1 {
+        font-size: 100px;
+    }
+
+    .error-container h2 {
+        font-size: 28px;
+    }
+
+    .error-message {
+        font-size: 16px;
+    }
+
+    .master-emoji {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: var(--mobile-md)) {
+    .error-container {
+        padding: 30px 20px;
+    }
+
+    .error-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .error-icon i {
+        font-size: 40px;
+    }
+
+    .error-container h1 {
+        font-size: 80px;
+    }
+
+    .error-container h2 {
+        font-size: 24px;
+    }
+
+    .error-message {
+        font-size: 14px;
+    }
+
+    .master-emoji {
+        font-size: 18px;
+    }
+
+    .btn-group-404 {
+        flex-direction: column;
+    }
+
+    .btn-group-404 .btn {
+        width: 100%;
+    }
+}
