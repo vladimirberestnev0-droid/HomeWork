@@ -1,5 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ВЕРСИЯ 13.3 — С ЖЁСТКИМ ФИКСОМ КОНТЕЙНЕРОВ + ЗАЩИТА ОТ РЕДИРЕКТОВ
+// ВЕРСИЯ 13.4 — ИСПРАВЛЕНА ПРОБЛЕМА ИСЧЕЗНОВЕНИЯ ЗАКАЗОВ
 
 // ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
 (function() {
@@ -11,17 +11,21 @@
     const lastRedirect = sessionStorage.getItem(REDIRECT_KEY);
     
     if (lastRedirect) {
-        const data = JSON.parse(lastRedirect);
-        if (now - data.timestamp < TIME_WINDOW) {
-            data.count++;
-            if (data.count > MAX_REDIRECTS) {
-                console.error('⚠️ Обнаружен бесконечный редирект!');
-                alert('❌ Слишком много перенаправлений. Проверьте подключение к интернету или обратитесь в поддержку.');
-                window.stop();
-                return;
+        try {
+            const data = JSON.parse(lastRedirect);
+            if (now - data.timestamp < TIME_WINDOW) {
+                data.count++;
+                if (data.count > MAX_REDIRECTS) {
+                    console.error('⚠️ Обнаружен бесконечный редирект!');
+                    alert('❌ Слишком много перенаправлений. Проверьте подключение к интернету или обратитесь в поддержку.');
+                    window.stop();
+                    return;
+                }
+                sessionStorage.setItem(REDIRECT_KEY, JSON.stringify(data));
+            } else {
+                sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
             }
-            sessionStorage.setItem(REDIRECT_KEY, JSON.stringify(data));
-        } else {
+        } catch (e) {
             sessionStorage.setItem(REDIRECT_KEY, JSON.stringify({ count: 1, timestamp: now }));
         }
     } else {
@@ -29,7 +33,7 @@
     }
 })();
 
-// Глобальные переменные
+// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
 let map = null;
 let ordersMap = null;
 let ymapsReady = false;
@@ -52,6 +56,13 @@ let displayedOrders = [];      // Отображаемые заказы
 let currentPage = 0;
 let isLoading = false;
 let hasMore = true;
+
+// ===== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЗАЩИТЫ ОТ ГОНКИ =====
+let isLoadingOrders = false;          // Флаг, чтобы не запускать параллельные загрузки
+let ordersLoadTimeout = null;         // Таймер для дебаунса
+let lastOrdersUpdate = 0;             // Время последнего успешного обновления
+let pendingAuthUpdate = false;        // Флаг для отложенного обновления после авторизации
+const ORDERS_UPDATE_COOLDOWN = 1000;  // Минимальный интервал между обновлениями (1 сек)
 
 // Топ мастеров
 let currentLeaderboardPeriod = 'week';
@@ -312,11 +323,28 @@ function initCityCombo() {
 }
 
 // ============================================
-// ФУНКЦИИ ЗАГРУЗКИ ДАННЫХ
+// ФУНКЦИИ ЗАГРУЗКИ ДАННЫХ (ОБНОВЛЕННЫЕ)
 // ============================================
 
-// Загрузка всех заказов
-async function loadAllOrders() {
+// Загрузка всех заказов с защитой от множественных вызовов
+async function loadAllOrders(force = false) {
+    // Защита от параллельных вызовов
+    if (isLoadingOrders) {
+        console.log('⏳ Загрузка заказов уже выполняется, пропускаем...');
+        return;
+    }
+
+    // Защита от слишком частых обновлений
+    const now = Date.now();
+    if (!force && now - lastOrdersUpdate < ORDERS_UPDATE_COOLDOWN) {
+        console.log(`⏳ Слишком частые обновления. Ждём ${ORDERS_UPDATE_COOLDOWN}мс...`);
+        if (ordersLoadTimeout) clearTimeout(ordersLoadTimeout);
+        ordersLoadTimeout = setTimeout(() => loadAllOrders(true), ORDERS_UPDATE_COOLDOWN);
+        return;
+    }
+
+    isLoadingOrders = true;
+    
     try {
         if (!window.db) {
             throw new Error('db не определен');
@@ -329,33 +357,42 @@ async function loadAllOrders() {
             .orderBy('createdAt', 'desc')
             .get();
         
-        allOrders = [];
+        const newOrders = [];
         snapshot.forEach(doc => {
-            allOrders.push({ id: doc.id, ...doc.data() });
+            newOrders.push({ id: doc.id, ...doc.data() });
         });
         
-        console.log(`📦 Загружено ${allOrders.length} заказов`);
+        console.log(`📦 Загружено ${newOrders.length} заказов`);
         
-        // Обновляем счетчик
-        const ordersCountEl = document.getElementById('ordersCount');
-        if (ordersCountEl) ordersCountEl.textContent = allOrders.length;
-        
-        // Применяем фильтры
-        applyFilters();
+        // Обновляем состояние только если данные действительно новые
+        if (JSON.stringify(allOrders) !== JSON.stringify(newOrders)) {
+            allOrders = newOrders;
+            lastOrdersUpdate = Date.now();
+            
+            // Обновляем счетчик
+            const ordersCountEl = document.getElementById('ordersCount');
+            if (ordersCountEl) ordersCountEl.textContent = allOrders.length;
+            
+            // Применяем фильтры
+            applyFilters(true);
+        } else {
+            console.log('📦 Данные заказов не изменились');
+        }
 
     } catch (error) {
         console.error('❌ Ошибка загрузки заказов:', error);
         showError('Не удалось загрузить заказы');
+    } finally {
+        isLoadingOrders = false;
+        if (ordersLoadTimeout) {
+            clearTimeout(ordersLoadTimeout);
+            ordersLoadTimeout = null;
+        }
     }
 }
 
 // Применение фильтров и отображение
 function applyFilters(resetPage = true) {
-    if (resetPage) {
-        currentPage = 0;
-        displayedOrders = [];
-    }
-    
     // Фильтруем заказы
     let filtered = [...allOrders];
     
@@ -373,15 +410,24 @@ function applyFilters(resetPage = true) {
             );
         }
     }
-        
+    
     // Обновляем отображаемые заказы
     if (resetPage) {
-        displayedOrders = filtered.slice(0, window.PAGINATION?.ORDERS_INITIAL || 7);
+        const initialCount = window.PAGINATION?.ORDERS_INITIAL || 7;
+        displayedOrders = filtered.slice(0, initialCount);
+        currentPage = 0;
     } else {
         const start = displayedOrders.length;
-        const end = start + (window.PAGINATION?.ORDERS_LOAD_MORE || 5);
-        const more = filtered.slice(start, end);
-        displayedOrders = [...displayedOrders, ...more];
+        const loadMoreCount = window.PAGINATION?.ORDERS_LOAD_MORE || 5;
+        const end = start + loadMoreCount;
+        const moreOrders = filtered.slice(start, end);
+        
+        // Избегаем дублирования
+        if (moreOrders.length > 0) {
+            const existingIds = new Set(displayedOrders.map(o => o.id));
+            const uniqueNewOrders = moreOrders.filter(o => !existingIds.has(o.id));
+            displayedOrders = [...displayedOrders, ...uniqueNewOrders];
+        }
     }
     
     // Проверяем, есть ли еще заказы
@@ -408,10 +454,19 @@ function updateLoadMoreButton(totalFiltered) {
     }
 }
 
-// Отрисовка заказов
+// Отрисовка заказов с оптимизацией
 function renderOrders() {
     const ordersList = document.getElementById('ordersList');
     if (!ordersList) return;
+    
+    // Генерируем ключ на основе отображаемых заказов
+    const currentStateKey = displayedOrders.map(o => o.id).join(',');
+    
+    // Если список не изменился и уже отрисован — пропускаем рендер
+    if (ordersList.dataset.lastState === currentStateKey && ordersList.children.length > 0) {
+        console.log('📦 Список заказов не изменился, пропускаем рендер');
+        return;
+    }
     
     if (displayedOrders.length === 0) {
         ordersList.innerHTML = `
@@ -421,13 +476,15 @@ function renderOrders() {
                 <p class="text-secondary">Попробуйте изменить фильтры</p>
             </div>
         `;
-        return;
+    } else {
+        ordersList.innerHTML = '';
+        displayedOrders.forEach(order => {
+            ordersList.appendChild(createOrderCard(order));
+        });
     }
     
-    ordersList.innerHTML = '';
-    displayedOrders.forEach(order => {
-        ordersList.appendChild(createOrderCard(order));
-    });
+    // Сохраняем текущее состояние для будущих сравнений
+    ordersList.dataset.lastState = currentStateKey;
 }
 
 // Создание карточки заказа
@@ -435,10 +492,8 @@ function createOrderCard(order) {
     const div = document.createElement('div');
     div.className = 'order-item';
     
-    // Иконка категории
     const categoryIcon = window.CATEGORY_ICONS?.[order.category] || 'fa-tag';
     
-    // Иконка города (определяем по адресу)
     let cityIcon = 'fa-map-marker-alt';
     let cityName = 'Город не указан';
     if (order.address && window.CITIES) {
@@ -463,7 +518,6 @@ function createOrderCard(order) {
         `;
     }
     
-    // Безопасная проверка для отображения кнопки отклика
     const showButton = typeof Auth !== 'undefined' && 
                       Auth.isAuthenticated && 
                       Auth.isAuthenticated() && 
@@ -490,14 +544,8 @@ function createOrderCard(order) {
         <p class="text-secondary mb-3">${Utils.escapeHtml(order.description || 'Нет описания')}</p>
         ${photosHtml}
         <div class="order-meta">
-            <span>
-                <i class="fas ${categoryIcon}"></i>
-                ${order.category || 'Без категории'}
-            </span>
-            <span>
-                <i class="fas ${cityIcon}"></i>
-                ${cityName}
-            </span>
+            <span><i class="fas ${categoryIcon}"></i> ${order.category || 'Без категории'}</span>
+            <span><i class="fas ${cityIcon}"></i> ${cityName}</span>
         </div>
         ${actionsHtml}
     `;
@@ -742,7 +790,7 @@ function initMaps() {
     try {
         if (document.getElementById('map') && typeof ymaps !== 'undefined') {
             map = new ymaps.Map('map', {
-                center: [61.0, 69.0], // Центр ХМАО
+                center: [61.0, 69.0],
                 zoom: 8
             });
             
@@ -759,7 +807,6 @@ function initMaps() {
                 map.geoObjects.add(new ymaps.Placemark(coords));
             });
             
-            // Добавляем инициализацию автоподстановки
             initAddressAutocomplete();
         }
         
@@ -821,7 +868,6 @@ function initAddressAutocomplete() {
     
     console.log('📍 Инициализация автоподстановки адресов');
     
-    // Создаем контейнер для саджестов
     if (!document.getElementById('addressSuggestions')) {
         const suggestionsDiv = document.createElement('div');
         suggestionsDiv.id = 'addressSuggestions';
@@ -832,14 +878,12 @@ function initAddressAutocomplete() {
         addressContainer = suggestionsDiv;
     }
     
-    // Индикатор загрузки
     const loadingIcon = document.createElement('i');
     loadingIcon.className = 'fas fa-spinner address-loading';
     loadingIcon.id = 'addressLoading';
     loadingIcon.style.display = 'none';
     addressInput.parentNode.appendChild(loadingIcon);
     
-    // Слушаем ввод
     addressInput.addEventListener('input', function(e) {
         const query = e.target.value.trim();
         
@@ -859,7 +903,6 @@ function initAddressAutocomplete() {
         }, 300);
     });
     
-    // Закрытие по клику вне
     document.addEventListener('click', function(e) {
         if (!addressInput.contains(e.target) && !addressContainer?.contains(e.target)) {
             if (addressContainer) addressContainer.style.display = 'none';
@@ -867,7 +910,6 @@ function initAddressAutocomplete() {
         }
     });
     
-    // Клавиши вверх/вниз/enter
     addressInput.addEventListener('keydown', function(e) {
         if (!addressContainer || addressContainer.style.display === 'none') return;
         
@@ -894,7 +936,6 @@ function initAddressAutocomplete() {
     });
 }
 
-// Подсветка выбранного саджеста
 function highlightSuggestion(items) {
     items.forEach((item, index) => {
         if (index === selectedAddressIndex) {
@@ -906,7 +947,6 @@ function highlightSuggestion(items) {
     });
 }
 
-// Поиск адресов через Яндекс.Карты
 async function searchAddresses(query) {
     if (!addressContainer || typeof ymaps === 'undefined') return;
     
@@ -1012,7 +1052,7 @@ async function respondToOrder(orderId) {
         const result = await Orders.respondToOrder(orderId, priceNum, comment || '');
         if (result?.success) {
             Utils.showNotification('✅ Отклик отправлен!', 'success');
-            loadAllOrders();
+            loadAllOrders(true); // force = true
         } else {
             Utils.showNotification(result?.error || '❌ Ошибка при отправке отклика', 'error');
         }
@@ -1095,7 +1135,7 @@ function initEventListeners() {
     document.getElementById('headerLogoutBtn')?.addEventListener('click', logoutHandler);
 
     document.getElementById('refreshBtn')?.addEventListener('click', () => {
-        loadAllOrders();
+        loadAllOrders(true);
         loadOrdersMap();
     });
 
@@ -1184,7 +1224,7 @@ function initEventListeners() {
                     document.getElementById('successMessage').classList.add('d-none');
                 }, 5000);
                 
-                loadAllOrders();
+                loadAllOrders(true);
                 loadOrdersMap();
             }
         } else {
@@ -1465,52 +1505,19 @@ function updateTrackingInfo(position) {
     }
 }
 
-// ============================================
-// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 index.js загружен и готов к работе!');
+// ===== НОВАЯ ФУНКЦИЯ: СЛУШАТЕЛЬ АВТОРИЗАЦИИ =====
+function setupAuthListener() {
+    if (typeof Auth?.onAuthChange !== 'function') return;
     
-    // Проверяем позиционирование
-    setTimeout(checkOrderPositioning, 500);
-    
-    // Отрисовываем блок авторизации
-    if (typeof AuthUI?.renderAuthBlock === 'function') {
-        AuthUI.renderAuthBlock();
-    }
-    
-    // Инициализация фильтров
-    initFilters();
-    
-    // Инициализация карт
-    if (typeof ymaps !== 'undefined') {
-        ymaps.ready(() => {
-            ymapsReady = true;
-            initMaps();
-        });
-    }
-    
-    // Загрузка данных
-    loadAllOrders();
-    loadTopMasters('week');
-    
-    // Инициализация обработчиков
-    initEventListeners();
-    
-    // Инициализация кнопок рейтинга
-    initLeaderboardButtons();
-});
-
-// Подписка на изменения авторизации
-if (typeof Auth?.onAuthChange === 'function') {
     Auth.onAuthChange((state) => {
         console.log('🔄 Статус авторизации изменился:', state);
         
+        // Обновляем UI авторизации
         if (typeof AuthUI?.renderAuthBlock === 'function') {
             AuthUI.renderAuthBlock();
         }
         
+        // Обновляем ссылки
         const clientLink = document.getElementById('clientLink');
         if (clientLink) {
             clientLink.style.display = state.isMaster ? 'none' : 'inline-block';
@@ -1521,6 +1528,7 @@ if (typeof Auth?.onAuthChange === 'function') {
             headerLogoutBtn.style.display = state.isAuthenticated ? 'inline-block' : 'none';
         }
         
+        // Обновляем видимость формы для мастеров
         const orderFormColumn = document.getElementById('orderFormColumn');
         if (orderFormColumn) {
             if (state.isMaster) {
@@ -1532,14 +1540,54 @@ if (typeof Auth?.onAuthChange === 'function') {
             }
         }
         
+        // Загружаем заказы для мастеров с дебаунсом
         if (state.isMaster) {
-            console.log('✅ Мастер авторизован, перезагружаем заказы');
-            loadAllOrders();
+            console.log('✅ Мастер авторизован, планируем перезагрузку заказов');
+            
+            if (pendingAuthUpdate) {
+                clearTimeout(pendingAuthUpdate);
+            }
+            
+            pendingAuthUpdate = setTimeout(() => {
+                loadAllOrders(true);
+                pendingAuthUpdate = null;
+            }, 300);
         }
     });
 }
 
-// Перепроверяем позиционирование после загрузки всех ресурсов
+// ============================================
+// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 index.js (v13.4) загружен и готов к работе!');
+    
+    setTimeout(checkOrderPositioning, 500);
+    
+    if (typeof AuthUI?.renderAuthBlock === 'function') {
+        AuthUI.renderAuthBlock();
+    }
+    
+    initFilters();
+    
+    if (typeof ymaps !== 'undefined') {
+        ymaps.ready(() => {
+            ymapsReady = true;
+            initMaps();
+        });
+    }
+    
+    // Загрузка данных
+    loadAllOrders(true);
+    loadTopMasters('week');
+    
+    initEventListeners();
+    initLeaderboardButtons();
+    setupAuthListener();
+});
+
+// Перепроверяем позиционирование после загрузки
 window.addEventListener('load', () => {
     setTimeout(checkOrderPositioning, 100);
 });
@@ -1559,15 +1607,12 @@ window.addEventListener('resize', () => {
             const loadMoreContainer = document.getElementById('loadMoreContainer');
             
             if (ordersCol && ordersList && loadMoreContainer) {
-                // Проверяем, есть ли уже orders-content
                 let ordersContent = document.querySelector('.orders-content');
                 
                 if (!ordersContent) {
-                    // Создаем контейнер
                     ordersContent = document.createElement('div');
                     ordersContent.className = 'orders-content';
                     
-                    // Перемещаем элементы
                     ordersList.parentNode.insertBefore(ordersContent, ordersList);
                     ordersContent.appendChild(ordersList);
                     ordersContent.appendChild(loadMoreContainer);
@@ -1575,7 +1620,6 @@ window.addEventListener('resize', () => {
                     console.log('✅ Структура заказов создана');
                 }
                 
-                // Принудительные стили
                 ordersContent.style.cssText = 'flex: 1 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important;';
                 ordersList.style.cssText = 'flex: 1 !important; overflow-y: auto !important;';
                 loadMoreContainer.style.cssText = 'flex-shrink: 0 !important; text-align: center !important; padding: 10px 0 !important;';
@@ -1590,12 +1634,10 @@ window.addEventListener('resize', () => {
 // ЖЁСТКИЙ ФИКС ВИДИМОСТИ КОНТЕЙНЕРОВ
 // ============================================
 (function forceShowContainers() {
-    // Ждём полной загрузки страницы
     window.addEventListener('load', function() {
         setTimeout(function() {
             console.log('🔧 Применяем фикс видимости контейнеров...');
             
-            // Список контейнеров для проверки
             const containers = [
                 'orderFormRow',
                 'orderFormColumn',
@@ -1607,27 +1649,23 @@ window.addEventListener('resize', () => {
             containers.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    // Принудительные стили
                     el.style.setProperty('display', 'block', 'important');
                     el.style.setProperty('visibility', 'visible', 'important');
                     el.style.setProperty('opacity', '1', 'important');
                     el.style.setProperty('height', 'auto', 'important');
                     el.style.setProperty('min-height', '100px', 'important');
                     
-                    // Специально для formRow
                     if (id === 'orderFormRow') {
                         el.style.setProperty('display', 'flex', 'important');
                         el.style.setProperty('min-height', '600px', 'important');
                     }
                     
-                    // Для колонок
                     if (id === 'orderFormColumn' || id === 'ordersColumn') {
                         el.style.setProperty('flex', '0 0 50%', 'important');
                         el.style.setProperty('max-width', '50%', 'important');
                         el.style.setProperty('min-height', '500px', 'important');
                     }
                     
-                    // Для списка заказов
                     if (id === 'ordersList') {
                         el.style.setProperty('display', 'flex', 'important');
                         el.style.setProperty('flex-direction', 'column', 'important');
@@ -1638,9 +1676,7 @@ window.addEventListener('resize', () => {
                 }
             });
             
-            // Принудительный ререндер
             window.dispatchEvent(new Event('resize'));
-            
             console.log('🎉 Фикс контейнеров применён!');
         }, 300);
     });
