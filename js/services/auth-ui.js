@@ -227,7 +227,331 @@ const AuthUI = (function() {
         }
     }
 
-    // ... (остальные функции обработчиков остаются без изменений)
+    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+    function setupLoginModalHandlers(modalEl) {
+        const loginBtn = document.getElementById('loginSubmitBtn');
+        const switchLink = document.getElementById('switchToRegisterLink');
+        const forgotLink = document.getElementById('forgotPasswordLink');
+        
+        if (loginBtn) {
+            loginBtn.addEventListener('click', handleLogin);
+        }
+        
+        if (switchLink) {
+            switchLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (loginModal) loginModal.hide();
+                setTimeout(() => showRegisterModal(), 300);
+            });
+        }
+        
+        if (forgotLink) {
+            forgotLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleForgotPassword();
+            });
+        }
+        
+        // Закрытие по Escape
+        modalEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && loginModal) {
+                loginModal.hide();
+            }
+        });
+        
+        // Очистка ошибок при открытии
+        modalEl.addEventListener('show.bs.modal', () => {
+            const errorDiv = document.getElementById('loginError');
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.textContent = '';
+            }
+            document.getElementById('loginEmail')?.focus();
+        });
+    }
+
+    function setupRegisterModalHandlers(modalEl) {
+        const registerBtn = document.getElementById('registerSubmitBtn');
+        const switchLink = document.getElementById('switchToLoginLink');
+        const roleRadios = document.querySelectorAll('input[name="role"]');
+        const masterField = document.querySelector('.master-only-field');
+        
+        if (registerBtn) {
+            registerBtn.addEventListener('click', handleRegister);
+        }
+        
+        if (switchLink) {
+            switchLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (registerModal) registerModal.hide();
+                setTimeout(() => showLoginModal(), 300);
+            });
+        }
+        
+        // Показываем/скрываем поле категорий при выборе роли
+        roleRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (masterField) {
+                    masterField.style.display = radio.value === 'master' ? 'block' : 'none';
+                    
+                    // Очищаем ошибку при смене роли
+                    const errorDiv = document.getElementById('registerError');
+                    if (errorDiv) {
+                        errorDiv.classList.add('d-none');
+                        errorDiv.textContent = '';
+                    }
+                }
+            });
+        });
+        
+        // Закрытие по Escape
+        modalEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && registerModal) {
+                registerModal.hide();
+            }
+        });
+        
+        // Очистка при открытии
+        modalEl.addEventListener('show.bs.modal', () => {
+            const errorDiv = document.getElementById('registerError');
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.textContent = '';
+            }
+            document.getElementById('registerEmail')?.focus();
+        });
+    }
+
+    // ===== ОБРАБОТЧИКИ ДЕЙСТВИЙ =====
+    async function handleLogin() {
+        if (!window.Auth) return;
+        
+        const email = document.getElementById('loginEmail')?.value.trim();
+        const password = document.getElementById('loginPassword')?.value;
+        const errorDiv = document.getElementById('loginError');
+        
+        // Валидация
+        if (!email || !password) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Введите email и пароль';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        if (!window.Helpers?.validateEmail?.(email)) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Некорректный email';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        // Показываем загрузку
+        const loginBtn = document.getElementById('loginSubmitBtn');
+        const originalText = loginBtn?.innerHTML;
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Вход...';
+        }
+        
+        try {
+            const result = await Auth.login(email, password);
+            
+            if (result?.success) {
+                if (loginModal) loginModal.hide();
+                // Обновляем UI
+                renderAuthBlock();
+                
+                // Показываем приветствие
+                const userData = Auth.getUserData();
+                if (userData?.name) {
+                    setTimeout(() => {
+                        Utils.showNotification(`👋 С возвращением, ${userData.name}!`, 'success');
+                    }, 500);
+                }
+            } else {
+                if (errorDiv) {
+                    errorDiv.textContent = result?.error || 'Ошибка входа';
+                    errorDiv.classList.remove('d-none');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Ошибка при входе:', error);
+            if (errorDiv) {
+                errorDiv.textContent = 'Произошла ошибка. Попробуйте позже.';
+                errorDiv.classList.remove('d-none');
+            }
+        } finally {
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = originalText;
+            }
+        }
+    }
+
+    async function handleRegister() {
+        if (!window.Auth) return;
+        
+        const email = document.getElementById('registerEmail')?.value.trim();
+        const password = document.getElementById('registerPassword')?.value;
+        const name = document.getElementById('registerName')?.value.trim() || 'Пользователь';
+        const phone = document.getElementById('registerPhone')?.value.trim() || '';
+        const role = document.querySelector('input[name="role"]:checked')?.value || 'client';
+        const categories = document.getElementById('registerCategories')?.value.trim() || '';
+        const errorDiv = document.getElementById('registerError');
+        
+        // Валидация
+        if (!email || !password) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Email и пароль обязательны';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        if (!window.Helpers?.validateEmail?.(email)) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Некорректный email';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        if (password.length < 6) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Пароль должен быть не менее 6 символов';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        if (role === 'master' && phone && !window.Helpers?.validatePhone?.(phone)) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Некорректный формат телефона';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+        
+        // Показываем загрузку
+        const registerBtn = document.getElementById('registerSubmitBtn');
+        const originalText = registerBtn?.innerHTML;
+        if (registerBtn) {
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Регистрация...';
+        }
+        
+        try {
+            const result = await Auth.register(email, password, {
+                name,
+                phone,
+                role,
+                categories
+            });
+            
+            if (result?.success) {
+                if (registerModal) registerModal.hide();
+                // Обновляем UI
+                renderAuthBlock();
+                
+                // Показываем приветственное сообщение
+                setTimeout(() => {
+                    Utils.showNotification(
+                        `✅ Добро пожаловать, ${name}!${role === 'master' ? ' Теперь вы можете откликаться на заказы' : ''}`, 
+                        'success'
+                    );
+                }, 500);
+            } else {
+                if (errorDiv) {
+                    errorDiv.textContent = result?.error || 'Ошибка регистрации';
+                    errorDiv.classList.remove('d-none');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Ошибка при регистрации:', error);
+            if (errorDiv) {
+                errorDiv.textContent = 'Произошла ошибка. Попробуйте позже.';
+                errorDiv.classList.remove('d-none');
+            }
+        } finally {
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = originalText;
+            }
+        }
+    }
+
+    function handleForgotPassword() {
+        const email = document.getElementById('loginEmail')?.value.trim();
+        
+        if (!email) {
+            Utils.showNotification('Введите email в поле выше', 'warning');
+            return;
+        }
+        
+        Utils.showNotification(
+            `📧 Инструкция по восстановлению пароля отправлена на ${email}`,
+            'info'
+        );
+    }
+
+    // ===== ФУНКЦИЯ РЕНДЕРИНГА БЛОКА АВТОРИЗАЦИИ =====
+    function renderAuthBlock() {
+        const container = document.getElementById('authBlockContainer');
+        if (!container) return;
+        
+        if (!window.Auth) {
+            container.innerHTML = '<div class="alert alert-warning">Ошибка загрузки авторизации</div>';
+            return;
+        }
+        
+        if (Auth.isAuthenticated && Auth.isAuthenticated()) {
+            const userData = Auth.getUserData();
+            const user = Auth.getUser();
+            const isMaster = Auth.isMaster ? Auth.isMaster() : false;
+            const isClient = Auth.isClient ? Auth.isClient() : false;
+            
+            container.innerHTML = `
+                <div class="card mb-4 p-3" style="border-radius: 20px; border-left: 4px solid var(--accent); background: var(--bg-white); box-shadow: var(--shadow);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar" style="width: 50px; height: 50px; background: var(--accent-gradient); box-shadow: 0 4px 10px rgba(230,122,75,0.3);">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 fw-bold">${Utils.escapeHtml(userData?.name || 'Пользователь')}</h6>
+                            <small class="text-secondary">
+                                ${isMaster ? '🔨 Мастер' : isClient ? '👤 Клиент' : '👤 ' + (userData?.role || 'Пользователь')}
+                            </small>
+                            <div><small class="text-muted">${user?.email || ''}</small></div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="AuthUI.showLogoutModal()" title="Выйти">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="card mb-4 p-3" style="border-radius: 20px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 1px solid rgba(230,122,75,0.2);">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-user-circle fa-2x" style="color: var(--accent);"></i>
+                            <span class="text-secondary">Войдите в личный кабинет</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary px-4" onclick="AuthUI.showLoginModal()">
+                                <i class="fas fa-sign-in-alt me-2"></i>Вход
+                            </button>
+                            <button class="btn px-4" style="background: var(--accent); color: white;" onclick="AuthUI.showRegisterModal()">
+                                <i class="fas fa-user-plus me-2"></i>Регистрация
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
 
     // ===== ПУБЛИЧНЫЕ API =====
     
