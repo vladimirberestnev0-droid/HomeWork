@@ -7,15 +7,15 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 // Версионирование кэша с датой для автоматического обновления
 const CACHE_NAME = 'workhom-v' + new Date().toISOString().split('T')[0].replace(/-/g, ''); // например workhom-v20250321
 
-// Кэшируем только локальные HTML-страницы
+// Кэшируем только локальные HTML-страницы с учётом подпапки /HomeWork/
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/masters.html',
-    '/client.html',
-    '/chat.html',
-    '/group-chat.html',
-    '/admin.html'
+    '/HomeWork/',
+    '/HomeWork/index.html',
+    '/HomeWork/masters.html',
+    '/HomeWork/client.html',
+    '/HomeWork/chat.html',
+    '/HomeWork/group-chat.html',
+    '/HomeWork/admin.html'
 ];
 
 self.addEventListener('install', event => {
@@ -114,7 +114,7 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     if (event.action === 'open') {
-        const urlToOpen = event.notification.data?.url || '/';
+        const urlToOpen = event.notification.data?.url || '/HomeWork/';
         event.waitUntil(
             clients.matchAll({ type: 'window' }).then(windowClients => {
                 for (let client of windowClients) {
