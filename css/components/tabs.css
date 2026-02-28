@@ -1,5 +1,5 @@
-/* ===== TABS.CSS ===== */
-/* Версия: 1.0 — НАСТОЯЩИЕ ТАБЫ (не таблицы) */
+/* ===== new-tabs.css ===== */
+/* Версия: 1.0 — НАСТОЯЩИЕ ТАБЫ (НЕ ТАБЛИЦЫ) */
 
 .tabs {
     display: flex;
@@ -20,7 +20,7 @@
     background: transparent;
     color: var(--text-soft);
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -40,7 +40,7 @@
 .tab.active {
     background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+    box-shadow: var(--shadow);
 }
 
 .tab-content {
@@ -71,7 +71,7 @@
     background: transparent;
     color: var(--text-soft);
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -92,7 +92,7 @@
 .tab-modern.active {
     background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+    box-shadow: var(--shadow);
 }
 
 .tab-badge {
@@ -117,80 +117,4 @@
 
 .tab-content-modern.active {
     display: block;
-}
-
-/* Темная тема */
-body.dark-theme .tabs {
-    background: var(--bg-dark);
-}
-
-body.dark-theme .tab:hover {
-    background: var(--bg-card);
-}
-
-body.dark-theme .tabs-modern {
-    background: var(--bg-dark);
-}
-
-body.dark-theme .tab-modern:hover {
-    background: var(--bg-card);
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .tabs {
-        flex-direction: column;
-        border-radius: var(--radius-lg);
-    }
-
-    .tab {
-        width: 100%;
-    }
-
-    .tabs-modern {
-        flex-direction: column;
-        border-radius: var(--radius-lg);
-    }
-
-    .tab-modern {
-        width: 100%;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .tab {
-        padding: 10px 15px;
-        font-size: 0.9rem;
-    }
-
-    .tab-modern {
-        padding: 10px 12px;
-        font-size: 0.9rem;
-    }
-
-    .tab-badge {
-        width: 18px;
-        height: 18px;
-        font-size: 10px;
-    }
-}
-
-@media (max-width: var(--mobile-sm)) {
-    .tab {
-        padding: 8px 12px;
-        font-size: 0.8rem;
-    }
-
-    .tab i {
-        font-size: 14px;
-    }
-
-    .tab-modern {
-        padding: 8px 10px;
-        font-size: 0.8rem;
-    }
-
-    .tab-modern i {
-        font-size: 14px;
-    }
 }

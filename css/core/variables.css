@@ -1,123 +1,108 @@
-/* ===== VARIABLES.CSS ===== */
-/* Версия: 5.0 — ЧИСТЫЕ ПЕРЕМЕННЫЕ С БРЕЙКПОИНТАМИ */
+/* ===== new-variables.css ===== */
+/* Версия: 6.0 — НОВАЯ ДИЗАЙН-СИСТЕМА */
 
 :root {
-    /* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
-    /* Основные цвета */
-    --primary: #1E2B3C;
-    --primary-light: #2C3E50;
-    --accent: #E67A4B;
-    --accent-dark: #D45C2F;
-    --accent-light: #F9E2D9;
-    --accent-soft: #fff5f0;
-    --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B);
-    
-    /* Фоны */
-    --bg-light: #F9F7F5;
-    --bg-white: #FFFFFF;
-    --bg-card: #FFFFFF;
-    --bg-dark: #1a1a1a;
-    --bg-dark-card: #2d2d2d;
-    --bg-hover: #f5f5f5;
-    --bg-light-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    
-    /* Текст */
-    --text-dark: #2D3A4A;
-    --text-soft: #5A6B7A;
-    --text-light: #FFFFFF;
-    --text-muted: #8A9BA8;
-    --text-soft-dark: #2c3e50;
-    
-    /* Границы */
-    --border: #E2E8F0;
-    --border-dark: #404040;
-    --border-light: #f0f0f0;
-    --border-soft: #ffd7cc;
-    
-    /* Статусы */
-    --success: #00A86B;
-    --success-light: #E3F2E9;
-    --warning: #FFB020;
-    --warning-light: #FFF4E0;
-    --danger: #DC3545;
-    --danger-light: #FFE8E8;
-    --info: #0984e3;
-    --info-light: #E3F2FD;
-    
-    /* Гейминг */
-    --level-1: #95a5a6;
-    --level-2: #3498db;
-    --level-3: #9b59b6;
-    --level-4: #f1c40f;
-    --level-5: #e67e22;
-    --level-6: #e74c3c;
-    --level-7: #2c3e50;
-    --level-8: #8e44ad;
-    --gold: #FFD700;
-    --silver: #C0C0C0;
-    --bronze: #cd7f32;
-    
-    /* Тени */
-    --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow: 0 12px 30px rgba(0,0,0,0.05);
-    --shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
-    --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
-    --card-glow: 0 10px 30px -10px rgba(230,122,75,0.2);
-    --card-glow-hover: 0 20px 40px -10px rgba(230,122,75,0.3);
-    
-    /* Карточки */
-    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    --card-shadow-hover: 0 20px 40px rgba(230,122,75,0.15);
-    
-    /* Скругления */
-    --radius-sm: 12px;
-    --radius-md: 20px;
-    --radius-lg: 30px;
+    /* ===== ОСНОВНЫЕ ЦВЕТА ===== */
+    --primary: #0f172a;
+    --primary-light: #1e293b;
+    --accent: #f97316;
+    --accent-dark: #ea580c;
+    --accent-light: #fff7ed;
+    --accent-soft: #f9731610;
+    --accent-gradient: linear-gradient(145deg, #f97316, #fb923c);
+
+    /* ===== ФОНЫ ===== */
+    --bg-light: #f8fafc;
+    --bg-white: #ffffff;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f5f9;
+    --bg-dark: #0f172a;
+    --bg-dark-card: #1e293b;
+
+    /* ===== ТЕКСТ ===== */
+    --text-dark: #1e293b;
+    --text-soft: #475569;
+    --text-muted: #64748b;
+    --text-light: #ffffff;
+
+    /* ===== ГРАНИЦЫ ===== */
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --border-dark: #334155;
+
+    /* ===== СТАТУСЫ ===== */
+    --success: #22c55e;
+    --success-light: #dcfce7;
+    --warning: #f97316;
+    --warning-light: #ffedd5;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+
+    /* ===== ГЕЙМИНГ ===== */
+    --level-1: #94a3b8;
+    --level-2: #3b82f6;
+    --level-3: #a855f7;
+    --level-4: #f59e0b;
+    --level-5: #ef4444;
+    --level-6: #8b5cf6;
+    --level-7: #0f172a;
+    --level-8: #ec4899;
+    --gold: #fbbf24;
+    --silver: #94a3b8;
+    --bronze: #b45309;
+
+    /* ===== ТЕНИ ===== */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 10px 25px -5px rgb(0 0 0 / 0.05);
+    --shadow-hover: 0 20px 30px -10px rgb(249 115 22 / 0.3);
+    --shadow-dark: 0 20px 30px -10px rgb(0 0 0 / 0.2);
+    --card-glow: 0 0 0 1px rgba(249, 115, 22, 0.1);
+    --card-glow-hover: 0 0 0 2px rgba(249, 115, 22, 0.2);
+
+    /* ===== СКРУГЛЕНИЯ ===== */
+    --radius-sm: 16px;
+    --radius-md: 24px;
+    --radius-lg: 32px;
+    --radius-xl: 40px;
     --radius-full: 9999px;
-    
-    /* Z-index */
+
+    /* ===== Z-INDEX ===== */
     --z-sticky: 100;
-    --z-dropdown: 10000;
-    --z-modal: 1000;
-    --z-popover: 1050;
-    --z-tooltip: 9999;
-    --z-notification: 10000;
-    --z-form: 30;
-    --z-form-card: 31;
-    --z-orders: 20;
-    --z-card: 15;
-    --z-card-hover: 25;
-    --z-button: 26;
-    
-    /* Анимации */
-    --transition-fast: all 0.15s ease;
-    --transition-normal: all 0.2s ease;
-    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    --transition-smooth: all 0.3s ease;
-    
-    /* ===== НОВЫЕ МОБИЛЬНЫЕ ПЕРЕМЕННЫЕ ===== */
-    --mobile-padding: 12px;
-    --mobile-gap: 8px;
-    --mobile-font-size: 14px;
-    --mobile-radius: 16px;
-    --mobile-header-height: 60px;
-    
-    /* Адаптивные размеры */
-    --responsive-container-padding: clamp(10px, 3vw, 20px);
-    --responsive-font-size: clamp(14px, 2vw, 16px);
-    --responsive-card-padding: clamp(12px, 3vw, 24px);
-    
-    /* Переменные для чата */
+    --z-dropdown: 1000;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-notification: 1080;
+
+    /* ===== АНИМАЦИИ ===== */
+    --transition-fast: 0.2s ease;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ===== РАЗМЕРЫ КОМПОНЕНТОВ ===== */
+    --input-height: 48px;
+    --input-height-sm: 40px;
+    --btn-height: 48px;
+    --btn-height-sm: 40px;
+    --avatar-size: 50px;
+    --avatar-size-lg: 80px;
+    --avatar-size-sm: 30px;
+    --card-padding: 24px;
+    --card-padding-sm: 20px;
+
+    /* ===== ЧАТ ===== */
     --chat-message-max-width: 70%;
-    --chat-message-max-width-mobile: 90%;
     --chat-avatar-size: 54px;
-    --chat-avatar-size-mobile: 40px;
     --chat-send-btn-size: 52px;
-    --chat-send-btn-size-mobile: 44px;
-    
-    /* Переменные для видео */
+
+    /* ===== ВИДЕО ===== */
     --video-aspect-ratio: 16/9;
     --video-min-height: 300px;
-    --video-min-height-mobile: 200px;
+
+    /* ===== ОТСТУПЫ ===== */
+    --section-spacing: 60px;
+    --container-padding: 0 24px;
+    --container-max-width: 1280px;
 }

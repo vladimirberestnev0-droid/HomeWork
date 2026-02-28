@@ -1,69 +1,37 @@
-/* ===== TYPOGRAPHY.CSS ===== */
-/* Версия: 3.0 — СТИЛИ ТЕКСТА С АДАПТИВОМ */
+/* ===== new-typography.css ===== */
+/* Версия: 3.0 — СТИЛИ ТЕКСТА */
 
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.2;
     color: var(--primary);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+h4 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); }
 h5 { font-size: 1.25rem; }
 h6 { font-size: 1rem; }
 
 p {
-    margin-bottom: 1rem;
     color: var(--text-soft);
+    margin-bottom: 1rem;
 }
 
 a {
     color: var(--accent);
     text-decoration: none;
-    transition: var(--transition-smooth);
+    transition: color var(--transition-fast);
 }
 
 a:hover {
     color: var(--accent-dark);
 }
 
-/* Тени для заголовков в светлой теме */
-body:not(.dark-theme) h1, 
-body:not(.dark-theme) h2, 
+body:not(.dark-theme) h1,
+body:not(.dark-theme) h2,
 body:not(.dark-theme) h3 {
-    text-shadow: 2px 2px 4px rgba(230,122,75,0.1);
-}
-
-/* Адаптивность */
-@media (max-width: var(--desktop-md)) {
-    h1 { font-size: 2.2rem; }
-    h2 { font-size: 1.9rem; }
-    h3 { font-size: 1.6rem; }
-}
-
-@media (max-width: var(--tablet)) {
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.75rem; }
-    h3 { font-size: 1.5rem; }
-}
-
-@media (max-width: var(--mobile-md)) {
-    h1 { font-size: 1.8rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.3rem; }
-}
-
-@media (max-width: var(--mobile-sm)) {
-    h1 { font-size: 1.6rem; }
-    h2 { font-size: 1.4rem; }
-    h3 { font-size: 1.2rem; }
-}
-
-@media (max-width: var(--mobile-xs)) {
-    h1 { font-size: 1.4rem; }
-    h2 { font-size: 1.2rem; }
-    h3 { font-size: 1.1rem; }
+    text-shadow: 0 2px 4px rgba(249,115,22,0.1);
 }

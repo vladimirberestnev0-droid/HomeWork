@@ -1,8 +1,8 @@
-/* ===== FORMS.CSS ===== */
-/* Версия: 5.0 — ВСЕ ФОРМЫ С ПЕРЕМЕННЫМИ (ИСПРАВЛЕНО) */
+/* ===== new-forms.css ===== */
+/* Версия: 5.0 — ВСЕ ФОРМЫ В НОВОМ СТИЛЕ */
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-label {
@@ -14,11 +14,11 @@
 
 .form-control {
     width: 100%;
-    padding: var(--input-padding);
+    padding: 12px 20px;
     border: 2px solid var(--border);
     border-radius: var(--radius-full);
     font-size: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: var(--transition-fast);
     background: var(--bg-white);
     color: var(--text-dark);
     height: var(--input-height);
@@ -27,7 +27,7 @@
 .form-control:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(230,122,75,0.1);
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.1);
 }
 
 .form-control.is-invalid {
@@ -39,7 +39,7 @@
 }
 
 textarea.form-control {
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     resize: vertical;
     min-height: 100px;
     height: auto;
@@ -47,11 +47,10 @@ textarea.form-control {
 
 .form-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6B7A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475669' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 20px center;
     padding-right: 40px;
-    height: var(--input-height);
 }
 
 .form-check {
@@ -83,20 +82,19 @@ textarea.form-control {
 /* Upload area */
 .upload-area {
     border: 2px dashed var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 30px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.3s ease, background 0.3s ease;
+    transition: var(--transition);
 }
 
 .upload-area:hover {
-    background: rgba(230,122,75,0.05);
+    background: rgba(249,115,22,0.05);
     border-color: var(--accent);
 }
 
 .upload-area:active {
-    background: rgba(230,122,75,0.1);
     transform: scale(0.98);
 }
 
@@ -104,34 +102,29 @@ textarea.form-control {
     font-size: 48px;
     color: var(--accent);
     margin-bottom: 16px;
-    transition: transform 0.3s ease;
+    transition: transform var(--transition);
 }
 
 .upload-area:hover i {
     transform: scale(1.1);
 }
 
-.upload-area.dragover {
-    background: rgba(230,122,75,0.1);
-    border-color: var(--accent);
-}
-
 /* Поиск */
 .search-input {
     border: 2px solid var(--border);
     background: var(--bg-white);
-    font-size: 1.1rem;
-    padding: var(--input-padding);
+    font-size: 1rem;
+    padding: 12px 20px;
     border-radius: var(--radius-full);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
     width: 100%;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: var(--transition-fast);
     height: var(--input-height);
 }
 
 .search-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(230,122,75,0.1);
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.1);
     outline: none;
 }
 
@@ -142,111 +135,11 @@ textarea.form-control {
     left: 0;
     right: 0;
     background: var(--bg-white);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-hover);
-    max-height: 400px;
+    max-height: 300px;
     overflow-y: auto;
     z-index: var(--z-dropdown);
     margin-top: 8px;
     border: 1px solid var(--border);
-}
-
-/* Темная тема */
-body.dark-theme input,
-body.dark-theme textarea,
-body.dark-theme select {
-    background: var(--bg-card);
-    color: var(--text-dark);
-    border-color: var(--border);
-}
-
-body.dark-theme input:focus,
-body.dark-theme textarea:focus,
-body.dark-theme select:focus {
-    background: var(--bg-white);
-}
-
-body.dark-theme input::placeholder,
-body.dark-theme textarea::placeholder {
-    color: var(--text-muted);
-}
-
-body.dark-theme .form-control {
-    background: var(--bg-card);
-    color: var(--text-dark);
-    border-color: var(--border);
-}
-
-body.dark-theme .form-control:focus {
-    background: var(--bg-white);
-}
-
-/* Кастомный select с иконками */
-select.form-select option {
-    padding: 12px 12px 12px 35px;
-    background-position: left 10px center;
-    background-repeat: no-repeat;
-    background-size: 20px 20px;
-    min-height: 40px;
-    line-height: 1.5;
-}
-
-select.form-select option:checked {
-    background-color: var(--accent-light);
-    color: var(--accent-dark);
-}
-
-select.form-select option:hover {
-    background-color: var(--accent-light);
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .form-control,
-    .form-select,
-    .search-input {
-        padding: var(--input-padding-sm);
-        height: var(--input-height-sm);
-        font-size: 0.95rem;
-    }
-
-    .upload-area {
-        padding: 20px;
-    }
-
-    .upload-area i {
-        font-size: 40px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    .form-label {
-        font-size: 0.9rem;
-    }
-
-    .form-control,
-    .form-select,
-    .search-input {
-        font-size: 0.9rem;
-    }
-
-    .form-check-label {
-        font-size: 0.9rem;
-    }
-
-    .upload-area {
-        padding: 15px;
-    }
-
-    .upload-area i {
-        font-size: 36px;
-    }
-
-    .form-text {
-        font-size: 0.8rem;
-    }
 }

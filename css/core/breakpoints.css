@@ -1,4 +1,4 @@
-/* ===== BREAKPOINTS.CSS ===== */
+/* ===== new-breakpoints.css ===== */
 /* Версия: 1.0 — Переменные для адаптивности */
 
 :root {
@@ -12,50 +12,19 @@
     --desktop-lg: 1400px;
 
     /* Контейнеры */
-    --container-padding: 20px;
-    --container-padding-sm: 15px;
-    --container-padding-xs: 10px;
-    --container-max-width: 1400px;
+    --container-padding: 0 24px;
+    --container-padding-sm: 0 16px;
+    --container-max-width: 1280px;
 
     /* Сетка */
-    --grid-gap: 20px;
-    --grid-gap-sm: 15px;
-    --grid-gap-xs: 10px;
+    --grid-gap: 24px;
+    --grid-gap-sm: 16px;
 
     /* Отступы */
-    --section-spacing: 40px;
-    --section-spacing-sm: 30px;
-    --section-spacing-xs: 20px;
-
-    /* Шапка */
-    --header-sticky-top: 10px;
-    --header-height: 80px;
-    --header-height-mobile: 60px;
+    --section-spacing: 60px;
+    --section-spacing-sm: 40px;
 
     /* Карточки */
     --card-padding: 24px;
     --card-padding-sm: 20px;
-    --card-padding-xs: 15px;
-
-    /* Скролл */
-    --scrollbar-width: 10px;
-    --scrollbar-width-sm: 6px;
-
-    /* Формы */
-    --input-height: 48px;
-    --input-height-sm: 40px;
-    --input-padding: 12px 20px;
-    --input-padding-sm: 10px 16px;
-
-    /* Кнопки */
-    --btn-height: 48px;
-    --btn-height-sm: 40px;
-    --btn-padding: 12px 28px;
-    --btn-padding-sm: 8px 20px;
 }
-
-/* Использование в media-запросах:
-   @media (max-width: var(--tablet)) {
-       ...
-   }
-*/

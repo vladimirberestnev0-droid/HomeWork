@@ -1,12 +1,12 @@
-/* ===== BUTTONS.CSS ===== */
-/* Версия: 4.0 — ВСЕ КНОПКИ С ПЕРЕМЕННЫМИ */
+/* ===== new-buttons.css ===== */
+/* Версия: 4.0 — ВСЕ КНОПКИ В НОВОМ СТИЛЕ */
 
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: var(--btn-padding);
+    gap: 8px;
+    padding: 12px 32px;
     border: none;
     border-radius: var(--radius-full);
     font-weight: 600;
@@ -15,9 +15,9 @@
     transition: var(--transition);
     text-decoration: none;
     white-space: nowrap;
-    background: var(--accent);
+    background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 8px 20px rgba(230,122,75,0.2);
+    box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
     height: var(--btn-height);
@@ -34,7 +34,7 @@
     border-radius: 50%;
     background: rgba(255,255,255,0.3);
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    transition: width 0.5s, height 0.5s;
 }
 
 .btn:hover::after {
@@ -45,7 +45,7 @@
 .btn:hover {
     background: var(--accent-dark);
     transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(230,122,75,0.4);
+    box-shadow: var(--shadow-hover);
 }
 
 .btn:active {
@@ -53,75 +53,71 @@
 }
 
 /* Outline кнопка */
-.btn-outline-secondary {
+.btn-outline {
     background: transparent;
     border: 2px solid var(--border);
-    color: var(--primary);
+    color: var(--text-dark);
     box-shadow: none;
 }
 
-.btn-outline-secondary:hover {
+.btn-outline:hover {
     background: var(--accent-gradient);
     color: white;
     border-color: transparent;
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
+    box-shadow: var(--shadow-hover);
 }
 
-.btn-outline-secondary:hover::after {
+.btn-outline:hover::after {
     display: none;
 }
 
 /* Цветные кнопки */
 .btn-success {
     background: var(--success);
-    box-shadow: 0 8px 20px rgba(0,168,107,0.2);
+    box-shadow: 0 8px 20px rgba(34,197,94,0.2);
 }
-
 .btn-success:hover {
-    background: #00875A;
-    box-shadow: 0 12px 30px rgba(0,168,107,0.4);
+    background: #16a34a;
+    box-shadow: 0 12px 30px rgba(34,197,94,0.4);
 }
 
 .btn-danger {
     background: var(--danger);
-    box-shadow: 0 8px 20px rgba(220,53,69,0.2);
+    box-shadow: 0 8px 20px rgba(239,68,68,0.2);
 }
-
 .btn-danger:hover {
-    background: #bd2130;
-    box-shadow: 0 12px 30px rgba(220,53,69,0.4);
+    background: #dc2626;
+    box-shadow: 0 12px 30px rgba(239,68,68,0.4);
 }
 
 .btn-warning {
     background: var(--warning);
     color: var(--text-dark);
-    box-shadow: 0 8px 20px rgba(255,176,32,0.2);
+    box-shadow: 0 8px 20px rgba(249,115,22,0.2);
 }
-
 .btn-warning:hover {
-    background: #e6a01d;
-    color: var(--text-dark);
+    background: #ea580c;
+    color: white;
 }
 
 .btn-info {
     background: var(--info);
-    box-shadow: 0 8px 20px rgba(9,132,227,0.2);
+    box-shadow: 0 8px 20px rgba(59,130,246,0.2);
 }
-
 .btn-info:hover {
-    background: #0769b3;
+    background: #2563eb;
 }
 
 /* Размеры */
 .btn-sm {
-    padding: 8px 20px;
+    padding: 8px 24px;
     font-size: 0.9rem;
     height: var(--btn-height-sm);
 }
 
 .btn-lg {
-    padding: 16px 36px;
+    padding: 16px 40px;
     font-size: 1.1rem;
     height: calc(var(--btn-height) + 8px);
 }
@@ -140,41 +136,11 @@
 
 .btn-icon-sm {
     padding: 8px;
-    border-radius: 50%;
     width: var(--btn-height-sm);
     height: var(--btn-height-sm);
 }
 
 /* Специальные кнопки */
-.search-btn {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 1rem 2.5rem;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    width: 100%;
-    transition: var(--transition);
-    cursor: pointer;
-    height: var(--btn-height);
-}
-
-.search-btn:hover {
-    background: var(--accent-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(230,122,75,0.4);
-}
-
-.respond-btn {
-    background: var(--success) !important;
-    color: white !important;
-    border: none;
-}
-
-.respond-btn:hover {
-    background: #00875A !important;
-}
-
 .filter-btn {
     padding: 8px 16px;
     border-radius: var(--radius-full);
@@ -183,7 +149,7 @@
     color: var(--text-dark);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: var(--transition-smooth);
+    transition: var(--transition-fast);
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -199,7 +165,7 @@
     background: var(--accent-gradient);
     color: white;
     border-color: transparent;
-    box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+    box-shadow: var(--shadow);
 }
 
 /* Кнопка "Наверх" */
@@ -216,9 +182,9 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 5px 20px rgba(230,122,75,0.3);
+    box-shadow: var(--shadow-hover);
     z-index: var(--z-tooltip);
-    transition: var(--transition-slow);
+    transition: var(--transition);
     border: none;
     opacity: 0;
     visibility: hidden;
@@ -235,12 +201,11 @@
 #scrollToTop:hover {
     background: var(--accent-dark);
     transform: scale(1.15) translateY(-5px);
-    box-shadow: 0 15px 30px rgba(230,122,75,0.6);
+    box-shadow: 0 20px 30px -10px rgba(249,115,22,0.6);
 }
 
 #scrollToTop i {
     font-size: 24px;
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
 }
 
 /* Кнопка выхода */
@@ -250,7 +215,7 @@
     color: var(--danger);
     padding: 8px 20px;
     border-radius: var(--radius-full);
-    transition: var(--transition-smooth);
+    transition: var(--transition);
     cursor: pointer;
     font-weight: 600;
     margin-left: 10px;
@@ -260,7 +225,7 @@
     background: var(--danger);
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(220,53,69,0.3);
+    box-shadow: 0 8px 20px rgba(239,68,68,0.3);
 }
 
 /* Кнопка бота */
@@ -268,123 +233,28 @@
     position: fixed !important;
     bottom: 30px !important;
     right: 30px !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(145deg, #3b82f6, #8b5cf6) !important;
     color: white !important;
     padding: 15px 25px !important;
-    border-radius: 60px !important;
+    border-radius: var(--radius-full) !important;
     cursor: pointer !important;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(59,130,246,0.4) !important;
     z-index: var(--z-tooltip) !important;
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
     animation: float 3s ease-in-out infinite !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    transition: var(--transition) !important;
     border: none !important;
     font-weight: 600 !important;
 }
 
 #deepseek-bro-button:hover {
     transform: translateY(-5px) scale(1.05) !important;
-    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.6) !important;
+    box-shadow: 0 20px 40px rgba(59,130,246,0.6) !important;
 }
 
 #deepseek-bro-button i {
     font-size: 24px !important;
     animation: pulse 2s infinite !important;
-}
-
-/* Темная тема */
-body.dark-theme .btn-outline-secondary {
-    color: var(--text-dark);
-    border-color: var(--border);
-}
-
-body.dark-theme .btn-outline-secondary:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .btn {
-        padding: 10px 20px;
-        font-size: 0.95rem;
-    }
-
-    .btn-lg {
-        padding: 14px 30px;
-    }
-
-    #scrollToTop {
-        width: 50px;
-        height: 50px;
-        bottom: 20px;
-        right: 20px;
-    }
-
-    #scrollToTop i {
-        font-size: 22px;
-    }
-
-    #deepseek-bro-button {
-        padding: 12px 20px;
-    }
-
-    #deepseek-bro-button i {
-        font-size: 22px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
-
-    .btn-sm {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-    }
-
-    .btn-lg {
-        padding: 12px 24px;
-        font-size: 1rem;
-    }
-
-    #scrollToTop {
-        width: 45px;
-        height: 45px;
-    }
-
-    #scrollToTop i {
-        font-size: 20px;
-    }
-
-    #deepseek-bro-button {
-        padding: 10px 15px;
-    }
-
-    #deepseek-bro-button i {
-        font-size: 20px;
-    }
-}
-
-@media (max-width: var(--mobile-sm)) {
-    #scrollToTop {
-        width: 40px;
-        height: 40px;
-    }
-
-    #scrollToTop i {
-        font-size: 18px;
-    }
-}
-
-@media (max-width: var(--mobile-xs)) {
-    #scrollToTop {
-        width: 35px;
-        height: 35px;
-    }
 }

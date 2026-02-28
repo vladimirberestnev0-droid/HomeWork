@@ -1,12 +1,12 @@
-/* ===== OFFLINE.CSS ===== */
+/* ===== new-offline.css ===== */
 /* Версия: 3.0 — ОФЛАЙН СТРАНИЦА */
 
 .offline-container {
     max-width: 500px;
     text-align: center;
     background: var(--bg-white);
-    padding: 50px 40px;
-    border-radius: var(--radius-lg);
+    padding: 60px 40px;
+    border-radius: var(--radius-xl);
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     animation: slideUp 0.5s ease;
     margin: 50px auto;
@@ -68,51 +68,4 @@
 
 .cached-order .small {
     font-size: 0.85rem;
-}
-
-/* Темная тема */
-body.dark-theme .offline-container {
-    background: var(--bg-card);
-}
-
-body.dark-theme .offline-container h1 {
-    color: var(--text-dark);
-}
-
-body.dark-theme .cached-order {
-    background: var(--bg-dark);
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .offline-container {
-        padding: 40px 30px;
-        margin: 30px 20px;
-    }
-
-    .offline-icon {
-        font-size: 70px;
-    }
-
-    .offline-container h1 {
-        font-size: 28px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .offline-container {
-        padding: 30px 20px;
-    }
-
-    .offline-icon {
-        font-size: 60px;
-    }
-
-    .offline-container h1 {
-        font-size: 24px;
-    }
-
-    .cached-order {
-        padding: 12px;
-    }
 }

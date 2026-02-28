@@ -1,16 +1,17 @@
-/* ===== 404.CSS ===== */
-/* Версия: 3.0 — СТРАНИЦА 404 */
+/* ===== new-404.css ===== */
+/* Версия: 3.0 — СТРАНИЦА 404 В НОВОМ СТИЛЕ */
 
 .error-container {
     max-width: 600px;
     text-align: center;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 50px 40px;
-    border-radius: var(--radius-lg);
+    background: rgba(255,255,255,0.9);
+    padding: 60px 40px;
+    border-radius: var(--radius-xl);
     box-shadow: 0 30px 60px rgba(0,0,0,0.1);
     backdrop-filter: blur(10px);
     animation: float 3s ease-in-out infinite;
     margin: 50px auto;
+    border: 1px solid rgba(255,255,255,0.6);
 }
 
 .error-icon {
@@ -22,7 +23,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 20px 40px rgba(230,122,75,0.3);
+    box-shadow: 0 20px 40px rgba(249,115,22,0.3);
 }
 
 .error-icon i {
@@ -36,7 +37,7 @@
     color: var(--accent);
     line-height: 1;
     margin-bottom: 10px;
-    text-shadow: 5px 5px 0 rgba(230,122,75,0.2);
+    text-shadow: 5px 5px 0 rgba(249,115,22,0.2);
 }
 
 .error-container h2 {
@@ -80,15 +81,15 @@
 .fun-fact {
     margin-top: 40px;
     padding: 20px;
-    background: rgba(230,122,75,0.1);
+    background: rgba(249,115,22,0.1);
     border-radius: 20px;
     font-size: 14px;
     color: var(--text-soft);
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .fun-fact:hover {
-    background: rgba(230,122,75,0.15);
+    background: rgba(249,115,22,0.15);
     transform: translateY(-2px);
 }
 
@@ -101,86 +102,4 @@
 
 .logo-text i {
     margin-right: 8px;
-}
-
-/* Темная тема */
-body.dark-theme .error-container {
-    background: var(--bg-card);
-    color: var(--text-dark);
-}
-
-body.dark-theme .fun-fact {
-    background: rgba(230,122,75,0.2);
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .error-container {
-        padding: 40px 30px;
-        margin: 30px 20px;
-    }
-
-    .error-icon {
-        width: 100px;
-        height: 100px;
-    }
-
-    .error-icon i {
-        font-size: 50px;
-    }
-
-    .error-container h1 {
-        font-size: 100px;
-    }
-
-    .error-container h2 {
-        font-size: 28px;
-    }
-
-    .error-message {
-        font-size: 16px;
-    }
-
-    .master-emoji {
-        font-size: 20px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .error-container {
-        padding: 30px 20px;
-    }
-
-    .error-icon {
-        width: 80px;
-        height: 80px;
-    }
-
-    .error-icon i {
-        font-size: 40px;
-    }
-
-    .error-container h1 {
-        font-size: 80px;
-    }
-
-    .error-container h2 {
-        font-size: 24px;
-    }
-
-    .error-message {
-        font-size: 14px;
-    }
-
-    .master-emoji {
-        font-size: 18px;
-    }
-
-    .btn-group-404 {
-        flex-direction: column;
-    }
-
-    .btn-group-404 .btn {
-        width: 100%;
-    }
 }

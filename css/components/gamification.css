@@ -1,13 +1,13 @@
-/* ===== GAMIFICATION.CSS ===== */
-/* Версия: 3.0 — ГЕЙМИФИКАЦИЯ */
+/* ===== new-gamification.css ===== */
+/* Версия: 3.0 — ГЕЙМИФИКАЦИЯ В НОВОМ СТИЛЕ */
 
 /* Карточка достижения */
 .achievement-card {
     background: var(--bg-white);
-    border-radius: var(--radius-md);
-    padding: 15px;
+    border-radius: var(--radius-lg);
+    padding: 16px;
     text-align: center;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     border: 1px solid var(--border);
     position: relative;
     overflow: hidden;
@@ -20,7 +20,7 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(251,191,36,0.1) 0%, transparent 70%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -37,25 +37,21 @@
 }
 
 .achievement-card.earned {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
     color: white;
     border-color: transparent;
 }
 
 .achievement-card.earned .achievement-icon {
-    color: gold;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-.achievement-card.earned .achievement-xp {
-    color: rgba(255,255,255,0.8);
+    color: white;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
 }
 
 .achievement-icon {
     font-size: 32px;
     color: var(--accent);
     margin-bottom: 10px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .achievement-name {
@@ -77,22 +73,17 @@
 .achievement-xp {
     font-size: 0.8rem;
     font-weight: 600;
-    color: gold;
-    background: rgba(0,0,0,0.1);
+    color: var(--gold);
+    background: rgba(0,0,0,0.05);
     padding: 3px 8px;
-    border-radius: 20px;
+    border-radius: var(--radius-full);
     display: inline-block;
-}
-
-.achievement-card.earned .achievement-xp {
-    background: rgba(255,255,255,0.2);
-    color: white;
 }
 
 /* Лидерборд */
 .leaderboard {
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: 20px;
     border: 1px solid var(--border);
 }
@@ -110,9 +101,9 @@
     display: flex;
     align-items: center;
     padding: 12px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     margin-bottom: 5px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     cursor: pointer;
     background: var(--bg-light);
 }
@@ -138,22 +129,22 @@
     flex-shrink: 0;
 }
 
-.leaderboard-rank.rank-1 { 
-    background: linear-gradient(135deg, #FFD700, #FFA500); 
-    color: #333; 
-    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+.leaderboard-rank.rank-1 {
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
+    color: #0f172a;
+    box-shadow: 0 4px 10px rgba(251,191,36,0.3);
 }
 
-.leaderboard-rank.rank-2 { 
-    background: linear-gradient(135deg, #C0C0C0, #A0A0A0); 
-    color: #333; 
-    box-shadow: 0 4px 10px rgba(192, 192, 192, 0.3);
+.leaderboard-rank.rank-2 {
+    background: linear-gradient(145deg, #94a3b8, #64748b);
+    color: white;
+    box-shadow: 0 4px 10px rgba(100,116,139,0.3);
 }
 
-.leaderboard-rank.rank-3 { 
-    background: linear-gradient(135deg, #CD7F32, #B87333); 
-    color: white; 
-    box-shadow: 0 4px 10px rgba(205, 127, 50, 0.3);
+.leaderboard-rank.rank-3 {
+    background: linear-gradient(145deg, #b45309, #92400e);
+    color: white;
+    box-shadow: 0 4px 10px rgba(180,83,9,0.3);
 }
 
 .leaderboard-avatar {
@@ -191,7 +182,7 @@
     color: var(--accent);
     background: var(--accent-light);
     padding: 3px 10px;
-    border-radius: 20px;
+    border-radius: var(--radius-full);
     font-size: 0.8rem;
     margin-left: 10px;
 }
@@ -199,7 +190,7 @@
 /* Прогресс уровня */
 .level-progress {
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: 20px;
     border: 1px solid var(--border);
 }
@@ -222,16 +213,10 @@
     gap: 8px;
 }
 
-.level-name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
 .xp-bar-container {
     height: 12px;
     background: var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-full);
     overflow: hidden;
     margin: 15px 0;
 }
@@ -239,7 +224,7 @@
 .xp-bar-fill {
     height: 100%;
     background: var(--accent-gradient);
-    border-radius: 6px;
+    border-radius: var(--radius-full);
     transition: width 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -271,12 +256,6 @@
     padding: 15px;
 }
 
-.achievements-mini h6 {
-    display: flex;
-    align-items: center;
-    color: var(--text-dark);
-}
-
 .achievement-icon-mini {
     width: 40px;
     height: 40px;
@@ -287,14 +266,14 @@
     justify-content: center;
     color: var(--accent);
     font-size: 18px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     cursor: help;
     border: 1px solid var(--border);
 }
 
 .achievement-icon-mini.earned {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
+    color: #0f172a;
     border-color: transparent;
     animation: achievementGlow 2s infinite;
 }
@@ -307,7 +286,7 @@
 .achievement-icon-mini:hover {
     transform: scale(1.1);
     border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(230,122,75,0.2);
+    box-shadow: var(--shadow);
 }
 
 .achievements-icons {
@@ -321,15 +300,15 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
     color: white;
     padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(251,191,36,0.4);
     z-index: calc(var(--z-notification) + 1);
     max-width: 350px;
     animation: slideInRight 0.5s ease;
-    border: 2px solid gold;
+    border: 2px solid white;
 }
 
 .achievement-notification-content {
@@ -341,12 +320,12 @@
 .achievement-notification-icon {
     width: 60px;
     height: 60px;
-    background: gold;
+    background: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #333;
+    color: #f59e0b;
     font-size: 30px;
     animation: rotate 10s linear infinite;
     flex-shrink: 0;
@@ -367,7 +346,7 @@
 .achievement-notification-xp {
     background: rgba(255,255,255,0.2);
     padding: 3px 10px;
-    border-radius: 20px;
+    border-radius: var(--radius-full);
     font-size: 0.9rem;
     display: inline-block;
 }
@@ -375,7 +354,7 @@
 /* Топ на главной */
 .top-masters {
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: 20px;
 }
 
@@ -383,10 +362,10 @@
     display: flex;
     align-items: center;
     padding: 15px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     margin-bottom: 10px;
     background: var(--bg-light);
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .top-master-item:hover {
@@ -410,17 +389,17 @@
 }
 
 .top-master-rank.gold {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #333;
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
+    color: #0f172a;
 }
 
 .top-master-rank.silver {
-    background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
-    color: #333;
+    background: linear-gradient(145deg, #94a3b8, #64748b);
+    color: white;
 }
 
 .top-master-rank.bronze {
-    background: linear-gradient(135deg, #CD7F32, #B87333);
+    background: linear-gradient(145deg, #b45309, #92400e);
     color: white;
 }
 
@@ -442,7 +421,7 @@
 
 .top-master-xp {
     font-weight: 600;
-    color: gold;
+    color: var(--gold);
 }
 
 /* Статистика достижений */
@@ -458,19 +437,19 @@
     padding: 20px;
     text-align: center;
     border: 1px solid var(--border);
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .achievement-stat-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
-    border-color: gold;
+    border-color: var(--gold);
 }
 
 .achievement-stat-value {
     font-size: 2rem;
     font-weight: 800;
-    color: gold;
+    color: var(--gold);
     line-height: 1.2;
     margin-bottom: 5px;
 }
@@ -480,144 +459,7 @@
     color: var(--text-soft);
 }
 
-/* Анимации */
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes rotate {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 @keyframes achievementGlow {
-    0%, 100% {
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%);
-    }
-    100% {
-        transform: translateX(100%);
-    }
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .achievement-notification {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-
-    .achievement-stat-card {
-        padding: 15px;
-    }
-
-    .achievement-stat-value {
-        font-size: 1.8rem;
-    }
-
-    .leaderboard-item {
-        flex-wrap: wrap;
-    }
-
-    .leaderboard-xp {
-        margin-left: 0;
-        margin-top: 5px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .achievement-card {
-        padding: 12px;
-    }
-
-    .achievement-icon {
-        font-size: 28px;
-    }
-
-    .achievement-name {
-        font-size: 0.9rem;
-    }
-
-    .achievement-description {
-        font-size: 0.75rem;
-    }
-
-    .achievement-stat-card {
-        padding: 12px;
-    }
-
-    .achievement-stat-value {
-        font-size: 1.6rem;
-    }
-
-    .leaderboard-avatar {
-        width: 35px;
-        height: 35px;
-        font-size: 16px;
-    }
-
-    .leaderboard-name {
-        font-size: 0.9rem;
-    }
-
-    .leaderboard-stats {
-        font-size: 0.75rem;
-    }
-
-    .top-master-rank {
-        width: 35px;
-        height: 35px;
-        font-size: 1rem;
-    }
-
-    .achievements-stats {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-}
-
-@media (max-width: var(--mobile-sm)) {
-    .achievement-icon-mini {
-        width: 35px;
-        height: 35px;
-        font-size: 16px;
-    }
-
-    .achievement-notification {
-        padding: 15px;
-    }
-
-    .achievement-notification-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 24px;
-    }
-
-    .achievement-notification-text h4 {
-        font-size: 1rem;
-    }
-
-    .achievement-notification-text p {
-        font-size: 0.9rem;
-    }
+    0%, 100% { box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+    50% { box-shadow: 0 0 20px rgba(251,191,36,0.6); }
 }

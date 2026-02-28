@@ -1,5 +1,5 @@
-/* ===== MODALS.CSS ===== */
-/* Версия: 5.0 — МОДАЛЬНЫЕ ОКНА (ИСПРАВЛЕНО) */
+/* ===== new-modals.css ===== */
+/* Версия: 5.0 — МОДАЛЬНЫЕ ОКНА В НОВОМ СТИЛЕ */
 
 .modal-backdrop {
     position: fixed;
@@ -8,7 +8,7 @@
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(5px);
     z-index: calc(var(--z-modal) - 1);
     display: none;
 }
@@ -53,11 +53,11 @@
 
 .modal-content {
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: 30px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: var(--shadow-dark);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
     position: relative;
     animation: scaleIn 0.3s ease;
     border: 1px solid var(--border);
@@ -68,7 +68,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 15px;
+    padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -99,7 +99,7 @@
 
 .modal-close:hover {
     color: var(--danger);
-    background: var(--bg-light);
+    background: var(--bg-hover);
     transform: rotate(90deg);
 }
 
@@ -129,7 +129,7 @@
 
 /* Стиль для модалок ВоркХом */
 .modal-workhom .modal-content {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     overflow: hidden;
 }
 
@@ -153,133 +153,24 @@
     color: white;
 }
 
-.modal-workhom .modal-footer {
-    padding: 15px 25px 25px;
-}
-
-/* Светлая тема */
-body:not(.dark-theme) .modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-}
-
 /* Модалка подтверждения выхода */
 .modal-logout .modal-header {
-    background: linear-gradient(135deg, #DC3545, #ff6b6b);
+    background: linear-gradient(145deg, #ef4444, #dc2626);
     color: white;
 }
 
 .modal-logout .modal-header i {
-    animation: bounce 1s ease-in-out infinite;
+    animation: bounce 1s infinite;
 }
 
 /* Модалка успеха */
 .modal-success .modal-header {
-    background: linear-gradient(135deg, #00A86B, #2ecc71);
+    background: linear-gradient(145deg, #22c55e, #16a34a);
     color: white;
-}
-
-.modal-success .modal-header i {
-    animation: checkPop 0.5s ease;
 }
 
 /* Модалка предупреждения */
 .modal-warning .modal-header {
-    background: linear-gradient(135deg, #FFB020, #f39c12);
+    background: linear-gradient(145deg, #f97316, #ea580c);
     color: white;
-}
-
-/* Красивые кнопки в модалках */
-.modal-footer .btn {
-    min-width: 120px;
-    padding: 10px 20px;
-    border-radius: var(--radius-full);
-    transition: all 0.3s ease;
-}
-
-.modal-footer .btn:hover {
-    transform: translateY(-2px) scale(1.02);
-}
-
-.modal-footer .btn-outline-secondary:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-}
-
-/* Затемнение фона */
-.modal-backdrop {
-    backdrop-filter: blur(3px);
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.modal-backdrop.show {
-    opacity: 1;
-}
-
-/* Убираем мигание скролла */
-body.modal-open {
-    padding-right: 0;
-    overflow: hidden;
-}
-
-/* Адаптивность */
-@media (max-width: var(--tablet)) {
-    .modal-dialog {
-        margin: 10px;
-    }
-
-    .modal-content {
-        padding: 20px;
-        border-radius: var(--radius-lg);
-    }
-
-    .modal-footer {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .modal-footer .btn {
-        width: 100%;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .modal-content {
-        padding: 15px;
-    }
-
-    .modal-title {
-        font-size: 1.3rem;
-    }
-
-    .modal-close {
-        width: 35px;
-        height: 35px;
-        font-size: 20px;
-    }
-
-    .modal-workhom .modal-header {
-        padding: 15px 20px;
-    }
-}
-
-@media (max-width: var(--mobile-sm)) {
-    .modal-dialog {
-        margin: 5px;
-    }
-
-    .modal-content {
-        padding: 12px;
-    }
-
-    .modal-title {
-        font-size: 1.2rem;
-    }
-
-    .modal-footer .btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
 }
