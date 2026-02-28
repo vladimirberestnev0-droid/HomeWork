@@ -1569,7 +1569,17 @@ document.addEventListener('DOMContentLoaded', () => {
         AuthUI.renderAuthBlock();
     }
     
-    initFilters();
+    // Загружаем города перед инициализацией фильтров
+    if (typeof loadCities === 'function') {
+        loadCities().then(() => {
+            initFilters();
+        }).catch(err => {
+            console.error('Ошибка загрузки городов:', err);
+            initFilters(); // всё равно продолжаем
+        });
+    } else {
+        initFilters();
+    }
     
     if (typeof ymaps !== 'undefined') {
         ymaps.ready(() => {
