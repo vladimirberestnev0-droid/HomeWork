@@ -48,6 +48,12 @@ self.addEventListener('activate', event => {
 
 // Стратегия: Stale-While-Revalidate (сначала кэш, потом сеть)
 self.addEventListener('fetch', event => {
+    // Кэшируем только GET-запросы (POST и другие не кэшируем)
+    if (event.request.method !== 'GET') {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     // Не кэшируем запросы к Firebase и Яндекс.Картам
     if (event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('firebase') ||
