@@ -7,6 +7,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 // Версионирование кэша с датой для автоматического обновления
 const CACHE_NAME = 'workhom-v' + new Date().toISOString().split('T')[0].replace(/-/g, ''); // например workhom-v20250321
 
+// Кэшируем только локальные HTML-страницы
 const urlsToCache = [
     '/',
     '/index.html',
@@ -14,11 +15,7 @@ const urlsToCache = [
     '/client.html',
     '/chat.html',
     '/group-chat.html',
-    '/admin.html',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
-    // '/css/main.css' – удалён, так как файла нет
+    '/admin.html'
 ];
 
 self.addEventListener('install', event => {
@@ -32,9 +29,7 @@ self.addEventListener('install', event => {
     );
 });
 
-// ... остальной код без изменений ...
-
-// Активация
+// Активация – удаляем старые кэши
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -51,8 +46,9 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Стратегия: Stale-While-Revalidate
+// Стратегия: Stale-While-Revalidate (сначала кэш, потом сеть)
 self.addEventListener('fetch', event => {
+    // Не кэшируем запросы к Firebase и Яндекс.Картам
     if (event.request.url.includes('firestore.googleapis.com') ||
         event.request.url.includes('firebase') ||
         event.request.url.includes('yandex')) {
