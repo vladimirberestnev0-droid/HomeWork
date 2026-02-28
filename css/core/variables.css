@@ -1,38 +1,38 @@
 /* ===== VARIABLES.CSS ===== */
-/* Версия: 7.0 — УЛУЧШЕННЫЙ ДИЗАЙН + АДАПТИВНОСТЬ */
+/* Версия: 7.1 — УЛУЧШЕННЫЙ ДИЗАЙН + АДАПТИВНОСТЬ */
 
 :root {
     /* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
     /* Основные цвета */
-    --primary: #1E2B3C;
-    --primary-light: #2C3E50;
+    --primary: #0F172A;
+    --primary-light: #334155;
     --accent: #E67A4B;
     --accent-dark: #D45C2F;
-    --accent-light: #F9E2D9;
+    --accent-light: #FEF3E9;
     --accent-soft: #fff5f0;
     --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B);
     --accent-gradient-soft: linear-gradient(135deg, rgba(230,122,75,0.1), rgba(255,159,75,0.1));
     
     /* Фоны */
-    --bg-light: #F9F7F5;
+    --bg-light: #F8FAFC;
     --bg-white: #FFFFFF;
     --bg-card: #FFFFFF;
     --bg-dark: #1a1a1a;
     --bg-dark-card: #2d2d2d;
-    --bg-hover: #f5f5f5;
+    --bg-hover: #F1F5F9;
     --bg-light-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     
     /* Текст */
-    --text-dark: #2D3A4A;
-    --text-soft: #5A6B7A;
+    --text-dark: #0F172A;
+    --text-soft: #334155;
     --text-light: #FFFFFF;
-    --text-muted: #8A9BA8;
+    --text-muted: #64748B;
     --text-soft-dark: #2c3e50;
     
     /* Границы */
     --border: #E2E8F0;
     --border-dark: #404040;
-    --border-light: #f0f0f0;
+    --border-light: #F1F5F9;
     --border-soft: #ffd7cc;
     
     /* Статусы */
@@ -60,9 +60,9 @@
     
     /* Тени (улучшенные) */
     --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow: 0 12px 30px rgba(0,0,0,0.08);
-    --shadow-hover: 0 20px 40px rgba(230,122,75,0.2);
-    --shadow-dark: 0 12px 30px rgba(0,0,0,0.2);
+    --shadow: 0 20px 40px -15px rgba(0,0,0,0.1);
+    --shadow-hover: 0 25px 50px -12px rgba(230,122,75,0.25);
+    --shadow-dark: 0 20px 40px -15px rgba(0,0,0,0.2);
     --card-glow: 0 10px 30px -10px rgba(230,122,75,0.3);
     --card-glow-hover: 0 20px 40px -10px rgba(230,122,75,0.4);
     --glass-shadow: 0 8px 32px rgba(0,0,0,0.1);

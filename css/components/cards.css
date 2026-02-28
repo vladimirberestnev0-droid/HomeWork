@@ -1,5 +1,5 @@
 /* ===== new-cards.css ===== */
-/* Версия: 5.0 — ВСЕ КАРТОЧКИ (ОБЩИЕ) */
+/* Версия: 5.1 — УЛУЧШЕННЫЕ КАРТОЧКИ */
 
 /* Базовая карточка */
 .card {
@@ -339,7 +339,7 @@ body:not(.dark-theme) .card:hover {
     color: var(--text-muted);
 }
 
-/* Полноценная карточка мастера (из master-card.css) */
+/* Полноценная карточка мастера (исправлено) */
 .master-card {
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
     background: var(--bg-white);
@@ -347,8 +347,10 @@ body:not(.dark-theme) .card:hover {
     padding: 24px;
     box-shadow: var(--shadow);
     height: 100%;
+    min-height: 300px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: box-shadow, border-color;
@@ -368,6 +370,7 @@ body:not(.dark-theme) .card:hover {
 .master-avatar {
     width: 80px;
     height: 80px;
+    flex-shrink: 0;
     background: var(--accent-gradient);
     border-radius: 50%;
     display: flex;
@@ -377,7 +380,6 @@ body:not(.dark-theme) .card:hover {
     color: white;
     font-size: 40px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    transform: translateZ(0);
     box-shadow: 0 10px 20px rgba(249,115,22,0.3);
 }
 
@@ -435,23 +437,22 @@ body:not(.dark-theme) .card:hover {
     background: transparent;
     border: 2px solid var(--accent);
     color: var(--accent);
-    transition: var(--transition);
-    padding: 8px 16px;
-    font-weight: 600;
+    transition: all 0.3s;
+    padding: 10px 16px;
+    font-weight: 700;
     width: 100%;
     border-radius: var(--radius-full);
-    transform: translateZ(0);
     cursor: pointer;
-    margin-top: auto;
-    position: relative;
-    z-index: var(--z-button);
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .master-card .btn-sm:hover {
     background: var(--accent);
     color: white;
-    transform: scale(1.02) translateY(-2px);
-    box-shadow: var(--shadow);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px -5px var(--accent);
 }
 
 .master-info {

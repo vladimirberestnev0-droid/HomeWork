@@ -1,5 +1,5 @@
 /* ===== new-base.css ===== */
-/* Версия: 3.0 — БАЗОВЫЕ СТИЛИ С НОВЫМИ ПЕРЕМЕННЫМИ */
+/* Версия: 3.1 — БАЗОВЫЕ СТИЛИ С УЛУЧШЕННЫМ ФОНОМ */
 
 * {
     margin: 0;
@@ -22,7 +22,7 @@ body {
 }
 
 body:not(.dark-theme) {
-    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+    background: linear-gradient(145deg, #F8FAFC, #F1F5F9);
     position: relative;
 }
 
