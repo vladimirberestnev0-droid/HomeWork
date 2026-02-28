@@ -167,24 +167,6 @@
     };
 
     /**
-     * Перехват ошибок в JSON.parse
-     */
-    const originalJSONParse = JSON.parse;
-    JSON.parse = function(...args) {
-        try {
-            return originalJSONParse(...args);
-        } catch (error) {
-            handleError({
-                type: 'JSON_PARSE_ERROR',
-                message: 'Ошибка парсинга JSON',
-                data: args[0]?.substring(0, 200), // только первые 200 символов
-                timestamp: new Date().toISOString()
-            });
-            throw error;
-        }
-    };
-
-    /**
      * Перехват ошибок в localStorage/sessionStorage
      */
     const storages = ['localStorage', 'sessionStorage'];
@@ -376,10 +358,6 @@
             return '🔄 Ошибка соединения. Переподключаемся...';
         }
 
-        if (error.type === 'JSON_PARSE_ERROR') {
-            return '📦 Ошибка формата данных';
-        }
-
         if (error.type === 'STORAGE_ERROR') {
             return '💾 Ошибка сохранения данных';
         }
@@ -449,7 +427,7 @@
     }
 
     /**
-     * Обработка ошибок загрузки чанков (ИСПРАВЛЕНО)
+     * Обработка ошибок загрузки чанков
      */
     function handleChunkLoadError() {
         const CHUNK_KEY = 'chunk_reload_count';
@@ -742,8 +720,7 @@ window.safeAsync = function(asyncFn) {
             
             // Показываем уведомление если это пользовательская ошибка
             if (error.message && !error.message.includes('NetworkError')) {
-                const errorLevel = error.code?.startsWith('auth/') ? 'warning' : 'error';
-                showUserNotification(error.message, errorLevel);
+                showUserNotification(error.message, error.code?.startsWith('auth/') ? 'warning' : 'error');
             }
             
             throw error;
