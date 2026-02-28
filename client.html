@@ -145,7 +145,7 @@
                     <span id="xpToNextLevel">100 XP</span> до следующего уровня
                 </div>
             </div>
-
+            
             <div class="row g-4">
                 <!-- Левая колонка -->
                 <div class="col-lg-4">
@@ -155,7 +155,7 @@
                             <div class="client-avatar" id="clientAvatar">
                                 <i class="fas fa-user"></i>
                             </div>
-                            <button class="avatar-edit-btn" id="editAvatarBtn" title="Изменить фото">
+                            <button class="avatar-edit-btn" id="editAvatarBtn" aria-label="Изменить фото" title="Изменить фото">
                                 <i class="fas fa-camera"></i>
                             </button>
                         </div>
@@ -217,7 +217,7 @@
                         
                         <!-- Быстрые действия -->
                         <div class="quick-actions mt-4">
-                            <a href="/HomeWork/" class="btn w-100 mb-2">
+                            <a href="./index.html" class="btn w-100 mb-2">
                                 <i class="fas fa-plus-circle me-2"></i> Новая заявка
                             </a>
                             <button class="btn btn-outline-secondary w-100" id="editProfileBtn">
@@ -294,14 +294,10 @@
                             Отслеживание мастеров
                         </h4>
                         
-                        <div id="activeTrackingOrders" class="mb-4">
-                            <!-- Динамически заполняется -->
-                        </div>
-                        
+                        <div id="activeTrackingOrders" class="mb-4"></div>
                         <div class="tracking-map-card">
                             <div id="trackingMap" style="height: 300px; border-radius: 20px;"></div>
                         </div>
-                        
                         <div id="trackingInfoPanel" class="mt-4" style="display: none;"></div>
                     </div>
 
@@ -365,9 +361,7 @@
                             <i class="fas fa-heart me-2" style="color: #ff6b6b;"></i>
                             Избранные мастера
                         </h4>
-                        <div id="favoritesList" class="row g-4">
-                            <!-- Заполняется JS -->
-                        </div>
+                        <div id="favoritesList" class="row g-4"></div>
                     </div>
 
                     <!-- Таб: Чаты -->
@@ -376,9 +370,7 @@
                             <i class="fas fa-comment-dots me-2" style="color: var(--accent);"></i>
                             Мои чаты
                         </h4>
-                        <div id="chatsList">
-                            <!-- Заполняется JS -->
-                        </div>
+                        <div id="chatsList"></div>
                     </div>
 
                     <!-- Таб: Достижения -->
@@ -388,7 +380,6 @@
                             Мои достижения
                         </h4>
                         
-                        <!-- Статистика достижений -->
                         <div class="achievements-stats mb-4">
                             <div class="achievement-stat-card">
                                 <div class="achievement-stat-value" id="achievementsEarned">0</div>
@@ -404,45 +395,25 @@
                             </div>
                         </div>
                         
-                        <!-- Группы достижений -->
                         <div class="achievements-groups">
                             <div class="achievement-group mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-box me-2" style="color: var(--accent);"></i>
-                                    Заказы
-                                </h5>
+                                <h5 class="mb-3"><i class="fas fa-box me-2" style="color: var(--accent);"></i>Заказы</h5>
                                 <div class="achievements-grid" id="achievementsOrdersGrid"></div>
                             </div>
-                            
                             <div class="achievement-group mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-coins me-2" style="color: gold;"></i>
-                                    Бюджет
-                                </h5>
+                                <h5 class="mb-3"><i class="fas fa-coins me-2" style="color: gold;"></i>Бюджет</h5>
                                 <div class="achievements-grid" id="achievementsBudgetGrid"></div>
                             </div>
-                            
                             <div class="achievement-group mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-pen me-2" style="color: #4CAF50;"></i>
-                                    Отзывы
-                                </h5>
+                                <h5 class="mb-3"><i class="fas fa-pen me-2" style="color: #4CAF50;"></i>Отзывы</h5>
                                 <div class="achievements-grid" id="achievementsReviewsGrid"></div>
                             </div>
-                            
                             <div class="achievement-group mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-tags me-2" style="color: #9C27B0;"></i>
-                                    Категории
-                                </h5>
+                                <h5 class="mb-3"><i class="fas fa-tags me-2" style="color: #9C27B0;"></i>Категории</h5>
                                 <div class="achievements-grid" id="achievementsCategoriesGrid"></div>
                             </div>
-                            
                             <div class="achievement-group mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-star me-2" style="color: #FF9800;"></i>
-                                    Специальные
-                                </h5>
+                                <h5 class="mb-3"><i class="fas fa-star me-2" style="color: #FF9800;"></i>Специальные</h5>
                                 <div class="achievements-grid" id="achievementsSpecialGrid"></div>
                             </div>
                         </div>
@@ -463,11 +434,10 @@
                         <i class="fas fa-star me-2" style="color: gold;"></i>
                         Оцените работу мастера
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div id="reviewMasterInfo" class="review-master-info mb-4"></div>
-                    
                     <label class="form-label fw-bold mb-3">Ваша оценка</label>
                     <div class="rating-selector mb-4">
                         <div class="rating-stars-lg">
@@ -478,20 +448,13 @@
                             <span class="rating-star-lg" data-rating="5">★</span>
                         </div>
                         <div class="rating-labels">
-                            <span>Ужасно</span>
-                            <span>Плохо</span>
-                            <span>Нормально</span>
-                            <span>Хорошо</span>
-                            <span>Отлично</span>
+                            <span>Ужасно</span><span>Плохо</span><span>Нормально</span><span>Хорошо</span><span>Отлично</span>
                         </div>
                     </div>
-                    
                     <div class="mb-4">
                         <label class="form-label fw-bold mb-2">Отзыв</label>
-                        <textarea id="reviewText" class="form-control" rows="4" 
-                                  placeholder="Расскажите о качестве работы, соблюдении сроков и т.д."></textarea>
+                        <textarea id="reviewText" class="form-control" rows="4" placeholder="Расскажите о качестве работы, соблюдении сроков и т.д."></textarea>
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label fw-bold mb-2">Фото выполненных работ</label>
                         <div class="upload-area-mini" id="reviewUploadArea">
@@ -503,7 +466,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn" style="background: var(--accent); color: white;" id="submitReview">
+                    <button type="button" class="btn btn-primary" id="submitReview">
                         <i class="fas fa-paper-plane me-2"></i> Отправить отзыв
                     </button>
                 </div>
@@ -520,7 +483,7 @@
                         <i class="fas fa-credit-card me-2" style="color: var(--accent);"></i>
                         Пополнение баланса
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="topup-presets mb-4">
@@ -529,33 +492,24 @@
                         <button class="topup-preset" data-amount="2000">2000 ₽</button>
                         <button class="topup-preset" data-amount="5000">5000 ₽</button>
                     </div>
-                    
                     <div class="mb-4">
                         <label class="form-label fw-bold">Своя сумма</label>
                         <input type="number" class="form-control" id="topupAmount" placeholder="Введите сумму" min="100">
                     </div>
-                    
                     <div class="mb-4">
                         <label class="form-label fw-bold">Способ оплаты</label>
                         <div class="payment-methods">
                             <label class="payment-method">
-                                <input type="radio" name="paymentMethod" value="card" checked>
-                                <i class="fas fa-credit-card"></i>
-                                <span>Карта</span>
+                                <input type="radio" name="paymentMethod" value="card" checked> <i class="fas fa-credit-card"></i> Карта
                             </label>
                             <label class="payment-method">
-                                <input type="radio" name="paymentMethod" value="sbp">
-                                <i class="fas fa-university"></i>
-                                <span>СБП</span>
+                                <input type="radio" name="paymentMethod" value="sbp"> <i class="fas fa-university"></i> СБП
                             </label>
                             <label class="payment-method">
-                                <input type="radio" name="paymentMethod" value="yoomoney">
-                                <i class="fas fa-wallet"></i>
-                                <span>ЮMoney</span>
+                                <input type="radio" name="paymentMethod" value="yoomoney"> <i class="fas fa-wallet"></i> ЮMoney
                             </label>
                         </div>
                     </div>
-                    
                     <div class="bonus-info p-3 rounded-4 mb-3">
                         <i class="fas fa-gift me-2" style="color: gold;"></i>
                         При пополнении от 1000 ₽ - бонус 5% на баланс!
@@ -580,7 +534,7 @@
                         <i class="fas fa-user-edit me-2" style="color: var(--accent);"></i>
                         Редактировать профиль
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -602,7 +556,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn" id="saveProfileBtn">Сохранить</button>
+                    <button type="button" class="btn btn-primary" id="saveProfileBtn">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -617,15 +571,41 @@
                         <i class="fas fa-trophy me-2" style="color: gold;"></i>
                         Все достижения
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="achievements-modal-stats mb-4">
-                        <!-- Статистика -->
+                    <div class="achievements-modal-stats mb-4"></div>
+                    <div class="achievements-modal-grid" id="achievementsModalGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения выхода -->
+    <div class="modal fade" id="logoutConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #DC3545, #ff6b6b); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Подтверждение выхода
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-4">
+                        <i class="fas fa-door-open fa-4x" style="color: #DC3545; opacity: 0.8;"></i>
                     </div>
-                    <div class="achievements-modal-grid" id="achievementsModalGrid">
-                        <!-- Заполняется JS -->
-                    </div>
+                    <h5 class="mb-3">Вы действительно хотите выйти?</h5>
+                    <p class="text-secondary mb-0">Вы всегда можете войти снова</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Отмена
+                    </button>
+                    <button type="button" class="btn btn-danger px-4" id="confirmLogoutBtn">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </button>
                 </div>
             </div>
         </div>
@@ -666,57 +646,31 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Яндекс.Карты -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU"></script>
     
-    <script src="/HomeWork/js/core/constants-light.js"></script>
-    <script src="/HomeWork/js/core/base-utils.js"></script>
-    <script src="/HomeWork/js/core/firebase.js"></script>
-    <script src="/HomeWork/js/core/error-handler.js"></script>
-    <script src="/HomeWork/js/services/auth.js"></script>
-    <script src="/HomeWork/js/services/orders.js"></script>
-    <script src="/HomeWork/js/services/badges.js"></script>
-    <script src="/HomeWork/js/services/payments.js"></script>
-    <script src="/HomeWork/js/services/tracking.js"></script>
-    <script src="/HomeWork/js/services/auth-ui.js"></script>
-    <script src="/HomeWork/js/services/websocket.js"></script>
-    <script src="/HomeWork/js/services/telegram-client.js"></script>
+    <!-- Core -->
+    <script src="./js/core/config.js"></script>
+    <script src="./js/core/constants.js"></script>
+    <script src="./js/core/base-utils.js"></script>
+    <script src="./js/core/redirect-protection.js"></script>
+    <script src="./js/core/error-handler.js"></script>
+    <script src="./js/core/firebase.js"></script>
     
-    <!-- ГЕЙМИФИКАЦИЯ -->
-    <script src="/HomeWork/js/services/gamification-base.js"></script>
-    <script src="/HomeWork/js/services/client-gamification.js"></script>
+    <!-- Services -->
+    <script src="./js/services/auth.js"></script>
+    <script src="./js/services/orders.js"></script>
+    <script src="./js/services/badges.js"></script>
+    <script src="./js/services/payments.js"></script>
+    <script src="./js/services/tracking.js"></script>
+    <script src="./js/services/websocket.js"></script>
+    <script src="./js/services/telegram-client.js"></script>
+    <script src="./js/services/gamification-base.js"></script>
+    <script src="./js/services/client-gamification.js"></script>
     
-    <script src="/HomeWork/js/pages/client.js"></script>
-
-<!-- Модалка подтверждения выхода (для единообразия) -->
-<div class="modal fade modal-logout" id="logoutConfirmModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #DC3545, #ff6b6b); color: white; border-bottom: none;">
-                <h5 class="modal-title">
-                    <i class="fas fa-sign-out-alt me-2"></i>
-                    Подтверждение выхода
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center py-4">
-                <div class="mb-4">
-                    <i class="fas fa-door-open fa-4x" style="color: #DC3545; opacity: 0.8; animation: bounce 1s ease-in-out infinite;"></i>
-                </div>
-                <h5 class="mb-3">Вы действительно хотите выйти?</h5>
-                <p class="text-secondary mb-0">Вы всегда можете войти снова</p>
-            </div>
-            <div class="modal-footer justify-content-center border-0 pb-4">
-                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Отмена
-                </button>
-                <button type="button" class="btn px-4" style="background: #DC3545; color: white;" onclick="window.confirmLogout()">
-                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- Components -->
+    <script src="./js/components/auth-ui.js"></script>
+    
+    <!-- Pages -->
+    <script src="./js/pages/client.js"></script>
 </body>
 </html>
