@@ -1,294 +1,238 @@
-/* ===== new-client.css ===== */
-/* Версия: 4.0 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА В НОВОМ СТИЛЕ */
+/* ===== Улучшенный кабинет клиента ===== */
 
-/* Аватар в профиле */
-.client-avatar {
-    width: 120px;
-    height: 120px;
-    background: var(--accent-gradient);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    color: white;
-    font-size: 60px;
-    box-shadow: var(--shadow-hover);
-    transition: var(--transition);
-    border: 4px solid white;
-}
-
-.client-avatar:hover {
-    transform: scale(1.05) rotate(5deg);
-    box-shadow: 0 25px 40px -10px rgba(249,115,22,0.4);
-}
-
-/* Карточка баланса */
-.balance-card {
-    background: linear-gradient(145deg, var(--accent-light), rgba(249,115,22,0.1));
-    border-radius: var(--radius-xl);
-    padding: 24px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
-    transition: var(--transition);
-    position: relative;
+/* Сглаженные углы для карточек */
+.profile-card,
+.stat-card,
+.balance-card-modern,
+.order-card,
+.achievement-card,
+.chat-card,
+.finance-stat-card {
+    border-radius: var(--radius-xl) !important;
     overflow: hidden;
 }
 
-.balance-card::before {
+/* Карточка профиля с обводкой и градиентом */
+.profile-card {
+    position: relative;
+    background: linear-gradient(145deg, var(--bg-white), #fafafa);
+    border: 1px solid rgba(230,122,75,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(230,122,75,0.15);
+    border-color: var(--accent);
+}
+
+.profile-card::after {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(145deg, var(--accent), transparent 70%);
+    border-radius: calc(var(--radius-xl) + 2px);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-.balance-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent);
+.profile-card:hover::after {
+    opacity: 0.3;
 }
 
-.balance-label {
-    font-size: 0.9rem;
-    color: var(--text-soft);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+/* Аватар с обводкой */
+.client-avatar {
+    border: 4px solid var(--bg-white);
+    box-shadow: 0 10px 25px rgba(230,122,75,0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.balance-label i {
-    color: var(--accent);
+.client-avatar:hover {
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: 0 15px 35px rgba(230,122,75,0.4);
 }
 
-.balance-amount {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1.2;
-    margin-bottom: 5px;
-    text-shadow: 2px 2px 4px rgba(249,115,22,0.1);
+/* Кнопка редактирования аватара */
+.avatar-edit-btn {
+    background: var(--accent);
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: all 0.2s;
 }
 
-/* Современная карточка баланса */
+.avatar-edit-btn:hover {
+    background: var(--accent-dark);
+    transform: scale(1.15);
+}
+
+/* Баланс – более яркий */
 .balance-card-modern {
-    background: linear-gradient(145deg, var(--bg-card), var(--bg-white));
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border: 1px solid var(--border);
-    transition: var(--transition);
-}
-
-.balance-card-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent);
+    background: linear-gradient(145deg, var(--bg-white), #f0f0f0);
+    border-left: 5px solid var(--accent);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 .balance-icon {
-    width: 50px;
-    height: 50px;
     background: var(--accent-gradient);
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     color: white;
-    font-size: 24px;
-    flex-shrink: 0;
+    border-radius: 15px;
+    width: 55px;
+    height: 55px;
+    font-size: 28px;
 }
 
-/* Статистика клиента */
-.client-stats {
+.balance-amount {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--accent-dark);
+}
+
+/* Статистика в профиле (мини) */
+.stats-mini {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    margin: 25px 0;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
 }
 
-.client-stat-item {
+.stat-mini-item {
     background: var(--bg-light);
-    border-radius: var(--radius-lg);
-    padding: 15px 10px;
+    border-radius: 20px;
+    padding: 15px 5px;
     text-align: center;
-    transition: var(--transition);
+    transition: all 0.3s;
     border: 1px solid transparent;
 }
 
-.client-stat-item:hover {
-    transform: translateY(-3px);
+.stat-mini-item:hover {
+    background: white;
     border-color: var(--accent);
-    box-shadow: 0 5px 15px rgba(249,115,22,0.15);
-    background: var(--bg-white);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(230,122,75,0.1);
 }
 
-.client-stat-value {
+.stat-mini-value {
     font-size: 1.8rem;
     font-weight: 700;
     color: var(--accent);
     line-height: 1.2;
-    margin-bottom: 5px;
 }
 
-.client-stat-label {
+.stat-mini-label {
     font-size: 0.8rem;
     color: var(--text-soft);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-/* История заказов */
-.client-history-item {
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    margin-bottom: 12px;
-    border-left: 4px solid var(--accent);
-    transition: var(--transition);
+/* Достижения – иконки с подписями */
+.achievements-icons {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
-    gap: 15px;
-    box-shadow: var(--shadow-sm);
+    justify-content: center;
 }
 
-.client-history-item:hover {
-    transform: translateX(5px);
-    box-shadow: var(--shadow);
-    border-left-color: var(--accent-dark);
-}
-
-.client-history-info h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.client-history-meta {
-    display: flex;
-    gap: 15px;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-}
-
-.client-history-meta span {
+.achievement-icon-mini {
+    width: 45px;
+    height: 45px;
+    border-radius: 15px;
+    background: var(--bg-white);
     display: flex;
     align-items: center;
-    gap: 5px;
-}
-
-.client-history-price {
-    font-size: 1.3rem;
-    font-weight: 700;
+    justify-content: center;
+    font-size: 22px;
     color: var(--accent);
-    background: var(--accent-light);
-    padding: 5px 15px;
-    border-radius: var(--radius-full);
-}
-
-/* Пополнение баланса */
-.topup-presets {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.topup-preset {
-    background: var(--bg-light);
-    border: 2px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 15px 5px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.topup-preset:hover {
-    border-color: var(--accent);
-    background: var(--accent-light);
-    transform: translateY(-3px);
-}
-
-.topup-preset.active {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: transparent;
-    box-shadow: var(--shadow);
-}
-
-/* Карточка заказа в списке */
-.order-card {
-    background: var(--bg-white);
-    border-radius: var(--radius-xl);
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: var(--transition);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.2s;
     border: 1px solid var(--border);
 }
 
-.order-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
+.achievement-icon-mini.earned {
+    background: linear-gradient(145deg, #fbbf24, #f59e0b);
+    color: white;
+    border: none;
+}
+
+.achievement-icon-mini:hover {
+    transform: scale(1.1);
     border-color: var(--accent);
 }
 
-.order-card-content {
-    padding: 20px;
+/* Табы – более плавные */
+.tabs-modern {
+    background: var(--bg-light);
+    border-radius: 50px;
+    padding: 6px;
 }
 
-.order-card-main {
-    display: flex;
-    gap: 15px;
-}
-
-.order-card-left {
-    flex-shrink: 0;
-}
-
-.order-photo-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
+.tab-modern {
+    border-radius: 40px;
+    padding: 10px 15px;
+    font-weight: 600;
+    transition: all 0.3s;
     position: relative;
-    cursor: pointer;
+    overflow: hidden;
 }
 
-.order-photo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform var(--transition);
-}
-
-.order-photo-preview:hover img {
-    transform: scale(1.1);
-}
-
-.photo-count {
+.tab-modern::after {
+    content: '';
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: rgba(0,0,0,0.5);
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.2s;
+}
+
+.tab-modern.active::after {
+    width: 50%;
+}
+
+.tab-modern:hover:not(.active) {
+    background: rgba(230,122,75,0.1);
+    color: var(--accent);
+}
+
+.tab-modern.active {
+    background: var(--accent-gradient);
     color: white;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 10px;
+    box-shadow: 0 8px 15px rgba(230,122,75,0.3);
+}
+
+/* Карточка заказа – улучшенная */
+.order-card {
+    background: var(--bg-white);
+    border-radius: 25px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.order-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 30px rgba(230,122,75,0.1);
+    border-color: var(--accent);
+}
+
+.order-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: var(--accent-gradient);
+    opacity: 0.7;
 }
 
 .order-card-header {
@@ -299,60 +243,38 @@
 }
 
 .category-badge {
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    padding: 5px 15px;
+    border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 600;
-    display: inline-flex;
-    align-items: center;
 }
 
-.order-price-tag {
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-}
-
-.price-amount {
-    font-size: 1.3rem;
-    font-weight: 700;
+.order-price-tag .price-amount {
+    font-size: 1.6rem;
+    font-weight: 800;
     color: var(--accent);
 }
 
-.order-title-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-
 .order-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.urgent-badge {
-    background: var(--danger-light);
-    color: var(--danger);
-    padding: 3px 8px;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 5px 0;
 }
 
 .order-description {
     color: var(--text-soft);
-    font-size: 0.9rem;
-    margin-bottom: 12px;
+    font-size: 0.95rem;
     line-height: 1.5;
+    margin-bottom: 15px;
 }
 
 .order-meta-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 8px;
-    margin-bottom: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
 }
 
 .meta-item {
@@ -360,192 +282,138 @@
     align-items: center;
     gap: 6px;
     color: var(--text-soft);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
 }
 
 .meta-item i {
-    width: 16px;
-    font-size: 14px;
+    width: 20px;
     color: var(--accent);
-}
-
-.order-card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-}
-
-.order-status-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .order-status {
-    padding: 5px 12px;
-    border-radius: var(--radius-full);
-    font-size: 0.85rem;
-    font-weight: 600;
     display: inline-flex;
     align-items: center;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.85rem;
 }
 
-/* Карточка отклика */
-.response-card {
-    background: var(--bg-light);
-    border-radius: var(--radius-lg);
-    padding: 15px;
-    position: relative;
+.order-status.open {
+    background: rgba(230,122,75,0.15);
+    color: var(--accent);
+}
+.order-status.in_progress {
+    background: rgba(52,152,219,0.15);
+    color: #2980b9;
+}
+.order-status.completed {
+    background: rgba(46,204,113,0.15);
+    color: #27ae60;
+}
+
+/* Кнопка "Показать ещё" */
+#loadMoreOrders .btn-outline-secondary {
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    border-radius: 40px;
+    padding: 12px 30px;
+    font-weight: 700;
+    transition: all 0.3s;
+}
+
+#loadMoreOrders .btn-outline-secondary:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(230,122,75,0.3);
+}
+
+/* Пустое состояние */
+.orders-list .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-soft);
+}
+
+.orders-list .empty-state i {
+    font-size: 5rem;
+    color: var(--border);
+    margin-bottom: 20px;
+}
+
+/* Финансовые карточки */
+.finance-stat-card {
+    background: var(--bg-white);
+    border-radius: 25px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    transition: all 0.3s;
     border: 1px solid var(--border);
-    transition: var(--transition);
 }
 
-.response-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
+.finance-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(230,122,75,0.1);
     border-color: var(--accent);
 }
 
-.response-card.selected {
-    border-left: 4px solid var(--success);
-}
-
-.selected-badge {
-    position: absolute;
-    top: -10px;
-    right: 10px;
-    background: var(--success);
-    color: white;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(34,197,94,0.3);
-}
-
-.response-avatar {
-    width: 50px;
-    height: 50px;
-    background: var(--accent-gradient);
-    border-radius: 50%;
+.finance-stat-icon {
+    width: 55px;
+    height: 55px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 28px;
     color: white;
-    font-size: 24px;
-    margin-bottom: 10px;
 }
 
-.response-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.response-name h6 {
-    margin: 0 0 4px 0;
-    font-size: 1rem;
-}
-
-.response-rating {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.rating-stars {
-    color: var(--gold);
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-}
-
-.response-price {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--accent);
-}
-
-.response-comment {
+.finance-stat-label {
     font-size: 0.9rem;
     color: var(--text-soft);
-    margin-bottom: 8px;
-    padding: 8px;
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.response-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+.finance-stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-dark);
 }
 
-.btn-response {
-    padding: 6px 12px;
-    border: none;
-    border-radius: var(--radius-full);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-}
-
-.btn-response.primary {
-    background: var(--accent);
-    color: white;
-}
-
-.btn-response.primary:hover {
-    background: var(--accent-dark);
-    transform: translateY(-2px);
-}
-
-.btn-response.success {
-    background: var(--success);
-    color: white;
-}
-
-.btn-response.success:hover {
-    background: #16a34a;
-}
-
-/* Карточка чата */
+/* Чаты – карточки */
 .chat-card {
     display: flex;
     align-items: center;
     gap: 15px;
     padding: 15px;
+    border-radius: 25px;
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition);
-    cursor: pointer;
-    margin-bottom: 10px;
     border: 1px solid var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
 }
 
 .chat-card:hover {
     transform: translateX(5px);
-    box-shadow: var(--shadow);
     border-color: var(--accent);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 .chat-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    border-radius: 18px;
     background: var(--accent-gradient);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 20px;
-    flex-shrink: 0;
+    font-size: 26px;
 }
 
 .chat-info {
@@ -553,7 +421,7 @@
 }
 
 .chat-name {
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 3px;
 }
 
@@ -567,13 +435,6 @@
     overflow: hidden;
 }
 
-.chat-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 5px;
-}
-
 .chat-time {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -583,10 +444,32 @@
     background: var(--accent);
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Анимации появления */
+.animate-on-load {
+    animation: fadeSlideUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Применяем анимацию к основным блокам */
+.profile-card, .finance-stats, .orders-list, .tabs-modern {
+    animation: fadeSlideUp 0.5s ease forwards;
 }
