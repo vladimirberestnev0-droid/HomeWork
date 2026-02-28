@@ -4,7 +4,7 @@
 // ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
 (function() {
     const REDIRECT_KEY = 'last_redirect';
-    const MAX_REDIRECTS = 3;
+    const MAX_REDIRECTS = 7;
     const TIME_WINDOW = 5000; // 5 секунд
     
     const now = Date.now();
