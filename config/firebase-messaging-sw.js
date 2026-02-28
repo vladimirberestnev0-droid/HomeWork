@@ -4,7 +4,9 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-const CACHE_NAME = 'workhom-v2';
+// Версионирование кэша с датой для автоматического обновления
+const CACHE_NAME = 'workhom-v' + new Date().toISOString().split('T')[0].replace(/-/g, ''); // например workhom-v20250321
+
 const urlsToCache = [
     '/',
     '/index.html',
@@ -13,13 +15,12 @@ const urlsToCache = [
     '/chat.html',
     '/group-chat.html',
     '/admin.html',
-    '/css/main.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+    // '/css/main.css' – удалён, так как файла нет
 ];
 
-// Установка
 self.addEventListener('install', event => {
     self.skipWaiting();
     event.waitUntil(
@@ -30,6 +31,8 @@ self.addEventListener('install', event => {
             })
     );
 });
+
+// ... остальной код без изменений ...
 
 // Активация
 self.addEventListener('activate', event => {
