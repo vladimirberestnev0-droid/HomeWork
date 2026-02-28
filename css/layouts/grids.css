@@ -1,0 +1,50 @@
+/* ===== new-grids.css ===== */
+/* Версия: 3.0 — СЕТКИ ДЛЯ РАЗНЫХ СТРАНИЦ */
+
+/* Дашборд */
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--grid-gap);
+    margin-bottom: 40px;
+}
+
+/* Сетка статистики */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--grid-gap);
+    margin-bottom: 40px;
+}
+
+/* Сетка достижений */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--grid-gap-sm);
+    margin-top: 20px;
+}
+
+/* Сетка портфолио */
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--grid-gap-sm);
+    margin-top: 20px;
+}
+
+/* Чарты */
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--grid-gap);
+    margin-bottom: 40px;
+}
+
+/* Топ мастеров */
+.top-masters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--grid-gap-sm);
+    margin-top: 20px;
+}

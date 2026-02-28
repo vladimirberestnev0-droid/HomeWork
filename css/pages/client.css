@@ -1,0 +1,592 @@
+/* ===== new-client.css ===== */
+/* Версия: 4.0 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА В НОВОМ СТИЛЕ */
+
+/* Аватар в профиле */
+.client-avatar {
+    width: 120px;
+    height: 120px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 60px;
+    box-shadow: var(--shadow-hover);
+    transition: var(--transition);
+    border: 4px solid white;
+}
+
+.client-avatar:hover {
+    transform: scale(1.05) rotate(5deg);
+    box-shadow: 0 25px 40px -10px rgba(249,115,22,0.4);
+}
+
+/* Карточка баланса */
+.balance-card {
+    background: linear-gradient(145deg, var(--accent-light), rgba(249,115,22,0.1));
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.balance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.balance-label {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.balance-label i {
+    color: var(--accent);
+}
+
+.balance-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(249,115,22,0.1);
+}
+
+/* Современная карточка баланса */
+.balance-card-modern {
+    background: linear-gradient(145deg, var(--bg-card), var(--bg-white));
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.balance-card-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.balance-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* Статистика клиента */
+.client-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.client-stat-item {
+    background: var(--bg-light);
+    border-radius: var(--radius-lg);
+    padding: 15px 10px;
+    text-align: center;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+.client-stat-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 5px 15px rgba(249,115,22,0.15);
+    background: var(--bg-white);
+}
+
+.client-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-bottom: 5px;
+}
+
+.client-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* История заказов */
+.client-history-item {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--accent);
+    transition: var(--transition);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: var(--shadow-sm);
+}
+
+.client-history-item:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
+    border-left-color: var(--accent-dark);
+}
+
+.client-history-info h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.client-history-meta {
+    display: flex;
+    gap: 15px;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+}
+
+.client-history-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.client-history-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+}
+
+/* Пополнение баланса */
+.topup-presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.topup-preset {
+    background: var(--bg-light);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 15px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.topup-preset:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-3px);
+}
+
+.topup-preset.active {
+    background: var(--accent-gradient);
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow);
+}
+
+/* Карточка заказа в списке */
+.order-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-xl);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: var(--transition);
+    border: 1px solid var(--border);
+}
+
+.order-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent);
+}
+
+.order-card-content {
+    padding: 20px;
+}
+
+.order-card-main {
+    display: flex;
+    gap: 15px;
+}
+
+.order-card-left {
+    flex-shrink: 0;
+}
+
+.order-photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.order-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition);
+}
+
+.order-photo-preview:hover img {
+    transform: scale(1.1);
+}
+
+.photo-count {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.category-badge {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.order-price-tag {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.price-amount {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.order-title-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.urgent-badge {
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.order-description {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.order-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+}
+
+.meta-item i {
+    width: 16px;
+    font-size: 14px;
+    color: var(--accent);
+}
+
+.order-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.order-status-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-status {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Карточка отклика */
+.response-card {
+    background: var(--bg-light);
+    border-radius: var(--radius-lg);
+    padding: 15px;
+    position: relative;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.response-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent);
+}
+
+.response-card.selected {
+    border-left: 4px solid var(--success);
+}
+
+.selected-badge {
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    background: var(--success);
+    color: white;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.3);
+}
+
+.response-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.response-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.response-name h6 {
+    margin: 0 0 4px 0;
+    font-size: 1rem;
+}
+
+.response-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.rating-stars {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+}
+
+.response-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.response-comment {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+}
+
+.response-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-response {
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-response.primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-response.primary:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+}
+
+.btn-response.success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-response.success:hover {
+    background: #16a34a;
+}
+
+/* Карточка чата */
+.chat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    cursor: pointer;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+.chat-card:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent);
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-name {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.chat-last-message {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.chat-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.chat-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.chat-unread {
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

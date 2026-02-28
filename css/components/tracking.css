@@ -1,0 +1,105 @@
+/* ===== new-tracking.css ===== */
+/* Версия: 4.0 — ТРЕКИНГ */
+
+.tracking-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.tracking-map {
+    min-height: 300px;
+    height: auto;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 1px solid var(--border);
+}
+
+.tracking-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.tracking-info-item {
+    text-align: center;
+    padding: 10px;
+    background: var(--bg-light);
+    border-radius: var(--radius-lg);
+}
+
+.tracking-info-label {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-bottom: 5px;
+}
+
+.tracking-info-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.tracking-eta {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+/* Позиция мастера */
+.master-position {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-light);
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
+}
+
+.master-position-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    animation: float 3s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+/* Информационная панель */
+.tracking-info-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--accent);
+}
+
+.tracking-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.tracking-label {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.tracking-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}

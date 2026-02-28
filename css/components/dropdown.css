@@ -1,0 +1,132 @@
+/* ===== new-dropdown.css ===== */
+/* Версия: 4.0 — КОМБО-ПОИСК И ДРОПДАУНЫ */
+
+#citySearchCombo {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+    z-index: var(--z-dropdown);
+}
+
+#citySearchInput {
+    border-radius: var(--radius-full);
+    padding: 12px 20px;
+    border: 2px solid var(--border);
+    background: var(--bg-white);
+    transition: border-color var(--transition-fast);
+    width: 100%;
+    height: var(--input-height);
+}
+
+#citySearchInput:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(249,115,22,0.1);
+    outline: none;
+}
+
+#cityDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-top: 5px;
+    box-shadow: var(--shadow-hover);
+    z-index: calc(var(--z-dropdown) + 1);
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--bg-light);
+    display: none;
+    will-change: transform, opacity;
+}
+
+#cityDropdown.visible {
+    display: block;
+    animation: fadeSlideDown 0.25s var(--transition-slow);
+}
+
+#cityDropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+#cityDropdown::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+
+#cityDropdown::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+#cityDropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Элементы дропдауна */
+#cityDropdown .dropdown-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-dark);
+    position: relative;
+    overflow: hidden;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--border);
+}
+
+#cityDropdown .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+#cityDropdown .dropdown-item:hover {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    padding-left: 30px;
+    border-left: 3px solid var(--accent);
+}
+
+#cityDropdown .dropdown-item.selected {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 600;
+    border-left: 3px solid var(--accent);
+    padding-left: 30px;
+}
+
+#cityDropdown .dropdown-item.selected::after {
+    content: '✓';
+    position: absolute;
+    right: 15px;
+    color: var(--accent);
+    font-weight: bold;
+    animation: checkPop 0.3s ease;
+}
+
+/* Заголовки районов */
+#cityDropdown .dropdown-district {
+    padding: 10px 16px;
+    background: var(--bg-light);
+    font-weight: 700;
+    color: var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Светлая тема */
+body:not(.dark-theme) #cityDropdown {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(249,115,22,0.3);
+}

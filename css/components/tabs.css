@@ -1,0 +1,120 @@
+/* ===== new-tabs.css ===== */
+/* Версия: 1.0 — НАСТОЯЩИЕ ТАБЫ (НЕ ТАБЛИЦЫ) */
+
+.tabs {
+    display: flex;
+    gap: 5px;
+    background: var(--bg-light);
+    padding: 5px;
+    border-radius: var(--radius-full);
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    flex: 1;
+    min-width: 100px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-soft);
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.tab i {
+    font-size: 16px;
+}
+
+.tab:hover {
+    background: var(--bg-white);
+    color: var(--accent);
+}
+
+.tab.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Современные табы для клиента */
+.tabs-modern {
+    display: flex;
+    gap: 5px;
+    background: var(--bg-light);
+    padding: 5px;
+    border-radius: var(--radius-full);
+    flex-wrap: wrap;
+}
+
+.tab-modern {
+    flex: 1;
+    min-width: 100px;
+    padding: 12px 15px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-soft);
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+}
+
+.tab-modern i {
+    font-size: 1.1rem;
+}
+
+.tab-modern:hover {
+    background: var(--bg-white);
+    color: var(--accent);
+}
+
+.tab-modern.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.tab-badge {
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-content-modern {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.tab-content-modern.active {
+    display: block;
+}
