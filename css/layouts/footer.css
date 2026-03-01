@@ -1,5 +1,5 @@
 /* ===== new-footer.css ===== */
-/* Версия: 3.0 — ПОДВАЛ */
+/* Версия: 4.0 — ПОДВАЛ С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 footer {
     background: var(--bg-white);
@@ -8,6 +8,13 @@ footer {
     margin-top: 60px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+    transition: var(--transition-bounce);
+}
+
+footer:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-light);
+    transform: translateY(-2px);
 }
 
 .footer-content {
@@ -20,6 +27,24 @@ footer {
     margin-bottom: 20px;
     font-size: 1.1rem;
     color: var(--primary);
+    position: relative;
+    display: inline-block;
+}
+
+.footer-section h4::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-fast);
+}
+
+.footer-section:hover h4::after {
+    width: 60px;
 }
 
 .footer-section ul {
@@ -34,17 +59,23 @@ footer {
 .footer-section ul li a {
     color: var(--text-soft);
     text-decoration: none;
-    transition: var(--transition);
+    transition: var(--transition-bounce);
+    display: inline-block;
 }
 
 .footer-section ul li a:hover {
     color: var(--accent);
-    padding-left: 5px;
+    transform: translateX(5px);
 }
 
 .footer-section ul li i {
     width: 20px;
     color: var(--accent);
+    transition: transform var(--transition-fast);
+}
+
+.footer-section ul li:hover i {
+    transform: scale(1.2);
 }
 
 .footer-bottom {
@@ -56,9 +87,28 @@ footer {
     font-size: 0.9rem;
 }
 
-/* Светлая тема */
+/* Светлая тема (стекло) */
 body:not(.dark-theme) footer {
     background: rgba(255,255,255,0.8);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.6);
+}
+
+/* Тёмная тема */
+body.dark-theme footer {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+body.dark-theme .footer-section h4 {
+    color: var(--text-dark);
+}
+
+body.dark-theme .footer-section ul li a {
+    color: var(--text-soft);
+}
+
+body.dark-theme .footer-section ul li a:hover {
+    color: var(--accent);
 }

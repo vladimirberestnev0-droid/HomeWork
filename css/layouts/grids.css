@@ -1,5 +1,5 @@
 /* ===== new-grids.css ===== */
-/* Версия: 3.0 — СЕТКИ ДЛЯ РАЗНЫХ СТРАНИЦ */
+/* Версия: 3.1 — СЕТКИ (обновление переменных) */
 
 /* Дашборд */
 .dashboard {
@@ -47,4 +47,20 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--grid-gap-sm);
     margin-top: 20px;
+}
+
+/* Добавляем небольшой эффект для карточек внутри сеток (опционально) */
+.stats-grid > *,
+.achievements-grid > *,
+.portfolio-grid > *,
+.top-masters-grid > * {
+    transition: var(--transition-bounce);
+}
+
+.stats-grid > *:hover,
+.achievements-grid > *:hover,
+.portfolio-grid > *:hover,
+.top-masters-grid > *:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
 }

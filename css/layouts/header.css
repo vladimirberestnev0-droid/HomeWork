@@ -1,5 +1,5 @@
 /* ===== new-header.css ===== */
-/* Версия: 4.1 — ШАПКА САЙТА (удалён дубль .header-xp-badge) */
+/* Версия: 5.0 — ШАПКА САЙТА С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 header {
     background: var(--bg-white);
@@ -17,13 +17,14 @@ header {
     z-index: var(--z-sticky);
     backdrop-filter: blur(10px);
     background: rgba(255,255,255,0.9);
-    transition: var(--transition);
+    transition: var(--transition-bounce);
     border: 1px solid var(--border-light);
 }
 
 header:hover {
     box-shadow: var(--shadow-hover);
     border-color: var(--accent-light);
+    transform: translateY(-2px);
 }
 
 .logo {
@@ -39,11 +40,12 @@ header:hover {
     font-size: 32px;
     color: var(--accent);
     filter: drop-shadow(0 4px 8px rgba(249,115,22,0.3));
-    transition: transform var(--transition);
+    transition: var(--transition-bounce);
 }
 
 .logo:hover i {
     transform: rotate(5deg) scale(1.1);
+    filter: drop-shadow(0 8px 16px rgba(249,115,22,0.5));
 }
 
 .logo-link {
@@ -52,7 +54,7 @@ header:hover {
     display: flex;
     align-items: center;
     gap: 12px;
-    transition: opacity var(--transition);
+    transition: opacity var(--transition-fast);
 }
 
 .logo-link:hover {
@@ -72,7 +74,7 @@ nav a {
     font-weight: 500;
     padding: 10px 20px;
     border-radius: var(--radius-full);
-    transition: var(--transition);
+    transition: var(--transition-bounce);
     position: relative;
 }
 
@@ -90,14 +92,81 @@ nav a.active {
 
 nav a.active:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
 }
 
-/* XP бейдж в шапке теперь в badges.css, здесь не дублируем */
+/* Бейдж уведомлений (если есть) */
+.nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+    transition: var(--transition-fast);
+}
 
-/* Светлая тема */
+.nav-badge:hover {
+    transform: scale(1.2);
+}
+
+/* XP бейдж в шапке (из badges.css) */
+.header-xp-badge {
+    background: var(--gradient-gold);
+    color: #0f172a;
+    padding: 5px 15px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 10px rgba(251,191,36,0.3);
+    animation: glow 2s infinite;
+    transition: var(--transition-bounce);
+}
+
+.header-xp-badge:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(251,191,36,0.6);
+}
+
+/* Светлая тема (стекло) */
 body:not(.dark-theme) header {
     background: rgba(255,255,255,0.8);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.6);
+}
+
+/* Тёмная тема */
+body.dark-theme header {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+body.dark-theme nav a {
+    color: var(--text-soft);
+}
+
+body.dark-theme nav a:hover {
+    background: var(--accent-light);
+    color: white;
+}
+
+body.dark-theme .logo {
+    color: var(--text-dark);
+}
+
+/* Анимации */
+@keyframes glow {
+    0%, 100% { box-shadow: 0 4px 10px rgba(251,191,36,0.3); }
+    50% { box-shadow: 0 4px 20px rgba(251,191,36,0.6); }
 }
