@@ -1,12 +1,11 @@
 /* ===== admin.css ===== */
-/* Версия: 3.1 — АДМИН-ПАНЕЛЬ В НОВОМ СТИЛЕ */
+/* Версия: 4.0 — АДМИН-ПАНЕЛЬ */
 
 .chart-container {
     height: 300px;
     position: relative;
     width: 100%;
 }
-
 .chart-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -20,7 +19,6 @@
     flex-wrap: wrap;
     margin-bottom: 20px;
 }
-
 .metric-item {
     flex: 1;
     min-width: 150px;
@@ -31,19 +29,16 @@
     transition: var(--transition);
     border: 1px solid var(--border);
 }
-
 .metric-item:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow);
     border-color: var(--accent-light);
 }
-
 .metric-label {
     font-size: 0.9rem;
     color: var(--text-soft);
     margin-bottom: 5px;
 }
-
 .metric-value {
     font-size: 1.5rem;
     font-weight: 600;
@@ -56,19 +51,16 @@
     align-items: center;
     margin-bottom: 20px;
 }
-
 .dashboard-title {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--primary);
 }
-
 .dashboard-value {
     font-size: 2rem;
     font-weight: 700;
     color: var(--accent);
 }
-
 .dashboard-change {
     font-size: 0.9rem;
     padding: 4px 12px;
@@ -76,7 +68,6 @@
     background: var(--success-light);
     color: var(--success);
 }
-
 .dashboard-change.negative {
     background: var(--danger-light);
     color: var(--danger);
@@ -92,7 +83,6 @@
     border: 1px solid var(--border);
     transition: var(--transition);
 }
-
 .admin-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
@@ -103,51 +93,4 @@
 .funnel-chart {
     height: 300px;
     position: relative;
-}
-
-/* Адаптивность */
-@media (max-width: var(--desktop-md)) {
-    .chart-container {
-        height: 250px;
-    }
-}
-
-@media (max-width: var(--tablet)) {
-    .chart-container {
-        height: 200px;
-    }
-
-    .metric-item {
-        min-width: 120px;
-        padding: 12px;
-    }
-
-    .metric-value {
-        font-size: 1.3rem;
-    }
-
-    .admin-card {
-        padding: 15px;
-    }
-}
-
-@media (max-width: var(--mobile-md)) {
-    .metric-row {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .metric-item {
-        width: 100%;
-    }
-
-    .dashboard-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-
-    .chart-container {
-        height: 180px;
-    }
 }

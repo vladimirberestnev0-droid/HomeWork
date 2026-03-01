@@ -1,6 +1,7 @@
-/* ===== new-responsive.css ===== */
-/* Версия: 5.0 — ВСЕ МЕДИА-ЗАПРОСЫ */
+/* ===== responsive.css ===== */
+/* Версия: 6.0 — ВСЕ МЕДИА-ЗАПРОСЫ */
 
+/* Общие для всех страниц */
 @media (min-width: var(--desktop-md)) {
     .container {
         max-width: var(--container-max-width);
@@ -12,13 +13,8 @@
     h1 { font-size: 2.2rem; }
     h2 { font-size: 1.9rem; }
     h3 { font-size: 1.6rem; }
-
-    .dashboard {
-        grid-template-columns: 1fr;
-    }
-    .charts-row {
-        grid-template-columns: 1fr;
-    }
+    .dashboard { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
     .video-container {
         grid-template-columns: 1fr;
         height: auto;
@@ -29,7 +25,6 @@
     h1 { font-size: 2rem; }
     h2 { font-size: 1.75rem; }
     h3 { font-size: 1.5rem; }
-
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: var(--grid-gap-sm);
@@ -37,10 +32,7 @@
 }
 
 @media (max-width: calc(var(--tablet) - 1px)) {
-    .container {
-        padding: 0 16px;
-    }
-
+    .container { padding: 0 16px; }
     h1 { font-size: 1.8rem; }
     h2 { font-size: 1.5rem; }
     h3 { font-size: 1.3rem; }
@@ -51,23 +43,11 @@
         padding: 15px;
         position: static;
     }
+    nav { justify-content: center; flex-wrap: wrap; }
+    .btn { width: 100%; }
+    .stats-grid { grid-template-columns: 1fr; }
 
-    nav {
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .btn {
-        width: 100%;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    #orderFormRow {
-        flex-direction: column;
-    }
+    #orderFormRow { flex-direction: column; }
     #orderFormColumn,
     #ordersColumn {
         flex: 0 0 100%;
@@ -79,28 +59,23 @@
         height: 100vh;
         border-radius: 0;
     }
-
     .video-controls {
         flex-wrap: wrap;
         padding: 10px;
         bottom: 10px;
     }
-
     #scrollToTop {
         bottom: 20px;
         right: 20px;
         width: 45px;
         height: 45px;
     }
-
     #deepseek-bro-button {
         bottom: 20px;
         right: 20px;
         padding: 12px 18px;
     }
-    #deepseek-bro-button span {
-        display: none;
-    }
+    #deepseek-bro-button span { display: none; }
     #deepseek-chat-window {
         width: 300px;
         height: 450px;
@@ -112,84 +87,111 @@
 @media (max-width: calc(var(--mobile-md) - 1px)) {
     h1 { font-size: 1.6rem; }
     h2 { font-size: 1.4rem; }
-
     .avatar-lg {
         width: 60px;
         height: 60px;
         font-size: 24px;
     }
-
     .achievements-grid,
     .portfolio-grid,
     .top-masters-grid {
         grid-template-columns: 1fr;
     }
-
-    .order-price {
-        font-size: 1.2rem;
-    }
-
+    .order-price { font-size: 1.2rem; }
     .profile-avatar {
         width: 80px;
         height: 80px;
         font-size: 35px;
     }
-
-    .filter-chips {
-        justify-content: center;
-    }
-
+    .filter-chips { justify-content: center; }
     .tab-modern {
         min-width: auto;
         padding: 8px 12px;
         font-size: 0.9rem;
     }
-
     #scrollToTop {
         width: 40px;
         height: 40px;
     }
-
-    .message {
-        max-width: 90%;
-    }
+    .message { max-width: 90%; }
 }
 
 @media (max-width: calc(var(--mobile-xs) - 1px)) {
     h1 { font-size: 1.4rem; }
     h2 { font-size: 1.2rem; }
-
     .btn {
         font-size: 0.9rem;
         padding: 10px;
     }
-
-    .order-price {
-        font-size: 1rem;
-    }
-
+    .order-price { font-size: 1rem; }
     .avatar {
         width: 40px;
         height: 40px;
         font-size: 16px;
     }
-
     .tab-modern {
         padding: 6px 8px;
         font-size: 0.8rem;
     }
-
     #scrollToTop {
         width: 35px;
         height: 35px;
     }
-
     #deepseek-chat-window {
         width: 250px;
         height: 350px;
     }
 }
 
+/* Специфические для клиента (можно добавить, если не попали выше) */
+@media (max-width: 992px) {
+    .profile-card .row.g-4 { grid-template-columns: 1fr; }
+    .tabs-modern { flex-wrap: wrap; }
+    .tab-modern {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 8px 10px;
+        font-size: 0.9rem;
+    }
+    .order-card .order-card-main { flex-direction: column; }
+    .order-photo-preview {
+        width: 100%;
+        height: auto;
+        max-height: 150px;
+    }
+    .finance-stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 576px) {
+    .profile-card { padding: 20px; }
+    .client-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
+    }
+    .stats-mini { grid-template-columns: 1fr; gap: 5px; }
+    .balance-card-modern {
+        flex-direction: column;
+        text-align: center;
+    }
+    .balance-icon { margin-bottom: 10px; }
+    .order-card-header { flex-direction: column; align-items: flex-start; }
+    .order-price-tag { align-self: flex-start; }
+    .order-meta-grid { grid-template-columns: 1fr; }
+    .filter-chips { justify-content: center; }
+    .filter-chip {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    .chat-card { flex-wrap: wrap; }
+    .chat-avatar {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+}
+
+/* Для печати */
 @media print {
     header, footer, nav, .no-print,
     #scrollToTop, #deepseek-bro-button,
@@ -201,6 +203,7 @@
     .card { box-shadow: none; border: 1px solid #ddd; }
 }
 
+/* Для пользователей, предпочитающих уменьшенное движение */
 @media (prefers-reduced-motion: reduce) {
     * {
         animation-duration: 0.01ms !important;

@@ -1,38 +1,22 @@
-/* ===== Улучшенный кабинет клиента ===== */
+/* ===== client.css ===== */
+/* Версия: 6.0 — ПРЕМИАЛЬНЫЙ КАБИНЕТ КЛИЕНТА */
 
-/* Сглаженные углы для карточек */
-.profile-card,
-.stat-card,
-.balance-card-modern,
-.order-card,
-.achievement-card,
-.chat-card,
-.finance-stat-card {
-    border-radius: var(--radius-xl) !important;
-    overflow: hidden;
-}
-
-/* Карточка профиля с обводкой и градиентом */
+/* Карточка профиля с обводкой и градиентом (переопределяем базовую) */
 .profile-card {
     position: relative;
     background: linear-gradient(145deg, var(--bg-white), #fafafa);
     border: 1px solid rgba(230,122,75,0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.profile-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(230,122,75,0.15);
-    border-color: var(--accent);
+    border-radius: var(--radius-xl);
+    padding: 30px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
 }
 
 .profile-card::after {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
     background: linear-gradient(145deg, var(--accent), transparent 70%);
     border-radius: calc(var(--radius-xl) + 2px);
     z-index: -1;
@@ -44,24 +28,45 @@
     opacity: 0.3;
 }
 
-/* Аватар с обводкой */
+/* Аватар клиента */
 .client-avatar {
-    border: 4px solid var(--bg-white);
-    box-shadow: 0 10px 25px rgba(230,122,75,0.3);
+    width: 120px;
+    height: 120px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 60px;
+    box-shadow: 0 15px 30px rgba(230,122,75,0.3);
     transition: transform 0.3s, box-shadow 0.3s;
+    border: 4px solid white;
 }
 
 .client-avatar:hover {
     transform: scale(1.05) rotate(3deg);
-    box-shadow: 0 15px 35px rgba(230,122,75,0.4);
+    box-shadow: 0 20px 40px rgba(230,122,75,0.4);
 }
 
 /* Кнопка редактирования аватара */
 .avatar-edit-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
     background: var(--accent);
     border: 2px solid white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .avatar-edit-btn:hover {
@@ -69,29 +74,7 @@
     transform: scale(1.15);
 }
 
-/* Баланс – более яркий */
-.balance-card-modern {
-    background: linear-gradient(145deg, var(--bg-white), #f0f0f0);
-    border-left: 5px solid var(--accent);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-}
-
-.balance-icon {
-    background: var(--accent-gradient);
-    color: white;
-    border-radius: 15px;
-    width: 55px;
-    height: 55px;
-    font-size: 28px;
-}
-
-.balance-amount {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--accent-dark);
-}
-
-/* Статистика в профиле (мини) */
+/* Мини-статистика */
 .stats-mini {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -128,7 +111,39 @@
     text-transform: uppercase;
 }
 
-/* Достижения – иконки с подписями */
+/* Баланс */
+.balance-card-modern {
+    background: linear-gradient(135deg, #fff5f0, #ffffff);
+    border-left: 6px solid var(--accent);
+    border-radius: 24px;
+    padding: 20px 25px;
+    box-shadow: 0 10px 25px rgba(230,122,75,0.15);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.balance-icon {
+    background: var(--accent-gradient);
+    border-radius: 18px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+}
+
+.balance-amount {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(145deg, var(--accent), #ff9f4b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Достижения – мини-иконки */
 .achievements-icons {
     display: flex;
     gap: 12px;
@@ -162,18 +177,31 @@
     border-color: var(--accent);
 }
 
-/* Табы – более плавные */
+/* Табы */
 .tabs-modern {
     background: var(--bg-light);
     border-radius: 50px;
     padding: 6px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
 }
 
 .tab-modern {
-    border-radius: 40px;
+    flex: 1;
+    min-width: 80px;
     padding: 10px 15px;
+    border: none;
+    border-radius: 40px;
+    background: transparent;
+    color: var(--text-soft);
     font-weight: 600;
     transition: all 0.3s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     position: relative;
     overflow: hidden;
 }
@@ -186,12 +214,12 @@
     transform: translateX(-50%);
     width: 0;
     height: 3px;
-    background: var(--accent);
+    background: var(--accent-gradient);
     transition: width 0.2s;
 }
 
 .tab-modern.active::after {
-    width: 50%;
+    width: 70%;
 }
 
 .tab-modern:hover:not(.active) {
@@ -202,26 +230,20 @@
 .tab-modern.active {
     background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 8px 15px rgba(230,122,75,0.3);
+    box-shadow: 0 8px 20px rgba(230,122,75,0.3);
 }
 
-/* Карточка заказа – улучшенная */
+/* Карточка заказа (специфичная для клиента, если отличается от общей) */
 .order-card {
     background: var(--bg-white);
-    border-radius: 25px;
+    border-radius: 28px;
     padding: 20px;
+    box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid var(--border-light);
     margin-bottom: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.03);
-    border: 1px solid var(--border);
-    transition: all 0.3s;
     position: relative;
     overflow: hidden;
-}
-
-.order-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 30px rgba(230,122,75,0.1);
-    border-color: var(--accent);
 }
 
 .order-card::before {
@@ -233,6 +255,12 @@
     height: 100%;
     background: var(--accent-gradient);
     opacity: 0.7;
+}
+
+.order-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 40px -15px rgba(230,122,75,0.3);
+    border-color: var(--accent);
 }
 
 .order-card-header {
@@ -290,26 +318,29 @@
     color: var(--accent);
 }
 
+/* Статус заказа (цветные бейджи) */
 .order-status {
     display: inline-flex;
     align-items: center;
-    padding: 6px 16px;
-    border-radius: 30px;
+    padding: 6px 18px;
+    border-radius: 40px;
     font-weight: 600;
     font-size: 0.85rem;
+    background: rgba(230,122,75,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(230,122,75,0.3);
 }
 
-.order-status.open {
-    background: rgba(230,122,75,0.15);
-    color: var(--accent);
-}
 .order-status.in_progress {
-    background: rgba(52,152,219,0.15);
+    background: rgba(52,152,219,0.1);
     color: #2980b9;
+    border-color: rgba(52,152,219,0.3);
 }
+
 .order-status.completed {
-    background: rgba(46,204,113,0.15);
+    background: rgba(46,204,113,0.1);
     color: #27ae60;
+    border-color: rgba(46,204,113,0.3);
 }
 
 /* Кнопка "Показать ещё" */
@@ -320,6 +351,7 @@
     padding: 12px 30px;
     font-weight: 700;
     transition: all 0.3s;
+    background: transparent;
 }
 
 #loadMoreOrders .btn-outline-secondary:hover {
@@ -327,19 +359,6 @@
     color: white;
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(230,122,75,0.3);
-}
-
-/* Пустое состояние */
-.orders-list .empty-state {
-    text-align: center;
-    padding: 50px 20px;
-    color: var(--text-soft);
-}
-
-.orders-list .empty-state i {
-    font-size: 5rem;
-    color: var(--border);
-    margin-bottom: 20px;
 }
 
 /* Финансовые карточки */
@@ -385,7 +404,7 @@
     color: var(--text-dark);
 }
 
-/* Чаты – карточки */
+/* Карточка чата (переопределение общей) */
 .chat-card {
     display: flex;
     align-items: center;
@@ -396,6 +415,7 @@
     border: 1px solid var(--border);
     transition: all 0.3s;
     cursor: pointer;
+    margin-bottom: 10px;
 }
 
 .chat-card:hover {
@@ -414,10 +434,6 @@
     justify-content: center;
     color: white;
     font-size: 26px;
-}
-
-.chat-info {
-    flex: 1;
 }
 
 .chat-name {
@@ -452,24 +468,76 @@
     justify-content: center;
 }
 
-/* Анимации появления */
-.animate-on-load {
-    animation: fadeSlideUp 0.5s ease forwards;
-    opacity: 0;
+/* Мобильные стили для клиента (можно позже перенести в responsive) */
+@media (max-width: 992px) {
+    .row.g-4 {
+        grid-template-columns: 1fr;
+    }
+    .tabs-modern {
+        flex-wrap: wrap;
+    }
+    .tab-modern {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 8px 10px;
+        font-size: 0.9rem;
+    }
+    .order-card .order-card-main {
+        flex-direction: column;
+    }
+    .order-photo-preview {
+        width: 100%;
+        height: auto;
+        max-height: 150px;
+    }
+    .finance-stats {
+        grid-template-columns: 1fr;
+    }
 }
 
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+@media (max-width: 576px) {
+    .profile-card {
+        padding: 20px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .client-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
     }
-}
-
-/* Применяем анимацию к основным блокам */
-.profile-card, .finance-stats, .orders-list, .tabs-modern {
-    animation: fadeSlideUp 0.5s ease forwards;
+    .stats-mini {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+    .balance-card-modern {
+        flex-direction: column;
+        text-align: center;
+    }
+    .balance-icon {
+        margin-bottom: 10px;
+    }
+    .order-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .order-price-tag {
+        align-self: flex-start;
+    }
+    .order-meta-grid {
+        grid-template-columns: 1fr;
+    }
+    .filter-chips {
+        justify-content: center;
+    }
+    .filter-chip {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    .chat-card {
+        flex-wrap: wrap;
+    }
+    .chat-avatar {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
 }

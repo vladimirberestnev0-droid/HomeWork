@@ -1,5 +1,5 @@
-/* ===== new-index.css ===== */
-/* Версия: 17.0 — ФИНАЛЬНАЯ ГЛАВНАЯ (только уникальные стили) */
+/* ===== index.css ===== */
+/* Версия: 19.0 — ФИНАЛЬНАЯ ГЛАВНАЯ */
 
 /* Контейнер формы и заказов */
 #orderFormRow {
@@ -16,7 +16,6 @@
     margin-bottom: 40px;
 }
 
-/* Левая колонка (форма) */
 #orderFormColumn {
     flex: 0 0 50%;
     max-width: 50%;
@@ -29,7 +28,6 @@
     isolation: isolate;
 }
 
-/* Правая колонка (заказы) */
 #ordersColumn {
     flex: 0 0 50%;
     max-width: 50%;
@@ -45,7 +43,6 @@
     flex-direction: column;
 }
 
-/* Контейнер для списка и кнопки */
 .orders-content {
     flex: 1;
     display: flex;
@@ -54,7 +51,6 @@
     overflow: visible;
 }
 
-/* Список заказов */
 #ordersList {
     flex: 1;
     overflow-y: auto;
@@ -66,7 +62,21 @@
     gap: 15px;
 }
 
-/* Кнопка "Показать еще" */
+#ordersList::-webkit-scrollbar {
+    width: 6px;
+}
+#ordersList::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 10px;
+}
+#ordersList::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+#ordersList::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
 #loadMoreContainer {
     flex-shrink: 0;
     text-align: center;
@@ -77,42 +87,22 @@
 }
 
 #loadMoreBtn {
-    background: var(--bg-white);
+    background: linear-gradient(145deg, #f8f9fa, #e9ecef);
     border: 1px solid var(--border);
-    color: var(--text-dark);
-    padding: 10px 25px;
-    border-radius: var(--radius-full);
-    transition: var(--transition);
-    font-weight: 500;
+    border-radius: 40px;
+    padding: 12px 35px;
+    font-weight: 700;
+    transition: all 0.3s;
     cursor: pointer;
     display: inline-block;
+    color: var(--text-dark);
 }
 
 #loadMoreBtn:hover {
-    background: var(--accent);
+    background: var(--accent-gradient);
     color: white;
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-/* Стилизация скролла */
-#ordersList::-webkit-scrollbar {
-    width: 6px;
-}
-
-#ordersList::-webkit-scrollbar-track {
-    background: var(--bg-light);
-    border-radius: 10px;
-}
-
-#ordersList::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 10px;
-}
-
-#ordersList::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(230,122,75,0.3);
 }
 
 /* Фильтр-секция */
@@ -123,7 +113,7 @@
     margin-bottom: 30px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    transition: box-shadow 0.3s, border-color 0.3s;
 }
 
 .filter-section:hover {
@@ -208,27 +198,17 @@
     align-items: center;
     gap: 10px;
 }
-
-.address-suggestion-item:last-child {
-    border-bottom: none;
-}
-
+.address-suggestion-item:last-child { border-bottom: none; }
 .address-suggestion-item:hover {
     background: var(--accent-light);
     padding-left: 20px;
 }
-
 .address-suggestion-item i {
     color: var(--accent);
     width: 20px;
     font-size: 14px;
 }
-
-.address-suggestion-item .address-text {
-    flex: 1;
-    color: var(--text-dark);
-}
-
+.address-suggestion-item .address-text { flex: 1; color: var(--text-dark); }
 .address-suggestion-item .address-type {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -253,10 +233,7 @@
     background-position: right 15px center;
     background-size: 16px;
 }
-
-#address:focus {
-    background-image: none;
-}
+#address:focus { background-image: none; }
 
 /* Карточка формы */
 .form-card {
@@ -300,10 +277,7 @@
     font-size: 0.9rem;
     font-weight: 600;
 }
-
-.orders-count-badge i {
-    margin-right: 5px;
-}
+.orders-count-badge i { margin-right: 5px; }
 
 /* AI Price Hint */
 .ai-price-hint {
@@ -314,7 +288,6 @@
     border-radius: var(--radius-lg);
     padding: 12px 16px;
 }
-
 .ai-price-hint:hover {
     background: var(--accent);
     color: white;
@@ -330,13 +303,34 @@
     padding: 20px;
 }
 
+.top-masters-grid .master-card {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    padding: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid rgba(230,122,75,0.2);
+}
+
+.top-masters-grid .master-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 30px 40px -20px rgba(230,122,75,0.5);
+    border-color: var(--accent);
+}
+
+.top-masters-grid .master-avatar {
+    width: 90px;
+    height: 90px;
+    border: 3px solid white;
+    box-shadow: 0 10px 20px rgba(230,122,75,0.3);
+}
+
 /* Превью фото */
 .photo-preview {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
 }
-
 .photo-preview-item {
     position: relative;
     width: 80px;
@@ -344,13 +338,11 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
 }
-
 .photo-preview-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
-
 .photo-preview-item .remove-photo {
     position: absolute;
     top: 2px;
@@ -367,7 +359,6 @@
     cursor: pointer;
     transition: var(--transition);
 }
-
 .photo-preview-item .remove-photo:hover {
     background: var(--danger);
     transform: scale(1.1);
@@ -375,11 +366,10 @@
 
 /* Анимации */
 @keyframes goldLine {
-    0%, 100% { opacity: 0.5; }
+    0%,100% { opacity: 0.5; }
     50% { opacity: 1; }
 }
-
 @keyframes trophyGlow {
-    0%, 100% { filter: drop-shadow(0 4px 8px rgba(251,191,36,0.3)); transform: scale(1); }
+    0%,100% { filter: drop-shadow(0 4px 8px rgba(251,191,36,0.3)); transform: scale(1); }
     50% { filter: drop-shadow(0 8px 16px rgba(251,191,36,0.6)); transform: scale(1.05); }
 }

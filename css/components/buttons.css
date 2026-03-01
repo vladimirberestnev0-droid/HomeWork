@@ -1,6 +1,7 @@
-/* ===== new-buttons.css ===== */
-/* Версия: 4.0 — ВСЕ КНОПКИ В НОВОМ СТИЛЕ */
+/* ===== buttons.css ===== */
+/* Версия: 5.0 — ВСЕ КНОПКИ В НОВОМ СТИЛЕ */
 
+/* Базовые стили кнопок */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -20,11 +21,13 @@
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
-    height: var(--btn-height);
+    height: var(--btn-height, auto);
     line-height: 1;
+    z-index: 1;
 }
 
-.btn::after {
+/* Эффект волны (ripple) */
+.btn::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -35,9 +38,10 @@
     background: rgba(255,255,255,0.3);
     transform: translate(-50%, -50%);
     transition: width 0.5s, height 0.5s;
+    z-index: -1;
 }
 
-.btn:hover::after {
+.btn:hover::before {
     width: 300px;
     height: 300px;
 }
@@ -68,7 +72,7 @@
     box-shadow: var(--shadow-hover);
 }
 
-.btn-outline:hover::after {
+.btn-outline:hover::before {
     display: none;
 }
 
@@ -113,13 +117,13 @@
 .btn-sm {
     padding: 8px 24px;
     font-size: 0.9rem;
-    height: var(--btn-height-sm);
+    height: var(--btn-height-sm, auto);
 }
 
 .btn-lg {
     padding: 16px 40px;
     font-size: 1.1rem;
-    height: calc(var(--btn-height) + 8px);
+    height: calc(var(--btn-height, 0) + 8px);
 }
 
 .btn-block {
@@ -130,17 +134,17 @@
 .btn-icon {
     padding: 12px;
     border-radius: 50%;
-    width: var(--btn-height);
-    height: var(--btn-height);
+    width: var(--btn-height, 50px);
+    height: var(--btn-height, 50px);
 }
 
 .btn-icon-sm {
     padding: 8px;
-    width: var(--btn-height-sm);
-    height: var(--btn-height-sm);
+    width: var(--btn-height-sm, 40px);
+    height: var(--btn-height-sm, 40px);
 }
 
-/* Специальные кнопки */
+/* Специальные кнопки (фильтры) */
 .filter-btn {
     padding: 8px 16px;
     border-radius: var(--radius-full);
@@ -166,6 +170,57 @@
     color: white;
     border-color: transparent;
     box-shadow: var(--shadow);
+}
+
+/* Кнопка выхода в шапке */
+.header-logout-btn {
+    background: transparent;
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    padding: 8px 20px;
+    border-radius: var(--radius-full);
+    transition: var(--transition);
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.header-logout-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239,68,68,0.3);
+}
+
+/* Кнопка бота (DeepSeek) – вынесена отдельно, можно оставить здесь */
+#deepseek-bro-button {
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: linear-gradient(145deg, #3b82f6, #8b5cf6) !important;
+    color: white !important;
+    padding: 15px 25px !important;
+    border-radius: var(--radius-full) !important;
+    cursor: pointer !important;
+    box-shadow: 0 10px 30px rgba(59,130,246,0.4) !important;
+    z-index: var(--z-tooltip) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    animation: float 3s ease-in-out infinite !important;
+    transition: var(--transition) !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+
+#deepseek-bro-button:hover {
+    transform: translateY(-5px) scale(1.05) !important;
+    box-shadow: 0 20px 40px rgba(59,130,246,0.6) !important;
+}
+
+#deepseek-bro-button i {
+    font-size: 24px !important;
+    animation: pulse 2s infinite !important;
 }
 
 /* Кнопка "Наверх" */
@@ -208,53 +263,43 @@
     font-size: 24px;
 }
 
-/* Кнопка выхода */
-.header-logout-btn {
-    background: transparent;
-    border: 2px solid var(--danger);
-    color: var(--danger);
-    padding: 8px 20px;
-    border-radius: var(--radius-full);
-    transition: var(--transition);
-    cursor: pointer;
-    font-weight: 600;
-    margin-left: 10px;
-}
-
-.header-logout-btn:hover {
-    background: var(--danger);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(239,68,68,0.3);
-}
-
-/* Кнопка бота */
-#deepseek-bro-button {
-    position: fixed !important;
-    bottom: 30px !important;
-    right: 30px !important;
-    background: linear-gradient(145deg, #3b82f6, #8b5cf6) !important;
-    color: white !important;
-    padding: 15px 25px !important;
-    border-radius: var(--radius-full) !important;
-    cursor: pointer !important;
-    box-shadow: 0 10px 30px rgba(59,130,246,0.4) !important;
-    z-index: var(--z-tooltip) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    animation: float 3s ease-in-out infinite !important;
-    transition: var(--transition) !important;
-    border: none !important;
-    font-weight: 600 !important;
-}
-
-#deepseek-bro-button:hover {
-    transform: translateY(-5px) scale(1.05) !important;
-    box-shadow: 0 20px 40px rgba(59,130,246,0.6) !important;
-}
-
-#deepseek-bro-button i {
-    font-size: 24px !important;
-    animation: pulse 2s infinite !important;
+/* Мобильные стили для кнопок (можно перенести в responsive.css) */
+@media (max-width: 768px) {
+    .btn {
+        padding: 10px 24px;
+        font-size: 0.95rem;
+    }
+    .btn-sm {
+        padding: 6px 16px;
+        font-size: 0.85rem;
+    }
+    .btn-lg {
+        padding: 14px 30px;
+        font-size: 1rem;
+    }
+    .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    #scrollToTop {
+        width: 45px;
+        height: 45px;
+        bottom: 20px;
+        right: 20px;
+    }
+    #scrollToTop i {
+        font-size: 20px;
+    }
+    #deepseek-bro-button {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+    }
+    #deepseek-bro-button span {
+        display: none; /* Только иконка */
+    }
+    #deepseek-bro-button i {
+        margin: 0;
+        font-size: 22px;
+    }
 }
