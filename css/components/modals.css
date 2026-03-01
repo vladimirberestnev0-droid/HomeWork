@@ -1,5 +1,5 @@
-/* ===== new-modals.css ===== */
-/* Версия: 5.0 — МОДАЛЬНЫЕ ОКНА В НОВОМ СТИЛЕ */
+/* ===== modals.css ===== */
+/* Версия: 6.0 — МОДАЛЬНЫЕ ОКНА С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 .modal-backdrop {
     position: fixed;
@@ -7,15 +7,13 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px); /* усилено */
     z-index: calc(var(--z-modal) - 1);
     display: none;
 }
 
-.modal-backdrop.show {
-    display: block;
-}
+.modal-backdrop.show { display: block; }
 
 .modal {
     position: fixed;
@@ -29,9 +27,7 @@
     z-index: var(--z-modal);
 }
 
-.modal.show {
-    display: flex;
-}
+.modal.show { display: flex; }
 
 .modal-dialog {
     position: relative;
@@ -43,13 +39,8 @@
     pointer-events: auto;
 }
 
-.modal-dialog-lg {
-    max-width: 800px;
-}
-
-.modal-dialog-sm {
-    max-width: 300px;
-}
+.modal-dialog-lg { max-width: 800px; }
+.modal-dialog-sm { max-width: 300px; }
 
 .modal-content {
     background: var(--bg-white);
@@ -59,8 +50,34 @@
     overflow-y: auto;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
     position: relative;
-    animation: scaleIn 0.3s ease;
+    animation: modalAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* пружинка */
     border: 1px solid var(--border);
+    overflow: hidden; /* чтобы псевдоэлементы не вылезали */
+}
+
+/* Декоративные круги */
+.modal-content::before,
+.modal-content::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: var(--accent-gradient-soft);
+    z-index: -1;
+    opacity: 0.4;
+    filter: blur(40px);
+}
+
+.modal-content::before {
+    top: -150px;
+    right: -150px;
+}
+
+.modal-content::after {
+    bottom: -150px;
+    left: -150px;
+    background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.1));
 }
 
 .modal-header {
@@ -94,7 +111,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition);
+    transition: var(--transition-bounce);
 }
 
 .modal-close:hover {
@@ -103,9 +120,7 @@
     transform: rotate(90deg);
 }
 
-.modal-body {
-    margin-bottom: 20px;
-}
+.modal-body { margin-bottom: 20px; }
 
 .modal-footer {
     display: flex;
@@ -116,18 +131,13 @@
     border-top: 1px solid var(--border);
 }
 
-.modal.fade .modal-dialog {
-    transform: scale(0.9) translateY(-30px);
-    opacity: 0;
-    transition: transform 0.3s ease-out, opacity 0.3s;
+/* Анимация появления */
+@keyframes modalAppear {
+    0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-}
-
-/* Стиль для модалок ВоркХом */
+/* Стили для модалок ВоркХом */
 .modal-workhom .modal-content {
     border-radius: var(--radius-xl);
     overflow: hidden;
@@ -140,14 +150,8 @@
     padding: 20px 25px;
 }
 
-.modal-workhom .modal-header .modal-title {
-    color: white;
-}
-
-.modal-workhom .modal-header .modal-close {
-    color: white;
-}
-
+.modal-workhom .modal-header .modal-title { color: white; }
+.modal-workhom .modal-header .modal-close { color: white; }
 .modal-workhom .modal-header .modal-close:hover {
     background: rgba(255,255,255,0.2);
     color: white;
@@ -155,22 +159,13 @@
 
 /* Модалка подтверждения выхода */
 .modal-logout .modal-header {
-    background: linear-gradient(145deg, #ef4444, #dc2626);
+    background: var(--gradient-danger);
     color: white;
 }
-
-.modal-logout .modal-header i {
-    animation: bounce 1s infinite;
-}
+.modal-logout .modal-header i { animation: bounce 1s infinite; }
 
 /* Модалка успеха */
-.modal-success .modal-header {
-    background: linear-gradient(145deg, #22c55e, #16a34a);
-    color: white;
-}
+.modal-success .modal-header { background: var(--gradient-success); color: white; }
 
 /* Модалка предупреждения */
-.modal-warning .modal-header {
-    background: linear-gradient(145deg, #f97316, #ea580c);
-    color: white;
-}
+.modal-warning .modal-header { background: var(--gradient-gold); color: white; }

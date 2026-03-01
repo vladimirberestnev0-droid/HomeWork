@@ -1,5 +1,5 @@
 /* ===== new-offline.css ===== */
-/* Версия: 3.0 — ОФЛАЙН СТРАНИЦА */
+/* Версия: 4.0 — ОФЛАЙН СТРАНИЦА С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 .offline-container {
     max-width: 500px;
@@ -7,19 +7,32 @@
     background: var(--bg-white);
     padding: 60px 40px;
     border-radius: var(--radius-xl);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow);
     animation: slideUp 0.5s ease;
     margin: 50px auto;
+    border: 1px solid var(--border);
+    transition: var(--transition-bounce);
+}
+
+.offline-container:hover {
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    transform: translateY(-5px);
 }
 
 .offline-icon {
     font-size: 80px;
     color: var(--accent);
     margin-bottom: 20px;
+    transition: var(--transition-bounce);
 }
 
 .offline-icon i {
     animation: pulse 2s infinite;
+}
+
+.offline-icon:hover {
+    transform: scale(1.1) rotate(5deg);
+    color: var(--accent-dark);
 }
 
 .offline-container h1 {
@@ -53,11 +66,13 @@
     border-radius: 15px;
     margin-bottom: 10px;
     border-left: 4px solid var(--accent);
-    transition: transform 0.2s ease;
+    transition: var(--transition-bounce);
 }
 
 .cached-order:hover {
-    transform: translateX(5px);
+    transform: translateX(8px);
+    box-shadow: var(--shadow-hover);
+    border-left-color: var(--accent-dark);
 }
 
 .cached-order .fw-bold {
@@ -68,4 +83,19 @@
 
 .cached-order .small {
     font-size: 0.85rem;
+    color: var(--text-soft);
+}
+
+/* Тёмная тема */
+body.dark-theme .offline-container {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .cached-order {
+    background: var(--bg-hover);
+}
+
+body.dark-theme .cached-order:hover {
+    background: var(--bg-card);
 }

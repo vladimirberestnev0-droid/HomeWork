@@ -1,5 +1,5 @@
 /* ===== new-payment-success.css ===== */
-/* Версия: 3.0 — УСПЕШНАЯ ОПЛАТА */
+/* Версия: 4.0 — УСПЕШНАЯ ОПЛАТА С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 .success-container {
     max-width: 400px;
@@ -7,9 +7,16 @@
     background: var(--bg-white);
     padding: 60px 40px;
     border-radius: var(--radius-xl);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow);
     animation: scaleIn 0.5s ease;
     margin: 50px auto;
+    border: 1px solid var(--border);
+    transition: var(--transition-bounce);
+}
+
+.success-container:hover {
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    transform: translateY(-5px);
 }
 
 .success-icon {
@@ -24,6 +31,13 @@
     font-size: 50px;
     margin: 0 auto 30px;
     animation: pulse 2s infinite;
+    transition: var(--transition-bounce);
+    box-shadow: var(--shadow);
+}
+
+.success-icon:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: var(--shadow-glow);
 }
 
 .success-container h1 {
@@ -44,6 +58,12 @@
     border-radius: 20px;
     padding: 20px;
     border: 1px solid var(--border);
+    transition: var(--transition-bounce);
+}
+
+.order-details:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
 }
 
 .order-details h6 {
@@ -76,4 +96,14 @@
     background: var(--accent);
     animation: progress 3s linear forwards;
     width: 100%;
+}
+
+/* Тёмная тема */
+body.dark-theme .success-container {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .order-details {
+    background: var(--bg-hover);
 }

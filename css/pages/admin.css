@@ -1,11 +1,12 @@
 /* ===== admin.css ===== */
-/* Версия: 4.0 — АДМИН-ПАНЕЛЬ */
+/* Версия: 5.0 — АДМИН-ПАНЕЛЬ С ПРЕМИУМ-ЭФФЕКТАМИ */
 
 .chart-container {
     height: 300px;
     position: relative;
     width: 100%;
 }
+
 .chart-title {
     font-size: 1.1rem;
     font-weight: 600;
@@ -19,26 +20,31 @@
     flex-wrap: wrap;
     margin-bottom: 20px;
 }
+
 .metric-item {
     flex: 1;
     min-width: 150px;
     padding: 15px;
-    background: var(--bg-light);
+    background: var(--bg-white);
     border-radius: var(--radius-lg);
     text-align: center;
-    transition: var(--transition);
+    transition: var(--transition-bounce);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
+
 .metric-item:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-    border-color: var(--accent-light);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    border-color: var(--accent);
 }
+
 .metric-label {
     font-size: 0.9rem;
     color: var(--text-soft);
     margin-bottom: 5px;
 }
+
 .metric-value {
     font-size: 1.5rem;
     font-weight: 600;
@@ -51,26 +57,35 @@
     align-items: center;
     margin-bottom: 20px;
 }
+
 .dashboard-title {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--primary);
 }
+
 .dashboard-value {
     font-size: 2rem;
     font-weight: 700;
     color: var(--accent);
 }
+
 .dashboard-change {
     font-size: 0.9rem;
     padding: 4px 12px;
     border-radius: var(--radius-full);
     background: var(--success-light);
     color: var(--success);
+    transition: var(--transition-fast);
 }
+
 .dashboard-change.negative {
     background: var(--danger-light);
     color: var(--danger);
+}
+
+.dashboard-change:hover {
+    transform: scale(1.05);
 }
 
 /* Админ-карточка */
@@ -81,16 +96,30 @@
     margin-bottom: 15px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-    transition: var(--transition);
+    transition: var(--transition-bounce);
 }
+
 .admin-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--accent-light);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    border-color: var(--accent);
 }
 
 /* Воронка конверсии */
 .funnel-chart {
     height: 300px;
     position: relative;
+}
+
+/* Тёмная тема */
+body.dark-theme .metric-item,
+body.dark-theme .admin-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+
+body.dark-theme .metric-item:hover,
+body.dark-theme .admin-card:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
 }

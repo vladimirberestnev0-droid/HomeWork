@@ -1,50 +1,51 @@
 /* ===== variables.css ===== */
-/* Версия: 7.2 — ЧИСТЫЕ ПЕРЕМЕННЫЕ */
+/* Версия: 8.0 — ПОЛНЫЙ НАБОР ПЕРЕМЕННЫХ ДЛЯ ПРЕМИУМ-СТИЛЯ */
 
 :root {
     /* ===== СВЕТЛАЯ ТЕМА (ПО УМОЛЧАНИЮ) ===== */
-    /* Основные цвета */
-    --primary: #0F172A;
-    --primary-light: #334155;
-    --accent: #E67A4B;
-    --accent-dark: #D45C2F;
-    --accent-light: #FEF3E9;
-    --accent-soft: #fff5f0;
-    --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B);
+    
+    /* --- Основные цвета --- */
+    --primary: #0F172A;               /* Тёмно-синий для заголовков */
+    --primary-light: #334155;          /* Светлый вариант */
+    --accent: #E67A4B;                 /* Оранжевый акцент */
+    --accent-dark: #D45C2F;             /* Тёмный оранжевый */
+    --accent-light: #FEF3E9;            /* Светло-оранжевый фон */
+    --accent-soft: #fff5f0;             /* Очень светлый */
+    --accent-gradient: linear-gradient(135deg, #E67A4B, #FF9F4B); /* Градиент */
     --accent-gradient-soft: linear-gradient(135deg, rgba(230,122,75,0.1), rgba(255,159,75,0.1));
 
-    /* Фоны */
-    --bg-light: #F8FAFC;
-    --bg-white: #FFFFFF;
-    --bg-card: #FFFFFF;
-    --bg-dark: #1a1a1a;
-    --bg-dark-card: #2d2d2d;
-    --bg-hover: #F1F5F9;
+    /* --- Фоны --- */
+    --bg-light: #F8FAFC;                /* Светлый фон страницы */
+    --bg-white: #FFFFFF;                 /* Белый фон карточек */
+    --bg-card: #FFFFFF;                  /* Для карточек */
+    --bg-dark: #1a1a1a;                  /* Тёмный фон (для тёмной темы) */
+    --bg-dark-card: #2d2d2d;             /* Карточки в тёмной теме */
+    --bg-hover: #F1F5F9;                 /* Ховер на элементах */
     --bg-light-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 
-    /* Текст */
-    --text-dark: #0F172A;
-    --text-soft: #334155;
-    --text-light: #FFFFFF;
-    --text-muted: #64748B;
+    /* --- Текст --- */
+    --text-dark: #0F172A;                /* Основной текст */
+    --text-soft: #334155;                 /* Вторичный текст */
+    --text-light: #FFFFFF;                 /* Белый текст */
+    --text-muted: #64748B;                 /* Приглушённый текст */
 
-    /* Границы */
-    --border: #E2E8F0;
-    --border-dark: #404040;
-    --border-light: #F1F5F9;
-    --border-soft: #ffd7cc;
+    /* --- Границы --- */
+    --border: #E2E8F0;                    /* Основная граница */
+    --border-dark: #404040;                 /* Для тёмной темы */
+    --border-light: #F1F5F9;                /* Светлая граница */
+    --border-soft: #ffd7cc;                 /* Акцентная граница */
 
-    /* Статусы */
-    --success: #00A86B;
+    /* --- Статусы --- */
+    --success: #00A86B;                    /* Зелёный */
     --success-light: #E3F2E9;
-    --warning: #FFB020;
+    --warning: #FFB020;                     /* Жёлтый */
     --warning-light: #FFF4E0;
-    --danger: #DC3545;
+    --danger: #DC3545;                       /* Красный */
     --danger-light: #FFE8E8;
-    --info: #0984e3;
+    --info: #0984e3;                          /* Синий */
     --info-light: #E3F2FD;
 
-    /* Гейминг */
+    /* --- Гейминг / уровни --- */
     --level-1: #95a5a6;
     --level-2: #3498db;
     --level-3: #9b59b6;
@@ -57,34 +58,35 @@
     --silver: #C0C0C0;
     --bronze: #cd7f32;
 
-    /* Тени (улучшенные) */
+    /* --- Тени (улучшенные) --- */
     --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow: 0 20px 40px -15px rgba(0,0,0,0.1);
-    --shadow-hover: 0 25px 50px -12px rgba(230,122,75,0.25);
+    --shadow: 0 20px 40px -15px rgba(0,0,0,0.15);
+    --shadow-hover: 0 30px 50px -20px rgba(230,122,75,0.3);
     --shadow-dark: 0 20px 40px -15px rgba(0,0,0,0.2);
+    --shadow-glow: 0 0 20px rgba(230,122,75,0.4);          /* Свечение */
     --card-glow: 0 10px 30px -10px rgba(230,122,75,0.3);
     --card-glow-hover: 0 20px 40px -10px rgba(230,122,75,0.4);
     --glass-shadow: 0 8px 32px rgba(0,0,0,0.1);
 
-    /* Дополнительные эффекты */
+    /* --- Дополнительные эффекты --- */
     --glass-bg: rgba(255,255,255,0.2);
     --glass-border: rgba(255,255,255,0.3);
     --accent-glow: 0 0 20px rgba(230,122,75,0.5);
 
-    /* Скругления */
+    /* --- Скругления --- */
     --radius-sm: 12px;
     --radius-md: 20px;
     --radius-lg: 30px;
     --radius-xl: 40px;
     --radius-full: 9999px;
 
-    /* Z-index */
+    /* --- Z-index (иерархия слоёв) --- */
     --z-sticky: 100;
-    --z-dropdown: 10000;
+    --z-dropdown: 10000;          /* Выпадающие списки поверх всего */
     --z-modal: 1000;
     --z-popover: 1050;
     --z-tooltip: 9999;
-    --z-notification: 10000;
+    --z-notification: 10000;       /* Уведомления над модалками */
     --z-form: 30;
     --z-form-card: 31;
     --z-orders: 20;
@@ -92,39 +94,47 @@
     --z-card-hover: 25;
     --z-button: 26;
 
-    /* Анимации */
+    /* --- Анимации / переходы --- */
     --transition-fast: all 0.15s ease;
     --transition-normal: all 0.2s ease;
     --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Пружинка */
     --transition-smooth: all 0.3s ease;
+    --transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-    /* ===== МОБИЛЬНЫЕ ПЕРЕМЕННЫЕ ===== */
+    /* --- Размеры элементов (для единообразия) --- */
+    --btn-height: 48px;                     /* Высота кнопок */
+    --btn-height-sm: 40px;                  /* Маленькие кнопки */
+    --input-height: 48px;                    /* Высота полей ввода */
+    --chat-avatar-size: 54px;                 /* Размер аватара в чате */
+    --chat-send-btn-size: 52px;               /* Кнопка отправки */
+    --video-aspect-ratio: 16/9;
+    --video-min-height: 300px;
+
+    /* --- Отступы и контейнеры --- */
+    --container-padding: 0 24px;
+    --container-padding-sm: 0 16px;
+    --container-max-width: 1280px;
+    --grid-gap: 24px;
+    --grid-gap-sm: 16px;
+    --section-spacing: 60px;
+    --section-spacing-sm: 40px;
+    --card-padding: 24px;
+    --card-padding-sm: 20px;
+
+    /* --- Мобильные переменные (будут использоваться в медиа-запросах) --- */
     --mobile-padding: 12px;
     --mobile-gap: 8px;
     --mobile-font-size: 14px;
     --mobile-radius: 16px;
     --mobile-header-height: 60px;
-
-    /* Адаптивные размеры */
-    --responsive-container-padding: clamp(10px, 3vw, 20px);
-    --responsive-font-size: clamp(14px, 2vw, 16px);
-    --responsive-card-padding: clamp(12px, 3vw, 24px);
-
-    /* Переменные для чата */
     --chat-message-max-width: 70%;
     --chat-message-max-width-mobile: 90%;
-    --chat-avatar-size: 54px;
     --chat-avatar-size-mobile: 40px;
-    --chat-send-btn-size: 52px;
     --chat-send-btn-size-mobile: 44px;
-
-    /* Переменные для видео */
-    --video-aspect-ratio: 16/9;
-    --video-min-height: 300px;
     --video-min-height-mobile: 200px;
 
-    /* ===== БРЕЙКПОИНТЫ (для использования в JS или как справочные) ===== */
+    /* --- Брейкпоинты (для JS, не используются в CSS напрямую) --- */
     --mobile-xs: 360px;
     --mobile-sm: 480px;
     --mobile-md: 576px;
@@ -133,20 +143,9 @@
     --desktop-md: 1200px;
     --desktop-lg: 1400px;
 
-    /* Контейнеры */
-    --container-padding: 0 24px;
-    --container-padding-sm: 0 16px;
-    --container-max-width: 1280px;
-
-    /* Сетка */
-    --grid-gap: 24px;
-    --grid-gap-sm: 16px;
-
-    /* Отступы */
-    --section-spacing: 60px;
-    --section-spacing-sm: 40px;
-
-    /* Карточки */
-    --card-padding: 24px;
-    --card-padding-sm: 20px;
+    /* --- Специальные градиенты --- */
+    --gradient-gold: linear-gradient(145deg, #fbbf24, #f59e0b);
+    --gradient-success: linear-gradient(145deg, #22c55e, #16a34a);
+    --gradient-danger: linear-gradient(145deg, #ef4444, #dc2626);
+    --gradient-info: linear-gradient(145deg, #3b82f6, #2563eb);
 }

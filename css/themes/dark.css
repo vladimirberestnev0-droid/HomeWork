@@ -1,7 +1,8 @@
 /* ===== new-dark.css ===== */
-/* Версия: 7.1 — УЛЬТИМАТИВНАЯ ТЁМНАЯ ТЕМА (улучшенная) */
+/* Версия: 8.0 — УЛЬТИМАТИВНАЯ ТЁМНАЯ ТЕМА (со всеми новыми эффектами) */
 
 body.dark-theme {
+    /* Переопределение переменных */
     --primary: #ffffff;
     --accent: #fb923c;
     --accent-dark: #f97316;
@@ -35,6 +36,7 @@ body.dark-theme {
     --shadow: 0 20px 40px -15px rgba(0,0,0,0.6);
     --shadow-hover: 0 25px 50px -12px rgba(249,115,22,0.3);
     --shadow-dark: 0 20px 40px -15px rgba(0,0,0,0.8);
+    --shadow-glow: 0 0 20px rgba(251,146,60,0.4);
 }
 
 body.dark-theme {
@@ -42,6 +44,7 @@ body.dark-theme {
     background-attachment: fixed;
 }
 
+/* Общие стили текста */
 body.dark-theme h1,
 body.dark-theme h2,
 body.dark-theme h3,
@@ -50,28 +53,15 @@ body.dark-theme h5,
 body.dark-theme h6 {
     color: var(--text-dark);
 }
+body.dark-theme p { color: var(--text-soft); }
+body.dark-theme a { color: var(--accent); }
+body.dark-theme a:hover { color: var(--accent-dark); }
 
-body.dark-theme p {
-    color: var(--text-soft);
-}
+/* Скроллбар */
+body.dark-theme ::-webkit-scrollbar-track { background: var(--bg-dark); }
+body.dark-theme ::-webkit-scrollbar-thumb { background: var(--accent); }
 
-body.dark-theme a {
-    color: var(--accent);
-}
-
-body.dark-theme a:hover {
-    color: var(--accent-dark);
-}
-
-body.dark-theme ::-webkit-scrollbar-track {
-    background: var(--bg-dark);
-}
-
-body.dark-theme ::-webkit-scrollbar-thumb {
-    background: var(--accent);
-}
-
-/* Улучшенные карточки */
+/* Карточки – стеклянный эффект */
 body.dark-theme .card,
 body.dark-theme .stat-card,
 body.dark-theme .profile-card,
@@ -83,9 +73,11 @@ body.dark-theme .master-card-compact,
 body.dark-theme .order-card-compact,
 body.dark-theme .notification-card,
 body.dark-theme .chat-card,
-body.dark-theme .master-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+body.dark-theme .master-card,
+body.dark-theme .modal-content {
+    background: rgba(30, 41, 59, 0.8); /* стекло */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
     box-shadow: var(--shadow);
 }
 
@@ -102,51 +94,136 @@ body.dark-theme .notification-card:hover,
 body.dark-theme .chat-card:hover,
 body.dark-theme .master-card:hover {
     border-color: var(--accent);
-    background: var(--bg-hover);
+    background: rgba(30, 41, 59, 0.9);
     box-shadow: var(--shadow-hover);
     transform: translateY(-4px);
 }
 
-body.dark-theme .profile-card::before {
-    background: var(--accent-gradient);
-}
+/* Специально для профиля */
+body.dark-theme .profile-card::before { background: var(--accent-gradient); }
 
-/* Кнопки и навигация */
+/* Кнопки */
 body.dark-theme .btn-outline-secondary {
     border-color: var(--accent);
     color: var(--accent);
 }
-
 body.dark-theme .btn-outline-secondary:hover {
     background: var(--accent);
     color: #0F172A;
     border-color: var(--accent);
 }
-
-body.dark-theme nav a {
-    color: #e2e8f0; /* более светлый */
+body.dark-theme .btn-outline {
+    color: var(--text-dark);
+    border-color: var(--border);
+}
+body.dark-theme .btn-outline:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
 }
 
+/* Навигация */
+body.dark-theme nav a {
+    color: #e2e8f0;
+}
 body.dark-theme nav a:hover {
     background: var(--accent-light);
     color: white;
 }
-
 body.dark-theme nav a.active {
     background: var(--accent-gradient);
     color: white;
     box-shadow: 0 4px 12px rgba(249,115,22,0.3);
 }
 
-body.dark-theme .btn-outline {
+/* Чат */
+body.dark-theme .message.received .message-bubble {
+    background: rgba(30, 41, 59, 0.9);
     color: var(--text-dark);
     border-color: var(--border);
 }
-
-body.dark-theme .btn-outline:hover {
+body.dark-theme .message.sent .message-bubble {
+    background: var(--accent-gradient);
+}
+body.dark-theme .message.received .message-bubble::after {
+    border-right-color: rgba(30, 41, 59, 0.9);
+}
+body.dark-theme .message.sent .message-bubble::after {
+    border-left-color: var(--accent);
+}
+body.dark-theme .quick-reply-btn {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border);
+    color: var(--text-soft);
+}
+body.dark-theme .quick-reply-btn:hover {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+}
+body.dark-theme .emoji-panel,
+body.dark-theme .file-preview-item {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+body.dark-theme .typing-indicator {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+body.dark-theme .message-reactions {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+body.dark-theme .existing-reaction {
+    background: var(--bg-light);
+    border-color: var(--border);
+}
+
+/* Модальные окна */
+body.dark-theme .modal-content {
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(15px);
+}
+body.dark-theme .modal-content::before,
+body.dark-theme .modal-content::after {
+    opacity: 0.2; /* менее заметные в тёмной теме */
+}
+
+/* Прочие элементы */
+body.dark-theme .order-badge {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+body.dark-theme .order-badge:hover {
+    background: var(--accent);
+    color: white;
+}
+body.dark-theme .badge {
+    background: var(--bg-hover);
+    color: var(--text-dark);
+}
+body.dark-theme .badge-primary {
+    background: var(--accent-gradient);
+    color: white;
+}
+body.dark-theme .header-xp-badge {
+    background: var(--gradient-gold);
+    color: #0F172A;
+}
+body.dark-theme .xp-bar {
+    background: var(--border);
+}
+body.dark-theme .xp-progress {
+    background: var(--accent-gradient);
+}
+body.dark-theme .filter-chip {
+    background: var(--bg-hover);
+    color: var(--text-soft);
+}
+body.dark-theme .filter-chip.active,
+body.dark-theme .filter-chip:hover {
+    background: var(--accent);
+    color: white;
 }
 
 /* Стили для балунов Яндекс.Карт */
@@ -156,26 +233,9 @@ body.dark-theme .ymaps-2-1-79-balloon {
     border: 1px solid #334155;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
 }
+body.dark-theme .ymaps-2-1-79-balloon__content { color: #F1F5F9; }
+body.dark-theme .ymaps-2-1-79-balloon__close { color: #94A3B8; }
+body.dark-theme .ymaps-2-1-79-balloon__close:hover { color: #F1F5F9; }
 
-body.dark-theme .ymaps-2-1-79-balloon__content {
-    color: #F1F5F9;
-}
-
-body.dark-theme .ymaps-2-1-79-balloon__close {
-    color: #94A3B8;
-}
-
-body.dark-theme .ymaps-2-1-79-balloon__close:hover {
-    color: #F1F5F9;
-}
-
-/* Прочие улучшения */
-body.dark-theme .order-badge {
-    background: var(--accent-light);
-    color: var(--accent);
-}
-
-body.dark-theme .order-badge:hover {
-    background: var(--accent);
-    color: white;
-}
+/* Анимации в тёмной теме (без изменений) */
+body.dark-theme .pulse { animation: pulse 2s infinite; }

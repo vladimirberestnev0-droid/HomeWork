@@ -661,3 +661,8 @@ body:not(.dark-theme) .order-item {
     color: var(--border);
     margin-bottom: 15px;
 }
+
+.card:hover {
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    transform: translateY(-6px);
+}

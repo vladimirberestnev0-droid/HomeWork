@@ -1,5 +1,5 @@
 /* ===== new-404.css ===== */
-/* Версия: 3.0 — СТРАНИЦА 404 В НОВОМ СТИЛЕ */
+/* Версия: 4.0 — СТРАНИЦА 404 В ПРЕМИУМ-СТИЛЕ */
 
 .error-container {
     max-width: 600px;
@@ -7,11 +7,17 @@
     background: rgba(255,255,255,0.9);
     padding: 60px 40px;
     border-radius: var(--radius-xl);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
     animation: float 3s ease-in-out infinite;
     margin: 50px auto;
     border: 1px solid rgba(255,255,255,0.6);
+    transition: var(--transition-bounce);
+}
+
+.error-container:hover {
+    box-shadow: var(--shadow-hover), var(--shadow-glow);
+    transform: translateY(-5px);
 }
 
 .error-icon {
@@ -24,6 +30,12 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 20px 40px rgba(249,115,22,0.3);
+    transition: var(--transition-bounce);
+}
+
+.error-icon:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: var(--shadow-glow);
 }
 
 .error-icon i {
@@ -62,12 +74,13 @@
 
 .master-emoji i {
     margin: 0 5px;
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-bounce);
     display: inline-block;
 }
 
 .master-emoji i:hover {
     transform: scale(1.2) rotate(10deg);
+    color: var(--accent);
 }
 
 .btn-group-404 {
@@ -85,12 +98,13 @@
     border-radius: 20px;
     font-size: 14px;
     color: var(--text-soft);
-    transition: var(--transition);
+    transition: var(--transition-bounce);
 }
 
 .fun-fact:hover {
     background: rgba(249,115,22,0.15);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .logo-text {
@@ -102,4 +116,19 @@
 
 .logo-text i {
     margin-right: 8px;
+}
+
+/* Тёмная тема */
+body.dark-theme .error-container {
+    background: rgba(30,41,59,0.9);
+    border-color: rgba(255,255,255,0.1);
+}
+
+body.dark-theme .error-icon {
+    box-shadow: 0 20px 40px rgba(249,115,22,0.5);
+}
+
+body.dark-theme .fun-fact {
+    background: rgba(249,115,22,0.2);
+    color: var(--text-soft);
 }

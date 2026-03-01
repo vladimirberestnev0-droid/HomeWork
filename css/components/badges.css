@@ -180,3 +180,17 @@
     0%, 100% { box-shadow: 0 4px 10px rgba(251,191,36,0.3); }
     50% { box-shadow: 0 4px 20px rgba(251,191,36,0.6); }
 }
+
+.badge {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+}
+.badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.header-xp-badge {
+    animation: glow-pulse 2s infinite;
+}
+@keyframes glow-pulse { 0% { box-shadow: 0 4px 10px rgba(251,191,36,0.3); } 50% { box-shadow: 0 4px 20px rgba(251,191,36,0.6); } }

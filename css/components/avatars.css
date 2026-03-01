@@ -128,3 +128,9 @@
     transform: scale(1.1);
     box-shadow: var(--shadow-hover);
 }
+
+.online-status.online {
+    box-shadow: 0 0 0 0 rgba(0, 168, 107, 0.7);
+    animation: pulse-online 2s infinite;
+}
+@keyframes pulse-online { 0% { box-shadow: 0 0 0 0 rgba(0,168,107,0.7); } 70% { box-shadow: 0 0 0 10px rgba(0,168,107,0); } }

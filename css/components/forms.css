@@ -143,3 +143,13 @@ textarea.form-control {
     margin-top: 8px;
     border: 1px solid var(--border);
 }
+
+.form-control:focus {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05), 0 0 0 4px rgba(230,122,75,0.15);
+}
+
+.upload-area.dragover {
+    background: rgba(230,122,75,0.1);
+    border-color: var(--accent);
+    transform: scale(1.02);
+}
