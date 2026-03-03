@@ -225,3 +225,39 @@
         min-height: 500px;
     }
 }
+
+.top-masters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    justify-items: center; /* центрируем карточки по горизонтали */
+}
+
+.top-masters-grid .master-card {
+    max-width: 280px;      /* ограничиваем максимальную ширину */
+    width: 100%;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    padding: 20px;
+    transition: var(--transition-bounce);
+    border: 1px solid rgba(230,122,75,0.2);
+    box-shadow: var(--shadow);
+}
+
+/* Обрезаем длинные имена и категории */
+.top-masters-grid .master-card h6,
+.top-masters-grid .master-card .small {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Для мобильных убираем ограничение */
+@media (max-width: 768px) {
+    .top-masters-grid .master-card {
+        max-width: 100%;
+    }
+}
