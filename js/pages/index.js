@@ -635,34 +635,31 @@ async function loadTopMasters(period = 'week') {
             return;
         }
         
-        container.innerHTML = '';
+        container.innerHTML = ''; // очищаем
         
         topMasters.forEach(master => {
             const rating = startDate ? (master.periodRating || 0) : (master.rating || 0);
             const completedJobs = startDate ? (master.periodCompleted || 0) : (master.completedJobs || 0);
-            
             const ratingStars = renderRatingStars(rating);
             
-            const col = document.createElement('div');
-            col.className = 'col-md-4 col-lg-2';
-            col.innerHTML = `
-                <div class="master-card text-center">
-                    <div class="master-avatar">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <h6 class="fw-bold mb-1">${Utils.escapeHtml(master.name || 'Мастер')}</h6>
-                    <div class="rating-stars mb-2">${ratingStars}</div>
-                    <div class="mb-2">
-                        <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
-                        <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
-                    </div>
-                    <p class="small text-secondary mb-2">${Utils.escapeHtml(master.categories || 'Специалист')}</p>
-                    <button class="btn btn-sm w-100" onclick="handleViewMaster('${master.id}')">
-                        Смотреть профиль
-                    </button>
+            const card = document.createElement('div');
+            card.className = 'master-card text-center';
+            card.innerHTML = `
+                <div class="master-avatar">
+                    <i class="fas fa-user-tie"></i>
                 </div>
+                <h6 class="fw-bold mb-1">${Utils.escapeHtml(master.name || 'Мастер')}</h6>
+                <div class="rating-stars mb-2">${ratingStars}</div>
+                <div class="mb-2">
+                    <span class="badge badge-primary">⭐ ${rating.toFixed(1)}</span>
+                    <span class="badge badge-success ms-1">📦 ${completedJobs}</span>
+                </div>
+                <p class="small text-secondary mb-2">${Utils.escapeHtml(master.categories || 'Специалист')}</p>
+                <button class="btn btn-sm w-100" onclick="handleViewMaster('${master.id}')">
+                    Смотреть профиль
+                </button>
             `;
-            container.appendChild(col);
+            container.appendChild(card);
         });
         
     } catch (error) {
