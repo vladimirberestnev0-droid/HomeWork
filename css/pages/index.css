@@ -1,5 +1,5 @@
 /* ===== index.css ===== */
-/* Версия: 20.0 — ФИНАЛЬНАЯ ГЛАВНАЯ С ПРЕМИУМ-ЭФФЕКТАМИ */
+/* Версия: 20.1 — ИСПРАВЛЕННАЯ ГЛАВНАЯ (без дублирующих фиксов) */
 
 /* Контейнер формы и заказов */
 #orderFormRow {
@@ -7,12 +7,8 @@
     flex-direction: row;
     align-items: flex-start;
     gap: 20px;
-    position: relative;
     min-height: 600px;
     width: 100%;
-    isolation: isolate;
-    z-index: 1;
-    flex-wrap: nowrap;
     margin-bottom: 40px;
 }
 
@@ -24,23 +20,38 @@
     top: 90px;
     align-self: flex-start;
     height: fit-content;
-    z-index: var(--z-form);
-    isolation: isolate;
 }
 
 #ordersColumn {
     flex: 0 0 50%;
     max-width: 50%;
     width: 50%;
-    height: auto;
-    overflow-y: visible;
-    overflow-x: hidden;
-    padding-right: 10px;
-    position: sticky;
-    top: 90px;
-    z-index: var(--z-orders);
     display: flex;
     flex-direction: column;
+    position: sticky;
+    top: 90px;
+    height: fit-content;
+}
+
+.orders-card {
+    background: var(--bg-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 600px;
+    width: 100%;
+}
+
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .orders-content {
@@ -48,18 +59,19 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: visible;
+    padding: 20px;
+    height: 100%;
 }
 
 #ordersList {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 10px;
-    margin-bottom: 15px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    padding-right: 10px;
+    margin-bottom: 15px;
+    min-height: 200px;
 }
 
 #ordersList::-webkit-scrollbar { width: 6px; }
@@ -73,10 +85,8 @@
 #loadMoreContainer {
     flex-shrink: 0;
     text-align: center;
-    margin-top: 0;
+    margin-top: 10px;
     padding: 10px 0;
-    position: relative;
-    z-index: 2;
 }
 
 #loadMoreBtn {
@@ -127,40 +137,6 @@
 #map:hover, #ordersMap:hover {
     box-shadow: var(--shadow-hover), var(--shadow-glow);
     transform: scale(1.01);
-}
-
-/* Трофей для рейтинга */
-.card h3 i.fa-trophy {
-    background: linear-gradient(145deg, #fbbf24, #f59e0b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 4px 8px rgba(251,191,36,0.3));
-    animation: trophyGlow 2s ease-in-out infinite;
-    display: inline-block;
-    margin-right: 8px;
-    font-size: 1.8rem;
-}
-
-.rating-header {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.rating-header::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, #fbbf24, transparent);
-    animation: goldLine 3s ease-in-out infinite;
 }
 
 /* Саджесты адреса */
@@ -217,29 +193,13 @@
     animation: spin 1s linear infinite;
 }
 
-#address {
-    padding-right: 40px;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23f97316" viewBox="0 0 16 16"%3E%3Cpath d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/%3E%3C/svg%3E');
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 16px;
-}
-#address:focus { background-image: none; }
-
 /* Карточка формы */
 .form-card {
-    height: fit-content;
     background: var(--bg-white);
+    border-radius: var(--radius-xl);
+    padding: 24px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-    pointer-events: auto;
-    isolation: isolate;
-    max-height: none;
-    overflow: visible;
-    position: relative;
-    z-index: var(--z-form-card);
-    width: 100%;
-    transition: var(--transition-bounce);
 }
 
 .form-card:hover {
@@ -247,154 +207,21 @@
     border-color: var(--accent-light);
 }
 
-/* Карточка заказов */
-.orders-card {
-    height: auto;
-    min-height: 600px;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-white);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    transition: var(--transition-bounce);
-}
-
-.orders-card:hover {
-    box-shadow: var(--shadow-hover), var(--shadow-glow);
-    border-color: var(--accent-light);
-}
-
-.orders-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-.orders-count-badge {
-    background: var(--accent-light);
-    color: var(--accent-dark);
-    padding: 5px 15px;
-    border-radius: var(--radius-full);
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: var(--transition-fast);
-}
-
-.orders-count-badge:hover {
-    transform: scale(1.05);
-    background: var(--accent);
-    color: white;
-}
-.orders-count-badge i { margin-right: 5px; }
-
-/* AI Price Hint */
-.ai-price-hint {
-    background: var(--accent-light);
-    color: var(--accent-dark);
-    cursor: pointer;
-    transition: var(--transition-bounce);
-    border-radius: var(--radius-lg);
-    padding: 12px 16px;
-    border: 1px solid transparent;
-}
-
-.ai-price-hint:hover {
-    background: var(--accent);
-    color: white;
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-hover), var(--shadow-glow);
-}
-
-/* Сетка топ мастеров */
-.top-masters-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.top-masters-grid .master-card {
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 30px;
-    padding: 20px;
-    transition: var(--transition-bounce);
-    border: 1px solid rgba(230,122,75,0.2);
-    box-shadow: var(--shadow);
-}
-
-.top-masters-grid .master-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: var(--shadow-hover), var(--shadow-glow);
-    border-color: var(--accent);
-}
-
-.top-masters-grid .master-avatar {
-    width: 90px;
-    height: 90px;
-    border: 3px solid white;
-    box-shadow: var(--shadow);
-    transition: var(--transition-bounce);
-}
-
-.top-masters-grid .master-card:hover .master-avatar {
-    transform: rotate(5deg) scale(1.05);
-    box-shadow: var(--shadow-glow);
-}
-
-/* Превью фото */
-.photo-preview {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.photo-preview-item {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition-bounce);
-}
-.photo-preview-item:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-hover);
-}
-.photo-preview-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.photo-preview-item .remove-photo {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    cursor: pointer;
-    transition: var(--transition-bounce);
-}
-.photo-preview-item .remove-photo:hover {
-    background: var(--danger);
-    transform: scale(1.2);
-}
-
-/* Анимации */
-@keyframes goldLine {
-    0%,100% { opacity: 0.5; }
-    50% { opacity: 1; }
-}
-@keyframes trophyGlow {
-    0%,100% { filter: drop-shadow(0 4px 8px rgba(251,191,36,0.3)); transform: scale(1); }
-    50% { filter: drop-shadow(0 8px 16px rgba(251,191,36,0.6)); transform: scale(1.05); }
+/* Адаптивность */
+@media (max-width: 992px) {
+    #orderFormRow {
+        flex-direction: column;
+    }
+    
+    #orderFormColumn,
+    #ordersColumn {
+        flex: 0 0 100%;
+        max-width: 100%;
+        width: 100%;
+        position: static;
+    }
+    
+    .orders-card {
+        min-height: 500px;
+    }
 }

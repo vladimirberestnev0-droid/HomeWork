@@ -164,9 +164,3 @@ body.dark-theme nav a:hover {
 body.dark-theme .logo {
     color: var(--text-dark);
 }
-
-/* Анимации */
-@keyframes glow {
-    0%, 100% { box-shadow: 0 4px 10px rgba(251,191,36,0.3); }
-    50% { box-shadow: 0 4px 20px rgba(251,191,36,0.6); }
-}

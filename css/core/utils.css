@@ -84,12 +84,3 @@
 .position-relative { position: relative; }
 .position-absolute { position: absolute; }
 .position-fixed { position: fixed; }
-
-/* ===== АНИМАЦИИ ЧЕРЕЗ КЛАССЫ ===== */
-.animate-fade-slide { animation: fadeSlide 0.3s ease forwards; }
-.animate-slide-up { animation: slideUp 0.5s ease forwards; }
-.animate-slide-down { animation: slideDown 0.5s ease forwards; }
-.animate-fade-in { animation: fadeIn 0.5s ease forwards; }
-.animate-scale-in { animation: scaleIn 0.5s ease forwards; }
-.pulse { animation: pulse 2s infinite; }
-.float { animation: float 3s ease-in-out infinite; }

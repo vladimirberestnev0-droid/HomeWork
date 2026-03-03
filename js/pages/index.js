@@ -1,5 +1,5 @@
 // ===== INDEX.JS — Логика главной страницы =====
-// ВЕРСИЯ 13.4 — ИСПРАВЛЕНА ПРОБЛЕМА ИСЧЕЗНОВЕНИЯ ЗАКАЗОВ
+// ВЕРСИЯ 13.5 — ИСПРАВЛЕНА, УБРАНЫ ЛИШНИЕ ФИКСЫ
 
 // ===== ЗАЩИТА ОТ БЕСКОНЕЧНЫХ РЕДИРЕКТОВ =====
 (function() {
@@ -90,7 +90,7 @@ function renderRatingStars(rating) {
 }
 
 // ============================================
-// ФУНКЦИЯ ПРОВЕРКИ ПОЗИЦИОНИРОВАНИЯ
+// ФУНКЦИЯ ПРОВЕРКИ ПОЗИЦИОНИРОВАНИЯ (только лог, без принудительных изменений)
 // ============================================
 
 function checkOrderPositioning() {
@@ -105,25 +105,7 @@ function checkOrderPositioning() {
     console.log('- ordersColumn display:', window.getComputedStyle(ordersColumn).display);
     console.log('- formRow flex-direction:', window.getComputedStyle(formRow).flexDirection);
     
-    // Принудительно применяем стили если что-то пошло не так
-    if (window.getComputedStyle(formRow).flexDirection !== 'row') {
-        console.warn('⚠️ flex-direction не row, применяем фикс');
-        formRow.style.setProperty('flex-direction', 'row', 'important');
-    }
-    
-    if (window.getComputedStyle(formColumn).flex !== '0 0 50%') {
-        console.warn('⚠️ ширина формы не 50%, применяем фикс');
-        formColumn.style.setProperty('flex', '0 0 50%', 'important');
-        formColumn.style.setProperty('max-width', '50%', 'important');
-        formColumn.style.setProperty('width', '50%', 'important');
-    }
-    
-    if (window.getComputedStyle(ordersColumn).flex !== '0 0 50%') {
-        console.warn('⚠️ ширина заказов не 50%, применяем фикс');
-        ordersColumn.style.setProperty('flex', '0 0 50%', 'important');
-        ordersColumn.style.setProperty('max-width', '50%', 'important');
-        ordersColumn.style.setProperty('width', '50%', 'important');
-    }
+    // Ничего не меняем, только логируем
 }
 
 // ============================================
@@ -1561,8 +1543,9 @@ function setupAuthListener() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 index.js (v13.4) загружен и готов к работе!');
+    console.log('🚀 index.js (v13.5) загружен и готов к работе!');
     
+    // Просто проверяем, но не применяем принудительные фиксы
     setTimeout(checkOrderPositioning, 500);
     
     if (typeof AuthUI?.renderAuthBlock === 'function') {
@@ -1605,92 +1588,6 @@ window.addEventListener('load', () => {
 window.addEventListener('resize', () => {
     setTimeout(checkOrderPositioning, 100);
 });
-
-// ===== ФИКС СТРУКТУРЫ ЗАКАЗОВ =====
-(function fixOrdersStructure() {
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            console.log('🔧 Применяем фикс структуры заказов...');
-            
-            const ordersCol = document.getElementById('ordersColumn');
-            const ordersList = document.getElementById('ordersList');
-            const loadMoreContainer = document.getElementById('loadMoreContainer');
-            
-            if (ordersCol && ordersList && loadMoreContainer) {
-                let ordersContent = document.querySelector('.orders-content');
-                
-                if (!ordersContent) {
-                    ordersContent = document.createElement('div');
-                    ordersContent.className = 'orders-content';
-                    
-                    ordersList.parentNode.insertBefore(ordersContent, ordersList);
-                    ordersContent.appendChild(ordersList);
-                    ordersContent.appendChild(loadMoreContainer);
-                    
-                    console.log('✅ Структура заказов создана');
-                }
-                
-                ordersContent.style.cssText = 'flex: 1 !important; display: flex !important; flex-direction: column !important; min-height: 0 !important; overflow: hidden !important;';
-                ordersList.style.cssText = 'flex: 1 !important; overflow-y: auto !important;';
-                loadMoreContainer.style.cssText = 'flex-shrink: 0 !important; text-align: center !important; padding: 10px 0 !important;';
-                
-                console.log('✅ Фикс структуры заказов применён');
-            }
-        }, 1000);
-    });
-})();
-
-// ============================================
-// ЖЁСТКИЙ ФИКС ВИДИМОСТИ КОНТЕЙНЕРОВ
-// ============================================
-(function forceShowContainers() {
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            console.log('🔧 Применяем фикс видимости контейнеров...');
-            
-            const containers = [
-                'orderFormRow',
-                'orderFormColumn',
-                'ordersColumn',
-                'ordersList',
-                'ordersMap'
-            ];
-            
-            containers.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.style.setProperty('display', 'block', 'important');
-                    el.style.setProperty('visibility', 'visible', 'important');
-                    el.style.setProperty('opacity', '1', 'important');
-                    el.style.setProperty('height', 'auto', 'important');
-                    el.style.setProperty('min-height', '100px', 'important');
-                    
-                    if (id === 'orderFormRow') {
-                        el.style.setProperty('display', 'flex', 'important');
-                        el.style.setProperty('min-height', '600px', 'important');
-                    }
-                    
-                    if (id === 'orderFormColumn' || id === 'ordersColumn') {
-                        el.style.setProperty('flex', '0 0 50%', 'important');
-                        el.style.setProperty('max-width', '50%', 'important');
-                        el.style.setProperty('min-height', '500px', 'important');
-                    }
-                    
-                    if (id === 'ordersList') {
-                        el.style.setProperty('display', 'flex', 'important');
-                        el.style.setProperty('flex-direction', 'column', 'important');
-                        el.style.setProperty('gap', '15px', 'important');
-                    }
-                    
-                    console.log(`✅ ${id} принудительно показан`);
-                }
-            });
-            
-            window.dispatchEvent(new Event('resize'));
-            console.log('🎉 Фикс контейнеров применён!');
-        }, 300);
-    });
-})();
 
 // ============================================
 // ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНУЮ ОБЛАСТЬ
