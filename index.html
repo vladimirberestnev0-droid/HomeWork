@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — Главная</title>
+    <title>Свой Мастер 86 — Главная</title>
     
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- CSS -->
+    <!-- CSS основные -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
@@ -22,8 +22,10 @@
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
-      <!-- Мобильная оптимизация (подключаем ПОСЛЕ основных стилей) -->
+    
+    <!-- Мобильная оптимизация -->
     <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-utilities.css">
 </head>
@@ -33,12 +35,12 @@
         <header class="d-flex justify-content-between align-items-center mb-4">
             <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2">
                 <i class="fas fa-house" style="color: var(--accent); font-size: 28px;"></i>
-                <span class="fw-bold fs-4">Свой Мастер 86</span>
+                <span class="fw-bold fs-4">Свой Мастер 86 — Нягань</span>
             </a>
             <nav class="d-flex gap-3 align-items-center">
                 <a href="/HomeWork/" class="active fw-medium">Главная</a>
                 <a href="/HomeWork/client.html" id="clientLink">Мои заказы</a>
-                <a href="/HomeWork/masters.html" id="masterLink">Мастерам</a>
+                <a href="/HomeWork/master.html" id="masterLink">Мастерам</a>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -51,27 +53,25 @@
         <!-- Блок авторизации -->
         <div id="authBlockContainer" class="mb-4"></div>
 
-        <!-- Фильтр по городам (упрощённый select) -->
-        <div class="filter-section mb-4">
-            <label class="form-label fw-bold mb-2">
-                <i class="fas fa-map-marker-alt me-1" style="color: var(--accent);"></i>
-                Город
-            </label>
-            <select id="cityFilter" class="form-select">
-                <option value="all">Все города</option>
-                <option value="nyagan">Нягань</option>
-                <option value="surgut">Сургут</option>
-                <option value="khanty-mansiysk">Ханты-Мансийск</option>
-            </select>
-        </div>
+        <!-- Город (только Нягань, скрыто) -->
+        <input type="hidden" id="cityFilter" value="nyagan">
 
-        <!-- Фильтр по категориям -->
+        <!-- КОМБО-БОКС для категорий -->
         <div class="filter-section mb-4">
-            <label class="form-label fw-bold mb-2">
+            <label class="form-label fw-bold mb-2" id="categoryLabel" style="cursor: pointer;">
                 <i class="fas fa-tags me-1" style="color: var(--accent);"></i>
-                Категория
+                Категория: <span id="selectedCategoryName">Все</span> 
+                <i class="fas fa-chevron-down ms-1" style="font-size: 14px;"></i>
             </label>
-            <div id="categoryFilter" class="d-flex flex-wrap gap-2"></div>
+            
+            <!-- Выпадающий список с поиском -->
+            <div id="categoryDropdown" class="category-dropdown" style="display: none;">
+                <input type="text" id="categorySearch" class="form-control mb-2" placeholder="🔍 Поиск категории...">
+                <div id="categoryList" class="category-list" style="max-height: 300px; overflow-y: auto;"></div>
+            </div>
+            
+            <!-- Скрытое поле для хранения выбранной категории -->
+            <input type="hidden" id="selectedCategory" value="all">
         </div>
 
         <!-- Основной контейнер: форма + заказы -->
@@ -111,7 +111,7 @@
                             <input type="file" id="photoInput" accept="image/*" multiple class="form-control">
                             <div id="photoPreview" class="d-flex gap-2 mt-2 flex-wrap"></div>
                         </div>
-                        <button type="submit" class="btn w-100 py-3">
+                        <button type="submit" class="btn btn-primary w-100 py-3">
                             <i class="fas fa-paper-plane me-2"></i> Опубликовать заказ
                         </button>
                     </form>
@@ -124,7 +124,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h3 class="mb-0">
                             <i class="fas fa-clipboard-list me-2" style="color: var(--accent);"></i>
-                            Актуальные заказы
+                            Актуальные заказы в Нягани
                         </h3>
                         <span class="badge bg-secondary" id="ordersCount">0</span>
                     </div>
@@ -156,37 +156,31 @@
 
     <!-- Футер -->
     <footer class="mt-5 py-4 text-center text-secondary border-top">
-        <p>&copy; 2026 Свой Мастер 86 — ремонт и строительство в Нягани</p>
+        <p>&copy; 2026 Свой Мастер 86 — ремонт и строительство только в Нягани</p>
     </footer>
 
-    <!-- Сначала Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-
-<!-- Потом Bootstrap -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Затем наши скрипты в правильном порядке -->
-<script src="/HomeWork/js/core/config.js"></script>
-<script src="/HomeWork/js/core/constants.js"></script>
-<script src="/HomeWork/js/core/base-utils.js"></script>
-<script src="/HomeWork/js/core/firebase.js"></script>  <!-- Firebase инициализация -->
-<script src="/HomeWork/js/core/error-handler.js"></script>
-<script src="/HomeWork/js/core/redirect-protection.js"></script>
-
-<!-- Сервисы -->
-<script src="/HomeWork/js/services/auth.js"></script>
-<script src="/HomeWork/js/services/orders.js"></script>
-<script src="/HomeWork/js/services/chat.js"></script>
-<script src="/HomeWork/js/services/moderation.js"></script>
-
-<!-- Компоненты -->
-<script src="/HomeWork/js/components/auth-ui.js"></script>
-
-<!-- Страницы -->
-<script src="/HomeWork/js/pages/index.js"></script>
-<script src="/HomeWork/js/components/mobile-nav.js"></script>
+    <!-- Скрипты -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="/HomeWork/js/core/config.js"></script>
+    <script src="/HomeWork/js/core/constants.js"></script>
+    <script src="/HomeWork/js/core/base-utils.js"></script>
+    <script src="/HomeWork/js/core/firebase.js"></script>
+    <script src="/HomeWork/js/core/error-handler.js"></script>
+    <script src="/HomeWork/js/core/redirect-protection.js"></script>
+    
+    <script src="/HomeWork/js/services/auth.js"></script>
+    <script src="/HomeWork/js/services/orders.js"></script>
+    <script src="/HomeWork/js/services/chat.js"></script>
+    <script src="/HomeWork/js/services/moderation.js"></script>
+    
+    <script src="/HomeWork/js/components/auth-ui.js"></script>
+    
+    <script src="/HomeWork/js/pages/index.js"></script>
+    <script src="/HomeWork/js/components/mobile-nav.js"></script>
 </body>
 </html>
