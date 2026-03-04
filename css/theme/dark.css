@@ -1,5 +1,11 @@
-/* Тёмная тема уже определена в variables.css через body.dark-theme */
-/* Этот файл может быть пустым или содержать дополнительные стили для тёмной темы */
+/* Тёмная тема - минимальная */
+body.dark-theme {
+    --bg-light: #1a1a1a;
+    --bg-white: #2d2d2d;
+    --text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --border: #404040;
+}
 
 body.dark-theme .card {
     background: var(--bg-white);
@@ -9,12 +15,5 @@ body.dark-theme .form-control,
 body.dark-theme .form-select {
     background: var(--bg-white);
     color: var(--text-primary);
-}
-
-body.dark-theme .chat-card:hover {
-    background: var(--bg-light);
-}
-
-body.dark-theme .message.received .message-bubble {
-    background: var(--bg-light);
+    border-color: var(--border);
 }

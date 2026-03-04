@@ -1,14 +1,22 @@
-// Проверяем, загружен ли Firebase
-if (typeof firebase === 'undefined') {
-    console.error('❌ Firebase SDK не загружен!');
-} else {
-    // Проверяем, не инициализирован ли уже Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(CONFIG.firebase);
+// Ждём, пока CONFIG загрузится
+(function() {
+    // Если CONFIG ещё нет, ждём
+    if (typeof CONFIG === 'undefined') {
+        console.error('❌ CONFIG не загружен! Проверь порядок скриптов');
+        return;
     }
 
-    // Глобальные ссылки
-    if (typeof window.db === 'undefined') {
+    if (typeof firebase === 'undefined') {
+        console.error('❌ Firebase SDK не загружен!');
+        return;
+    }
+
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(CONFIG.firebase);
+        }
+
+        // Глобальные ссылки
         window.db = firebase.firestore();
         window.auth = firebase.auth();
         window.storage = firebase.storage();
@@ -18,16 +26,16 @@ if (typeof firebase === 'undefined') {
             ignoreUndefinedProperties: true
         });
 
-        // Включаем persistence для offline режима
+        // Persistence (опционально)
         window.db.enablePersistence({ synchronizeTabs: true })
             .catch(err => {
                 if (err.code === 'failed-precondition') {
                     console.warn('⚠️ Множественные вкладки, persistence отключен');
-                } else if (err.code === 'unimplemented') {
-                    console.warn('⚠️ Браузер не поддерживает persistence');
                 }
             });
-        
+
         console.log('✅ Firebase инициализирован');
+    } catch (error) {
+        console.error('❌ Ошибка инициализации Firebase:', error);
     }
-}
+})();

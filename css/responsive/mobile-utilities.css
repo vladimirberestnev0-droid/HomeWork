@@ -1,0 +1,84 @@
+/* ===== МОБИЛЬНЫЕ УТИЛИТЫ ===== */
+/* Классы для показа/скрытия элементов на разных устройствах */
+
+/* По умолчанию скрыто на мобилках */
+.mobile-only {
+    display: none;
+}
+
+/* По умолчанию видно на десктопе */
+.desktop-only {
+    display: block;
+}
+
+/* На мобилках */
+@media (max-width: 768px) {
+    .mobile-only {
+        display: block;
+    }
+    
+    .desktop-only {
+        display: none;
+    }
+    
+    /* Гибкие изображения */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* Убираем лишние отступы */
+    .py-4 {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Компактные карточки */
+    .card {
+        border-radius: 12px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Исправление скролла */
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Исправление тапов */
+    button, a, .clickable {
+        touch-action: manipulation;
+    }
+    
+    /* Убираем hover-эффекты на мобилках */
+    .btn:hover {
+        transform: none;
+    }
+    
+    .card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* Альбомная ориентация */
+@media (max-width: 900px) and (orientation: landscape) {
+    .chat-container {
+        height: 90vh;
+    }
+    
+    .modal-dialog {
+        align-items: center;
+    }
+    
+    .modal-content {
+        border-radius: 20px;
+        max-height: 80vh;
+    }
+}

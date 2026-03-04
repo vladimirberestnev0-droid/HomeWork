@@ -23,6 +23,9 @@
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
+      <!-- Мобильная оптимизация (подключаем ПОСЛЕ основных стилей) -->
+    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-utilities.css">
 </head>
 <body>
     <div class="container py-4">
@@ -156,30 +159,34 @@
         <p>&copy; 2026 Свой Мастер 86 — ремонт и строительство в Нягани</p>
     </footer>
 
-    <!-- Скрипты -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Core -->
-    <script src="/HomeWork/js/core/config.js"></script>
-    <script src="/HomeWork/js/core/constants.js"></script>
-    <script src="/HomeWork/js/core/base-utils.js"></script>
-    <script src="/HomeWork/js/core/firebase.js"></script>
-    <script src="/HomeWork/js/core/error-handler.js"></script>
-    <script src="/HomeWork/js/core/redirect-protection.js"></script>
-    
-    <!-- Services -->
-    <script src="/HomeWork/js/services/auth.js"></script>
-    <script src="/HomeWork/js/services/orders.js"></script>
-    <script src="/HomeWork/js/services/moderation.js"></script>
-    
-    <!-- Components -->
-    <script src="/HomeWork/js/components/auth-ui.js"></script>
-    
-    <!-- Pages -->
-    <script src="/HomeWork/js/pages/index.js"></script>
+    <!-- Сначала Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+<!-- Потом Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Затем наши скрипты в правильном порядке -->
+<script src="/HomeWork/js/core/config.js"></script>
+<script src="/HomeWork/js/core/constants.js"></script>
+<script src="/HomeWork/js/core/base-utils.js"></script>
+<script src="/HomeWork/js/core/firebase.js"></script>  <!-- Firebase инициализация -->
+<script src="/HomeWork/js/core/error-handler.js"></script>
+<script src="/HomeWork/js/core/redirect-protection.js"></script>
+
+<!-- Сервисы -->
+<script src="/HomeWork/js/services/auth.js"></script>
+<script src="/HomeWork/js/services/orders.js"></script>
+<script src="/HomeWork/js/services/chat.js"></script>
+<script src="/HomeWork/js/services/moderation.js"></script>
+
+<!-- Компоненты -->
+<script src="/HomeWork/js/components/auth-ui.js"></script>
+
+<!-- Страницы -->
+<script src="/HomeWork/js/pages/index.js"></script>
+<script src="/HomeWork/js/components/mobile-nav.js"></script>
 </body>
 </html>
