@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С КНОПКОЙ ЗАЯВКИ)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ЧАТАМИ)
 // ============================================
 
 const BottomNav = (function() {
@@ -26,25 +26,26 @@ const BottomNav = (function() {
         
         navItems = document.querySelectorAll('.nav-item');
         
-        console.log('📱 Нижняя навигация инициализирована');
+        console.log('📱 Нижняя навигация с чатами инициализирована');
         
         // Показываем навигацию только на мобилках/планшетах
         checkScreenSize();
         window.addEventListener('resize', debounce(checkScreenSize, 150));
         
-        highlightActive();
+        // Первоначальное обновление видимости
+        updateNavVisibility();
         setupListeners();
-        updateCreateOrderButton();
         
         // Подписываемся на изменения авторизации
-        Auth.onAuthChange(() => {
-            updateNavVisibility();
-            updateCreateOrderButton();
-        });
+        if (window.Auth) {
+            Auth.onAuthChange(() => {
+                updateNavVisibility();
+            });
+        }
         
         // Подписываемся на непрочитанные сообщения
         document.addEventListener('unread-changed', (e) => {
-            updateUnreadBadge(e.detail.count);
+            updateChatBadge(e.detail.count);
         });
         
         initialized = true;
@@ -63,9 +64,95 @@ const BottomNav = (function() {
         }
     }
     
+    // ===== ОБНОВЛЕНИЕ ВИДИМОСТИ ПО РОЛЯМ =====
+    function updateNavVisibility() {
+        if (!window.Auth) return;
+        
+        const state = Auth.getAuthState();
+        const isAuth = state.isAuthenticated;
+        const isMaster = state.isMaster;
+        const isClient = state.isClient;
+        
+        navItems.forEach(item => {
+            const page = item.dataset.page;
+            
+            // По умолчанию скрываем всё
+            item.style.display = 'none';
+            
+            if (!isAuth) {
+                // ГОСТЬ - только главная, заявка, профиль (как вход)
+                switch(page) {
+                    case 'home':
+                    case 'create-order':
+                    case 'profile':
+                        item.style.display = 'flex';
+                        break;
+                }
+                
+                // Меняем текст профиля на "Войти"
+                if (page === 'profile') {
+                    const span = item.querySelector('span:last-child');
+                    if (span) span.textContent = 'Войти';
+                }
+                
+            } else if (isMaster) {
+                // МАСТЕР - главная, поиск, чаты, отклики, профиль
+                switch(page) {
+                    case 'home':
+                    case 'search':
+                    case 'chats':
+                    case 'orders':
+                    case 'profile':
+                        item.style.display = 'flex';
+                        break;
+                }
+                
+                // Меняем текст "Заказы" на "Отклики"
+                if (page === 'orders') {
+                    const span = item.querySelector('span:last-child');
+                    if (span) span.textContent = 'Отклики';
+                }
+                
+                // Восстанавливаем текст профиля
+                if (page === 'profile') {
+                    const span = item.querySelector('span:last-child');
+                    if (span) span.textContent = 'Профиль';
+                }
+                
+            } else if (isClient) {
+                // КЛИЕНТ - главная, чаты, заявка, заказы, профиль
+                switch(page) {
+                    case 'home':
+                    case 'chats':
+                    case 'create-order':
+                    case 'orders':
+                    case 'profile':
+                        item.style.display = 'flex';
+                        break;
+                }
+                
+                // Меняем текст "Заказы" на "Мои заказы"
+                if (page === 'orders') {
+                    const span = item.querySelector('span:last-child');
+                    if (span) span.textContent = 'Мои заказы';
+                }
+                
+                // Восстанавливаем текст профиля
+                if (page === 'profile') {
+                    const span = item.querySelector('span:last-child');
+                    if (span) span.textContent = 'Профиль';
+                }
+            }
+        });
+        
+        // Обновляем подсветку активного пункта
+        highlightActive();
+    }
+    
     // ===== ПОДСВЕТКА АКТИВНОГО ПУНКТА =====
     function highlightActive() {
         const currentPath = window.location.pathname;
+        const currentUrl = window.location.href;
         
         navItems.forEach(item => {
             item.classList.remove('active');
@@ -74,71 +161,28 @@ const BottomNav = (function() {
             
             if (page === 'home' && (currentPath.includes('index.html') || currentPath === '/HomeWork/')) {
                 item.classList.add('active');
-            } else if (page === 'orders' && (currentPath.includes('client.html') || currentPath.includes('orders'))) {
+            } else if (page === 'orders' && (currentPath.includes('client.html') || currentPath.includes('master.html'))) {
                 item.classList.add('active');
-            } else if (page === 'profile' && (currentPath.includes('master.html') || currentPath.includes('profile'))) {
+            } else if (page === 'profile' && (currentPath.includes('client.html') || currentPath.includes('master.html') || currentPath.includes('admin.html'))) {
                 item.classList.add('active');
-            } else if (page === 'favorites' && currentPath.includes('favorites.html')) {
+            } else if (page === 'chats' && currentUrl.includes('tab=chats')) {
                 item.classList.add('active');
-            } else if (page === 'create-order') {
-                // Никогда не подсвечиваем кнопку заявки
-                item.classList.remove('active');
             }
         });
     }
     
-    // ===== ОБНОВЛЕНИЕ ВИДИМОСТИ =====
-    function updateNavVisibility() {
-        const isAuth = Auth.isAuthenticated();
+    // ===== ОБНОВЛЕНИЕ БЕЙДЖА ЧАТОВ =====
+    function updateChatBadge(count) {
+        const chatItem = document.querySelector('.nav-item[data-page="chats"]');
+        if (!chatItem) return;
         
-        navItems.forEach(item => {
-            const page = item.dataset.page;
-            
-            // Главная и заявка всегда видны
-            if (page === 'home' || page === 'create-order' || page === 'favorites') {
-                item.style.display = 'flex';
-            } else if (page === 'orders') {
-                item.style.display = isAuth ? 'flex' : 'none';
-            } else if (page === 'profile') {
-                item.style.display = isAuth ? 'flex' : 'none';
-            }
-        });
-    }
-    
-    // ===== ОБНОВЛЕНИЕ КНОПКИ ЗАЯВКИ =====
-    function updateCreateOrderButton() {
-        const createBtn = document.querySelector('.create-order-btn');
-        if (!createBtn) return;
-        
-        if (Auth.isAuthenticated()) {
-            if (Auth.isMaster()) {
-                // Для мастера - делаем неактивной
-                createBtn.classList.add('master-mode');
-                createBtn.setAttribute('title', 'Мастера создают отклики, а не заказы');
-            } else {
-                // Для клиента - активна
-                createBtn.classList.remove('master-mode');
-                createBtn.setAttribute('title', 'Создать новый заказ');
-            }
-        } else {
-            // Для гостя - ведёт на авторизацию
-            createBtn.classList.remove('master-mode');
-            createBtn.setAttribute('title', 'Войдите, чтобы создать заказ');
-        }
-    }
-    
-    // ===== ОБНОВЛЕНИЕ БЕЙДЖА НЕПРОЧИТАННЫХ =====
-    function updateUnreadBadge(count) {
-        const profileItem = document.querySelector('.nav-item[data-page="profile"]');
-        if (!profileItem) return;
-        
-        let badge = profileItem.querySelector('.nav-badge');
+        let badge = chatItem.querySelector('.chat-badge');
         
         if (count > 0) {
             if (!badge) {
                 badge = document.createElement('span');
-                badge.className = 'nav-badge';
-                profileItem.appendChild(badge);
+                badge.className = 'chat-badge';
+                chatItem.appendChild(badge);
             }
             badge.textContent = count > 99 ? '99+' : count;
         } else {
@@ -152,17 +196,13 @@ const BottomNav = (function() {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                // Защита от двойного клика
                 const now = Date.now();
                 if (now - lastClickTime < 500) return;
                 lastClickTime = now;
                 
                 const page = this.dataset.page;
                 
-                // Анимация клика
                 animateClick(this);
-                
-                // Обработка навигации
                 handleNavigation(page);
             });
         });
@@ -178,6 +218,11 @@ const BottomNav = (function() {
     
     // ===== ОБРАБОТКА НАВИГАЦИИ =====
     function handleNavigation(page) {
+        if (!window.Auth || !window.AuthUI) {
+            console.warn('Auth не загружен');
+            return;
+        }
+        
         const state = Auth.getAuthState();
         
         switch(page) {
@@ -185,9 +230,23 @@ const BottomNav = (function() {
                 window.location.href = '/HomeWork/';
                 break;
                 
-            case 'favorites':
+            case 'search':
+                // Только для мастера - поиск заказов
+                if (state.isMaster) {
+                    window.location.href = '/HomeWork/?focus=search';
+                } else {
+                    window.location.href = '/HomeWork/';
+                }
+                break;
+                
+            case 'chats':
                 if (state.isAuthenticated) {
-                    Utils.showInfo('⭐ Избранное появится soon!');
+                    // Переходим в кабинет с открытыми чатами
+                    if (state.isClient) {
+                        window.location.href = '/HomeWork/client.html?tab=chats';
+                    } else if (state.isMaster) {
+                        window.location.href = '/HomeWork/master.html?tab=chats';
+                    }
                 } else {
                     AuthUI.showLoginModal();
                 }
@@ -203,8 +262,6 @@ const BottomNav = (function() {
                         window.location.href = '/HomeWork/client.html';
                     } else if (state.isMaster) {
                         window.location.href = '/HomeWork/master.html';
-                    } else {
-                        window.location.href = '/HomeWork/';
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -219,8 +276,6 @@ const BottomNav = (function() {
                         window.location.href = '/HomeWork/master.html';
                     } else if (state.isAdmin) {
                         window.location.href = '/HomeWork/admin.html';
-                    } else {
-                        window.location.href = '/HomeWork/';
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -234,33 +289,25 @@ const BottomNav = (function() {
         const state = Auth.getAuthState();
         
         if (!state.isAuthenticated) {
-            // Неавторизован - показать модалку входа
             AuthUI.showLoginModal();
             return;
         }
         
-        if (state.isMaster) {
-            // Мастер - показать подсказку
-            Utils.showInfo('Вы мастер. Чтобы создать заказ, войдите как клиент');
-            return;
-        }
-        
         if (state.isClient) {
-            // Клиент - переходим к созданию заказа
+            // Клиент - создаём заказ
             if (window.location.pathname.includes('client.html')) {
                 // Мы уже в кабинете клиента - переключаем на вкладку создания
-                if (window.ClientCabinet && window.ClientCabinet.switchTab) {
-                    window.ClientCabinet.switchTab('new');
-                } else {
-                    // Fallback - через событие
-                    document.dispatchEvent(new CustomEvent('switch-client-tab', { 
-                        detail: { tab: 'new' } 
-                    }));
-                }
+                document.dispatchEvent(new CustomEvent('switch-client-tab', { 
+                    detail: { tab: 'new' } 
+                }));
             } else {
                 // Переходим в кабинет клиента с параметром
                 window.location.href = '/HomeWork/client.html?tab=new';
             }
+        } else if (state.isMaster) {
+            // Мастер - поиск заказов
+            Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
+            window.location.href = '/HomeWork/?focus=search';
         }
     }
     
@@ -276,8 +323,8 @@ const BottomNav = (function() {
     // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
-        highlightActive,
-        handleCreateOrder
+        updateNavVisibility,
+        highlightActive
     };
 
     window.__BOTTOM_NAV_INITIALIZED__ = true;

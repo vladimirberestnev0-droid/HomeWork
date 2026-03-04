@@ -1,5 +1,10 @@
+/**
+ * masters.js — логика кабинета мастера
+ * Версия 3.0 с поддержкой новой навигации
+ */
+
 (function() {
-    // Состояние
+    // ===== СОСТОЯНИЕ =====
     let currentFilter = 'all';
     let allResponses = [];
     let currentOrderId = null;
@@ -7,9 +12,10 @@
     let currentClientName = '';
     let currentRating = 0;
 
+    // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // Инициализация
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
         console.log('🚀 Masters.js загружен');
         
@@ -31,6 +37,9 @@
                     if (window.BottomNav) {
                         BottomNav.highlightActive();
                     }
+                    
+                    // Проверяем параметры URL
+                    checkUrlParams();
                 } else {
                     Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
                     setTimeout(() => window.location.href = '/HomeWork/', 2000);
@@ -45,7 +54,6 @@
 
         initEventListeners();
         
-        // Проверяем, не перешли ли с параметром для отклика
         const urlParams = new URLSearchParams(window.location.search);
         const respondOrderId = urlParams.get('respond');
         if (respondOrderId) {
@@ -53,6 +61,19 @@
         }
     });
 
+    // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
+    function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        
+        if (tabParam === 'chats') {
+            setTimeout(() => {
+                switchTab('chats');
+            }, 500);
+        }
+    }
+
+    // ===== ЗАГРУЗКА ПРОФИЛЯ =====
     async function loadMasterProfile() {
         try {
             const userData = Auth.getUserData();
@@ -75,6 +96,7 @@
         }
     }
 
+    // ===== ЗАГРУЗКА ОТКЛИКОВ =====
     async function loadMasterResponses(filter = 'all') {
         currentFilter = filter;
         
@@ -117,6 +139,7 @@
         }
     }
 
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
     function createResponseCard(item) {
         const order = item.order || {};
         const response = item.response || {};
@@ -191,6 +214,7 @@
         `;
     }
 
+    // ===== ОТКРЫТЬ ЧАТ =====
     window.openChat = (orderId, clientId) => {
         const user = Auth.getUser();
         if (!user) return;
@@ -199,7 +223,7 @@
         window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
     };
 
-    // Функция для отклика с главной
+    // ===== ЗАГРУЗКА ЗАКАЗА ДЛЯ ОТКЛИКА =====
     async function loadOrderForResponse(orderId) {
         try {
             const order = await Orders.getOrderById(orderId);
@@ -211,7 +235,7 @@
         }
     }
 
-    // Показать модалку отклика
+    // ===== ПОКАЗ МОДАЛКИ ОТКЛИКА =====
     window.showRespondModal = (orderId, orderTitle, orderCategory, orderPrice) => {
         currentOrderId = orderId;
 
@@ -228,7 +252,7 @@
         modal.show();
     };
 
-    // Отправка отклика
+    // ===== ОТПРАВКА ОТКЛИКА =====
     $('submitResponse')?.addEventListener('click', async () => {
         const price = parseInt($('responsePrice')?.value);
         const comment = $('responseComment')?.value || '';
@@ -254,7 +278,7 @@
         }
     });
 
-    // Показать модалку отзыва о клиенте
+    // ===== ПОКАЗ МОДАЛКИ ОТЗЫВА О КЛИЕНТЕ =====
     window.showClientReviewModal = (orderId, clientId, clientName) => {
         currentOrderId = orderId;
         currentClientId = clientId;
@@ -270,7 +294,7 @@
         modal.show();
     };
 
-    // Обработчик звёзд
+    // ===== ОБРАБОТЧИК ЗВЁЗД =====
     document.querySelectorAll('#clientRatingStars .star').forEach(star => {
         star.addEventListener('click', function() {
             const rating = parseInt(this.dataset.rating);
@@ -283,7 +307,7 @@
         });
     });
 
-    // Отправка отзыва о клиенте
+    // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ =====
     $('submitClientReview')?.addEventListener('click', async () => {
         if (!currentRating) {
             Utils.showNotification('Поставьте оценку клиенту', 'warning');
@@ -307,6 +331,7 @@
         }
     });
 
+    // ===== ЗАГРУЗКА ЧАТОВ =====
     async function loadChats() {
         const chatsList = $('chatsList');
         if (!chatsList) return;
@@ -350,6 +375,7 @@
         }
     }
 
+    // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
     function switchTab(tabName) {
         document.querySelectorAll('[data-tab]').forEach(btn => {
             if (btn.dataset.tab === tabName) {
@@ -370,8 +396,13 @@
         if (tabName === 'chats') {
             loadChats();
         }
+        
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabName);
+        window.history.replaceState({}, '', url);
     }
 
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -394,4 +425,17 @@
 
         $('themeToggle')?.addEventListener('click', Auth.toggleTheme);
     }
+
+    // ===== СЛУШАТЕЛЬ СОБЫТИЙ ОТ НАВИГАЦИИ =====
+    document.addEventListener('switch-master-tab', (e) => {
+        if (e.detail && e.detail.tab) {
+            switchTab(e.detail.tab);
+        }
+    });
+
+    // ===== ЭКСПОРТ =====
+    window.switchMasterTab = switchTab;
+    window.MasterCabinet = {
+        switchTab: switchTab
+    };
 })();

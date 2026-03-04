@@ -137,27 +137,37 @@
 
     <!-- НИЖНЯЯ НАВИГАЦИЯ (ОБНОВЛЕННАЯ) -->
     <div class="bottom-nav">
+        <!-- Главная (всегда) -->
         <button class="nav-item" data-page="home">
             <span>🏠</span>
             <span>Главная</span>
         </button>
         
-        <button class="nav-item" data-page="favorites">
-            <span>❤️</span>
-            <span>Избранное</span>
+        <!-- Поиск (только для мастера) -->
+        <button class="nav-item" data-page="search" style="display: none;">
+            <span>🔍</span>
+            <span>Поиск</span>
         </button>
         
-        <!-- НОВАЯ КНОПКА ЗАЯВКИ -->
-        <button class="nav-item create-order-btn" data-page="create-order" id="createOrderNavBtn">
+        <!-- Чаты (для авторизованных) -->
+        <button class="nav-item" data-page="chats" style="display: none;">
+            <span>💬</span>
+            <span>Чаты</span>
+        </button>
+        
+        <!-- Заявка (для всех, но с разным поведением) -->
+        <button class="nav-item create-order-btn" data-page="create-order">
             <span class="plus-icon">➕</span>
             <span>Заявка</span>
         </button>
         
-        <button class="nav-item" data-page="orders">
+        <!-- Заказы/Отклики (в зависимости от роли) -->
+        <button class="nav-item" data-page="orders" style="display: none;">
             <span>📋</span>
             <span>Заказы</span>
         </button>
         
+        <!-- Профиль/Войти -->
         <button class="nav-item" data-page="profile">
             <span>👤</span>
             <span>Профиль</span>

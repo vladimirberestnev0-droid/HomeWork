@@ -11,7 +11,6 @@
         city: 'nyagan',
         sort: 'newest'
     };
-    let currentPage = 0;
     let lastDoc = null;
     let hasMore = true;
     let isLoading = false;
@@ -23,28 +22,37 @@
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Главная загружается...');
         
-        // Показываем скелетон
         document.body.classList.remove('loaded');
         
-        // Ждём Firebase
         await waitForFirebase();
         
-        // Заполняем фильтры
         renderCategoryFilters();
         renderCityFilter();
         
-        // Загружаем реальные заказы
         await loadOrders();
-        
-        // Загружаем мастеров
         await loadMasters();
         
-        // Показываем контент
         document.body.classList.add('loaded');
         
-        // Инициализируем обработчики
         initEventListeners();
+        checkUrlParams();
     });
+
+    // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
+    function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const focusParam = urlParams.get('focus');
+        
+        if (focusParam === 'search') {
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 1000);
+        }
+    }
 
     // ===== ОЖИДАНИЕ FIREBASE =====
     function waitForFirebase() {
@@ -109,7 +117,6 @@
                     <p class="mt-3 text-secondary">Загружаем заказы...</p>
                 </div>
             `;
-            currentPage = 0;
             lastDoc = null;
             allOrders = [];
         }
@@ -119,7 +126,6 @@
                 throw new Error('Сервис заказов не найден');
             }
 
-            // Строим запрос с пагинацией
             let query = db.collection('orders')
                 .where('status', '==', ORDER_STATUS.OPEN)
                 .orderBy('createdAt', 'desc')
@@ -148,7 +154,6 @@
                 newOrders.push({ id: doc.id, ...doc.data() });
             });
 
-            // Применяем фильтры на клиенте
             let filtered = applyFilters(newOrders);
 
             if (reset) {
@@ -185,12 +190,10 @@
     function applyFilters(orders) {
         let filtered = [...orders];
 
-        // Фильтр по категории
         if (filters.category && filters.category !== 'all') {
             filtered = filtered.filter(o => o.category === filters.category);
         }
 
-        // Фильтр по городу
         if (filters.city && filters.city !== 'all') {
             const cityName = CITIES.find(c => c.id === filters.city)?.name?.toLowerCase();
             if (cityName) {
@@ -201,7 +204,6 @@
             }
         }
 
-        // Сортировка
         if (filters.sort === 'price_asc') {
             filtered.sort((a, b) => a.price - b.price);
         } else if (filters.sort === 'price_desc') {
@@ -227,7 +229,6 @@
             container.insertAdjacentHTML('beforeend', displayedOrders.slice(-6).map(order => createOrderCard(order)).join(''));
         }
 
-        // Анимация появления
         setTimeout(() => {
             document.querySelectorAll('.order-card:not(.animated)').forEach((card, index) => {
                 card.classList.add('animated');
@@ -236,11 +237,20 @@
             });
         }, 100);
 
-        // Показываем кнопку "Загрузить ещё"
         if (hasMore) {
             showLoadMoreButton(container);
         } else {
             hideLoadMoreButton();
+        }
+        
+        updateOrdersCount();
+    }
+
+    // ===== ОБНОВЛЕНИЕ СЧЁТЧИКА ЗАКАЗОВ =====
+    function updateOrdersCount() {
+        const countEl = $('ordersCount');
+        if (countEl) {
+            countEl.textContent = allOrders.length;
         }
     }
 
@@ -294,7 +304,7 @@
                 AuthUI.showLoginModal();
                 return;
             }
-            window.location.href = '/HomeWork/client.html';
+            window.location.href = '/HomeWork/client.html?tab=new';
         });
     }
 
@@ -360,20 +370,36 @@
             let masters = [];
             
             if (window.db) {
-                const snapshot = await db.collection('users')
-                    .where('role', '==', 'master')
-                    .where('banned', '==', false)
-                    .orderBy('rating', 'desc')
-                    .limit(8)
-                    .get();
+                try {
+                    const snapshot = await db.collection('users')
+                        .where('role', '==', 'master')
+                        .where('banned', '==', false)
+                        .orderBy('rating', 'desc')
+                        .limit(8)
+                        .get();
+                        
+                    snapshot.forEach(doc => {
+                        masters.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (indexError) {
+                    console.warn('⚠️ Индекс не найден, загружаем без сортировки');
                     
-                snapshot.forEach(doc => {
-                    masters.push({ id: doc.id, ...doc.data() });
-                });
+                    const snapshot = await db.collection('users')
+                        .where('role', '==', 'master')
+                        .where('banned', '==', false)
+                        .limit(20)
+                        .get();
+                        
+                    snapshot.forEach(doc => {
+                        masters.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    masters.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                    masters = masters.slice(0, 8);
+                }
             }
             
             if (masters.length === 0) {
-                // Демо-мастера
                 masters = getDemoMasters();
             }
             
@@ -381,7 +407,8 @@
             
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
-            container.innerHTML = '<div class="text-muted p-3 text-center">Ошибка загрузки мастеров</div>';
+            const masters = getDemoMasters();
+            container.innerHTML = masters.map(master => createMasterCard(master)).join('');
         }
     }
 
@@ -430,7 +457,6 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        // Фильтр по категориям
         document.querySelectorAll('[data-category]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
@@ -441,7 +467,6 @@
             });
         });
 
-        // Фильтр по городу
         document.querySelectorAll('[data-city]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('[data-city]').forEach(b => b.classList.remove('active'));
@@ -452,13 +477,11 @@
             });
         });
 
-        // Сортировка
         document.getElementById('sortSelect')?.addEventListener('change', (e) => {
             filters.sort = e.target.value;
             loadOrders(true);
         });
 
-        // Кнопка создания заказа
         const createBtn = document.getElementById('createOrderBtn');
         if (createBtn) {
             createBtn.addEventListener('click', () => {
@@ -470,11 +493,10 @@
                     Utils.showWarning('Мастера не могут создавать заказы');
                     return;
                 }
-                window.location.href = '/HomeWork/client.html';
+                window.location.href = '/HomeWork/client.html?tab=new';
             });
         }
 
-        // Поиск с дебаунсом
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
@@ -485,7 +507,6 @@
                     return;
                 }
                 
-                // Фильтруем уже загруженные
                 const filtered = allOrders.filter(order => 
                     (order.title && order.title.toLowerCase().includes(query)) || 
                     (order.description && order.description.toLowerCase().includes(query))
@@ -520,7 +541,6 @@
             return;
         }
         
-        // Сохраняем в sessionStorage для страницы мастера
         sessionStorage.setItem('respond_order', JSON.stringify({
             orderId, title, category, price
         }));

@@ -1,17 +1,17 @@
 /**
  * client.js — логика кабинета клиента
- * Версия 2.0 с исправленными обработчиками
+ * Версия 3.0 с поддержкой новой навигации
  */
 
 (function() {
-    // Состояние
+    // ===== СОСТОЯНИЕ =====
     let currentFilter = 'all';
     let allOrders = [];
 
-    // DOM элементы
+    // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // Инициализация
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
         console.log('🚀 Client.js загружен');
         
@@ -31,9 +31,12 @@
                     await loadChats();
                     
                     // Обновляем мобильную навигацию
-                    if (window.MobileNav) {
-                        MobileNav.setActiveTab('orders');
+                    if (window.BottomNav) {
+                        BottomNav.highlightActive();
                     }
+                    
+                    // Проверяем параметры URL после загрузки
+                    checkUrlParams();
                 } else {
                     Utils.showNotification('❌ Эта страница только для клиентов', 'warning');
                     setTimeout(() => window.location.href = '/HomeWork/', 2000);
@@ -49,7 +52,23 @@
         initEventListeners();
     });
 
-    // Загрузка профиля
+    // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
+    function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        
+        if (tabParam === 'new') {
+            setTimeout(() => {
+                switchTab('new');
+            }, 500);
+        } else if (tabParam === 'chats') {
+            setTimeout(() => {
+                switchTab('chats');
+            }, 500);
+        }
+    }
+
+    // ===== ЗАГРУЗКА ПРОФИЛЯ =====
     async function loadClientProfile() {
         try {
             const userData = Auth.getUserData();
@@ -71,7 +90,7 @@
         }
     }
 
-    // Загрузка заказов
+    // ===== ЗАГРУЗКА ЗАКАЗОВ =====
     async function loadClientOrders(filter = 'all') {
         currentFilter = filter;
         
@@ -108,7 +127,7 @@
         }
     }
 
-    // Создание карточки заказа
+    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
     function createOrderCard(order) {
         const statusText = {
             'open': '🔵 Активен',
@@ -174,14 +193,12 @@
         `;
     }
 
-    // Создание карточки отклика
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
     function createResponseCard(order, response) {
         const isSelected = order.selectedMasterId === response.masterId;
         
-        // Проверяем, оставлен ли уже отзыв
         const hasReview = order.reviews && order.reviews.some(r => r.masterId === response.masterId) || false;
         
-        // Формируем звезды рейтинга
         const ratingStars = response.masterRating ? 
             '★'.repeat(Math.floor(response.masterRating)) + 
             (response.masterRating % 1 >= 0.5 ? '½' : '') + 
@@ -225,7 +242,7 @@
         `;
     }
 
-    // Отправка отзыва
+    // ===== ОТПРАВКА ОТЗЫВА =====
     async function submitReview() {
         if (!window.currentRating) {
             Utils.showNotification('Поставьте оценку!', 'warning');
@@ -248,12 +265,10 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Добавляем отзыв в заказ
             await db.collection('orders').doc(window.currentOrderId).update({
                 reviews: firebase.firestore.FieldValue.arrayUnion(review)
             });
 
-            // Обновляем рейтинг мастера
             const masterDoc = await db.collection('users').doc(window.currentMasterId).get();
             if (masterDoc.exists) {
                 const masterData = masterDoc.data();
@@ -267,7 +282,6 @@
                 });
             }
 
-            // Скрываем модалку
             const modalEl = document.getElementById('reviewModal');
             if (modalEl && window.bootstrap) {
                 const modal = bootstrap.Modal.getInstance(modalEl);
@@ -276,7 +290,6 @@
             
             Utils.showNotification('✅ Спасибо за отзыв!', 'success');
             
-            // Перезагружаем заказы
             await loadClientOrders(currentFilter);
             
         } catch (error) {
@@ -285,7 +298,7 @@
         }
     }
 
-    // Загрузка чатов
+    // ===== ЗАГРУЗКА ЧАТОВ =====
     async function loadChats() {
         const chatsList = document.getElementById('chatsList');
         if (!chatsList) return;
@@ -329,7 +342,7 @@
         }
     }
 
-    // Переключение табов
+    // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
     function switchTab(tabName) {
         const tabs = document.querySelectorAll('[data-tab]');
         const contents = document.querySelectorAll('.tab-content');
@@ -350,15 +363,18 @@
             }
         });
         
-        // Загружаем данные если нужно
         if (tabName === 'chats') {
             loadChats();
         }
+        
+        // Обновляем URL без перезагрузки
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabName);
+        window.history.replaceState({}, '', url);
     }
 
-    // Инициализация обработчиков
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        // Фильтры заказов
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
@@ -367,14 +383,12 @@
             });
         });
 
-        // Табы
         document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.addEventListener('click', function() {
                 switchTab(this.dataset.tab);
             });
         });
 
-        // Звёзды рейтинга в модалке
         document.querySelectorAll('#reviewModal .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
@@ -387,13 +401,11 @@
             });
         });
 
-        // Отправка отзыва
         const submitBtn = document.getElementById('submitReview');
         if (submitBtn) {
             submitBtn.addEventListener('click', submitReview);
         }
 
-        // Выход
         const logoutLink = document.getElementById('logoutLink');
         if (logoutLink) {
             logoutLink.addEventListener('click', (e) => {
@@ -402,46 +414,22 @@
             });
         }
 
-        // Тема
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', Auth.toggleTheme);
         }
     }
 
-    // ===== ОБРАБОТКА ПАРАМЕТРОВ URL =====
-(function() {
-    // Проверяем параметр tab в URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    
-    if (tabParam === 'new') {
-        // Ждём загрузки кабинета
-        const checkInterval = setInterval(() => {
-            if (document.getElementById('clientCabinet') && 
-                !document.getElementById('clientCabinet').classList.contains('d-none')) {
-                clearInterval(checkInterval);
-                
-                // Переключаем на вкладку создания
-                setTimeout(() => {
-                    if (window.switchClientTab) {
-                        window.switchClientTab('new');
-                    } else {
-                        // Fallback - ищем кнопку и кликаем
-                        const newTabBtn = document.querySelector('[data-tab="new"]');
-                        if (newTabBtn) newTabBtn.click();
-                    }
-                }, 500);
-            }
-        }, 100);
-    }
-})();
+    // ===== СЛУШАТЕЛЬ СОБЫТИЙ ОТ НАВИГАЦИИ =====
+    document.addEventListener('switch-client-tab', (e) => {
+        if (e.detail && e.detail.tab) {
+            switchTab(e.detail.tab);
+        }
+    });
 
-// Экспортируем для глобального доступа
-window.ClientCabinet = {
-    switchTab: window.switchClientTab
-};
-
-    // Экспортируем функцию переключения табов глобально
+    // ===== ЭКСПОРТ =====
     window.switchClientTab = switchTab;
+    window.ClientCabinet = {
+        switchTab: switchTab
+    };
 })();
