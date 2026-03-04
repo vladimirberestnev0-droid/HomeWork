@@ -1,6 +1,6 @@
 /**
  * firebase.js - Инициализация Firebase
- * Версия 3.0 с оптимизированным persistence и обработкой ошибок
+ * Версия 3.1 с исправленным persistence (убрана лишняя опция)
  */
 
 (function() {
@@ -91,8 +91,28 @@
                 cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
             });
 
-            // Включаем persistence с повторными попытками
-            enablePersistenceWithRetry();
+            // Включаем persistence - ИСПРАВЛЕНО (убрана experimentalForceOwningTab)
+            window.db.enablePersistence({ 
+                synchronizeTabs: true
+            })
+            .then(() => {
+                console.log('✅ Firestore persistence включен');
+            })
+            .catch(err => {
+                if (err.code === 'failed-precondition') {
+                    console.warn('⚠️ Множественные вкладки открыты, persistence работает в ограниченном режиме');
+                    
+                    // Пробуем принудительно включить persistence с другой стратегией
+                    if (PERSISTENCE_RETRIES > 0) {
+                        console.log(`🔄 Повторная попытка включения persistence...`);
+                        setTimeout(() => enablePersistenceWithRetry(PERSISTENCE_RETRIES - 1), 1000);
+                    }
+                } else if (err.code === 'unimplemented') {
+                    console.warn('⚠️ Браузер не поддерживает persistence');
+                } else {
+                    console.warn('⚠️ Ошибка включения persistence:', err.message);
+                }
+            });
 
             // Настройки Auth
             window.auth.useDeviceLanguage();
@@ -121,29 +141,21 @@
         }
     }
 
-    function enablePersistenceWithRetry(retries = PERSISTENCE_RETRIES) {
+    function enablePersistenceWithRetry(retries) {
         if (!window.db) return;
         
         window.db.enablePersistence({ 
-            synchronizeTabs: true,
-            experimentalForceOwningTab: true
+            synchronizeTabs: true
         })
         .then(() => {
-            console.log('✅ Firestore persistence включен');
+            console.log('✅ Firestore persistence включен (после повторной попытки)');
         })
         .catch(err => {
-            if (err.code === 'failed-precondition') {
-                console.warn('⚠️ Множественные вкладки открыты, persistence работает в ограниченном режиме');
-                
-                // Пробуем принудительно включить persistence
-                if (retries > 0) {
-                    console.log(`🔄 Повторная попытка включения persistence (осталось ${retries})...`);
-                    setTimeout(() => enablePersistenceWithRetry(retries - 1), 1000);
-                }
-            } else if (err.code === 'unimplemented') {
-                console.warn('⚠️ Браузер не поддерживает persistence');
+            if (err.code === 'failed-precondition' && retries > 0) {
+                console.log(`🔄 Повторная попытка ${retries}...`);
+                setTimeout(() => enablePersistenceWithRetry(retries - 1), 1000);
             } else {
-                console.warn('⚠️ Ошибка включения persistence:', err.message);
+                console.warn('⚠️ Не удалось включить persistence:', err.message);
             }
         });
     }
