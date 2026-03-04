@@ -153,8 +153,7 @@ const Auth = (function() {
                     rating: 0,
                     reviews: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    banned: false,
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    banned: false
                 };
                 
                 await db.collection('users').doc(uid).set(currentUserData);
@@ -169,11 +168,14 @@ const Auth = (function() {
 
     // ===== ДЕЙСТВИЯ ПОСЛЕ ВХОДА =====
     function handlePostLogin() {
-        // Обновляем время последнего входа
+        // Обновляем время последнего входа (с обработкой ошибки)
         if (currentUser && window.db) {
             db.collection('users').doc(currentUser.uid).update({
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(err => console.warn('Не удалось обновить lastLogin:', err));
+            }).catch(err => {
+                // Просто логируем, не показываем пользователю
+                console.log('ℹ️ Не удалось обновить lastLogin (возможно, нет прав)');
+            });
             
             // Обновляем кэш
             if (currentUserData) {
@@ -267,7 +269,6 @@ const Auth = (function() {
                 rating: 0,
                 reviews: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
                 banned: false,
                 settings: {
                     notifications: true,

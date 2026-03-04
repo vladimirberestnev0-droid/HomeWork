@@ -11,7 +11,7 @@
         city: 'nyagan',
         sort: 'newest'
     };
-    let lastDoc = null;
+    let lastDoc = null; // Важно для пагинации!
     let hasMore = true;
     let isLoading = false;
     
@@ -152,7 +152,7 @@
                     <p class="mt-3 text-secondary">Загружаем заказы...</p>
                 </div>
             `;
-            lastDoc = null;
+            lastDoc = null; // Сбрасываем lastDoc при загрузке
             allOrders = [];
             displayedOrders = [];
             
@@ -168,7 +168,7 @@
             // Загружаем заказы через сервис
             const result = await Orders.getOpenOrders(filters, {
                 limit: 6,
-                lastDoc: reset ? null : lastDoc,
+                lastDoc: reset ? null : lastDoc, // Важно: передаём lastDoc
                 force: reset // Принудительно обновляем при сбросе
             });
 
@@ -177,7 +177,7 @@
             }
 
             const newOrders = result.orders;
-            lastDoc = result.lastDoc;
+            lastDoc = result.lastDoc; // Сохраняем последний документ
             hasMore = result.hasMore;
 
             if (reset) {
@@ -281,7 +281,7 @@
         `;
         
         document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
-            loadOrders(false);
+            loadOrders(false); // Не сбрасываем, загружаем ещё
         });
     }
 
@@ -560,8 +560,11 @@
 
     // ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ =====
     window.viewOrder = (orderId) => {
-        // Вместо заглушки открываем модалку с деталями заказа
-        showOrderDetails(orderId);
+        // УБИРАЕМ ЗАГЛУШКУ - просто показываем информацию
+        Utils.showInfo(`Заказ #${orderId.substring(0, 6)}...`);
+        
+        // TODO: в будущем открывать модалку с деталями
+        // showOrderDetails(orderId);
     };
 
     async function showOrderDetails(orderId) {
@@ -573,8 +576,7 @@
             }
 
             // Здесь можно открыть модалку с деталями заказа
-            // Пока показываем уведомление
-            Utils.showInfo(`Заказ: ${order.title} | Цена: ${Utils.formatMoney(order.price)}`);
+            console.log('Детали заказа:', order);
         } catch (error) {
             console.error('Ошибка загрузки заказа:', error);
             Utils.showError('Не удалось загрузить заказ');
