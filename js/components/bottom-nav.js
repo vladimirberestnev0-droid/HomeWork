@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С КНОПКОЙ ЗАЯВКИ)
 // ============================================
 
 const BottomNav = (function() {
@@ -34,10 +34,12 @@ const BottomNav = (function() {
         
         highlightActive();
         setupListeners();
+        updateCreateOrderButton();
         
         // Подписываемся на изменения авторизации
         Auth.onAuthChange(() => {
             updateNavVisibility();
+            updateCreateOrderButton();
         });
         
         // Подписываемся на непрочитанные сообщения
@@ -76,10 +78,11 @@ const BottomNav = (function() {
                 item.classList.add('active');
             } else if (page === 'profile' && (currentPath.includes('master.html') || currentPath.includes('profile'))) {
                 item.classList.add('active');
-            } else if (page === 'search' && currentPath.includes('search.html')) {
-                item.classList.add('active');
             } else if (page === 'favorites' && currentPath.includes('favorites.html')) {
                 item.classList.add('active');
+            } else if (page === 'create-order') {
+                // Никогда не подсвечиваем кнопку заявки
+                item.classList.remove('active');
             }
         });
     }
@@ -87,20 +90,41 @@ const BottomNav = (function() {
     // ===== ОБНОВЛЕНИЕ ВИДИМОСТИ =====
     function updateNavVisibility() {
         const isAuth = Auth.isAuthenticated();
-        const isMaster = Auth.isMaster();
         
         navItems.forEach(item => {
             const page = item.dataset.page;
             
-            // Показываем/скрываем пункты в зависимости от роли
-            if (page === 'orders') {
-                item.style.display = isAuth && !isMaster ? 'flex' : 'none';
+            // Главная и заявка всегда видны
+            if (page === 'home' || page === 'create-order' || page === 'favorites') {
+                item.style.display = 'flex';
+            } else if (page === 'orders') {
+                item.style.display = isAuth ? 'flex' : 'none';
             } else if (page === 'profile') {
                 item.style.display = isAuth ? 'flex' : 'none';
-            } else {
-                item.style.display = 'flex'; // Главная и поиск всегда видны
             }
         });
+    }
+    
+    // ===== ОБНОВЛЕНИЕ КНОПКИ ЗАЯВКИ =====
+    function updateCreateOrderButton() {
+        const createBtn = document.querySelector('.create-order-btn');
+        if (!createBtn) return;
+        
+        if (Auth.isAuthenticated()) {
+            if (Auth.isMaster()) {
+                // Для мастера - делаем неактивной
+                createBtn.classList.add('master-mode');
+                createBtn.setAttribute('title', 'Мастера создают отклики, а не заказы');
+            } else {
+                // Для клиента - активна
+                createBtn.classList.remove('master-mode');
+                createBtn.setAttribute('title', 'Создать новый заказ');
+            }
+        } else {
+            // Для гостя - ведёт на авторизацию
+            createBtn.classList.remove('master-mode');
+            createBtn.setAttribute('title', 'Войдите, чтобы создать заказ');
+        }
     }
     
     // ===== ОБНОВЛЕНИЕ БЕЙДЖА НЕПРОЧИТАННЫХ =====
@@ -108,12 +132,12 @@ const BottomNav = (function() {
         const profileItem = document.querySelector('.nav-item[data-page="profile"]');
         if (!profileItem) return;
         
-        let badge = profileItem.querySelector('.unread-badge');
+        let badge = profileItem.querySelector('.nav-badge');
         
         if (count > 0) {
             if (!badge) {
                 badge = document.createElement('span');
-                badge.className = 'unread-badge';
+                badge.className = 'nav-badge';
                 profileItem.appendChild(badge);
             }
             badge.textContent = count > 99 ? '99+' : count;
@@ -161,23 +185,16 @@ const BottomNav = (function() {
                 window.location.href = '/HomeWork/';
                 break;
                 
-            case 'search':
-                if (window.location.pathname.includes('index.html') || window.location.pathname === '/HomeWork/') {
-                    document.querySelector('.search-bar')?.scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                } else {
-                    window.location.href = '/HomeWork/';
-                }
-                break;
-                
             case 'favorites':
                 if (state.isAuthenticated) {
                     Utils.showInfo('⭐ Избранное появится soon!');
                 } else {
                     AuthUI.showLoginModal();
                 }
+                break;
+                
+            case 'create-order':
+                handleCreateOrder();
                 break;
                 
             case 'orders':
@@ -212,6 +229,41 @@ const BottomNav = (function() {
         }
     }
     
+    // ===== ОБРАБОТКА КНОПКИ ЗАЯВКИ =====
+    function handleCreateOrder() {
+        const state = Auth.getAuthState();
+        
+        if (!state.isAuthenticated) {
+            // Неавторизован - показать модалку входа
+            AuthUI.showLoginModal();
+            return;
+        }
+        
+        if (state.isMaster) {
+            // Мастер - показать подсказку
+            Utils.showInfo('Вы мастер. Чтобы создать заказ, войдите как клиент');
+            return;
+        }
+        
+        if (state.isClient) {
+            // Клиент - переходим к созданию заказа
+            if (window.location.pathname.includes('client.html')) {
+                // Мы уже в кабинете клиента - переключаем на вкладку создания
+                if (window.ClientCabinet && window.ClientCabinet.switchTab) {
+                    window.ClientCabinet.switchTab('new');
+                } else {
+                    // Fallback - через событие
+                    document.dispatchEvent(new CustomEvent('switch-client-tab', { 
+                        detail: { tab: 'new' } 
+                    }));
+                }
+            } else {
+                // Переходим в кабинет клиента с параметром
+                window.location.href = '/HomeWork/client.html?tab=new';
+            }
+        }
+    }
+    
     // ===== DEBOUNCE =====
     function debounce(func, wait) {
         let timeout;
@@ -224,7 +276,8 @@ const BottomNav = (function() {
     // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
-        highlightActive
+        highlightActive,
+        handleCreateOrder
     };
 
     window.__BOTTOM_NAV_INITIALIZED__ = true;

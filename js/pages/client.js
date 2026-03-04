@@ -409,6 +409,39 @@
         }
     }
 
+    // ===== ОБРАБОТКА ПАРАМЕТРОВ URL =====
+(function() {
+    // Проверяем параметр tab в URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam === 'new') {
+        // Ждём загрузки кабинета
+        const checkInterval = setInterval(() => {
+            if (document.getElementById('clientCabinet') && 
+                !document.getElementById('clientCabinet').classList.contains('d-none')) {
+                clearInterval(checkInterval);
+                
+                // Переключаем на вкладку создания
+                setTimeout(() => {
+                    if (window.switchClientTab) {
+                        window.switchClientTab('new');
+                    } else {
+                        // Fallback - ищем кнопку и кликаем
+                        const newTabBtn = document.querySelector('[data-tab="new"]');
+                        if (newTabBtn) newTabBtn.click();
+                    }
+                }, 500);
+            }
+        }, 100);
+    }
+})();
+
+// Экспортируем для глобального доступа
+window.ClientCabinet = {
+    switchTab: window.switchClientTab
+};
+
     // Экспортируем функцию переключения табов глобально
     window.switchClientTab = switchTab;
 })();

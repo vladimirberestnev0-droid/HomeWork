@@ -237,3 +237,79 @@
         display: none; /* Прячем иконки на совсем маленьких */
     }
 }
+
+/* ===== НОВЫЕ СТИЛИ ДЛЯ КНОПКИ ЗАЯВКИ ===== */
+
+/* Кнопка создания заказа в навигации */
+.create-order-btn {
+    position: relative;
+    transform: scale(1.1);
+    margin-top: -10px;
+}
+
+.create-order-btn .plus-icon {
+    font-size: 2.2rem;
+    line-height: 1;
+    color: var(--accent);
+    filter: drop-shadow(0 0 10px var(--accent));
+    animation: float 3s ease-in-out infinite;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.create-order-btn span:last-child {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.create-order-btn:hover .plus-icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px var(--accent));
+}
+
+.create-order-btn:active .plus-icon {
+    transform: scale(0.95);
+}
+
+/* Анимация для плюсика */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* Для мастеров (неактивная кнопка) */
+.create-order-btn.master-mode .plus-icon {
+    opacity: 0.5;
+    filter: none;
+    animation: none;
+}
+
+.create-order-btn.master-mode span:last-child {
+    color: var(--text-muted);
+}
+
+/* Адаптация для маленьких экранов */
+@media (max-width: 480px) {
+    .create-order-btn .plus-icon {
+        font-size: 2rem;
+    }
+    
+    .create-order-btn {
+        margin-top: -8px;
+    }
+}
+
+@media (max-width: 360px) {
+    .create-order-btn .plus-icon {
+        font-size: 1.8rem;
+    }
+    
+    .create-order-btn span:last-child {
+        font-size: 0.6rem;
+    }
+}

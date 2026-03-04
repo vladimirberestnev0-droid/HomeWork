@@ -145,3 +145,49 @@ body {
         display: none; /* Прячем иконки */
     }
 }
+
+/* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ НОВОЙ НАВИГАЦИИ ===== */
+
+/* Адаптация навигации под 5 элементов */
+.bottom-nav {
+    padding: 6px 8px;
+    justify-content: space-around;
+}
+
+.nav-item {
+    padding: 6px 6px;
+    min-width: 50px;
+}
+
+/* Специально для кнопки заявки */
+.create-order-btn {
+    background: rgba(44, 213, 196, 0.1);
+    border-radius: 40px;
+    padding: 4px 10px;
+    border: 1px solid rgba(44, 213, 196, 0.3);
+}
+
+.create-order-btn.active {
+    background: var(--accent);
+}
+
+.create-order-btn.active .plus-icon,
+.create-order-btn.active span:last-child {
+    color: var(--deep-blue);
+}
+
+/* Убираем лишние эффекты */
+.create-order-btn::after {
+    display: none;
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 360px) {
+    .nav-item span:last-child {
+        font-size: 0.6rem;
+    }
+    
+    .create-order-btn .plus-icon {
+        font-size: 1.8rem;
+    }
+}
