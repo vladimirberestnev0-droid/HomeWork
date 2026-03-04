@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ
+// СЕРВИС АВТОРИЗАЦИИ С КЭШИРОВАНИЕМ
 // ============================================
 
 const Auth = (function() {
@@ -16,6 +16,38 @@ const Auth = (function() {
     let initAttempts = 0;
     const MAX_ATTEMPTS = 5;
     let isInitialized = false;
+    
+    // Кэш пользователей (по UID)
+    const userCache = new Map();
+    const USER_CACHE_TTL = 5 * 60 * 1000; // 5 минут
+
+    // ===== РАБОТА С КЭШЕМ =====
+    function getUserFromCache(uid) {
+        const cached = userCache.get(uid);
+        if (!cached) return null;
+        
+        if (Date.now() - cached.timestamp > USER_CACHE_TTL) {
+            userCache.delete(uid);
+            return null;
+        }
+        
+        return cached.data;
+    }
+
+    function setUserToCache(uid, userData) {
+        userCache.set(uid, {
+            data: userData,
+            timestamp: Date.now()
+        });
+    }
+
+    function clearUserCache(uid) {
+        if (uid) {
+            userCache.delete(uid);
+        } else {
+            userCache.clear();
+        }
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
@@ -50,17 +82,29 @@ const Auth = (function() {
             
             console.log(`🔄 Auth state changed: ${isLoggedIn ? 'вошёл' : 'вышел'}`);
             
+            const previousUser = currentUser;
             currentUser = user;
             
             if (user) {
                 try {
-                    await loadUserData(user.uid);
+                    // Сначала проверяем кэш
+                    const cachedData = getUserFromCache(user.uid);
+                    if (cachedData) {
+                        console.log(`📦 Данные из кэша: ${cachedData?.name || 'Без имени'}`);
+                        currentUserData = cachedData;
+                    } else {
+                        await loadUserData(user.uid);
+                    }
                 } catch (error) {
                     console.error('❌ Ошибка загрузки данных:', error);
                     currentUserData = null;
                 }
             } else {
                 currentUserData = null;
+                // Очищаем кэш при выходе
+                if (previousUser) {
+                    clearUserCache(previousUser.uid);
+                }
             }
             
             notifyListeners();
@@ -74,7 +118,7 @@ const Auth = (function() {
 
         initTheme();
         isInitialized = true;
-        console.log('✅ Auth инициализирован');
+        console.log('✅ Auth инициализирован (с кэшированием)');
     }
 
     // ===== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ =====
@@ -88,7 +132,10 @@ const Auth = (function() {
             
             if (userDoc.exists) {
                 currentUserData = userDoc.data();
-                console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}`);
+                console.log(`📦 Данные загружены из Firestore: ${currentUserData?.name || 'Без имени'}`);
+                
+                // Сохраняем в кэш
+                setUserToCache(uid, currentUserData);
                 
                 // Проверка на бан
                 if (currentUserData.banned) {
@@ -111,6 +158,7 @@ const Auth = (function() {
                 };
                 
                 await db.collection('users').doc(uid).set(currentUserData);
+                setUserToCache(uid, currentUserData);
             }
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);
@@ -126,6 +174,14 @@ const Auth = (function() {
             db.collection('users').doc(currentUser.uid).update({
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             }).catch(err => console.warn('Не удалось обновить lastLogin:', err));
+            
+            // Обновляем кэш
+            if (currentUserData) {
+                setUserToCache(currentUser.uid, {
+                    ...currentUserData,
+                    lastLogin: new Date().toISOString()
+                });
+            }
         }
         
         // Проверяем, есть ли параметр redirect в URL
@@ -168,7 +224,6 @@ const Auth = (function() {
     // ===== РЕГИСТРАЦИЯ =====
     async function register(email, password, userData = {}) {
         try {
-            // Проверки
             if (!window.auth || !window.db) {
                 throw new Error('Firebase не инициализирован');
             }
@@ -213,6 +268,9 @@ const Auth = (function() {
 
             // Сохраняем в Firestore
             await db.collection('users').doc(user.uid).set(firestoreData);
+
+            // Сохраняем в кэш
+            setUserToCache(user.uid, firestoreData);
 
             Utils.showSuccess('Регистрация прошла успешно!');
             return { success: true, user };
@@ -287,6 +345,11 @@ const Auth = (function() {
                 throw new Error('Firebase не инициализирован');
             }
             
+            // Очищаем кэш перед выходом
+            if (currentUser) {
+                clearUserCache(currentUser.uid);
+            }
+            
             await auth.signOut();
             
             // Очищаем данные
@@ -296,7 +359,6 @@ const Auth = (function() {
             if (!silent) {
                 Utils.showNotification('👋 До свидания!', 'info');
                 
-                // Перенаправляем через секунду
                 setTimeout(() => {
                     if (window.location.pathname !== '/HomeWork/') {
                         window.location.href = '/HomeWork/';
@@ -364,7 +426,6 @@ const Auth = (function() {
         const isClientRole = isClient();
         const isAdminRole = isAdmin();
 
-        // Показываем/скрываем элементы
         document.querySelectorAll('.auth-required').forEach(el => {
             el.classList.toggle('d-none', !isAuth);
         });
@@ -385,7 +446,6 @@ const Auth = (function() {
             el.classList.toggle('d-none', !isAdminRole);
         });
 
-        // Обновляем информацию о пользователе
         const userEmailEl = document.getElementById('userEmail');
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
@@ -420,7 +480,6 @@ const Auth = (function() {
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         updateThemeIcon(isDark);
         
-        // Уведомляем остальные компоненты
         document.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark } }));
     }
 
@@ -450,6 +509,8 @@ const Auth = (function() {
             // Обновляем локальные данные
             if (currentUserData) {
                 currentUserData = { ...currentUserData, ...data };
+                // Обновляем кэш
+                setUserToCache(currentUser.uid, currentUserData);
             }
 
             Utils.showSuccess('Профиль обновлён');
@@ -469,14 +530,12 @@ const Auth = (function() {
                 throw new Error('Не авторизован');
             }
 
-            // Переаутентификация
             const credential = firebase.auth.EmailAuthProvider.credential(
                 currentUser.email,
                 oldPassword
             );
             await currentUser.reauthenticateWithCredential(credential);
 
-            // Смена пароля
             await currentUser.updatePassword(newPassword);
 
             Utils.showSuccess('Пароль изменён');
@@ -504,6 +563,7 @@ const Auth = (function() {
         }
         authListeners = [];
         isInitialized = false;
+        userCache.clear();
     }
 
     // ===== ПУБЛИЧНОЕ API =====
@@ -525,11 +585,14 @@ const Auth = (function() {
         toggleTheme,
         updateProfile,
         changePassword,
-        cleanup
+        cleanup,
+        
+        // Методы для работы с кэшем
+        clearUserCache
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен');
+    console.log('✅ Auth сервис загружен (с кэшированием)');
     
     return Object.freeze(api);
 })();
@@ -541,5 +604,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 
-// Глобальный доступ
 window.Auth = Auth;

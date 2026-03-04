@@ -10,6 +10,7 @@ const Utils = (function() {
 
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let notificationContainer = null;
+    const memoryCache = new Map(); // Добавляем кэш в памяти
 
     // ===== ПРОВЕРКИ FIREBASE =====
     
@@ -28,6 +29,118 @@ const Utils = (function() {
      */
     function checkFirestore() {
         return checkFirebase();
+    }
+
+    // ===== КЭШИРОВАНИЕ =====
+    
+    /**
+     * Сохранение в memory cache
+     */
+    function setMemoryCache(key, data, ttl = 300000) { // 5 минут по умолчанию
+        memoryCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            ttl
+        });
+        
+        // Автоматическая очистка через ttl
+        setTimeout(() => {
+            if (memoryCache.has(key)) {
+                const item = memoryCache.get(key);
+                if (Date.now() - item.timestamp >= item.ttl) {
+                    memoryCache.delete(key);
+                }
+            }
+        }, ttl);
+    }
+
+    /**
+     * Получение из memory cache
+     */
+    function getMemoryCache(key) {
+        const cached = memoryCache.get(key);
+        if (!cached) return null;
+        
+        if (Date.now() - cached.timestamp > cached.ttl) {
+            memoryCache.delete(key);
+            return null;
+        }
+        
+        return cached.data;
+    }
+
+    /**
+     * Удаление из memory cache
+     */
+    function removeMemoryCache(key) {
+        memoryCache.delete(key);
+    }
+
+    /**
+     * Очистка всего memory cache
+     */
+    function clearMemoryCache() {
+        memoryCache.clear();
+    }
+
+    /**
+     * Сохранение в localStorage (постоянный кэш)
+     */
+    function setPersistentCache(key, data, ttl = 3600000) { // 1 час по умолчанию
+        try {
+            const item = {
+                data,
+                timestamp: Date.now(),
+                ttl
+            };
+            localStorage.setItem(`cache_${key}`, JSON.stringify(item));
+            return true;
+        } catch (e) {
+            console.warn('⚠️ Ошибка сохранения в localStorage:', e);
+            return false;
+        }
+    }
+
+    /**
+     * Получение из localStorage
+     */
+    function getPersistentCache(key) {
+        try {
+            const item = localStorage.getItem(`cache_${key}`);
+            if (!item) return null;
+            
+            const { data, timestamp, ttl } = JSON.parse(item);
+            if (Date.now() - timestamp > ttl) {
+                localStorage.removeItem(`cache_${key}`);
+                return null;
+            }
+            
+            return data;
+        } catch (e) {
+            console.warn('⚠️ Ошибка чтения из localStorage:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Удаление из localStorage
+     */
+    function removePersistentCache(key) {
+        localStorage.removeItem(`cache_${key}`);
+    }
+
+    /**
+     * Очистка всего localStorage кэша (только наших ключей)
+     */
+    function clearPersistentCache() {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('cache_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
     }
 
     // ===== БЕЗОПАСНОСТЬ =====
@@ -410,48 +523,25 @@ const Utils = (function() {
     // ===== РАБОТА С ХРАНИЛИЩЕМ =====
 
     /**
-     * Сохранение в localStorage с TTL
+     * Сохранение в localStorage с TTL (устаревшая, используйте setPersistentCache)
      */
     function setStorage(key, value, ttl = null) {
-        try {
-            const item = {
-                value,
-                timestamp: Date.now(),
-                ttl
-            };
-            localStorage.setItem(key, JSON.stringify(item));
-            return true;
-        } catch (e) {
-            console.error('Ошибка сохранения:', e);
-            return false;
-        }
+        return setPersistentCache(key, value, ttl || 3600000);
     }
 
     /**
-     * Чтение из localStorage
+     * Чтение из localStorage (устаревшая, используйте getPersistentCache)
      */
     function getStorage(key, defaultValue = null) {
-        try {
-            const item = JSON.parse(localStorage.getItem(key));
-            if (!item) return defaultValue;
-
-            if (item.ttl && (Date.now() - item.timestamp > item.ttl)) {
-                localStorage.removeItem(key);
-                return defaultValue;
-            }
-
-            return item.value;
-        } catch (e) {
-            console.error('Ошибка чтения:', e);
-            return defaultValue;
-        }
+        const value = getPersistentCache(key);
+        return value !== null ? value : defaultValue;
     }
 
     /**
      * Удаление из localStorage
      */
     function removeStorage(key) {
-        localStorage.removeItem(key);
+        removePersistentCache(key);
     }
 
     /**
@@ -672,11 +762,21 @@ const Utils = (function() {
     // Инициализация стилей
     addAnimationStyles();
 
-    // Публичное API
+    // ===== ПУБЛИЧНОЕ API =====
     const utils = {
         // Проверки Firebase
         checkFirebase,
         checkFirestore,
+        
+        // Кэширование (НОВОЕ)
+        setMemoryCache,
+        getMemoryCache,
+        removeMemoryCache,
+        clearMemoryCache,
+        setPersistentCache,
+        getPersistentCache,
+        removePersistentCache,
+        clearPersistentCache,
         
         // Безопасность
         escapeHtml,
@@ -718,7 +818,7 @@ const Utils = (function() {
         // Проверки
         checkAuth,
         
-        // Хранилище
+        // Хранилище (совместимость)
         setStorage,
         getStorage,
         removeStorage,
@@ -743,7 +843,7 @@ const Utils = (function() {
     };
 
     window.__UTILS_INITIALIZED__ = true;
-    console.log('✅ Utils загружены');
+    console.log('✅ Utils загружены (с кэшированием)');
     
     return Object.freeze(utils);
 })();

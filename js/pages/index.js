@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ С КЭШИРОВАНИЕМ
 // ============================================
 
 (function() {
@@ -14,6 +14,10 @@
     let lastDoc = null;
     let hasMore = true;
     let isLoading = false;
+    
+    // Константы для кэша
+    const MASTERS_CACHE_KEY = 'home_masters';
+    const MASTERS_CACHE_TTL = 10 * 60 * 1000; // 10 минут
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
@@ -361,10 +365,29 @@
         `;
     }
 
-    // ===== ЗАГРУЗКА МАСТЕРОВ =====
-    async function loadMasters() {
+    // ===== ЗАГРУЗКА МАСТЕРОВ С КЭШИРОВАНИЕМ =====
+    async function loadMasters(forceRefresh = false) {
         const container = $('mastersList');
         if (!container) return;
+
+        // Пробуем загрузить из кэша
+        if (!forceRefresh) {
+            const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
+            if (cachedMasters && cachedMasters.length > 0) {
+                console.log('📦 Мастера из кэша');
+                container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
+                return;
+            }
+            
+            const memoryCached = Utils.getMemoryCache(MASTERS_CACHE_KEY);
+            if (memoryCached && memoryCached.length > 0) {
+                console.log('📦 Мастера из memory cache');
+                container.innerHTML = memoryCached.map(master => createMasterCard(master)).join('');
+                // Сохраняем в persistent cache
+                Utils.setPersistentCache(MASTERS_CACHE_KEY, memoryCached, MASTERS_CACHE_TTL);
+                return;
+            }
+        }
 
         try {
             let masters = [];
@@ -403,12 +426,23 @@
                 masters = getDemoMasters();
             }
             
+            // Сохраняем в кэш
+            Utils.setMemoryCache(MASTERS_CACHE_KEY, masters, MASTERS_CACHE_TTL);
+            Utils.setPersistentCache(MASTERS_CACHE_KEY, masters, MASTERS_CACHE_TTL);
+            
             container.innerHTML = masters.map(master => createMasterCard(master)).join('');
             
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
-            const masters = getDemoMasters();
-            container.innerHTML = masters.map(master => createMasterCard(master)).join('');
+            
+            // При ошибке пробуем показать кэш
+            const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
+            if (cachedMasters && cachedMasters.length > 0) {
+                container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
+            } else {
+                const masters = getDemoMasters();
+                container.innerHTML = masters.map(master => createMasterCard(master)).join('');
+            }
         }
     }
 
