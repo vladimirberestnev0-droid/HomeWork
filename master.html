@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Свой Мастер 86 — Кабинет клиента</title>
+    <title>Свой Мастер 86 — Кабинет мастера</title>
     
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#E67A4B">
@@ -29,8 +29,8 @@
             </a>
             <nav class="d-flex gap-3">
                 <a href="/HomeWork/">Главная</a>
-                <a href="/HomeWork/client.html" class="active">Мои заказы</a>
-                <a href="/HomeWork/masters.html">Мастерам</a>
+                <a href="/HomeWork/client.html">Клиентам</a>
+                <a href="/HomeWork/masters.html" class="active">Мастерам</a>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -40,62 +40,45 @@
             </nav>
         </header>
 
-        <!-- Приветствие -->
-        <div id="welcomeBanner" class="alert alert-info d-none">
-            <h4 id="welcomeName"></h4>
-        </div>
-
-        <!-- Блок авторизации -->
         <div id="authRequired" class="text-center p-5 d-none">
-            <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>
-            <h3>Войдите в кабинет</h3>
+            <i class="fas fa-user-tie fa-4x mb-3" style="color: var(--accent);"></i>
+            <h3>Вход в кабинет мастера</h3>
             <button class="btn mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
         </div>
 
-        <!-- Кабинет клиента -->
-        <div id="clientCabinet" class="d-none">
+        <div id="masterCabinet" class="d-none">
             <div class="row g-4">
                 <!-- Левая колонка: профиль -->
                 <div class="col-md-4">
                     <div class="card p-4 text-center">
                         <div class="avatar-circle mx-auto mb-3">
-                            <i class="fas fa-user fa-3x"></i>
+                            <i class="fas fa-user-tie fa-3x"></i>
                         </div>
-                        <h4 id="clientName">Загрузка...</h4>
-                        <p class="text-secondary" id="clientEmail"></p>
-                        <p class="text-secondary" id="clientPhone"></p>
+                        <h4 id="masterName">Загрузка...</h4>
+                        <p class="text-secondary" id="masterCategories"></p>
                         <hr>
                         <div class="text-start">
-                            <p><i class="fas fa-star me-2" style="color: gold;"></i> Рейтинг: <span id="clientRating">0</span> (<span id="clientReviews">0</span> отзывов)</p>
-                            <p><i class="fas fa-box me-2"></i> Заказов: <span id="clientOrdersCount">0</span></p>
+                            <p><i class="fas fa-star me-2" style="color: gold;"></i> Рейтинг: <span id="masterRating">0</span> (<span id="masterReviews">0</span> отзывов)</p>
+                            <p><i class="fas fa-box me-2"></i> Выполнено: <span id="masterCompleted">0</span></p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Правая колонка: заказы и чаты -->
+                <!-- Правая колонка: отклики и чаты -->
                 <div class="col-md-8">
-                    <!-- Табы -->
                     <ul class="nav nav-tabs mb-4">
                         <li class="nav-item">
-                            <button class="nav-link active" data-tab="orders">Мои заказы</button>
+                            <button class="nav-link active" data-tab="responses">Отклики</button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link" data-tab="chats">Чаты</button>
                         </li>
                     </ul>
 
-                    <!-- Таб: Заказы -->
-                    <div id="ordersTab" class="tab-content active">
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="all">Все</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="open">Активные</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="in_progress">В работе</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Завершённые</button>
-                        </div>
-                        <div id="ordersList"></div>
+                    <div id="responsesTab" class="tab-content active">
+                        <div id="responsesList"></div>
                     </div>
 
-                    <!-- Таб: Чаты -->
                     <div id="chatsTab" class="tab-content d-none">
                         <div id="chatsList"></div>
                     </div>
@@ -104,12 +87,38 @@
         </div>
     </div>
 
-    <!-- Модалка отзыва о мастере -->
-    <div class="modal fade" id="reviewModal" tabindex="-1">
+    <!-- Модалка отклика -->
+    <div class="modal fade" id="respondModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Оцените мастера</h5>
+                    <h5 class="modal-title">Откликнуться на заказ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Ваша цена (₽)</label>
+                        <input type="number" class="form-control" id="responsePrice" min="500">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea class="form-control" id="responseComment" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="submitResponse">Откликнуться</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка отзыва о клиенте -->
+    <div class="modal fade" id="reviewClientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Оцените клиента</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -122,11 +131,11 @@
                             <span class="star" data-rating="5">★</span>
                         </div>
                     </div>
-                    <textarea id="reviewText" class="form-control" rows="3" placeholder="Ваш отзыв"></textarea>
+                    <textarea id="reviewClientText" class="form-control" rows="2" placeholder="Комментарий"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="submitReview">Отправить</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Пропустить</button>
+                    <button type="button" class="btn btn-primary" id="submitClientReview">Отправить</button>
                 </div>
             </div>
         </div>
@@ -152,6 +161,6 @@
     
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     
-    <script src="/HomeWork/js/pages/client.js"></script>
+    <script src="/HomeWork/js/pages/masters.js"></script>
 </body>
 </html>

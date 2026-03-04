@@ -1,0 +1,48 @@
+:root {
+    /* Основные цвета */
+    --accent: #E67A4B;
+    --accent-dark: #d45c2f;
+    --accent-light: #fff1e8;
+    --success: #00A86B;
+    --danger: #DC3545;
+    --warning: #FFB020;
+    --info: #17a2b8;
+    
+    /* Нейтральные цвета */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #999;
+    --bg-light: #f8f9fa;
+    --bg-white: #ffffff;
+    --border: #e9ecef;
+    --border-dark: #dee2e6;
+    
+    /* Тени */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+    
+    /* Скругления */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-full: 999px;
+    
+    /* Анимации */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* Тёмная тема */
+body.dark-theme {
+    --text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --text-muted: #6c757d;
+    --bg-light: #2d2d2d;
+    --bg-white: #1a1a1a;
+    --border: #404040;
+    --border-dark: #4d4d4d;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+}

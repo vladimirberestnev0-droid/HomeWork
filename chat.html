@@ -3,211 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — Чат</title>
-
-    <!-- SEO -->
-    <meta name="description" content="ВоркХом - чат с мастером или клиентом. Обсуждайте детали заказа, обменивайтесь файлами.">
-    <meta name="keywords" content="чат, сообщения, заказ, мастер, клиент">
-    <meta name="author" content="ВоркХом">
+    <title>Свой Мастер 86 — Чат</title>
     
-    <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#E67A4B">
-    <link rel="icon" href="/HomeWork/icons/favicon.ico">
-    <link rel="apple-touch-icon" href="/HomeWork/icons/icon-192x192.png">
     
-    <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Animate.css -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
-    <!-- ===== CORE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/typography.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/animations.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
-
-    <!-- ===== LAYOUTS ===== -->
-    <link rel="stylesheet" href="/HomeWork/css/layouts/header.css">
-
-    <!-- ===== COMPONENTS ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/avatars.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-
-    <!-- ===== PAGE ===== -->
     <link rel="stylesheet" href="/HomeWork/css/components/chat.css">
-
-    <!-- ===== THEME ===== -->
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
-
-    <!-- ===== RESPONSIVE ===== -->
-    <link rel="stylesheet" href="/HomeWork/css/responsive/responsive.css">
 </head>
 <body>
-    <!-- содержимое без изменений -->
-</body>
-</html>
-    <!-- Шапка -->
-    <header class="animate__animated animate__fadeInDown">
-        <a href="/HomeWork/" class="logo-link">
-            <i class="fas fa-house"></i>
-            <span>ВоркХом</span>
-        </a>
-        <nav>
-            <a href="/HomeWork/">Главная</a>
-            <a href="/HomeWork/client.html" id="clientLink">Мои заказы</a>
-            <a href="/HomeWork/masters.html" id="masterLink">Мастерам</a>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
-                <i class="fas fa-moon"></i>
-            </button>
-        </nav>
-    </header>
-
-    <div class="chat-container animate__animated animate__fadeIn">
+    <div class="chat-container">
         <!-- Шапка чата -->
-        <div class="chat-header">
+        <div class="chat-header p-3 border-bottom d-flex align-items-center gap-3">
             <a href="javascript:history.back()" class="back-btn">
-                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-left fa-lg"></i>
             </a>
-            
             <div class="chat-avatar">
-                <i class="fas fa-user-tie"></i>
+                <i class="fas fa-user-circle fa-2x" style="color: var(--accent);"></i>
             </div>
-            
-            <div class="chat-info">
-                <h2 id="chatPartnerName">Загрузка...</h2>
-                <p id="chatPartnerRole">
-                    <span id="partnerRole">...</span>
-                    <span class="online-status" id="onlineStatus"></span>
-                </p>
+            <div>
+                <h5 id="chatPartnerName" class="mb-0">Загрузка...</h5>
+                <small id="chatPartnerRole" class="text-secondary"></small>
             </div>
-
-            <div class="order-badge" id="orderInfo" onclick="showOrderDetails()">
-                📋 Загрузка...
-            </div>
-            
-            <!-- Кнопки чата -->
-            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="videoCallBtn" title="Видеозвонок">
-                <i class="fas fa-video"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill" id="voiceCallBtn" title="Аудиозвонок">
-                <i class="fas fa-phone"></i>
-            </button>
         </div>
 
-        <!-- Закрепленный заказ -->
-        <div id="pinnedOrder" class="pinned-order hidden">
-            <div class="pinned-order-content">
-                <span><i class="fas fa-clipboard-list me-2"></i> <span id="pinnedTitle"></span></span>
-                <span><i class="fas fa-tag me-2"></i> <span id="pinnedPrice"></span> ₽</span>
-                <span><i class="fas fa-map-marker-alt me-2"></i> <span id="pinnedAddress"></span></span>
-            </div>
+        <!-- Закреплённый заказ -->
+        <div id="pinnedOrder" class="p-2 bg-light border-bottom d-none">
+            <small>
+                <i class="fas fa-clipboard-list me-1"></i>
+                <span id="pinnedTitle"></span> · <span id="pinnedPrice"></span> ₽
+            </small>
         </div>
 
         <!-- Сообщения -->
-        <div id="messagesArea" class="messages-area">
-            <div class="empty-chat">
-                <i class="fas fa-comments"></i>
-                <h3>Загрузка чата...</h3>
-                <p>Пожалуйста, подождите</p>
-            </div>
-        </div>
-
-        <!-- Индикатор печати -->
-        <div id="typingIndicator" class="typing-indicator hidden">
-            собеседник печатает...
-        </div>
-
-        <!-- Быстрые ответы для строительных услуг -->
-        <div id="quickReplies" class="quick-replies hidden">
-            <div class="quick-replies-buttons">
-                <button class="quick-reply-btn" data-text="✅ Принято! Приступаю к работе">
-                    <i class="fas fa-check-circle me-2"></i>Принято
-                </button>
-                <button class="quick-reply-btn" data-text="🚗 Выезжаю, буду через час">
-                    <i class="fas fa-truck me-2"></i>Выезжаю
-                </button>
-                <button class="quick-reply-btn" data-text="🔧 Нужны дополнительные материалы">
-                    <i class="fas fa-tools me-2"></i>Материалы
-                </button>
-                <button class="quick-reply-btn" data-text="💰 Смета: [цена] ₽">
-                    <i class="fas fa-calculator me-2"></i>Смета
-                </button>
-                <button class="quick-reply-btn" data-text="📸 Отправьте фото проблемы">
-                    <i class="fas fa-camera me-2"></i>Фото
-                </button>
-                <button class="quick-reply-btn" data-text="🕐 Во сколько будете?">
-                    <i class="fas fa-clock me-2"></i>Время
-                </button>
-            </div>
-        </div>
-
-        <!-- Панель эмодзи -->
-        <div id="emojiPanel" class="emoji-panel hidden">
-            <!-- Заполняется JS -->
-        </div>
+        <div id="messagesArea" class="messages-area p-3" style="height: 60vh; overflow-y: auto;"></div>
 
         <!-- Поле ввода -->
-        <div class="chat-input">
-            <button id="attachButton" class="attach-btn" title="Прикрепить файл">
-                <i class="fas fa-paperclip"></i>
-            </button>
-            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
-            
-            <button id="voiceButton" class="voice-btn" title="Голосовое сообщение">
-                <i class="fas fa-microphone"></i>
-            </button>
-            
-            <button id="emojiButton" class="emoji-btn" title="Смайлики">
-                <i class="fas fa-smile"></i>
-            </button>
-            
-            <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off" disabled>
-            
-            <button id="sendButton" class="send-btn" title="Отправить" disabled>
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-        
-        <!-- Превью файлов -->
-        <div id="filePreview" class="file-preview-area hidden"></div>
-    </div>
-
-    <!-- Запись голоса -->
-    <div id="voiceRecording" class="voice-recording hidden">
-        <div class="recording-wave">
-            <span></span><span></span><span></span><span></span>
-        </div>
-        <div class="recording-timer" id="recordingTimer">00:00</div>
-        <button class="btn btn-sm btn-light rounded-pill" onclick="window.stopRecording()">
-            <i class="fas fa-stop"></i>
-        </button>
-        <button class="btn btn-sm btn-light rounded-pill" onclick="window.cancelRecording()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-
-    <!-- Модалка деталей заказа -->
-    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">📋 Детали заказа</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="orderDetailsContent">
-                    <!-- Заполняется JS -->
-                </div>
+        <div class="chat-input p-3 border-top">
+            <div class="d-flex gap-2">
+                <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf">
+                <button class="btn btn-outline-secondary" id="attachButton" title="Прикрепить файл">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" id="messageInput" class="form-control" placeholder="Сообщение...">
+                <button class="btn btn-primary" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </div>
+            <div id="filePreview" class="d-flex gap-2 mt-2 flex-wrap d-none"></div>
         </div>
     </div>
 
@@ -218,24 +69,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Core -->
     <script src="/HomeWork/js/core/config.js"></script>
-    <script src="/HomeWork/js/core/constants-light.js"></script>
+    <script src="/HomeWork/js/core/constants.js"></script>
     <script src="/HomeWork/js/core/base-utils.js"></script>
-    <script src="/HomeWork/js/core/redirect-protection.js"></script>
-    <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
+    <script src="/HomeWork/js/core/error-handler.js"></script>
+    <script src="/HomeWork/js/core/redirect-protection.js"></script>
     
-    
-    <!-- Services -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
-    <script src="/HomeWork/js/services/moderation.js"></script>
-    <script src="/HomeWork/js/services/auth-ui.js"></script>
     
-    <!-- Pages -->
     <script src="/HomeWork/js/pages/chat.js"></script>
-    <script src="/HomeWork/js/services/welcome-modal.js"></script>
 </body>
 </html>

@@ -1,0 +1,36 @@
+.modal-content {
+    border: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    gap: 10px;
+}
+
+/* Анимация */
+.modal.fade .modal-dialog {
+    transform: scale(0.9);
+    transition: transform 0.2s ease;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* Бэкдроп */
+.modal-backdrop {
+    background: rgba(0,0,0,0.5);
+}

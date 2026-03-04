@@ -1,0 +1,95 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-light);
+    line-height: 1.5;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Контейнер */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Ссылки */
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--accent-dark);
+}
+
+/* Шапка */
+header a {
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+}
+
+header a:hover {
+    background: var(--bg-light);
+    color: var(--accent);
+}
+
+header a.active {
+    background: var(--accent);
+    color: white !important;
+}
+
+/* Логотип */
+.logo-link {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary) !important;
+}
+
+.logo-link i {
+    color: var(--accent);
+}
+
+/* Аватар */
+.avatar-circle {
+    width: 80px;
+    height: 80px;
+    background: var(--accent-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+
+/* Табы */
+.nav-tabs {
+    border-bottom: 2px solid var(--border);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    padding: 10px 20px;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent);
+    background: none;
+    border-bottom: 2px solid var(--accent);
+}
+
+/* Скрытые элементы */
+.d-none {
+    display: none !important;
+}
