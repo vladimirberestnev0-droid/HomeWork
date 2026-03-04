@@ -6,7 +6,6 @@
         category: 'all', 
         city: 'nyagan'
     };
-    let uploadedPhotos = [];
     let currentPage = 0;
     let hasMore = true;
 
@@ -25,11 +24,11 @@
         // Заполняем фильтры
         renderCategoryFilters();
         
-        // Загружаем данные
-        await Promise.all([
-            loadOrders(),
-            loadMasters()
-        ]);
+        // Загружаем РЕАЛЬНЫЕ заказы
+        await loadRealOrders();
+        
+        // Загружаем мастеров
+        await loadMasters();
         
         // Показываем контент
         document.body.classList.add('loaded');
@@ -62,42 +61,15 @@
         const container = $('categoryFilters');
         if (!container) return;
 
-        // Показываем только первые 8 категорий, остальные скрываем
-        const visibleCategories = ORDER_CATEGORIES.slice(0, 8);
-        const hiddenCategories = ORDER_CATEGORIES.slice(8);
-
-        container.innerHTML = visibleCategories.map(cat => `
-            <span class="filter-chip ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
-                <i class="fas ${cat.icon}"></i> ${cat.name}
-            </span>
-        `).join('');
-
-        // Добавляем кнопку "Ещё", если есть скрытые категории
-        if (hiddenCategories.length > 0) {
-            const moreBtn = document.createElement('span');
-            moreBtn.className = 'filter-chip more-categories';
-            moreBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i> Ещё';
-            moreBtn.addEventListener('click', () => showAllCategories());
-            container.appendChild(moreBtn);
-        }
-    }
-
-    // Показать все категории
-    function showAllCategories() {
-        const container = $('categoryFilters');
-        if (!container) return;
-        
         container.innerHTML = ORDER_CATEGORIES.map(cat => `
             <span class="filter-chip ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
                 <i class="fas ${cat.icon}"></i> ${cat.name}
             </span>
         `).join('');
         
-        // Перезапускаем обработчики
         attachFilterHandlers();
     }
 
-    // Прикрепить обработчики к фильтрам
     function attachFilterHandlers() {
         document.querySelectorAll('.filter-chip[data-category]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -105,29 +77,63 @@
                 this.classList.add('active');
                 
                 filters.category = this.dataset.category;
-                loadOrders();
+                loadRealOrders(); // ← ЗАГРУЖАЕМ ЗАНОВО
             });
         });
     }
 
-    // Загрузка заказов
-    async function loadOrders() {
+    // ===== ЗАГРУЗКА РЕАЛЬНЫХ ЗАКАЗОВ ИЗ FIREBASE =====
+    async function loadRealOrders() {
         const container = $('ordersList');
         if (!container) return;
 
+        // Показываем загрузку
+        container.innerHTML = `
+            <div class="text-center p-5">
+                <div class="spinner-border" style="color: var(--accent);"></div>
+                <p class="mt-2 text-secondary">Загрузка заказов...</p>
+            </div>
+        `;
+
         try {
-            // Пытаемся загрузить из Firebase
-            let orders = [];
-            if (window.Orders) {
-                orders = await Orders.getOpenOrders(filters);
+            // Проверяем, есть ли Orders
+            if (!window.Orders) {
+                throw new Error('Сервис заказов не найден');
             }
+
+            // Загружаем заказы из Firebase
+            const orders = await Orders.getOpenOrders(filters);
             
-            // Если заказов нет, показываем демо-заказы
             if (!orders || orders.length === 0) {
-                showDemoOrders(container);
+                // Если заказов нет — показываем красивое сообщение
+                container.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-smile fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h5>В Нягани пока нет заказов</h5>
+                        <p class="text-muted">Будьте первым, кто создаст заказ!</p>
+                        <button class="btn btn-primary mt-3" id="createFirstOrderBtn">
+                            <i class="fas fa-plus-circle me-2"></i>Создать заказ
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('createFirstOrderBtn')?.addEventListener('click', () => {
+                    if (!Auth.isAuthenticated()) {
+                        AuthUI.showLoginModal();
+                        return;
+                    }
+                    if (Auth.isMaster()) {
+                        Utils.showNotification('Мастера не могут создавать заказы', 'warning');
+                        return;
+                    }
+                    // Скроллим к форме создания заказа
+                    document.getElementById('orderFormColumn')?.scrollIntoView({ behavior: 'smooth' });
+                });
+                
                 return;
             }
-            
+
+            // Сохраняем и отображаем заказы
             allOrders = orders;
             displayedOrders = orders.slice(0, 5);
             renderOrders(container);
@@ -136,51 +142,70 @@
             if (countEl) countEl.textContent = allOrders.length;
             
         } catch (error) {
-            console.error('Ошибка загрузки заказов:', error);
-            showDemoOrders(container);
+            console.error('❌ Ошибка загрузки заказов:', error);
+            
+            // Показываем ошибку
+            container.innerHTML = `
+                <div class="text-center p-5 text-danger">
+                    <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                    <h5>Не удалось загрузить заказы</h5>
+                    <p class="text-muted">Попробуйте обновить страницу</p>
+                    <button class="btn btn-outline-secondary mt-3" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Обновить
+                    </button>
+                </div>
+            `;
         }
     }
 
-    // Показать демо-заказы (пока нет базы)
-    function showDemoOrders(container) {
-        container.innerHTML = `
-            <div class="order-card" onclick="viewOrder('demo1')">
+    // Отрисовка заказов
+    function renderOrders(container) {
+        if (!container) container = $('ordersList');
+        if (!container) return;
+
+        if (displayedOrders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center p-5">
+                    <i class="fas fa-smile fa-3x mb-3" style="color: var(--text-muted);"></i>
+                    <h5>Нет заказов</h5>
+                    <p class="text-muted">Попробуйте изменить фильтры</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = displayedOrders.map(order => createOrderCard(order)).join('');
+    }
+
+    // Создание карточки заказа
+    function createOrderCard(order) {
+        const category = ORDER_CATEGORIES.find(c => c.id === order.category) || 
+                        { icon: 'fa-tag', name: order.category || 'Услуга' };
+        
+        // Определяем, срочный ли заказ (можно добавить поле urgent в БД)
+        const isUrgent = order.urgent || false;
+        
+        // Форматируем дату
+        const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
+        
+        return `
+            <div class="order-card ${isUrgent ? 'urgent' : ''}" onclick="viewOrder('${order.id}')">
                 <div class="order-header">
-                    <span class="order-category"><i class="fas fa-wrench"></i> Сантехника</span>
-                    <span class="order-price">1 500 ₽</span>
+                    <span class="order-category">
+                        <i class="fas ${category.icon}"></i> ${category.name}
+                    </span>
+                    <span class="order-price">${Utils.formatMoney(order.price)}</span>
                 </div>
-                <div class="order-title">Протекает кран на кухне</div>
-                <div class="order-description">Капает вода из смесителя, нужна замена картриджа. Нягань, 3-й микрорайон.</div>
+                <div class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</div>
+                <div class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</div>
                 <div class="order-footer">
-                    <span><i class="far fa-clock"></i> 15 мин назад</span>
-                    <span><i class="fas fa-map-marker-alt"></i> 1.2 км</span>
-                    <button class="respond-btn" onclick="event.stopPropagation(); respondToOrder('demo1')">Отклик</button>
-                </div>
-            </div>
-            <div class="order-card urgent" onclick="viewOrder('demo2')">
-                <div class="order-header">
-                    <span class="order-category"><i class="fas fa-bolt"></i> Электрика</span>
-                    <span class="order-price">2 500 ₽</span>
-                </div>
-                <div class="order-title">Нет света в комнате</div>
-                <div class="order-description">Выбило пробки, нужен электрик срочно. Есть дети.</div>
-                <div class="order-footer">
-                    <span><i class="far fa-clock"></i> 5 мин назад</span>
-                    <span><i class="fas fa-map-marker-alt"></i> 0.5 км</span>
-                    <button class="respond-btn" onclick="event.stopPropagation(); respondToOrder('demo2')">Срочно</button>
-                </div>
-            </div>
-            <div class="order-card" onclick="viewOrder('demo3')">
-                <div class="order-header">
-                    <span class="order-category"><i class="fas fa-broom"></i> Клининг</span>
-                    <span class="order-price">2 000 ₽</span>
-                </div>
-                <div class="order-title">Генеральная уборка квартиры</div>
-                <div class="order-description">2-комнатная, 45 кв.м. Нужны свои средства.</div>
-                <div class="order-footer">
-                    <span><i class="far fa-clock"></i> 45 мин назад</span>
-                    <span><i class="fas fa-map-marker-alt"></i> 3 км</span>
-                    <button class="respond-btn" onclick="event.stopPropagation(); respondToOrder('demo3')">Отклик</button>
+                    <span><i class="far fa-clock"></i> ${dateStr}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> Нягань</span>
+                    ${Auth.isAuthenticated() && Auth.isMaster() ? `
+                        <button class="respond-btn" onclick="event.stopPropagation(); respondToOrder('${order.id}')">
+                            Отклик
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -192,8 +217,8 @@
         if (!container) return;
 
         try {
-            // Пытаемся загрузить из Firebase
             let masters = [];
+            
             if (window.db) {
                 const snapshot = await db.collection('users')
                     .where('role', '==', 'master')
@@ -206,9 +231,8 @@
                 });
             }
             
-            // Если мастеров нет, показываем демо
             if (masters.length === 0) {
-                showDemoMasters(container);
+                container.innerHTML = '<div class="text-muted p-3">Пока нет мастеров</div>';
                 return;
             }
             
@@ -219,23 +243,8 @@
             
         } catch (error) {
             console.error('Ошибка загрузки мастеров:', error);
-            showDemoMasters(container);
+            container.innerHTML = '<div class="text-muted p-3">Ошибка загрузки</div>';
         }
-    }
-
-    // Показать демо-мастеров
-    function showDemoMasters(container) {
-        const demoMasters = [
-            { name: 'Иван Д.', spec: 'Сантехника', rating: 5 },
-            { name: 'Сергей М.', spec: 'Электрика', rating: 4 },
-            { name: 'Ольга К.', spec: 'Клининг', rating: 5 },
-            { name: 'Дмитрий', spec: 'Ремонт', rating: 4 }
-        ];
-        
-        container.innerHTML = '';
-        demoMasters.forEach(master => {
-            container.appendChild(createMasterCard(master));
-        });
     }
 
     function createMasterCard(master) {
@@ -250,7 +259,7 @@
         };
         
         const rating = master.rating || 0;
-        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
         
         div.innerHTML = `
             <div class="master-avatar">
@@ -258,7 +267,7 @@
             </div>
             <div class="master-name">${Utils.escapeHtml(master.name || 'Мастер')}</div>
             <div class="master-rating">${stars}</div>
-            <div class="master-spec">${master.spec || master.categories?.split(',')[0] || 'Специалист'}</div>
+            <div class="master-spec">${master.categories?.split(',')[0] || 'Специалист'}</div>
         `;
         
         return div;
@@ -285,38 +294,24 @@
             return;
         }
 
-        Utils.showNotification('✅ Отклик отправлен! (демо-режим)', 'success');
+        const comment = prompt('Комментарий (необязательно):', '');
+        
+        // Отправляем реальный отклик
+        const result = await Orders.respondToOrder(orderId, priceNum, comment || '');
+        
+        if (result && result.success) {
+            Utils.showNotification('✅ Отклик отправлен!', 'success');
+        } else {
+            Utils.showNotification('❌ Ошибка при отправке', 'error');
+        }
     };
 
     window.viewOrder = (orderId) => {
-        Utils.showNotification('Просмотр заказа (демо)', 'info');
+        Utils.showNotification('Просмотр заказа (будет позже)', 'info');
     };
-
-    // Поиск
-    function initSearch() {
-        const searchInput = $('searchInput');
-        if (!searchInput) return;
-        
-        searchInput.addEventListener('input', Utils.debounce((e) => {
-            const query = e.target.value.trim().toLowerCase();
-            if (query.length < 3) {
-                loadOrders();
-                return;
-            }
-            
-            // Фильтруем демо-заказы
-            const container = $('ordersList');
-            const cards = container.querySelectorAll('.order-card');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? 'block' : 'none';
-            });
-        }, 500));
-    }
 
     // Инициализация обработчиков
     function initEventListeners() {
-        // Фильтры
         attachFilterHandlers();
 
         // Создание заказа
@@ -329,16 +324,33 @@
                 Utils.showNotification('Мастера не могут создавать заказы', 'warning');
                 return;
             }
-            window.location.href = '/HomeWork/';
+            // Скроллим к форме
+            document.getElementById('orderFormColumn')?.scrollIntoView({ behavior: 'smooth' });
         });
 
         // Поиск
-        initSearch();
+        const searchInput = $('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', Utils.debounce((e) => {
+                const query = e.target.value.trim().toLowerCase();
+                if (query.length < 3) {
+                    loadRealOrders();
+                    return;
+                }
+                // Фильтруем уже загруженные заказы
+                const filtered = allOrders.filter(order => 
+                    order.title?.toLowerCase().includes(query) || 
+                    order.description?.toLowerCase().includes(query)
+                );
+                displayedOrders = filtered.slice(0, 5);
+                renderOrders();
+            }, 500));
+        }
 
         // Просмотр всех заказов
         $('viewAllOrders')?.addEventListener('click', (e) => {
             e.preventDefault();
-            Utils.showNotification('Все заказы (демо)', 'info');
+            Utils.showNotification('Все заказы (будет позже)', 'info');
         });
     }
 })();
