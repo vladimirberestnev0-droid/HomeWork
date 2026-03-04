@@ -45,6 +45,14 @@
     <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
 <body>
+    <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР ДЛЯ ПЛАВНЫХ ПЕРЕХОДОВ -->
+    <div id="global-loader" class="global-loader">
+        <div class="loader-content">
+            <div class="spinner-glow" style="width: 60px; height: 60px;"></div>
+            <p class="loader-text" id="loader-text">Загрузка...</p>
+        </div>
+    </div>
+
     <div class="app-wrapper">
         <!-- ШАПКА -->
         <div class="header">
@@ -119,7 +127,7 @@
                     <i class="fas fa-crown" style="color: var(--accent);"></i> 
                     Мастера рядом
                 </h2>
-                <a href="/HomeWork/masters.html">Все →</a>
+                <a href="/HomeWork/masters.html" class="nav-link" data-no-loader="false">Все →</a>
             </div>
 
             <div class="masters-scroll" id="mastersList">
@@ -135,7 +143,7 @@
         </div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ (ОБНОВЛЕННАЯ) -->
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
         <!-- Главная (всегда) -->
         <button class="nav-item" data-page="home">
@@ -220,6 +228,7 @@
     <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants.js"></script>
     <script src="/HomeWork/js/core/base-utils.js"></script>
+    <script src="/HomeWork/js/core/loader.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>

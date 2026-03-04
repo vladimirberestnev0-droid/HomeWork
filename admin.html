@@ -22,15 +22,76 @@
     <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
 <body>
-    <div class="container py-4">
+    <!-- ===== ЗАЩИТА АДМИНКИ ===== -->
+    <script>
+    (function() {
+        // Проверяем авторизацию ДО загрузки страницы
+        const checkAdmin = function() {
+            // Если Auth уже загружен
+            if (window.Auth && typeof Auth.isAdmin === 'function') {
+                if (!Auth.isAdmin()) {
+                    showAccessDenied();
+                }
+                return;
+            }
+            
+            // Ждём загрузки Auth максимум 3 секунды
+            let attempts = 0;
+            const maxAttempts = 30; // 3 секунды (30 * 100мс)
+            
+            const interval = setInterval(() => {
+                attempts++;
+                
+                if (window.Auth && typeof Auth.isAdmin === 'function') {
+                    clearInterval(interval);
+                    if (!Auth.isAdmin()) {
+                        showAccessDenied();
+                    }
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    showAccessDenied();
+                }
+            }, 100);
+        };
+        
+        function showAccessDenied() {
+            // Полностью очищаем body
+            document.body.innerHTML = '';
+            document.body.style.margin = '0';
+            document.body.style.background = '#0B1E33';
+            
+            // Показываем сообщение о доступе
+            document.body.innerHTML = `
+                <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:#0B1E33; display:flex; align-items:center; justify-content:center; z-index:9999;">
+                    <div style="text-align:center; padding:20px; max-width:400px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:64px; color:#FF8A5C; margin-bottom:20px; display:block;"></i>
+                        <h3 style="color:white; font-size:24px; margin-bottom:15px; font-family: 'Inter', sans-serif;">Доступ запрещён</h3>
+                        <p style="color:#B0C4D9; margin-bottom:25px; font-size:16px; line-height:1.5;">Только администратор может войти в этот раздел</p>
+                        <a href="/HomeWork/" style="background:#2CD5C4; color:#0B1E33; padding:12px 30px; border-radius:60px; text-decoration:none; font-weight:700; display:inline-block; font-family: 'Inter', sans-serif;">
+                            <i class="fas fa-home me-2"></i>На главную
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            // Останавливаем загрузку
+            window.stop();
+        }
+        
+        // Запускаем проверку
+        checkAdmin();
+    })();
+    </script>
+
+    <div class="container py-4" id="adminContent" style="display: none;">
         <header class="d-flex justify-content-between align-items-center mb-4">
-            <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2">
-                <i class="fas fa-shield-alt" style="color: var(--accent);"></i>
-                <span class="fw-bold">Свой Мастер 86 Админ</span>
+            <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2 text-decoration-none">
+                <i class="fas fa-shield-alt" style="color: var(--accent); font-size: 24px;"></i>
+                <span class="fw-bold" style="color: var(--text-primary); font-size: 20px;">Свой Мастер 86 Админ</span>
             </a>
             <nav class="d-flex gap-3">
-                <a href="/HomeWork/" class="text-decoration-none">Главная</a>
-                <a href="/HomeWork/admin.html" class="text-decoration-none active">Админ-панель</a>
+                <a href="/HomeWork/" class="text-decoration-none" style="color: var(--text-secondary);">Главная</a>
+                <a href="/HomeWork/admin.html" class="text-decoration-none" style="color: var(--accent); font-weight:600;">Админ-панель</a>
                 <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -85,12 +146,12 @@
         <!-- Таб: Пользователи -->
         <div id="usersTab" class="tab-content">
             <input type="text" class="form-control mb-3" id="userSearch" placeholder="🔍 Поиск по имени или email...">
-            <div id="usersList"></div>
+            <div id="usersList" class="users-list"></div>
         </div>
 
         <!-- Таб: Заказы -->
         <div id="ordersTab" class="tab-content d-none">
-            <div id="adminOrdersList"></div>
+            <div id="adminOrdersList" class="orders-list"></div>
         </div>
     </div>
 
@@ -137,5 +198,16 @@
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
     <script src="/HomeWork/js/pages/admin.js"></script>
+    
+    <script>
+    // Показываем контент после проверки авторизации
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            if (window.Auth && Auth.isAdmin()) {
+                document.getElementById('adminContent').style.display = 'block';
+            }
+        }, 500);
+    });
+    </script>
 </body>
 </html>
