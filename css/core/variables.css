@@ -12,7 +12,12 @@
     --accent-urgent: #FF8A5C;
     --accent-dark: #1f9e91;
     --accent-soft: rgba(44, 213, 196, 0.1);
-    --accent-glow: 0 0 20px rgba(44, 213, 196, 0.5);
+    --accent-glow: 0 0 30px rgba(44, 213, 196, 0.3);
+    
+    /* Градиенты */
+    --gradient-primary: linear-gradient(135deg, var(--accent), #20b2aa);
+    --gradient-urgent: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    --gradient-card: linear-gradient(145deg, var(--card-blue), #152a3a);
     
     /* Системные цвета */
     --text-primary: #FFFFFF;
@@ -29,6 +34,7 @@
     --shadow-lg: 0 16px 32px rgba(0,0,0,0.5);
     --shadow-xl: 0 30px 60px rgba(0,0,0,0.6);
     --shadow-glow: 0 0 30px rgba(44, 213, 196, 0.3);
+    --shadow-inner: inset 0 2px 4px rgba(0,0,0,0.2);
     
     /* Скругления */
     --radius-sm: 16px;

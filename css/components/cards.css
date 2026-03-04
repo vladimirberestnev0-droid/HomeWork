@@ -1,23 +1,69 @@
 /* Карточка заказа в стиле Авито */
 .order-card {
-    background-color: var(--card-blue);
+    background: var(--gradient-card);
     border-radius: var(--radius-md);
     padding: 18px;
     border-left: 5px solid var(--accent);
     box-shadow: var(--shadow-sm);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: all var(--transition-bounce);
     cursor: pointer;
     margin-bottom: 12px;
     border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Эффект свечения при наведении */
+.order-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.order-card:hover::before {
+    left: 100%;
+}
+
+.order-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-glow);
+    border-color: var(--accent);
 }
 
 .order-card:active {
     transform: scale(0.99);
-    box-shadow: var(--shadow-md);
 }
 
 .order-card.urgent {
     border-left-color: var(--accent-urgent);
+    animation: urgentPulse 2s infinite;
+}
+
+@keyframes urgentPulse {
+    0%, 100% { border-left-color: var(--accent-urgent); }
+    50% { border-left-color: #ffd700; }
+}
+
+.order-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+}
+
+.urgent-badge {
+    background: var(--accent-urgent);
+    color: var(--deep-blue);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    animation: pulse 2s infinite;
 }
 
 .order-header {
@@ -37,16 +83,24 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    transition: all var(--transition-fast);
+}
+
+.order-card:hover .order-category {
+    background-color: var(--accent-soft);
+    color: var(--accent);
 }
 
 .order-price {
     font-weight: 800;
     font-size: 1.3rem;
     color: var(--accent);
+    text-shadow: 0 0 10px rgba(44, 213, 196, 0.3);
 }
 
 .urgent .order-price {
     color: var(--accent-urgent);
+    text-shadow: 0 0 10px rgba(255, 138, 92, 0.3);
 }
 
 .order-title {
@@ -68,6 +122,37 @@
     overflow: hidden;
 }
 
+.order-photos {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.order-photo-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.order-card:hover .order-photo-thumb {
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.photo-count {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: var(--deep-blue);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
 .order-footer {
     display: flex;
     align-items: center;
@@ -83,11 +168,16 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    transition: all var(--transition-fast);
 }
 
-/* Карточка чата (адаптированная) */
+.order-card:hover .order-footer span {
+    color: var(--text-soft);
+}
+
+/* Карточка чата */
 .chat-card {
-    background-color: var(--card-blue);
+    background: var(--gradient-card);
     border-radius: var(--radius-md);
     padding: 16px;
     margin-bottom: 12px;
@@ -96,12 +186,30 @@
     gap: 16px;
     cursor: pointer;
     border: 1px solid var(--border);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-bounce);
+    position: relative;
+    overflow: hidden;
 }
 
-.chat-card:active {
-    transform: scale(0.99);
+.chat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.chat-card:hover::before {
+    left: 100%;
+}
+
+.chat-card:hover {
+    transform: translateX(4px) scale(1.01);
     border-color: var(--accent);
+    box-shadow: var(--shadow-glow);
 }
 
 .chat-avatar {
@@ -114,6 +222,12 @@
     justify-content: center;
     font-size: 1.5rem;
     color: white;
+    transition: all var(--transition-fast);
+}
+
+.chat-card:hover .chat-avatar {
+    transform: rotate(5deg) scale(1.1);
+    box-shadow: 0 0 20px var(--accent);
 }
 
 .chat-info {
@@ -129,6 +243,11 @@
 .chat-last-message {
     color: var(--text-muted);
     font-size: 0.85rem;
+    transition: color var(--transition-fast);
+}
+
+.chat-card:hover .chat-last-message {
+    color: var(--text-soft);
 }
 
 .chat-unread {
@@ -142,4 +261,5 @@
     justify-content: center;
     font-size: 0.75rem;
     font-weight: 700;
+    animation: pulse 2s infinite;
 }
