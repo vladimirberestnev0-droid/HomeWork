@@ -296,3 +296,26 @@ body.dark-theme .mobile-bottom-nav {
         font-size: 20px;
     }
 }
+
+/* Фикс для ПК — ограничиваем максимальную ширину */
+@media (min-width: 992px) {
+    .container {
+        max-width: 1200px; /* или 1140px, как в Bootstrap */
+    }
+    
+    /* Возвращаем нормальные отступы для колонок */
+    .row {
+        margin-left: -12px;
+        margin-right: -12px;
+    }
+    
+    .col-md-6 {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    
+    /* Ограничиваем ширину карточек */
+    .order-card {
+        max-width: 100%;
+    }
+}
