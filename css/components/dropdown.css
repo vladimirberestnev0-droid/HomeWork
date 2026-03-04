@@ -1,34 +1,24 @@
-/* Комбо-бокс для категорий */
 .category-dropdown {
     position: absolute;
-    background: var(--bg-white);
-    border: 1px solid var(--border-soft);
+    background-color: var(--card-blue);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 16px;
-    box-shadow: var(--shadow-xl);
-    z-index: var(--z-dropdown);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
     width: 350px;
     max-width: 90vw;
-    backdrop-filter: blur(20px);
-    background: rgba(var(--bg-white-rgb), 0.98);
     animation: dropdownFade 0.2s ease;
 }
 
 @keyframes dropdownFade {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .category-list {
     max-height: 350px;
     overflow-y: auto;
-    padding-right: 4px;
 }
 
 .category-item {
@@ -39,67 +29,42 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid transparent;
-    margin-bottom: 2px;
+    color: var(--text-secondary);
 }
 
 .category-item:hover {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    transform: translateX(4px);
+    background-color: var(--bg-soft);
 }
 
 .category-item.active {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: white;
-    border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(230, 122, 75, 0.2);
+    background-color: var(--accent);
+    color: var(--deep-blue);
+    font-weight: 600;
 }
 
 .category-item.active i {
-    color: white;
+    color: var(--deep-blue);
 }
 
 .category-item i {
     width: 24px;
     color: var(--accent);
-    font-size: 1.1rem;
 }
 
-.category-item.disabled {
-    opacity: 0.5;
-    cursor: default;
-    pointer-events: none;
-}
-
-.category-item.disabled:hover {
-    background: transparent;
-    border-color: transparent;
-}
-
-/* Метка-кнопка */
 #categoryLabel {
     user-select: none;
     padding: 10px 20px;
-    background: var(--bg-white);
+    background-color: var(--bg-soft);
     border-radius: var(--radius-full);
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     cursor: pointer;
     transition: all var(--transition-fast);
-    font-weight: 500;
-    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
 }
 
 #categoryLabel:hover {
     border-color: var(--accent);
-    background: var(--accent-soft);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-#categoryLabel i {
-    color: var(--accent);
 }

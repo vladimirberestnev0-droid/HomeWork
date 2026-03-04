@@ -1,0 +1,40 @@
+/* Горизонтальные фильтры как в Авито */
+.filters-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 5px 0 20px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 10px;
+}
+
+.filters-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    background-color: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 12px 22px;
+    border-radius: 40px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.filter-chip:active {
+    transform: scale(0.96);
+}
+
+.filter-chip.active {
+    background-color: var(--accent);
+    color: var(--deep-blue);
+    border-color: var(--accent);
+    font-weight: 700;
+}

@@ -1,185 +1,118 @@
-/* Карточка заказа */
+/* Карточка заказа в стиле Авито */
 .order-card {
-    padding: 24px;
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-soft);
-    margin-bottom: 20px;
-    transition: all var(--transition-normal);
-    position: relative;
-    overflow: hidden;
+    background-color: var(--card-blue);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    border-left: 5px solid var(--accent);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    cursor: pointer;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
 }
 
-/* Градиентный акцент сверху */
-.order-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-light));
-    opacity: 0;
-    transition: opacity var(--transition-normal);
+.order-card:active {
+    transform: scale(0.99);
+    box-shadow: var(--shadow-md);
 }
 
-.order-card:hover::before {
-    opacity: 1;
-}
-
-.order-card:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-lg);
+.order-card.urgent {
+    border-left-color: var(--accent-urgent);
 }
 
 .order-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
-.order-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.4;
-    margin-right: 16px;
+.order-category {
+    background-color: var(--bg-soft);
+    padding: 4px 12px;
+    border-radius: 30px;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .order-price {
-    font-size: 1.5rem;
     font-weight: 800;
+    font-size: 1.3rem;
     color: var(--accent);
-    background: var(--accent-soft);
-    padding: 4px 12px;
-    border-radius: var(--radius-full);
-    white-space: nowrap;
 }
 
-.order-meta {
-    display: flex;
-    gap: 20px;
-    margin: 16px 0;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    flex-wrap: wrap;
+.urgent .order-price {
+    color: var(--accent-urgent);
 }
 
-.order-meta span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.order-meta i {
-    width: 18px;
-    color: var(--accent);
-    font-size: 1rem;
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    line-height: 1.4;
 }
 
 .order-description {
-    color: var(--text-secondary);
-    margin: 12px 0;
-    line-height: 1.7;
-    font-size: 0.95rem;
-}
-
-/* Фото в карточке */
-.order-photo-thumb {
-    width: 70px;
-    height: 70px;
-    object-fit: cover;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    border: 2px solid transparent;
-}
-
-.order-photo-thumb:hover {
-    transform: scale(1.1);
-    border-color: var(--accent);
-    box-shadow: var(--shadow-md);
-}
-
-/* Карточка отклика */
-.response-card {
-    padding: 20px;
-    margin: 12px 0;
-    background: var(--bg-soft);
-    border-radius: var(--radius-md);
-    border-left: 4px solid var(--accent);
-    transition: all var(--transition-fast);
-    position: relative;
-}
-
-.response-card:hover {
-    background: var(--bg-white);
-    box-shadow: var(--shadow-md);
-    transform: translateX(4px);
-}
-
-.response-card.selected {
-    border-left-color: var(--success);
-    background: linear-gradient(to right, var(--bg-white), #f0fff4);
-}
-
-.response-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    color: var(--text-soft);
+    font-size: 0.9rem;
     margin-bottom: 12px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.response-master {
-    font-weight: 700;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-}
-
-.response-price {
-    color: var(--accent);
-    font-weight: 800;
-    font-size: 1.2rem;
-}
-
-/* Карточка чата */
-.chat-card {
+.order-footer {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 16px;
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    border: 1px solid var(--border-soft);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
 }
 
-.chat-card:hover {
-    background: var(--bg-soft);
-    transform: translateX(4px);
+.order-footer span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Карточка чата (адаптированная) */
+.chat-card {
+    background-color: var(--card-blue);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all var(--transition-fast);
+}
+
+.chat-card:active {
+    transform: scale(0.99);
     border-color: var(--accent);
 }
 
 .chat-avatar {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, var(--accent-light), var(--accent-soft));
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(145deg, var(--accent), var(--deep-blue));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent);
     font-size: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-fast);
-}
-
-.chat-card:hover .chat-avatar {
-    transform: scale(1.1);
-    background: var(--accent);
     color: white;
 }
 
@@ -189,39 +122,24 @@
 
 .chat-name {
     font-weight: 700;
-    margin-bottom: 6px;
     color: var(--text-primary);
-    font-size: 1.1rem;
+    margin-bottom: 4px;
 }
 
 .chat-last-message {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 .chat-unread {
-    background: var(--accent);
-    color: white;
+    background-color: var(--accent);
+    color: var(--deep-blue);
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(230, 122, 75, 0.3);
-}
-
-.chat-meta {
-    text-align: right;
-}
-
-.chat-time {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 4px;
 }

@@ -2,134 +2,141 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ВоркХом — Кабинет клиента</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>СВОЙ МАСТЕР 86 — Мои заказы</title>
     
     <link rel="manifest" href="/HomeWork/manifest.json">
-    <meta name="theme-color" content="#E67A4B">
+    <meta name="theme-color" content="#2CD5C4">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- CSS -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/chat.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-    <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
 </head>
 <body>
-    <div class="container py-4">
-        <header class="d-flex justify-content-between align-items-center mb-4">
-            <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2">
-                <i class="fas fa-house" style="color: var(--accent);"></i>
-                <span class="fw-bold">ВоркХом</span>
-            </a>
-            <nav class="d-flex gap-3">
-                <a href="/HomeWork/">Главная</a>
-                <a href="/HomeWork/client.html" class="active">Мои заказы</a>
-                <a href="/HomeWork/masters.html">Мастерам</a>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <a href="#" id="logoutLink" class="btn btn-sm btn-outline-danger rounded-pill">
-                    <i class="fas fa-sign-out-alt me-1"></i> Выйти
-                </a>
-            </nav>
-        </header>
-
-        <!-- Приветствие -->
-        <div id="welcomeBanner" class="alert alert-info d-none">
-            <h4 id="welcomeName"></h4>
+    <div class="app-wrapper">
+        <!-- ШАПКА -->
+        <div class="header">
+            <div class="logo">
+                СВОЙ<span>86</span>
+            </div>
+            <button class="geo-tag" onclick="window.location.href='/HomeWork/'">
+                <i class="fas fa-arrow-left"></i> На главную
+            </button>
         </div>
 
-        <!-- Блок авторизации -->
+        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <div id="authBlockContainer" class="mb-3"></div>
+
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="authRequired" class="text-center p-5 d-none">
             <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>
             <h3>Войдите в кабинет</h3>
-            <button class="btn mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
+            <button class="btn btn-primary mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
         </div>
 
-        <!-- Кабинет клиента -->
         <div id="clientCabinet" class="d-none">
-            <div class="row g-4">
-                <!-- Левая колонка: профиль -->
-                <div class="col-md-4">
-                    <div class="card p-4 text-center">
-                        <div class="avatar-circle mx-auto mb-3">
-                            <i class="fas fa-user fa-3x"></i>
-                        </div>
-                        <h4 id="clientName">Загрузка...</h4>
-                        <p class="text-secondary" id="clientEmail"></p>
-                        <p class="text-secondary" id="clientPhone"></p>
-                        <hr>
-                        <div class="text-start">
-                            <p><i class="fas fa-star me-2" style="color: gold;"></i> Рейтинг: <span id="clientRating">0</span> (<span id="clientReviews">0</span> отзывов)</p>
-                            <p><i class="fas fa-box me-2"></i> Заказов: <span id="clientOrdersCount">0</span></p>
-                        </div>
+            <!-- ПРОФИЛЬ -->
+            <div class="card p-4 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="master-avatar" style="width: 60px; height: 60px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h4 id="clientName" class="mb-1">Загрузка...</h4>
+                        <div class="master-rating" id="clientRating">★★★★★ 0.0</div>
                     </div>
                 </div>
-
-                <!-- Правая колонка: заказы и чаты -->
-                <div class="col-md-8">
-                    <!-- Табы -->
-                    <ul class="nav nav-tabs mb-4">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-tab="orders">Мои заказы</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-tab="chats">Чаты</button>
-                        </li>
-                    </ul>
-
-                    <!-- Таб: Заказы -->
-                    <div id="ordersTab" class="tab-content active">
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="all">Все</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="open">Активные</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="in_progress">В работе</button>
-                            <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="completed">Завершённые</button>
-                        </div>
-                        <div id="ordersList"></div>
+                <hr class="my-3" style="border-color: var(--border);">
+                <div class="d-flex justify-content-around">
+                    <div class="text-center">
+                        <div class="fw-bold" id="clientOrdersCount">0</div>
+                        <small class="text-muted">Заказов</small>
                     </div>
-
-                    <!-- Таб: Чаты -->
-                    <div id="chatsTab" class="tab-content d-none">
-                        <div id="chatsList"></div>
+                    <div class="text-center">
+                        <div class="fw-bold" id="clientReviews">0</div>
+                        <small class="text-muted">Отзывов</small>
                     </div>
                 </div>
+            </div>
+
+            <!-- ТАБЫ -->
+            <div class="filters-scroll mb-4">
+                <button class="filter-chip active" data-tab="orders">📋 Мои заказы</button>
+                <button class="filter-chip" data-tab="chats">💬 Чаты</button>
+            </div>
+
+            <!-- ЗАКАЗЫ -->
+            <div id="ordersTab" class="tab-content">
+                <div class="filters-scroll mb-3">
+                    <button class="filter-chip active" data-filter="all">Все</button>
+                    <button class="filter-chip" data-filter="open">Активные</button>
+                    <button class="filter-chip" data-filter="in_progress">В работе</button>
+                    <button class="filter-chip" data-filter="completed">Завершённые</button>
+                </div>
+                <div id="ordersList" class="orders-list"></div>
+            </div>
+
+            <!-- ЧАТЫ -->
+            <div id="chatsTab" class="tab-content d-none">
+                <div id="chatsList" class="orders-list"></div>
             </div>
         </div>
     </div>
 
-    <!-- Модалка отзыва о мастере -->
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="home">
+            <span>🏠</span>
+            <span>Главная</span>
+        </button>
+        <button class="nav-item" data-page="search">
+            <span>🔍</span>
+            <span>Поиск</span>
+        </button>
+        <button class="nav-item" data-page="favorites">
+            <span>❤️</span>
+            <span>Избранное</span>
+        </button>
+        <button class="nav-item active" data-page="orders">
+            <span>📋</span>
+            <span>Заказы</span>
+        </button>
+        <button class="nav-item" data-page="profile">
+            <span>👤</span>
+            <span>Профиль</span>
+        </button>
+    </div>
+
+    <!-- МОДАЛКИ -->
     <div class="modal fade" id="reviewModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Оцените мастера</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <div class="rating-stars">
-                            <span class="star" data-rating="1">★</span>
-                            <span class="star" data-rating="2">★</span>
-                            <span class="star" data-rating="3">★</span>
-                            <span class="star" data-rating="4">★</span>
-                            <span class="star" data-rating="5">★</span>
-                        </div>
+                    <div class="rating-stars mb-3">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
                     </div>
                     <textarea id="reviewText" class="form-control" rows="3" placeholder="Ваш отзыв"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="submitReview">Отправить</button>
+                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button class="btn btn-primary" id="submitReview">Отправить</button>
                 </div>
             </div>
         </div>
@@ -142,7 +149,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Core -->
     <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants.js"></script>
     <script src="/HomeWork/js/core/base-utils.js"></script>
@@ -150,17 +156,13 @@
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
     
-    <!-- Services -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
-    <script src="/HomeWork/js/services/moderation.js"></script>
     
-    <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
+    <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
-    <!-- Pages -->
     <script src="/HomeWork/js/pages/client.js"></script>
-    <script src="/HomeWork/js/components/mobile-nav.js"></script>
 </body>
 </html>
