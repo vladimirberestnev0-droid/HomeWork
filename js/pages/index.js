@@ -1,7 +1,6 @@
-/**
- * index.js — логика главной страницы
- * Версия 2.0 (ПОЛНАЯ, с сохранением всей логики)
- */
+// ============================================
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ
+// ============================================
 
 (function() {
     // ===== СОСТОЯНИЕ =====
@@ -9,10 +8,13 @@
     let displayedOrders = [];
     let filters = { 
         category: 'all', 
-        city: 'nyagan'
+        city: 'nyagan',
+        sort: 'newest'
     };
     let currentPage = 0;
+    let lastDoc = null;
     let hasMore = true;
+    let isLoading = false;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
@@ -29,9 +31,10 @@
         
         // Заполняем фильтры
         renderCategoryFilters();
+        renderCityFilter();
         
         // Загружаем реальные заказы
-        await loadRealOrders();
+        await loadOrders();
         
         // Загружаем мастеров
         await loadMasters();
@@ -41,9 +44,6 @@
         
         // Инициализируем обработчики
         initEventListeners();
-        
-        // Красивое появление карточек
-        animateCards();
     });
 
     // ===== ОЖИДАНИЕ FIREBASE =====
@@ -61,7 +61,6 @@
             
             document.addEventListener('firebase-initialized', onFirebaseReady);
             
-            // Таймаут на случай проблем
             setTimeout(() => {
                 document.removeEventListener('firebase-initialized', onFirebaseReady);
                 console.warn('⚠️ Таймаут ожидания Firebase');
@@ -70,7 +69,7 @@
         });
     }
 
-    // ===== РЕНДЕР ФИЛЬТРОВ (ВСЕ КАТЕГОРИИ) =====
+    // ===== РЕНДЕР ФИЛЬТРОВ КАТЕГОРИЙ =====
     function renderCategoryFilters() {
         const container = $('categoryFilters');
         if (!container) return;
@@ -80,123 +79,223 @@
                 <i class="fas ${cat.icon}"></i> ${cat.name}
             </span>
         `).join('');
+    }
+
+    // ===== РЕНДЕР ФИЛЬТРА ГОРОДА =====
+    function renderCityFilter() {
+        const container = $('cityFilter');
+        if (!container) return;
+
+        container.innerHTML = CITIES.map(city => `
+            <span class="filter-chip ${city.id === filters.city ? 'active' : ''}" data-city="${city.id}">
+                <i class="fas fa-map-marker-alt"></i> ${city.name}
+            </span>
+        `).join('');
+    }
+
+    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ =====
+    async function loadOrders(reset = true) {
+        if (isLoading) return;
         
-        attachFilterHandlers();
-    }
-
-    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ =====
-    function attachFilterHandlers() {
-        document.querySelectorAll('.filter-chip[data-category]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                filters.category = this.dataset.category;
-                loadRealOrders();
-                
-                // Плавный скролл к заказам
-                document.getElementById('ordersList')?.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
-                });
-            });
-        });
-    }
-
-    // ===== ЗАГРУЗКА РЕАЛЬНЫХ ЗАКАЗОВ =====
-    async function loadRealOrders() {
         const container = $('ordersList');
         if (!container) return;
 
-        // Показываем загрузку с анимацией
-        container.innerHTML = `
-            <div class="text-center p-5">
-                <div class="spinner-glow"></div>
-                <p class="mt-3 text-secondary" style="animation: pulse 1.5s infinite;">Загружаем заказы...</p>
-            </div>
-        `;
+        isLoading = true;
+
+        if (reset) {
+            container.innerHTML = `
+                <div class="text-center p-5">
+                    <div class="spinner-glow"></div>
+                    <p class="mt-3 text-secondary">Загружаем заказы...</p>
+                </div>
+            `;
+            currentPage = 0;
+            lastDoc = null;
+            allOrders = [];
+        }
 
         try {
             if (!window.Orders) {
-                console.error('❌ Сервис заказов не найден');
                 throw new Error('Сервис заказов не найден');
             }
 
-            const orders = await Orders.getOpenOrders(filters);
+            // Строим запрос с пагинацией
+            let query = db.collection('orders')
+                .where('status', '==', ORDER_STATUS.OPEN)
+                .orderBy('createdAt', 'desc')
+                .limit(6);
+
+            if (lastDoc && !reset) {
+                query = query.startAfter(lastDoc);
+            }
+
+            const snapshot = await query.get();
             
-            if (!orders || orders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center p-5 fade-in">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-smile-wink fa-4x" style="color: var(--accent); opacity: 0.5;"></i>
-                        </div>
-                        <h5 class="mt-3">В Нягани пока нет заказов</h5>
-                        <p class="text-muted">Будьте первым, кто создаст заказ!</p>
-                        <button class="btn btn-primary btn-lg mt-3 pulse-button" id="createFirstOrderBtn">
-                            <i class="fas fa-plus-circle me-2"></i>Создать заказ
-                        </button>
-                    </div>
-                `;
-                
-                document.getElementById('createFirstOrderBtn')?.addEventListener('click', () => {
-                    if (!Auth.isAuthenticated()) {
-                        AuthUI.showLoginModal();
-                        return;
-                    }
-                    window.location.href = '/HomeWork/client.html';
-                });
-                
+            if (snapshot.empty) {
+                if (reset) {
+                    showEmptyState(container);
+                }
+                hasMore = false;
+                isLoading = false;
                 return;
             }
 
-            allOrders = orders;
-            displayedOrders = orders.slice(0, 6); // Показываем 6 заказов
-            renderOrders(container);
-            
-            const countEl = $('ordersCount');
-            if (countEl) countEl.textContent = allOrders.length;
+            lastDoc = snapshot.docs[snapshot.docs.length - 1];
+            hasMore = snapshot.docs.length === 6;
+
+            const newOrders = [];
+            snapshot.forEach(doc => {
+                newOrders.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Применяем фильтры на клиенте
+            let filtered = applyFilters(newOrders);
+
+            if (reset) {
+                allOrders = filtered;
+                displayedOrders = filtered;
+            } else {
+                allOrders = [...allOrders, ...filtered];
+                displayedOrders = [...displayedOrders, ...filtered];
+            }
+
+            renderOrders(container, reset);
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
             
-            container.innerHTML = `
-                <div class="text-center p-5">
-                    <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
-                    <h5>Не удалось загрузить заказы</h5>
-                    <p class="text-muted">${error.message || 'Попробуйте обновить страницу'}</p>
-                    <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
-                        <i class="fas fa-sync-alt me-2"></i>Обновить
-                    </button>
-                </div>
-            `;
+            if (reset) {
+                container.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
+                        <h5>Не удалось загрузить заказы</h5>
+                        <p class="text-muted">Попробуйте обновить страницу</p>
+                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Обновить
+                        </button>
+                    </div>
+                `;
+            }
+        } finally {
+            isLoading = false;
         }
     }
 
+    // ===== ПРИМЕНЕНИЕ ФИЛЬТРОВ =====
+    function applyFilters(orders) {
+        let filtered = [...orders];
+
+        // Фильтр по категории
+        if (filters.category && filters.category !== 'all') {
+            filtered = filtered.filter(o => o.category === filters.category);
+        }
+
+        // Фильтр по городу
+        if (filters.city && filters.city !== 'all') {
+            const cityName = CITIES.find(c => c.id === filters.city)?.name?.toLowerCase();
+            if (cityName) {
+                filtered = filtered.filter(o => 
+                    o.city === cityName || 
+                    (o.address && o.address.toLowerCase().includes(cityName))
+                );
+            }
+        }
+
+        // Сортировка
+        if (filters.sort === 'price_asc') {
+            filtered.sort((a, b) => a.price - b.price);
+        } else if (filters.sort === 'price_desc') {
+            filtered.sort((a, b) => b.price - a.price);
+        }
+
+        return filtered;
+    }
+
     // ===== ОТРИСОВКА ЗАКАЗОВ =====
-    function renderOrders(container) {
+    function renderOrders(container, reset = true) {
         if (!container) container = $('ordersList');
         if (!container) return;
 
         if (displayedOrders.length === 0) {
-            container.innerHTML = `
-                <div class="text-center p-5">
-                    <i class="fas fa-search fa-4x mb-3" style="color: var(--text-muted);"></i>
-                    <h5>Нет заказов по выбранным фильтрам</h5>
-                    <p class="text-muted">Попробуйте изменить категорию</p>
-                </div>
-            `;
+            showEmptyState(container);
             return;
         }
 
-        container.innerHTML = displayedOrders.map(order => createOrderCard(order)).join('');
-        
-        // Добавляем анимацию появления карточкам
+        if (reset) {
+            container.innerHTML = displayedOrders.map(order => createOrderCard(order)).join('');
+        } else {
+            container.insertAdjacentHTML('beforeend', displayedOrders.slice(-6).map(order => createOrderCard(order)).join(''));
+        }
+
+        // Анимация появления
         setTimeout(() => {
-            document.querySelectorAll('.order-card').forEach((card, index) => {
+            document.querySelectorAll('.order-card:not(.animated)').forEach((card, index) => {
+                card.classList.add('animated');
                 card.style.animation = `fadeInUp 0.5s ease ${index * 0.1}s forwards`;
                 card.style.opacity = '0';
             });
         }, 100);
+
+        // Показываем кнопку "Загрузить ещё"
+        if (hasMore) {
+            showLoadMoreButton(container);
+        } else {
+            hideLoadMoreButton();
+        }
+    }
+
+    // ===== ПОКАЗ КНОПКИ "ЗАГРУЗИТЬ ЕЩЁ" =====
+    function showLoadMoreButton(container) {
+        let loadMoreBtn = document.getElementById('loadMoreContainer');
+        
+        if (!loadMoreBtn) {
+            loadMoreBtn = document.createElement('div');
+            loadMoreBtn.id = 'loadMoreContainer';
+            loadMoreBtn.className = 'text-center mt-4 mb-3';
+            container.insertAdjacentElement('afterend', loadMoreBtn);
+        }
+        
+        loadMoreBtn.innerHTML = `
+            <button class="btn btn-outline-primary rounded-pill px-5 py-3" id="loadMoreBtn" ${isLoading ? 'disabled' : ''}>
+                ${isLoading ? 
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...' : 
+                    '<i class="fas fa-chevron-down me-2"></i>Показать ещё'
+                }
+            </button>
+        `;
+        
+        document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
+            loadOrders(false);
+        });
+    }
+
+    function hideLoadMoreButton() {
+        const btn = document.getElementById('loadMoreContainer');
+        if (btn) btn.remove();
+    }
+
+    // ===== ПУСТОЕ СОСТОЯНИЕ =====
+    function showEmptyState(container) {
+        container.innerHTML = `
+            <div class="text-center p-5 fade-in">
+                <div class="empty-state-icon">
+                    <i class="fas fa-smile-wink fa-4x" style="color: var(--accent); opacity: 0.5;"></i>
+                </div>
+                <h5 class="mt-3">В Нягани пока нет заказов</h5>
+                <p class="text-muted">Будьте первым, кто создаст заказ!</p>
+                <button class="btn btn-primary btn-lg mt-3 pulse-button" id="createFirstOrderBtn">
+                    <i class="fas fa-plus-circle me-2"></i>Создать заказ
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('createFirstOrderBtn')?.addEventListener('click', () => {
+            if (!Auth.isAuthenticated()) {
+                AuthUI.showLoginModal();
+                return;
+            }
+            window.location.href = '/HomeWork/client.html';
+        });
     }
 
     // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
@@ -204,11 +303,7 @@
         const category = ORDER_CATEGORIES.find(c => c.id === order.category) || 
                         { icon: 'fa-tag', name: order.category || 'Услуга' };
         const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
-        
-        // Определяем, срочный ли заказ
-        const isUrgent = order.urgent || Math.random() > 0.7; // Для демо
-        
-        // Проверяем, есть ли фото
+        const isUrgent = order.urgent || (order.price && order.price < 1000);
         const hasPhotos = order.photos && order.photos.length > 0;
         
         return `
@@ -228,7 +323,7 @@
                 
                 <h3 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h3>
                 
-                <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 120)}</p>
+                <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
                 
                 ${hasPhotos ? `
                     <div class="order-photos">
@@ -243,7 +338,7 @@
                         <i class="far fa-clock"></i> ${dateStr}
                     </span>
                     <span class="order-location">
-                        <i class="fas fa-map-marker-alt"></i> Нягань
+                        <i class="fas fa-map-marker-alt"></i> ${order.city || 'Нягань'}
                     </span>
                 </div>
                 
@@ -268,6 +363,7 @@
                 const snapshot = await db.collection('users')
                     .where('role', '==', 'master')
                     .where('banned', '==', false)
+                    .orderBy('rating', 'desc')
                     .limit(8)
                     .get();
                     
@@ -277,23 +373,11 @@
             }
             
             if (masters.length === 0) {
-                // Показываем демо-мастеров
-                masters = [
-                    { name: 'Иван Д.', rating: 5, categories: 'Сантехника, Отопление' },
-                    { name: 'Сергей М.', rating: 4, categories: 'Электрика, Сборка мебели' },
-                    { name: 'Ольга К.', rating: 5, categories: 'Клининг, Декорирование' },
-                    { name: 'Дмитрий В.', rating: 4, categories: 'Ремонт под ключ' },
-                    { name: 'Елена П.', rating: 5, categories: 'Дизайн интерьера' },
-                    { name: 'Алексей Н.', rating: 4, categories: 'Отделочные работы' },
-                    { name: 'Анна С.', rating: 5, categories: 'Уборка, Декорирование' },
-                    { name: 'Павел К.', rating: 4, categories: 'Сантехника, Электрика' }
-                ];
+                // Демо-мастера
+                masters = getDemoMasters();
             }
             
-            container.innerHTML = '';
-            masters.forEach(master => {
-                container.appendChild(createMasterCard(master));
-            });
+            container.innerHTML = masters.map(master => createMasterCard(master)).join('');
             
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
@@ -301,27 +385,29 @@
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ МАСТЕРА =====
+    function getDemoMasters() {
+        return [
+            { name: 'Иван Д.', rating: 5, categories: 'Сантехника, Отопление' },
+            { name: 'Сергей М.', rating: 4.8, categories: 'Электрика, Сборка мебели' },
+            { name: 'Ольга К.', rating: 5, categories: 'Клининг, Декорирование' },
+            { name: 'Дмитрий В.', rating: 4.7, categories: 'Ремонт под ключ' },
+            { name: 'Елена П.', rating: 5, categories: 'Дизайн интерьера' },
+            { name: 'Алексей Н.', rating: 4.9, categories: 'Отделочные работы' },
+            { name: 'Анна С.', rating: 5, categories: 'Уборка, Декорирование' },
+            { name: 'Павел К.', rating: 4.8, categories: 'Сантехника, Электрика' }
+        ];
+    }
+
     function createMasterCard(master) {
-        const div = document.createElement('div');
-        div.className = 'master-card';
-        div.onclick = () => {
-            if (Auth.isAuthenticated()) {
-                window.location.href = `/HomeWork/master.html`;
-            } else {
-                AuthUI.showLoginModal();
-            }
-        };
-        
         const rating = master.rating || 5;
         const fullStars = Math.floor(rating);
-        const halfStar = rating % 1 >= 0.5;
-        let stars = '';
+        const hasHalf = rating % 1 >= 0.5;
         
+        let stars = '';
         for (let i = 0; i < 5; i++) {
             if (i < fullStars) {
                 stars += '<i class="fas fa-star"></i>';
-            } else if (i === fullStars && halfStar) {
+            } else if (i === fullStars && hasHalf) {
                 stars += '<i class="fas fa-star-half-alt"></i>';
             } else {
                 stars += '<i class="far fa-star"></i>';
@@ -330,128 +416,50 @@
         
         const spec = master.categories ? master.categories.split(',')[0].trim() : 'Специалист';
         
-        div.innerHTML = `
-            <div class="master-avatar">
-                <i class="fas fa-user-tie"></i>
+        return `
+            <div class="master-card" onclick="window.location.href='/HomeWork/master.html'">
+                <div class="master-avatar">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h4 class="master-name">${Utils.escapeHtml(master.name || 'Мастер')}</h4>
+                <div class="master-rating">${stars} <span>${rating.toFixed(1)}</span></div>
+                <p class="master-spec">${Utils.escapeHtml(spec)}</p>
             </div>
-            <h4 class="master-name">${Utils.escapeHtml(master.name || 'Мастер')}</h4>
-            <div class="master-rating">${stars} <span>${rating.toFixed(1)}</span></div>
-            <p class="master-spec">${Utils.escapeHtml(spec)}</p>
         `;
-        
-        return div;
-    }
-
-    // ===== ПРОСМОТР ЗАКАЗА (ЗАГЛУШКА) =====
-    window.viewOrder = (orderId) => {
-        Utils.showNotification('👀 Просмотр заказа будет доступен позже', 'info');
-    };
-
-    // ===== АНИМАЦИЯ КАРТОЧЕК =====
-    function animateCards() {
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(30px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.5; }
-            }
-            
-            @keyframes spin {
-                to { transform: rotate(360deg); }
-            }
-            
-            @keyframes glow {
-                0%, 100% { box-shadow: 0 0 10px var(--accent); }
-                50% { box-shadow: 0 0 30px var(--accent); }
-            }
-            
-            .spinner-glow {
-                width: 50px;
-                height: 50px;
-                border: 3px solid var(--border);
-                border-top-color: var(--accent);
-                border-radius: 50%;
-                animation: spin 1s linear infinite, glow 1.5s ease-in-out infinite;
-                margin: 0 auto;
-            }
-            
-            .pulse-button {
-                animation: buttonPulse 2s infinite;
-            }
-            
-            @keyframes buttonPulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-            }
-            
-            .fade-in {
-                animation: fadeIn 0.5s ease;
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            
-            @keyframes slideIn {
-                from {
-                    opacity: 0;
-                    transform: translateX(30px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            
-            @keyframes slideOut {
-                from {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translateX(30px);
-                }
-            }
-            
-            #notification-container {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                pointer-events: none;
-            }
-            
-            .notification {
-                pointer-events: auto;
-                animation: slideIn 0.3s ease;
-            }
-        `;
-        document.head.appendChild(style);
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        // Фильтры
-        attachFilterHandlers();
+        // Фильтр по категориям
+        document.querySelectorAll('[data-category]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                filters.category = this.dataset.category;
+                loadOrders(true);
+            });
+        });
+
+        // Фильтр по городу
+        document.querySelectorAll('[data-city]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-city]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                filters.city = this.dataset.city;
+                loadOrders(true);
+            });
+        });
+
+        // Сортировка
+        document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+            filters.sort = e.target.value;
+            loadOrders(true);
+        });
 
         // Кнопка создания заказа
-        const createBtn = $('createOrderBtn');
+        const createBtn = document.getElementById('createOrderBtn');
         if (createBtn) {
             createBtn.addEventListener('click', () => {
                 if (!Auth.isAuthenticated()) {
@@ -459,7 +467,7 @@
                     return;
                 }
                 if (Auth.isMaster()) {
-                    Utils.showNotification('Мастера не могут создавать заказы', 'warning');
+                    Utils.showWarning('Мастера не могут создавать заказы');
                     return;
                 }
                 window.location.href = '/HomeWork/client.html';
@@ -467,23 +475,23 @@
         }
 
         // Поиск с дебаунсом
-        const searchInput = $('searchInput');
+        const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
                 const query = e.target.value.trim().toLowerCase();
                 
                 if (query.length < 3) {
-                    loadRealOrders();
+                    loadOrders(true);
                     return;
                 }
                 
-                // Фильтруем уже загруженные заказы
+                // Фильтруем уже загруженные
                 const filtered = allOrders.filter(order => 
                     (order.title && order.title.toLowerCase().includes(query)) || 
                     (order.description && order.description.toLowerCase().includes(query))
                 );
                 
-                displayedOrders = filtered.slice(0, 6);
+                displayedOrders = filtered;
                 
                 const container = $('ordersList');
                 if (filtered.length === 0) {
@@ -499,27 +507,24 @@
                 }
             }, 500));
         }
-
-        // Просмотр всех заказов
-        const viewAllLink = $('viewAllOrders');
-        if (viewAllLink) {
-            viewAllLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                $('ordersList')?.scrollIntoView({ behavior: 'smooth' });
-            });
-        }
-
-        // Анимация при скролле
-        window.addEventListener('scroll', () => {
-            const floatingBtn = document.querySelector('.btn-floating');
-            if (floatingBtn) {
-                const scrollY = window.scrollY;
-                if (scrollY > 200) {
-                    floatingBtn.style.transform = 'scale(1.05)';
-                } else {
-                    floatingBtn.style.transform = 'scale(1)';
-                }
-            }
-        });
     }
+
+    // ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ =====
+    window.viewOrder = (orderId) => {
+        Utils.showInfo('👀 Просмотр заказа будет доступен позже');
+    };
+
+    window.showRespondModal = (orderId, title, category, price) => {
+        if (!Auth.isAuthenticated()) {
+            AuthUI.showLoginModal();
+            return;
+        }
+        
+        // Сохраняем в sessionStorage для страницы мастера
+        sessionStorage.setItem('respond_order', JSON.stringify({
+            orderId, title, category, price
+        }));
+        
+        window.location.href = `/HomeWork/master.html?respond=${orderId}`;
+    };
 })();

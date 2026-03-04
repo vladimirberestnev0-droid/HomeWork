@@ -1,0 +1,228 @@
+/* ============================================
+   КОМПОНЕНТ УВЕДОМЛЕНИЙ
+   ============================================ */
+
+/* Контейнер для всплывающих уведомлений */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+    width: calc(100vw - 40px);
+    pointer-events: none;
+}
+
+/* Всплывающее уведомление */
+.notification-toast {
+    pointer-events: auto;
+    animation: notificationSlideIn 0.3s ease;
+    transform-origin: right;
+    background: var(--bg-white);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.notification-toast.success {
+    border-left-color: var(--success);
+}
+
+.notification-toast.error {
+    border-left-color: var(--danger);
+}
+
+.notification-toast.warning {
+    border-left-color: var(--warning);
+}
+
+.notification-toast.info {
+    border-left-color: var(--accent);
+}
+
+/* Иконка уведомления */
+.notification-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.notification-icon.success {
+    background: var(--success-light, rgba(0, 168, 107, 0.1));
+    color: var(--success);
+}
+
+.notification-icon.error {
+    background: var(--danger-light, rgba(220, 53, 69, 0.1));
+    color: var(--danger);
+}
+
+.notification-icon.warning {
+    background: var(--warning-light, rgba(255, 176, 32, 0.1));
+    color: var(--warning);
+}
+
+.notification-icon.info {
+    background: var(--accent-soft, rgba(44, 213, 196, 0.1));
+    color: var(--accent);
+}
+
+/* Текст уведомления */
+.notification-message {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Кнопка закрытия */
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* Бейдж уведомлений на иконке профиля */
+.profile-badge {
+    position: fixed;
+    bottom: calc(var(--mobile-nav-height) - 15px);
+    right: 15px;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+    z-index: 1001;
+    animation: badgePulse 0.3s ease;
+}
+
+.profile-badge.hidden {
+    display: none !important;
+}
+
+/* Бейдж на пункте навигации */
+.nav-badge {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+    animation: badgePulse 0.3s ease;
+}
+
+.nav-badge.hidden {
+    display: none !important;
+}
+
+/* Бейдж на табах */
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 18px;
+    padding: 0 5px;
+    margin-left: 5px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+    animation: badgePulse 0.3s ease;
+}
+
+.tab-badge.hidden {
+    display: none !important;
+}
+
+/* Анимации */
+@keyframes notificationSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes notificationSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+}
+
+@keyframes badgePulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Для десктопа */
+@media (min-width: 992px) {
+    .profile-badge {
+        bottom: 20px;
+        right: 20px;
+    }
+    
+    .nav-badge {
+        top: 10px;
+        right: 10px;
+    }
+}

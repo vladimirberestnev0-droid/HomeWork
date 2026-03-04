@@ -1,9 +1,16 @@
-/**
- * base-utils.js — универсальные утилиты для всего проекта
- * Версия 3.0 с глобальными функциями для HTML
- */
+// ============================================
+// УНИВЕРСАЛЬНЫЕ УТИЛИТЫ
+// ============================================
 
 const Utils = (function() {
+    // Защита от повторных инициализаций
+    if (window.__UTILS_INITIALIZED__) {
+        return window.Utils;
+    }
+
+    // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
+    let notificationContainer = null;
+
     // ===== БЕЗОПАСНОСТЬ =====
     
     /**
@@ -17,45 +24,83 @@ const Utils = (function() {
     }
 
     /**
+     * Экранирование для атрибутов
+     */
+    function escapeAttr(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // ===== ВАЛИДАЦИЯ =====
+
+    /**
      * Валидация email
      */
     function validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    /**
-     * Валидация цены
-     */
-    function validatePrice(price) {
-        return price && !isNaN(price) && price >= 500 && price <= 1000000;
+        if (!email) return false;
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
     }
 
     /**
      * Валидация телефона (Россия)
      */
     function validatePhone(phone) {
-        return /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/.test(phone);
+        if (!phone) return true; // Необязательное поле
+        const re = /^(\+7|8)[\s(]?(\d{3})[\s)]?[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$/;
+        return re.test(String(phone).replace(/\s+/g, ''));
+    }
+
+    /**
+     * Валидация цены
+     */
+    function validatePrice(price) {
+        if (!price && price !== 0) return false;
+        const num = Number(price);
+        return !isNaN(num) && num >= 500 && num <= 1000000;
+    }
+
+    /**
+     * Валидация имени
+     */
+    function validateName(name) {
+        if (!name) return false;
+        return name.length >= 2 && name.length <= 50;
+    }
+
+    /**
+     * Валидация пароля
+     */
+    function validatePassword(password) {
+        if (!password) return false;
+        return password.length >= 6;
     }
 
     // ===== РАБОТА С ДАТАМИ =====
 
     /**
-     * Безопасное получение даты из Timestamp
+     * Безопасное получение даты
      */
     function safeGetDate(timestamp) {
         if (!timestamp) return new Date();
+        
         try {
-            if (timestamp.toDate) return timestamp.toDate();
-            if (timestamp instanceof Date) return timestamp;
-            if (typeof timestamp === 'string') {
-                const date = new Date(timestamp);
-                return isNaN(date.getTime()) ? new Date() : date;
+            // Firestore Timestamp
+            if (timestamp?.toDate) {
+                return timestamp.toDate();
             }
-            if (typeof timestamp === 'number') {
-                const date = new Date(timestamp);
-                return isNaN(date.getTime()) ? new Date() : date;
+            // Date объект
+            if (timestamp instanceof Date) {
+                return timestamp;
             }
-            return new Date();
+            // Строка или число
+            const date = new Date(timestamp);
+            return isNaN(date.getTime()) ? new Date() : date;
         } catch (e) {
             console.warn('Ошибка преобразования даты:', e);
             return new Date();
@@ -69,20 +114,43 @@ const Utils = (function() {
         const date = safeGetDate(timestamp);
         const now = new Date();
         const diff = now - date;
+        const isToday = date.toDateString() === now.toDateString();
+        const isYesterday = date.toDateString() === new Date(now - 86400000).toDateString();
 
+        // Только что
         if (diff < 60000) return 'только что';
-        if (diff < 3600000) return Math.floor(diff / 60000) + ' мин назад';
         
-        if (format === 'short') {
-            if (diff < 86400000 && date.getDate() === now.getDate()) {
-                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            }
-            if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
-                return 'вчера ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            }
-            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        // Минуты назад
+        if (diff < 3600000) {
+            const minutes = Math.floor(diff / 60000);
+            return `${minutes} ${pluralize(minutes, ['минута', 'минуты', 'минут'])} назад`;
         }
-
+        
+        // Сегодня
+        if (isToday) {
+            return date.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        
+        // Вчера
+        if (isYesterday) {
+            return 'вчера ' + date.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        
+        // Короткий формат
+        if (format === 'short') {
+            return date.toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
+                month: 'short' 
+            });
+        }
+        
+        // Полный формат
         return date.toLocaleString('ru-RU', {
             day: 'numeric',
             month: 'long',
@@ -92,17 +160,47 @@ const Utils = (function() {
         });
     }
 
+    /**
+     * Получить возраст (для отзывов)
+     */
+    function getTimeAgo(timestamp) {
+        const date = safeGetDate(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        const months = Math.floor(days / 30);
+        const years = Math.floor(months / 12);
+        
+        if (years > 0) return `${years} ${pluralize(years, ['год', 'года', 'лет'])} назад`;
+        if (months > 0) return `${months} ${pluralize(months, ['месяц', 'месяца', 'месяцев'])} назад`;
+        if (days > 0) return `${days} ${pluralize(days, ['день', 'дня', 'дней'])} назад`;
+        if (hours > 0) return `${hours} ${pluralize(hours, ['час', 'часа', 'часов'])} назад`;
+        if (minutes > 0) return `${minutes} ${pluralize(minutes, ['минута', 'минуты', 'минут'])} назад`;
+        return 'только что';
+    }
+
     // ===== ФОРМАТИРОВАНИЕ =====
 
     /**
      * Форматирование денег
      */
     function formatMoney(amount) {
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 0
-        }).format(amount || 0);
+        if (amount === undefined || amount === null) return '0 ₽';
+        
+        try {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        } catch (e) {
+            return `${amount} ₽`;
+        }
     }
 
     /**
@@ -110,104 +208,146 @@ const Utils = (function() {
      */
     function pluralize(count, words) {
         const cases = [2, 0, 1, 1, 1, 2];
-        return words[(count % 100 > 4 && count % 100 < 20) ? 2 : cases[Math.min(count % 10, 5)]];
+        return words[
+            (count % 100 > 4 && count % 100 < 20) ? 2 : 
+            cases[Math.min(count % 10, 5)]
+        ];
     }
 
     /**
      * Обрезка текста
      */
-    function truncate(text, length = 100) {
+    function truncate(text, length = 100, suffix = '...') {
         if (!text) return '';
-        return text.length > length ? text.substring(0, length) + '...' : text;
+        if (text.length <= length) return text;
+        return text.substring(0, length).trim() + suffix;
     }
+
+    /**
+     * Номер телефона в красивый формат
+     */
+    function formatPhone(phone) {
+        if (!phone) return '';
+        
+        // Очищаем от всего кроме цифр
+        const cleaned = String(phone).replace(/\D/g, '');
+        
+        // Проверяем длину
+        if (cleaned.length === 11) {
+            if (cleaned.startsWith('8')) {
+                return `8 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
+            }
+            if (cleaned.startsWith('7')) {
+                return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
+            }
+        }
+        
+        return phone;
+    }
+
+    // ===== РАБОТА С КАТЕГОРИЯМИ =====
 
     /**
      * Получение иконки категории
      */
     function getCategoryIcon(category) {
-        const icons = window.CATEGORY_ICONS || {
-            'Сантехника': 'fa-wrench',
-            'Электрика': 'fa-bolt',
-            'Отделочные работы': 'fa-paint-roller',
-            'Мебель': 'fa-couch',
-            'Окна и двери': 'fa-window-maximize',
-            'Бытовой ремонт': 'fa-tools',
-            'Клининг': 'fa-broom',
-            'Ремонт техники': 'fa-gear',
-            'Дизайн интерьера': 'fa-pencil-ruler',
-            'Ремонт под ключ': 'fa-key'
-        };
-        return icons[category] || 'fa-tag';
+        const cat = window.ORDER_CATEGORIES?.find(c => c.id === category);
+        return cat?.icon || 'fa-tag';
+    }
+
+    /**
+     * Получение цвета категории
+     */
+    function getCategoryColor(category) {
+        const cat = window.ORDER_CATEGORIES?.find(c => c.id === category);
+        return cat?.color || '#2CD5C4';
+    }
+
+    /**
+     * Получение названия категории
+     */
+    function getCategoryName(category) {
+        const cat = window.ORDER_CATEGORIES?.find(c => c.id === category);
+        return cat?.name || category || 'Услуга';
+    }
+
+    // ===== РАБОТА С АДРЕСАМИ =====
+
+    /**
+     * Извлечение города из адреса
+     */
+    function extractCity(address) {
+        if (!address) return 'другой';
+        
+        const addressLower = address.toLowerCase();
+        const cities = window.CITIES || [];
+        
+        for (const city of cities) {
+            if (city.id !== 'all' && addressLower.includes(city.name.toLowerCase())) {
+                return city.name.toLowerCase();
+            }
+        }
+        
+        return 'другой';
     }
 
     // ===== УВЕДОМЛЕНИЯ =====
 
-    let notificationContainer = null;
-
     /**
      * Показать уведомление
      */
-    function showNotification(message, type = 'info', duration = 3000) {
-        const colors = {
-            success: '#00A86B',
-            error: '#DC3545',
-            warning: '#FFB020',
-            info: '#2CD5C4'
+    function showNotification(message, type = 'info', duration = 5000) {
+        // Цвета и иконки
+        const config = {
+            success: { color: '#00A86B', icon: 'fa-check-circle', bg: 'rgba(0, 168, 107, 0.1)' },
+            error: { color: '#DC3545', icon: 'fa-exclamation-circle', bg: 'rgba(220, 53, 69, 0.1)' },
+            warning: { color: '#FFB020', icon: 'fa-exclamation-triangle', bg: 'rgba(255, 176, 32, 0.1)' },
+            info: { color: '#2CD5C4', icon: 'fa-bell', bg: 'rgba(44, 213, 196, 0.1)' }
         };
 
-        const icons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle',
-            warning: 'fa-exclamation-triangle',
-            info: 'fa-bell'
-        };
+        const cfg = config[type] || config.info;
 
-        if (!notificationContainer) {
-            notificationContainer = document.createElement('div');
-            notificationContainer.id = 'notification-container';
-            notificationContainer.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                pointer-events: none;
-            `;
-            document.body.appendChild(notificationContainer);
+        // Создаём контейнер если нет
+        if (!window._notificationContainer) {
+            window._notificationContainer = document.createElement('div');
+            window._notificationContainer.className = 'notification-container';
+            document.body.appendChild(window._notificationContainer);
         }
 
-        const notification = document.createElement('div');
-        notification.className = 'notification';
-        notification.style.cssText = `
-            background: var(--bg-white);
-            border-left: 4px solid ${colors[type]};
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-            min-width: 250px;
-            max-width: 350px;
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideIn 0.3s ease;
-            color: var(--text-primary);
+        // Создаём уведомление
+        const toast = document.createElement('div');
+        toast.className = `notification-toast ${type}`;
+        
+        toast.innerHTML = `
+            <div class="notification-icon ${type}">
+                <i class="fas ${cfg.icon}"></i>
+            </div>
+            <div class="notification-message">${escapeHtml(message)}</div>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
         `;
 
-        notification.innerHTML = `
-            <i class="fas ${icons[type]}" style="color: ${colors[type]}; font-size: 1.2rem;"></i>
-            <span style="flex: 1;">${escapeHtml(message)}</span>
-            <span style="cursor: pointer; opacity: 0.5; font-size: 1.2rem;" onclick="this.parentElement.remove()">×</span>
-        `;
+        window._notificationContainer.appendChild(toast);
 
-        notificationContainer.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
+        // Автоудаление
+        const timeout = setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.animation = 'notificationSlideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
         }, duration);
+
+        // При наведении не удаляем
+        toast.addEventListener('mouseenter', () => clearTimeout(timeout));
+        toast.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'notificationSlideOut 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, duration);
+        });
+
+        return toast;
     }
 
     /**
@@ -218,14 +358,35 @@ const Utils = (function() {
         showNotification(message, 'error');
     }
 
+    /**
+     * Показать успех
+     */
+    function showSuccess(message) {
+        showNotification(message, 'success');
+    }
+
+    /**
+     * Показать предупреждение
+     */
+    function showWarning(message) {
+        showNotification(message, 'warning');
+    }
+
+    /**
+     * Показать информацию
+     */
+    function showInfo(message) {
+        showNotification(message, 'info');
+    }
+
     // ===== ПРОВЕРКИ =====
 
     /**
      * Проверка инициализации Firestore
      */
     function checkFirestore() {
-        if (typeof db === 'undefined' || !db) {
-            console.error('❌ Firestore не инициализирован!');
+        if (typeof window.db === 'undefined' || !window.db) {
+            console.warn('⏳ Firestore не инициализирован');
             return false;
         }
         return true;
@@ -253,13 +414,13 @@ const Utils = (function() {
             localStorage.setItem(key, JSON.stringify(item));
             return true;
         } catch (e) {
-            console.error('Ошибка сохранения в localStorage:', e);
+            console.error('Ошибка сохранения:', e);
             return false;
         }
     }
 
     /**
-     * Чтение из localStorage с проверкой TTL
+     * Чтение из localStorage
      */
     function getStorage(key, defaultValue = null) {
         try {
@@ -273,7 +434,7 @@ const Utils = (function() {
 
             return item.value;
         } catch (e) {
-            console.error('Ошибка чтения из localStorage:', e);
+            console.error('Ошибка чтения:', e);
             return defaultValue;
         }
     }
@@ -283,6 +444,27 @@ const Utils = (function() {
      */
     function removeStorage(key) {
         localStorage.removeItem(key);
+    }
+
+    /**
+     * Сессионное хранилище
+     */
+    function setSession(key, value) {
+        try {
+            sessionStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getSession(key, defaultValue = null) {
+        try {
+            const value = sessionStorage.getItem(key);
+            return value ? JSON.parse(value) : defaultValue;
+        } catch (e) {
+            return defaultValue;
+        }
     }
 
     // ===== ГЕНЕРАЦИЯ =====
@@ -306,10 +488,10 @@ const Utils = (function() {
         return sessionId;
     }
 
-    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+    // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     
     /**
-     * Debounce — ограничивает частоту вызова функции
+     * Debounce
      */
     function debounce(func, wait) {
         let timeout;
@@ -324,7 +506,7 @@ const Utils = (function() {
     }
 
     /**
-     * Throttle — пропускает вызовы не чаще чем раз в указанный интервал
+     * Throttle
      */
     function throttle(func, limit) {
         let inThrottle;
@@ -338,25 +520,25 @@ const Utils = (function() {
     }
 
     /**
-     * Копирование в буфер обмена
+     * Копирование в буфер
      */
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            showNotification('✅ Скопировано!', 'success');
+            showSuccess('Скопировано!');
         }).catch(() => {
-            showNotification('❌ Ошибка копирования', 'error');
+            showError('Ошибка копирования');
         });
     }
 
     /**
-     * Задержка (промис)
+     * Задержка
      */
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**
-     * Безопасная перезагрузка страницы с защитой от циклов
+     * Безопасная перезагрузка
      */
     function safeReload(maxAttempts = 2) {
         const RELOAD_KEY = 'safe_reload_count';
@@ -368,305 +550,194 @@ const Utils = (function() {
             window.location.reload();
         } else {
             sessionStorage.removeItem(RELOAD_KEY);
-            showNotification('Не удалось загрузить страницу. Попробуйте позже.', 'error');
+            showError('Не удалось загрузить страницу. Попробуйте позже.');
         }
     }
 
+    // ===== DOM =====
+
+    /**
+     * Безопасный querySelector
+     */
+    function $(selector, context = document) {
+        return context.querySelector(selector);
+    }
+
+    /**
+     * Безопасный querySelectorAll
+     */
+    function $$(selector, context = document) {
+        return Array.from(context.querySelectorAll(selector));
+    }
+
+    /**
+     * Создание элемента с классами
+     */
+    function createElement(tag, classes = [], attributes = {}) {
+        const el = document.createElement(tag);
+        if (classes.length) el.classList.add(...classes);
+        Object.entries(attributes).forEach(([key, value]) => {
+            if (key === 'text') el.textContent = value;
+            else if (key === 'html') el.innerHTML = value;
+            else el.setAttribute(key, value);
+        });
+        return el;
+    }
+
+    // ===== АНИМАЦИИ =====
+
+    /**
+     * Добавление стилей анимаций
+     */
+    function addAnimationStyles() {
+        if (document.getElementById('utils-animation-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'utils-animation-styles';
+        style.textContent = `
+            @keyframes notificationSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            
+            @keyframes notificationSlideOut {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(30px);
+                }
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            
+            .fade-in {
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .slide-up {
+                animation: slideUp 0.3s ease;
+            }
+            
+            .pulse {
+                animation: pulse 2s infinite;
+            }
+            
+            .spinner {
+                animation: spin 1s linear infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Инициализация стилей
+    addAnimationStyles();
+
     // Публичное API
-    return {
+    const utils = {
+        // Безопасность
         escapeHtml,
+        escapeAttr,
+        
+        // Валидация
         validateEmail,
         validatePhone,
         validatePrice,
+        validateName,
+        validatePassword,
+        
+        // Даты
         safeGetDate,
         formatDate,
+        getTimeAgo,
+        
+        // Форматирование
         formatMoney,
         pluralize,
         truncate,
+        formatPhone,
+        
+        // Категории
         getCategoryIcon,
+        getCategoryColor,
+        getCategoryName,
+        
+        // Адреса
+        extractCity,
+        
+        // Уведомления
         showNotification,
         showError,
+        showSuccess,
+        showWarning,
+        showInfo,
+        
+        // Проверки
         checkFirestore,
         checkAuth,
+        
+        // Хранилище
         setStorage,
         getStorage,
         removeStorage,
+        setSession,
+        getSession,
+        
+        // Генерация
         generateId,
         getSessionId,
+        
+        // Вспомогательные
         debounce,
         throttle,
         copyToClipboard,
         delay,
-        safeReload
+        safeReload,
+        
+        // DOM
+        $,
+        $$,
+        createElement
     };
+
+    window.__UTILS_INITIALIZED__ = true;
+    console.log('✅ Utils загружены');
+    
+    return Object.freeze(utils);
 })();
 
-// ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ HTML =====
-
-/**
- * Глобальные переменные состояния
- */
-window.currentOrderId = null;
-window.currentMasterId = null;
-window.currentClientId = null;
-window.currentRating = 0;
-window.selectedFiles = [];
-window.currentFilter = 'all';
-window._authUnsubscribe = null;
-window._messagesUnsubscribe = null;
-
-/**
- * Удаление файла из превью
- */
-window.removeFile = function(index) {
-    if (window.selectedFiles && Array.isArray(window.selectedFiles)) {
-        window.selectedFiles.splice(index, 1);
-        updateFilePreview();
-    }
-};
-
-/**
- * Обновление превью файлов
- */
-window.updateFilePreview = function() {
-    const preview = document.getElementById('filePreview');
-    if (!preview) return;
-    
-    if (!window.selectedFiles || window.selectedFiles.length === 0) {
-        preview.classList.add('d-none');
-        preview.innerHTML = '';
-        return;
-    }
-    
-    preview.classList.remove('d-none');
-    preview.innerHTML = window.selectedFiles.map((file, index) => {
-        const icon = file.type && file.type.startsWith('image/') ? 'fa-image' : 'fa-file';
-        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-        return `
-            <div class="file-preview-item">
-                <i class="fas ${icon}"></i>
-                <span>${Utils.escapeHtml(fileName)}</span>
-                <span class="remove-file" onclick="window.removeFile(${index})">×</span>
-            </div>
-        `;
-    }).join('');
-};
-
-/**
- * Просмотр заказа
- */
-window.viewOrder = function(orderId) {
-    Utils.showNotification('👀 Просмотр заказа будет доступен позже', 'info');
-};
-
-/**
- * Показать/скрыть отклики
- */
-window.toggleResponses = function(orderId) {
-    const el = document.getElementById(`responses-${orderId}`);
-    if (el) {
-        const isHidden = el.style.display === 'none' || el.style.display === '';
-        el.style.display = isHidden ? 'block' : 'none';
-        
-        // Находим кнопку по data-атрибуту или тексту
-        const btns = document.querySelectorAll('button');
-        for (let btn of btns) {
-            if (btn.textContent.includes('Отклики') && btn.textContent.includes(orderId.substring(0, 8))) {
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.className = isHidden ? 'fas fa-chevron-up me-1' : 'fas fa-chevron-down me-1';
-                }
-                break;
-            }
-        }
-    }
-};
-
-/**
- * Выбор мастера
- */
-window.selectMaster = async function(orderId, masterId, price) {
-    if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
-    
-    try {
-        if (!window.Orders) {
-            throw new Error('Сервис заказов не загружен');
-        }
-        
-        const result = await Orders.selectMaster(orderId, masterId, price);
-        
-        if (result && result.success) {
-            Utils.showNotification('✅ Мастер выбран! Чат создан.', 'success');
-            
-            if (result.chatId) {
-                setTimeout(() => {
-                    window.location.href = `/HomeWork/chat.html?chatId=${result.chatId}`;
-                }, 1500);
-            } else {
-                // Перезагружаем страницу если нет chatId
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            }
-        } else {
-            Utils.showNotification(result?.error || '❌ Ошибка при выборе мастера', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Ошибка выбора мастера:', error);
-        Utils.showNotification('❌ Ошибка при выборе мастера', 'error');
-    }
-};
-
-/**
- * Открыть чат
- */
-window.openChat = function(orderId, partnerId) {
-    const user = Auth.getUser();
-    if (!user) {
-        AuthUI.showLoginModal();
-        return;
-    }
-    
-    // Формируем ID чата в зависимости от роли
-    let chatId;
-    if (Auth.isMaster()) {
-        chatId = `chat_${orderId}_${user.uid}`;
-    } else {
-        chatId = `chat_${orderId}_${partnerId}`;
-    }
-    
-    window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
-};
-
-/**
- * Открыть модалку отзыва
- */
-window.openReviewModal = function(orderId, masterId, masterName) {
-    window.currentOrderId = orderId;
-    window.currentMasterId = masterId;
-    window.currentRating = 0;
-    
-    const modalEl = document.getElementById('reviewModal');
-    if (modalEl && window.bootstrap) {
-        const modal = new bootstrap.Modal(modalEl);
-        
-        // Сброс звёзд
-        document.querySelectorAll('#reviewModal .star').forEach(s => s.classList.remove('active'));
-        const reviewText = document.getElementById('reviewText');
-        if (reviewText) reviewText.value = '';
-        
-        modal.show();
-    } else {
-        Utils.showNotification('Не удалось открыть модалку отзыва', 'error');
-    }
-};
-
-/**
- * Показать модалку отклика
- */
-window.showRespondModal = function(orderId, orderTitle, orderCategory, orderPrice) {
-    window.currentOrderId = orderId;
-    
-    const infoBlock = document.getElementById('respondOrderInfo');
-    if (infoBlock) infoBlock.classList.remove('d-none');
-    
-    const titleEl = document.getElementById('respondOrderTitle');
-    if (titleEl) titleEl.textContent = orderTitle || 'Заказ';
-    
-    const categoryEl = document.getElementById('respondOrderCategory');
-    if (categoryEl) categoryEl.textContent = orderCategory || 'Категория';
-    
-    const priceEl = document.getElementById('respondOrderPrice');
-    if (priceEl) priceEl.textContent = Utils.formatMoney(orderPrice);
-    
-    const priceInput = document.getElementById('responsePrice');
-    if (priceInput) priceInput.value = '';
-    
-    const commentInput = document.getElementById('responseComment');
-    if (commentInput) commentInput.value = '';
-    
-    const modalEl = document.getElementById('respondModal');
-    if (modalEl && window.bootstrap) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
-};
-
-/**
- * Показать модалку отзыва о клиенте
- */
-window.showClientReviewModal = function(orderId, clientId, clientName) {
-    window.currentOrderId = orderId;
-    window.currentClientId = clientId;
-    window.currentRating = 0;
-    
-    const nameEl = document.getElementById('reviewClientName');
-    if (nameEl) nameEl.textContent = clientName || 'Клиент';
-    
-    // Сброс звёзд
-    document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
-    
-    const textEl = document.getElementById('reviewClientText');
-    if (textEl) textEl.value = '';
-    
-    const modalEl = document.getElementById('reviewClientModal');
-    if (modalEl && window.bootstrap) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
-};
-
-/**
- * Очистка при уходе со страницы
- */
-window.addEventListener('beforeunload', function() {
-    // Очищаем слушатели
-    if (window._authUnsubscribe && typeof window._authUnsubscribe === 'function') {
-        window._authUnsubscribe();
-        window._authUnsubscribe = null;
-    }
-    if (window._messagesUnsubscribe && typeof window._messagesUnsubscribe === 'function') {
-        window._messagesUnsubscribe();
-        window._messagesUnsubscribe = null;
-    }
-});
-
-// Добавляем стили для анимаций если их нет
-(function addAnimationStyles() {
-    if (document.getElementById('utils-animation-styles')) return;
-    
-    const style = document.createElement('style');
-    style.id = 'utils-animation-styles';
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-        }
-        
-        .notification {
-            pointer-events: auto;
-            animation: slideIn 0.3s ease;
-        }
-    `;
-    document.head.appendChild(style);
-})();
-
+// Глобальный доступ
 window.Utils = Utils;
-console.log('✅ Utils loaded (полная версия с глобальными функциями)');
+window.$ = Utils.$;
+window.$$ = Utils.$$;

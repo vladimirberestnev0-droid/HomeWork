@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/filters.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
@@ -27,12 +28,17 @@
     <div class="app-wrapper">
         <!-- ШАПКА -->
         <div class="header">
-            <div class="logo">
+            <div class="logo" onclick="window.location.href='/HomeWork/'">
                 СВОЙ<span>86</span>
             </div>
-            <button class="geo-tag" onclick="window.location.href='/HomeWork/'">
-                <i class="fas fa-arrow-left"></i> На главную
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <button class="geo-tag" onclick="window.location.href='/HomeWork/'">
+                    <i class="fas fa-arrow-left"></i> На главную
+                </button>
+                <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
         </div>
 
         <!-- БЛОК АВТОРИЗАЦИИ -->
@@ -40,36 +46,46 @@
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="authRequired" class="text-center p-5 d-none">
-            <i class="fas fa-user-tie fa-4x mb-3" style="color: var(--accent);"></i>
-            <h3>Вход в кабинет мастера</h3>
-            <button class="btn btn-primary mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h5>Вход в кабинет мастера</h5>
+                <p class="text-secondary mb-4">Чтобы управлять откликами, нужно авторизоваться</p>
+                <button class="btn btn-primary btn-lg px-5" onclick="AuthUI.showLoginModal()">
+                    <i class="fas fa-sign-in-alt me-2"></i>Войти
+                </button>
+            </div>
         </div>
 
         <div id="masterCabinet" class="d-none">
             <!-- ПРОФИЛЬ -->
-            <div class="card p-4 mb-4">
+            <div class="card p-4 mb-4 profile-card">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="master-avatar" style="width: 70px; height: 70px;">
+                    <div class="master-avatar" style="width: 80px; height: 80px;">
                         <i class="fas fa-user-tie fa-2x"></i>
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                         <h4 id="masterName" class="mb-1">Загрузка...</h4>
                         <p class="text-secondary mb-1" id="masterCategories"></p>
-                        <div class="master-rating" id="masterRatingDisplay">★★★★★ 0.0</div>
+                        <div class="rating-display" id="masterRatingDisplay">
+                            <span class="stars">★★★★★</span>
+                            <span class="rating-value">0.0</span>
+                        </div>
                     </div>
                 </div>
                 <hr class="my-3" style="border-color: var(--border);">
-                <div class="d-flex justify-content-around">
-                    <div class="text-center">
-                        <div class="fw-bold" id="masterRating">0.0</div>
+                <div class="row g-3 text-center">
+                    <div class="col-4">
+                        <div class="fw-bold fs-4" id="masterRating">0.0</div>
                         <small class="text-muted">Рейтинг</small>
                     </div>
-                    <div class="text-center">
-                        <div class="fw-bold" id="masterReviews">0</div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-4" id="masterReviews">0</div>
                         <small class="text-muted">Отзывов</small>
                     </div>
-                    <div class="text-center">
-                        <div class="fw-bold" id="masterCompleted">0</div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-4" id="masterCompleted">0</div>
                         <small class="text-muted">Выполнено</small>
                     </div>
                 </div>
@@ -77,8 +93,16 @@
 
             <!-- ТАБЫ -->
             <div class="filters-scroll mb-4">
-                <button class="filter-chip active" data-tab="responses">📋 Отклики</button>
-                <button class="filter-chip" data-tab="chats">💬 Чаты</button>
+                <button class="filter-chip active" data-tab="responses">
+                    <i class="fas fa-reply me-1"></i>Отклики
+                </button>
+                <button class="filter-chip" data-tab="chats">
+                    <i class="fas fa-comments me-1"></i>Чаты
+                    <span class="unread-badge-tab d-none" id="chatsUnread">0</span>
+                </button>
+                <button class="filter-chip" data-tab="stats">
+                    <i class="fas fa-chart-line me-1"></i>Статистика
+                </button>
             </div>
 
             <!-- ОТКЛИКИ -->
@@ -95,6 +119,52 @@
             <!-- ЧАТЫ -->
             <div id="chatsTab" class="tab-content d-none">
                 <div id="chatsList" class="orders-list"></div>
+            </div>
+
+            <!-- СТАТИСТИКА -->
+            <div id="statsTab" class="tab-content d-none">
+                <div class="card p-4">
+                    <h5 class="mb-4">Статистика</h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--accent-soft); color: var(--accent);">
+                                    <i class="fas fa-reply"></i>
+                                </div>
+                                <div class="stat-value" id="statTotal">0</div>
+                                <div class="stat-label">Всего откликов</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-value" id="statAccepted">0</div>
+                                <div class="stat-label">Принято</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="stat-value" id="statConversion">0%</div>
+                                <div class="stat-label">Конверсия</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+                                    <i class="fas fa-ruble-sign"></i>
+                                </div>
+                                <div class="stat-value" id="statEarnings">0 ₽</div>
+                                <div class="stat-label">Заработано</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -132,7 +202,7 @@
                         <i class="fas fa-reply me-2" style="color: var(--accent);"></i>
                         Откликнуться на заказ
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div id="respondOrderInfo" class="bg-soft p-3 rounded-4 mb-4 d-none">
@@ -151,30 +221,31 @@
                             Ваша цена <span class="text-danger">*</span>
                         </label>
                         <input type="number" class="form-control form-control-lg" id="responsePrice" 
-                               placeholder="Например: 1500" min="500" step="100">
-                        <small class="text-secondary">Минимальная сумма: 500 ₽</small>
+                               placeholder="Например: 1500" min="500" max="1000000" step="100">
+                        <small class="text-secondary">от 500 до 1 000 000 ₽</small>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">
                             <i class="fas fa-comment me-1" style="color: var(--accent);"></i>
-                            Комментарий к отклику
+                            Комментарий
                         </label>
                         <textarea class="form-control" id="responseComment" rows="3" 
-                                  placeholder="Расскажите, как будете выполнять работу..."></textarea>
+                                  placeholder="Расскажите, как будете выполнять работу..." maxlength="500"></textarea>
+                        <small class="text-secondary">Максимум 500 символов</small>
                     </div>
 
-                    <div class="alert alert-info d-flex align-items-center gap-2 mb-0" style="background: var(--accent-soft); border: none;">
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
                         <i class="fas fa-info-circle" style="color: var(--accent);"></i>
                         <small>Клиент увидит вашу цену и комментарий. Будьте вежливы!</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Отмена
+                        Отмена
                     </button>
                     <button type="button" class="btn btn-primary" id="submitResponse">
-                        <i class="fas fa-paper-plane me-2"></i>Отправить отклик
+                        Отправить отклик
                     </button>
                 </div>
             </div>
@@ -190,7 +261,7 @@
                         <i class="fas fa-star me-2" style="color: gold;"></i>
                         Оцените клиента
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center mb-4" id="reviewClientInfo">
@@ -215,10 +286,10 @@
                     <div class="mb-4">
                         <label class="form-label">
                             <i class="fas fa-pen me-1" style="color: var(--accent);"></i>
-                            Комментарий (необязательно)
+                            Комментарий
                         </label>
                         <textarea class="form-control" id="reviewClientText" rows="3" 
-                                  placeholder="Напишите пару слов о клиенте..."></textarea>
+                                  placeholder="Напишите пару слов о клиенте..." maxlength="500"></textarea>
                     </div>
 
                     <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
@@ -228,10 +299,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Пропустить
+                        Пропустить
                     </button>
                     <button type="button" class="btn btn-primary" id="submitClientReview">
-                        <i class="fas fa-check me-2"></i>Отправить отзыв
+                        Отправить отзыв
                     </button>
                 </div>
             </div>
@@ -259,6 +330,7 @@
     
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
+    <script src="/HomeWork/js/components/notifications.js"></script>
     
     <script src="/HomeWork/js/pages/masters.js"></script>
 </body>

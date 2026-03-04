@@ -2,12 +2,26 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>СВОЙ МАСТЕР 86 — мастера рядом</title>
+    
+    <!-- Мета-теги -->
+    <meta name="description" content="Найдите проверенных мастеров в Нягани и ХМАО. Ремонт, сантехника, электрика и другие услуги.">
+    <meta name="keywords" content="мастера Нягань, ремонт, сантехник, электрик, услуги ХМАО">
+    <meta name="author" content="СВОЙ МАСТЕР 86">
+    <meta name="theme-color" content="#2CD5C4">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="СВОЙ МАСТЕР 86">
+    <meta property="og:description" content="Найдите проверенных мастеров рядом">
+    <meta property="og:image" content="/HomeWork/icons/og-image.jpg">
+    <meta property="og:url" content="https://svoymaster86.ru">
     
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
-    <meta name="theme-color" content="#2CD5C4">
+    <link rel="apple-touch-icon" href="/HomeWork/icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -26,6 +40,7 @@
     <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
     <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
@@ -33,18 +48,25 @@
     <div class="app-wrapper">
         <!-- ШАПКА -->
         <div class="header">
-            <div class="logo">
+            <div class="logo" onclick="window.location.href='/HomeWork/'">
                 СВОЙ<span>86</span>
             </div>
-            <div class="geo-tag">
-                <i class="fas fa-map-marker-alt"></i> ХМАО, Нягань
+            <div class="d-flex align-items-center gap-2">
+                <button class="geo-tag" id="citySelector">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="selectedCity">Нягань</span>
+                    <i class="fas fa-chevron-down ms-1" style="font-size: 0.7rem;"></i>
+                </button>
+                <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
 
         <!-- ПОИСК -->
         <div class="search-bar">
             <span>🔍</span>
-            <input type="text" id="searchInput" placeholder="Поиск мастеров или услуг...">
+            <input type="text" id="searchInput" placeholder="Поиск мастеров или услуг..." aria-label="Поиск">
         </div>
 
         <!-- БЛОК АВТОРИЗАЦИИ -->
@@ -56,14 +78,16 @@
                 <div class="skeleton-chip"></div>
                 <div class="skeleton-chip"></div>
                 <div class="skeleton-chip"></div>
+                <div class="skeleton-chip"></div>
             </div>
+            <div class="skeleton-order"></div>
             <div class="skeleton-order"></div>
             <div class="skeleton-order"></div>
             <div class="skeleton-order"></div>
         </div>
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
-        <div id="mainContent">
+        <div id="mainContent" style="display: none;">
             <!-- ФИЛЬТРЫ (скроллящиеся) -->
             <div class="filters-scroll" id="categoryFilters">
                 <!-- JS заполнит -->
@@ -71,8 +95,18 @@
 
             <!-- БЛОК: СВЕЖИЕ ЗАКАЗЫ -->
             <div class="section-title">
-                <h2><i class="fas fa-fire" style="color: var(--accent);"></i> Свежие заказы</h2>
-                <a href="#" id="viewAllOrders">Все <span id="ordersCount">0</span> →</a>
+                <h2>
+                    <i class="fas fa-fire" style="color: var(--accent);"></i> 
+                    Свежие заказы
+                </h2>
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
+                        <option value="newest">Сначала новые</option>
+                        <option value="price_asc">Сначала дешевле</option>
+                        <option value="price_desc">Сначала дороже</option>
+                    </select>
+                    <span id="ordersCount" class="badge bg-accent">0</span>
+                </div>
             </div>
 
             <div id="ordersList" class="orders-list">
@@ -81,7 +115,10 @@
 
             <!-- БЛОК: ПОПУЛЯРНЫЕ МАСТЕРА -->
             <div class="section-title">
-                <h2><i class="fas fa-crown" style="color: var(--accent);"></i> Мастера рядом</h2>
+                <h2>
+                    <i class="fas fa-crown" style="color: var(--accent);"></i> 
+                    Мастера рядом
+                </h2>
                 <a href="/HomeWork/masters.html">Все →</a>
             </div>
 
@@ -100,7 +137,7 @@
 
     <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
-        <button class="nav-item active" data-page="home">
+        <button class="nav-item" data-page="home">
             <span>🏠</span>
             <span>Главная</span>
         </button>
@@ -137,7 +174,27 @@
         </div>
     </div>
 
-    <!-- Скрипты (ВАЖНО: строгий порядок!) -->
+    <!-- МОДАЛКА ВЫБОРА ГОРОДА -->
+    <div class="modal fade" id="cityModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-map-marker-alt me-2" style="color: var(--accent);"></i>
+                        Выберите город
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group" id="cityList">
+                        <!-- JS заполнит -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -161,6 +218,7 @@
     <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
+    <script src="/HomeWork/js/components/notifications.js"></script>
     
     <!-- Pages -->
     <script src="/HomeWork/js/pages/index.js"></script>

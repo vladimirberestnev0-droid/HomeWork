@@ -1,6 +1,25 @@
+/* ============================================
+   ЗАГРУЗЧИКИ И СКЕЛЕТОНЫ
+   ============================================ */
+
 /* Скелетон загрузки */
 .loading-skeleton {
     padding: 20px 0;
+    animation: fadeIn 0.5s ease;
+}
+
+.skeleton-chip {
+    height: 40px;
+    width: 100px;
+    background: linear-gradient(90deg, 
+        var(--border) 25%, 
+        var(--border-soft) 50%, 
+        var(--border) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius-full);
+    display: inline-block;
+    margin-right: 10px;
 }
 
 .skeleton-title {
@@ -45,7 +64,7 @@
 }
 
 .skeleton-order {
-    height: 120px;
+    height: 180px;
     background: linear-gradient(90deg, 
         var(--border) 25%, 
         var(--border-soft) 50%, 
@@ -56,9 +75,110 @@
     margin-bottom: 16px;
 }
 
+.skeleton-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    background: linear-gradient(90deg, 
+        var(--border) 25%, 
+        var(--border-soft) 50%, 
+        var(--border) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    margin-bottom: 12px;
+}
+
+.skeleton-text {
+    height: 16px;
+    width: 100%;
+    background: linear-gradient(90deg, 
+        var(--border) 25%, 
+        var(--border-soft) 50%, 
+        var(--border) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+}
+
+/* Анимация загрузки */
 @keyframes loading {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
+
+/* Спиннеры */
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+.spinner-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+.spinner-glow {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite, glow 1.5s ease-in-out infinite;
+    margin: 0 auto;
+}
+
+.spinner-glow-sm {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+}
+
+/* Прогресс-бар */
+.progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 30%;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: progress 2s ease-in-out infinite;
+}
+
+/* Анимации */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px var(--accent); }
+    50% { box-shadow: 0 0 30px var(--accent); }
+}
+
+@keyframes progress {
+    0% { left: -30%; }
+    100% { left: 100%; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* Скрываем скелетон когда контент готов */
@@ -68,4 +188,58 @@ body.loaded #loadingSkeleton {
 
 body.loaded #mainContent {
     display: block !important;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Пустые состояния */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    animation: fadeIn 0.5s ease;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: var(--accent-soft);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+}
+
+.empty-state h5 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+/* Fade In */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

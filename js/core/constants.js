@@ -1,93 +1,200 @@
-// Роли пользователей
-const USER_ROLE = {
-    CLIENT: 'client',
-    MASTER: 'master',
-    ADMIN: 'admin'
-};
+// ============================================
+// КОНСТАНТЫ ПРИЛОЖЕНИЯ
+// ============================================
 
-// Статусы заказов
-const ORDER_STATUS = {
-    OPEN: 'open',
-    IN_PROGRESS: 'in_progress',
-    COMPLETED: 'completed'
-};
+const CONSTANTS = (function() {
+    // Защита от повторных инициализаций
+    if (window.__CONSTANTS_INITIALIZED__) {
+        return window.CONSTANTS;
+    }
 
-// ID администратора
-const ADMIN_UID = "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
+    // ===== РОЛИ ПОЛЬЗОВАТЕЛЕЙ =====
+    const USER_ROLE = {
+        CLIENT: 'client',
+        MASTER: 'master',
+        ADMIN: 'admin',
+        
+        // Для валидации
+        isValid: (role) => {
+            return [USER_ROLE.CLIENT, USER_ROLE.MASTER, USER_ROLE.ADMIN].includes(role);
+        },
+        
+        // Для отображения
+        getDisplayName: (role) => {
+            const names = {
+                [USER_ROLE.CLIENT]: 'Клиент',
+                [USER_ROLE.MASTER]: 'Мастер',
+                [USER_ROLE.ADMIN]: 'Администратор'
+            };
+            return names[role] || 'Пользователь';
+        },
+        
+        // Иконки
+        getIcon: (role) => {
+            const icons = {
+                [USER_ROLE.CLIENT]: 'fa-user',
+                [USER_ROLE.MASTER]: 'fa-user-tie',
+                [USER_ROLE.ADMIN]: 'fa-crown'
+            };
+            return icons[role] || 'fa-user';
+        }
+    };
 
-// Категории заказов (РАСШИРЕННЫЙ СПИСОК)
-const ORDER_CATEGORIES = [
-    { id: 'all', name: 'Все', icon: 'fa-list-ul' },
-    { id: 'Сантехника', name: 'Сантехника', icon: 'fa-wrench' },
-    { id: 'Электрика', name: 'Электрика', icon: 'fa-bolt' },
-    { id: 'Отделочные работы', name: 'Отделочные работы', icon: 'fa-paint-roller' },
-    { id: 'Мебель', name: 'Мебель', icon: 'fa-couch' },
-    { id: 'Окна и двери', name: 'Окна и двери', icon: 'fa-window-maximize' },
-    { id: 'Бытовой ремонт', name: 'Бытовой ремонт', icon: 'fa-tools' },
-    { id: 'Клининг', name: 'Клининг', icon: 'fa-broom' },
-    { id: 'Ремонт техники', name: 'Ремонт техники', icon: 'fa-gear' },
-    { id: 'Дизайн интерьера', name: 'Дизайн интерьера', icon: 'fa-pencil-ruler' },
-    { id: 'Ландшафтный дизайн', name: 'Ландшафтный дизайн', icon: 'fa-tree' },
-    { id: 'Архитектор', name: 'Архитектор', icon: 'fa-draw-polygon' },
-    { id: '3D-визуализация', name: '3D-визуализация', icon: 'fa-cubes' },
-    { id: 'Декорирование', name: 'Декорирование', icon: 'fa-palette' },
-    { id: 'Ремонт под ключ', name: 'Ремонт под ключ', icon: 'fa-key' },
-    { id: 'Сварочные работы', name: 'Сварочные работы', icon: 'fa-welding' },
-    { id: 'Кровельные работы', name: 'Кровельные работы', icon: 'fa-home' },
-    { id: 'Фундаментные работы', name: 'Фундаментные работы', icon: 'fa-hard-hat' },
-    { id: 'Бетонные работы', name: 'Бетонные работы', icon: 'fa-trowel' },
-    { id: 'Укладка плитки', name: 'Укладка плитки', icon: 'fa-border-all' },
-    { id: 'Паркетные работы', name: 'Паркетные работы', icon: 'fa-wood' },
-    { id: 'Потолки', name: 'Потолки', icon: 'fa-arrow-up' },
-    { id: 'Гипсокартонные работы', name: 'Гипсокартон', icon: 'fa-layer-group' },
-    { id: 'Малярные работы', name: 'Малярные работы', icon: 'fa-paint-brush' },
-    { id: 'Штукатурные работы', name: 'Штукатурка', icon: 'fa-brush' },
-    { id: 'Утепление', name: 'Утепление', icon: 'fa-temperature-low' },
-    { id: 'Вентиляция', name: 'Вентиляция', icon: 'fa-wind' },
-    { id: 'Отопление', name: 'Отопление', icon: 'fa-radiator' },
-    { id: 'Водоснабжение', name: 'Водоснабжение', icon: 'fa-water' },
-    { id: 'Канализация', name: 'Канализация', icon: 'fa-poop' },
-    { id: 'Мелкий ремонт', name: 'Мелкий ремонт', icon: 'fa-screwdriver' },
-    { id: 'Сборка мебели', name: 'Сборка мебели', icon: 'fa-chair' },
-    { id: 'Компьютерная помощь', name: 'Компьютерная помощь', icon: 'fa-laptop' },
-    { id: 'Услуги грузчиков', name: 'Грузчики', icon: 'fa-people-carry' },
-    { id: 'Вывоз мусора', name: 'Вывоз мусора', icon: 'fa-trash' },
-    { id: 'Уборка снега', name: 'Уборка снега', icon: 'fa-snowplow' },
-    { id: 'Разнорабочий', name: 'Разнорабочий', icon: 'fa-hard-hat' }
-];
+    // ===== СТАТУСЫ ЗАКАЗОВ =====
+    const ORDER_STATUS = {
+        OPEN: 'open',
+        IN_PROGRESS: 'in_progress',
+        COMPLETED: 'completed',
+        CANCELLED: 'cancelled',
+        
+        // Для валидации
+        isValid: (status) => {
+            return [ORDER_STATUS.OPEN, ORDER_STATUS.IN_PROGRESS, 
+                    ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED].includes(status);
+        },
+        
+        // Для отображения
+        getDisplayName: (status) => {
+            const names = {
+                [ORDER_STATUS.OPEN]: 'Активен',
+                [ORDER_STATUS.IN_PROGRESS]: 'В работе',
+                [ORDER_STATUS.COMPLETED]: 'Завершён',
+                [ORDER_STATUS.CANCELLED]: 'Отменён'
+            };
+            return names[status] || status;
+        },
+        
+        // Цвета для бейджей
+        getBadgeClass: (status) => {
+            const classes = {
+                [ORDER_STATUS.OPEN]: 'bg-primary',
+                [ORDER_STATUS.IN_PROGRESS]: 'bg-warning text-dark',
+                [ORDER_STATUS.COMPLETED]: 'bg-success',
+                [ORDER_STATUS.CANCELLED]: 'bg-secondary'
+            };
+            return classes[status] || 'bg-secondary';
+        },
+        
+        // Иконки
+        getIcon: (status) => {
+            const icons = {
+                [ORDER_STATUS.OPEN]: 'fa-clock',
+                [ORDER_STATUS.IN_PROGRESS]: 'fa-spinner fa-spin',
+                [ORDER_STATUS.COMPLETED]: 'fa-check-circle',
+                [ORDER_STATUS.CANCELLED]: 'fa-times-circle'
+            };
+            return icons[status] || 'fa-question';
+        }
+    };
 
-// Иконки для категорий (для быстрого доступа)
-const CATEGORY_ICONS = ORDER_CATEGORIES.reduce((acc, cat) => {
-    if (cat.id !== 'all') acc[cat.id] = cat.icon;
-    return acc;
-}, {});
+    // ===== КАТЕГОРИИ ЗАКАЗОВ =====
+    const ORDER_CATEGORIES = [
+        { id: 'all', name: 'Все', icon: 'fa-list-ul', color: '#2CD5C4' },
+        { id: 'Сантехника', name: 'Сантехника', icon: 'fa-wrench', color: '#FF6B6B' },
+        { id: 'Электрика', name: 'Электрика', icon: 'fa-bolt', color: '#FFD93D' },
+        { id: 'Отделочные работы', name: 'Отделка', icon: 'fa-paint-roller', color: '#6BCB77' },
+        { id: 'Мебель', name: 'Мебель', icon: 'fa-couch', color: '#FF8A5C' },
+        { id: 'Окна и двери', name: 'Окна/Двери', icon: 'fa-window-maximize', color: '#4D96FF' },
+        { id: 'Бытовой ремонт', name: 'Бытовой ремонт', icon: 'fa-tools', color: '#9D65C9' },
+        { id: 'Клининг', name: 'Клининг', icon: 'fa-broom', color: '#FFB347' },
+        { id: 'Ремонт техники', name: 'Ремонт техники', icon: 'fa-gear', color: '#6C757D' },
+        { id: 'Дизайн интерьера', name: 'Дизайн', icon: 'fa-pencil-ruler', color: '#FF69B4' },
+        { id: 'Ландшафтный дизайн', name: 'Ландшафт', icon: 'fa-tree', color: '#2E8B57' },
+        { id: 'Архитектор', name: 'Архитектор', icon: 'fa-draw-polygon', color: '#9370DB' },
+        { id: '3D-визуализация', name: '3D', icon: 'fa-cubes', color: '#20B2AA' },
+        { id: 'Декорирование', name: 'Декор', icon: 'fa-palette', color: '#DB7093' },
+        { id: 'Ремонт под ключ', name: 'Под ключ', icon: 'fa-key', color: '#CD5C5C' },
+        { id: 'Сварочные работы', name: 'Сварка', icon: 'fa-welding', color: '#708090' },
+        { id: 'Кровельные работы', name: 'Кровля', icon: 'fa-home', color: '#8B4513' },
+        { id: 'Укладка плитки', name: 'Плитка', icon: 'fa-border-all', color: '#4682B4' },
+        { id: 'Паркетные работы', name: 'Паркет', icon: 'fa-wood', color: '#DEB887' },
+        { id: 'Потолки', name: 'Потолки', icon: 'fa-arrow-up', color: '#B0C4DE' },
+        { id: 'Гипсокартон', name: 'Гипсокартон', icon: 'fa-layer-group', color: '#D3D3D3' },
+        { id: 'Малярные работы', name: 'Покраска', icon: 'fa-paint-brush', color: '#FFA07A' },
+        { id: 'Штукатурка', name: 'Штукатурка', icon: 'fa-brush', color: '#BC8F8F' },
+        { id: 'Утепление', name: 'Утепление', icon: 'fa-temperature-low', color: '#87CEEB' },
+        { id: 'Вентиляция', name: 'Вентиляция', icon: 'fa-wind', color: '#98D8C8' },
+        { id: 'Отопление', name: 'Отопление', icon: 'fa-radiator', color: '#CD5C5C' },
+        { id: 'Водоснабжение', name: 'Вода', icon: 'fa-water', color: '#00CED1' },
+        { id: 'Мелкий ремонт', name: 'Мелкий ремонт', icon: 'fa-screwdriver', color: '#A9A9A9' },
+        { id: 'Сборка мебели', name: 'Сборка', icon: 'fa-chair', color: '#8B4513' },
+        { id: 'Компьютерная помощь', name: 'IT', icon: 'fa-laptop', color: '#2F4F4F' },
+        { id: 'Услуги грузчиков', name: 'Грузчики', icon: 'fa-people-carry', color: '#B8860B' },
+        { id: 'Вывоз мусора', name: 'Вывоз мусора', icon: 'fa-trash', color: '#696969' },
+        { id: 'Разнорабочий', name: 'Разнорабочий', icon: 'fa-hard-hat', color: '#8B7E66' }
+    ];
 
-// Города (для фильтра)
-const CITIES = [
-    { id: 'all', name: 'Все города' },
-    { id: 'nyagan', name: 'Нягань' },
-    { id: 'surgut', name: 'Сургут' },
-    { id: 'khanty-mansiysk', name: 'Ханты-Мансийск' },
-    { id: 'nefteyugansk', name: 'Нефтеюганск' },
-    { id: 'nizhnevartovsk', name: 'Нижневартовск' }
-];
+    // ===== ИКОНКИ ДЛЯ БЫСТРОГО ДОСТУПА =====
+    const CATEGORY_ICONS = ORDER_CATEGORIES.reduce((acc, cat) => {
+        if (cat.id !== 'all') acc[cat.id] = cat.icon;
+        return acc;
+    }, {});
 
-// Цвета для уведомлений
-const COLORS = {
-    accent: '#E67A4B',
-    success: '#00A86B',
-    warning: '#FFB020',
-    danger: '#DC3545',
-    info: '#17a2b8'
-};
+    // ===== ГОРОДА =====
+    const CITIES = [
+        { id: 'all', name: 'Все города' },
+        { id: 'nyagan', name: 'Нягань' },
+        { id: 'surgut', name: 'Сургут' },
+        { id: 'khanty-mansiysk', name: 'Ханты-Мансийск' },
+        { id: 'nefteyugansk', name: 'Нефтеюганск' },
+        { id: 'nizhnevartovsk', name: 'Нижневартовск' }
+    ];
 
-// Экспорт в глобальную область
-window.USER_ROLE = USER_ROLE;
-window.ORDER_STATUS = ORDER_STATUS;
-window.ADMIN_UID = ADMIN_UID;
-window.ORDER_CATEGORIES = ORDER_CATEGORIES;
-window.CATEGORY_ICONS = CATEGORY_ICONS;
-window.CITIES = CITIES;
-window.COLORS = COLORS;
+    // ===== ТИПЫ УВЕДОМЛЕНИЙ =====
+    const NOTIFICATION_TYPES = {
+        SUCCESS: 'success',
+        ERROR: 'error',
+        WARNING: 'warning',
+        INFO: 'info'
+    };
 
-console.log('✅ Constants loaded');
+    // ===== ТИПЫ СООБЩЕНИЙ В ЧАТЕ =====
+    const MESSAGE_TYPES = {
+        TEXT: 'text',
+        IMAGE: 'image',
+        FILE: 'file',
+        SYSTEM: 'system'
+    };
+
+    // ===== ЦВЕТА =====
+    const COLORS = {
+        accent: '#2CD5C4',
+        accentUrgent: '#FF8A5C',
+        success: '#00A86B',
+        warning: '#FFB020',
+        danger: '#DC3545',
+        info: '#17a2b8'
+    };
+
+    // ===== ID АДМИНА =====
+    const ADMIN_UID = "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
+
+    // ===== СОБИРАЕМ ВСЁ ВМЕСТЕ =====
+    const constants = {
+        USER_ROLE,
+        ORDER_STATUS,
+        ORDER_CATEGORIES,
+        CATEGORY_ICONS,
+        CITIES,
+        NOTIFICATION_TYPES,
+        MESSAGE_TYPES,
+        COLORS,
+        ADMIN_UID
+    };
+
+    // Заморозка
+    window.__CONSTANTS_INITIALIZED__ = true;
+    
+    console.log('✅ Константы загружены');
+    return Object.freeze(constants);
+})();
+
+// Глобальный доступ
+window.USER_ROLE = CONSTANTS.USER_ROLE;
+window.ORDER_STATUS = CONSTANTS.ORDER_STATUS;
+window.ORDER_CATEGORIES = CONSTANTS.ORDER_CATEGORIES;
+window.CATEGORY_ICONS = CONSTANTS.CATEGORY_ICONS;
+window.CITIES = CONSTANTS.CITIES;
+window.COLORS = CONSTANTS.COLORS;
+window.ADMIN_UID = CONSTANTS.ADMIN_UID;
+window.CONSTANTS = CONSTANTS;

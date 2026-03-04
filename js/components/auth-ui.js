@@ -1,18 +1,28 @@
-/**
- * AuthUI — компонент авторизации
- * Управляет модалками входа/регистрации и блоком авторизации в шапке
- */
+// ============================================
+// КОМПОНЕНТ ИНТЕРФЕЙСА АВТОРИЗАЦИИ
+// ============================================
 
 const AuthUI = (function() {
-    // Приватные переменные
+    // Защита от повторных инициализаций
+    if (window.__AUTH_UI_INITIALIZED__) {
+        return window.AuthUI;
+    }
+
+    // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let authModal = null;
     let currentMode = 'login'; // 'login' или 'register'
+    let isInitialized = false;
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
+        if (isInitialized) return;
+        
         const modalEl = document.getElementById('authModal');
         if (modalEl && window.bootstrap) {
-            authModal = new bootstrap.Modal(modalEl);
+            authModal = new bootstrap.Modal(modalEl, {
+                backdrop: 'static',
+                keyboard: true
+            });
         }
         
         // Рендерим начальное состояние
@@ -21,24 +31,38 @@ const AuthUI = (function() {
         // Добавляем глобальные обработчики
         setupGlobalListeners();
         
+        // Подписываемся на изменения авторизации
+        Auth.onAuthChange(() => {
+            renderAuthBlock();
+        });
+        
+        isInitialized = true;
         console.log('✅ AuthUI инициализирован');
     }
 
     // ===== ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ =====
     function setupGlobalListeners() {
-        // Обработка кликов по кнопкам с data-атрибутами
         document.addEventListener('click', (e) => {
-            if (e.target.closest('[data-action="login"]')) {
-                e.preventDefault();
-                showLoginModal();
-            }
-            if (e.target.closest('[data-action="register"]')) {
-                e.preventDefault();
-                showRegisterModal();
-            }
-            if (e.target.closest('[data-action="logout"]')) {
-                e.preventDefault();
-                Auth.logout();
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            
+            const action = target.dataset.action;
+            
+            e.preventDefault();
+            
+            switch(action) {
+                case 'login':
+                    showLoginModal();
+                    break;
+                case 'register':
+                    showRegisterModal();
+                    break;
+                case 'logout':
+                    Auth.logout();
+                    break;
+                case 'close-modals':
+                    hideModals();
+                    break;
             }
         });
     }
@@ -59,7 +83,7 @@ const AuthUI = (function() {
     function hideModals() {
         if (authModal) authModal.hide();
         
-        // Убираем бэкдропы если остались
+        // Убираем бэкдропы
         document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
@@ -75,13 +99,13 @@ const AuthUI = (function() {
         
         if (currentMode === 'login') {
             titleEl.innerHTML = `
-                <i class="fas fa-sign-in-alt me-2"></i>
+                <i class="fas fa-sign-in-alt me-2" style="color: var(--accent);"></i>
                 Вход в СВОЙ МАСТЕР 86
             `;
             bodyEl.innerHTML = getLoginForm();
         } else {
             titleEl.innerHTML = `
-                <i class="fas fa-user-plus me-2"></i>
+                <i class="fas fa-user-plus me-2" style="color: var(--accent);"></i>
                 Регистрация в СВОЙ МАСТЕР 86
             `;
             bodyEl.innerHTML = getRegisterForm();
@@ -93,22 +117,22 @@ const AuthUI = (function() {
     // ===== ФОРМА ВХОДА =====
     function getLoginForm() {
         return `
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="form-label">
                     <i class="fas fa-envelope me-1" style="color: var(--accent);"></i>
                     Email
                 </label>
-                <input type="email" class="form-control" id="loginEmail" 
-                       placeholder="email@example.com" autocomplete="email">
+                <input type="email" class="form-control form-control-lg" id="loginEmail" 
+                       placeholder="email@example.com" autocomplete="email" required>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="form-label">
                     <i class="fas fa-lock me-1" style="color: var(--accent);"></i>
                     Пароль
                 </label>
-                <input type="password" class="form-control" id="loginPassword" 
-                       placeholder="••••••" autocomplete="current-password">
+                <input type="password" class="form-control form-control-lg" id="loginPassword" 
+                       placeholder="••••••" autocomplete="current-password" required>
             </div>
             
             <div id="loginError" class="alert alert-danger d-none">
@@ -116,15 +140,17 @@ const AuthUI = (function() {
                 <span></span>
             </div>
             
-            <div class="d-grid gap-2">
+            <div class="d-grid gap-3">
                 <button class="btn btn-primary btn-lg" id="loginSubmitBtn">
                     <i class="fas fa-sign-in-alt me-2"></i>
                     Войти
                 </button>
                 
-                <button class="btn btn-link" id="switchToRegisterBtn">
-                    Нет аккаунта? Зарегистрироваться
-                </button>
+                <div class="text-center">
+                    <button class="btn btn-link" id="switchToRegisterBtn">
+                        Нет аккаунта? Зарегистрироваться
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -135,43 +161,45 @@ const AuthUI = (function() {
             <div class="mb-3">
                 <label class="form-label">
                     <i class="fas fa-envelope me-1" style="color: var(--accent);"></i>
-                    Email
+                    Email <span class="text-danger">*</span>
                 </label>
                 <input type="email" class="form-control" id="registerEmail" 
-                       placeholder="email@example.com" autocomplete="email">
+                       placeholder="email@example.com" autocomplete="email" required>
             </div>
             
             <div class="mb-3">
                 <label class="form-label">
                     <i class="fas fa-lock me-1" style="color: var(--accent);"></i>
-                    Пароль (мин. 6 символов)
+                    Пароль <span class="text-danger">*</span>
                 </label>
                 <input type="password" class="form-control" id="registerPassword" 
-                       placeholder="••••••" autocomplete="new-password">
+                       placeholder="Минимум 6 символов" autocomplete="new-password" required>
+                <small class="text-secondary">Минимум 6 символов</small>
             </div>
             
             <div class="mb-3">
                 <label class="form-label">
                     <i class="fas fa-user me-1" style="color: var(--accent);"></i>
-                    Имя
+                    Имя <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" id="registerName" 
-                       placeholder="Иван Петров" autocomplete="name">
+                       placeholder="Иван Петров" autocomplete="name" required>
             </div>
             
             <div class="mb-3">
                 <label class="form-label">
                     <i class="fas fa-phone me-1" style="color: var(--accent);"></i>
-                    Телефон (необязательно)
+                    Телефон
                 </label>
                 <input type="tel" class="form-control" id="registerPhone" 
                        placeholder="+7 (999) 123-45-67" autocomplete="tel">
+                <small class="text-secondary">Необязательно, но поможет мастерам связаться</small>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="form-label">
                     <i class="fas fa-user-tag me-1" style="color: var(--accent);"></i>
-                    Кто вы?
+                    Кто вы? <span class="text-danger">*</span>
                 </label>
                 <div class="d-flex gap-4">
                     <div class="form-check">
@@ -209,15 +237,17 @@ const AuthUI = (function() {
                 <span></span>
             </div>
             
-            <div class="d-grid gap-2">
+            <div class="d-grid gap-3">
                 <button class="btn btn-primary btn-lg" id="registerSubmitBtn">
                     <i class="fas fa-user-plus me-2"></i>
                     Зарегистрироваться
                 </button>
                 
-                <button class="btn btn-link" id="switchToLoginBtn">
-                    Уже есть аккаунт? Войти
-                </button>
+                <div class="text-center">
+                    <button class="btn btn-link" id="switchToLoginBtn">
+                        Уже есть аккаунт? Войти
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -251,12 +281,20 @@ const AuthUI = (function() {
         document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLogin);
         document.getElementById('registerSubmitBtn')?.addEventListener('click', handleRegister);
         
-        // Закрытие модалки по Escape
+        // Закрытие по Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && authModal) {
                 authModal.hide();
             }
         });
+        
+        // Очистка при закрытии
+        const modalEl = document.getElementById('authModal');
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            });
+        }
     }
 
     // ===== ОБРАБОТКА ВХОДА =====
@@ -276,6 +314,11 @@ const AuthUI = (function() {
             return;
         }
 
+        if (password.length < 6) {
+            showError(errorDiv, 'Пароль должен быть не менее 6 символов');
+            return;
+        }
+
         // Блокируем кнопку
         const loginBtn = document.getElementById('loginSubmitBtn');
         const originalText = loginBtn.innerHTML;
@@ -289,7 +332,7 @@ const AuthUI = (function() {
                 // Успешный вход
                 if (authModal) authModal.hide();
                 renderAuthBlock();
-                Utils.showNotification('✅ Вход выполнен успешно!', 'success');
+                Utils.showSuccess('Вход выполнен успешно!');
             } else {
                 showError(errorDiv, result.error || 'Ошибка входа');
             }
@@ -307,15 +350,15 @@ const AuthUI = (function() {
     async function handleRegister() {
         const email = document.getElementById('registerEmail')?.value.trim();
         const password = document.getElementById('registerPassword')?.value;
-        const name = document.getElementById('registerName')?.value.trim() || 'Пользователь';
+        const name = document.getElementById('registerName')?.value.trim();
         const phone = document.getElementById('registerPhone')?.value.trim() || '';
         const role = document.querySelector('input[name="role"]:checked')?.value || 'client';
         const categories = document.getElementById('registerCategories')?.value.trim() || '';
         const errorDiv = document.getElementById('registerError');
 
         // Валидация
-        if (!email || !password) {
-            showError(errorDiv, 'Email и пароль обязательны');
+        if (!email || !password || !name) {
+            showError(errorDiv, 'Заполните все обязательные поля');
             return;
         }
 
@@ -324,12 +367,17 @@ const AuthUI = (function() {
             return;
         }
 
-        if (password.length < 6) {
+        if (!Utils.validatePassword(password)) {
             showError(errorDiv, 'Пароль должен быть не менее 6 символов');
             return;
         }
 
-        if (role === 'master' && phone && !Utils.validatePhone?.(phone)) {
+        if (!Utils.validateName(name)) {
+            showError(errorDiv, 'Имя должно быть от 2 до 50 символов');
+            return;
+        }
+
+        if (phone && !Utils.validatePhone(phone)) {
             showError(errorDiv, 'Некорректный формат телефона');
             return;
         }
@@ -352,7 +400,7 @@ const AuthUI = (function() {
                 // Успешная регистрация
                 if (authModal) authModal.hide();
                 renderAuthBlock();
-                Utils.showNotification('✅ Регистрация прошла успешно!', 'success');
+                Utils.showSuccess('Регистрация прошла успешно!');
             } else {
                 showError(errorDiv, result.error || 'Ошибка регистрации');
             }
@@ -374,7 +422,7 @@ const AuthUI = (function() {
         if (span) span.textContent = message;
         errorDiv.classList.remove('d-none');
         
-        // Автоматически скрываем через 5 секунд
+        // Автоскрытие через 5 секунд
         setTimeout(() => {
             errorDiv.classList.add('d-none');
         }, 5000);
@@ -385,25 +433,29 @@ const AuthUI = (function() {
         const container = document.getElementById('authBlockContainer');
         if (!container) return;
 
-        if (Auth.isAuthenticated()) {
+        const state = Auth.getAuthState();
+
+        if (state.isAuthenticated && state.userData) {
             // Пользователь авторизован
-            const userData = Auth.getUserData();
-            const isMaster = Auth.isMaster();
-            const userEmail = Auth.getUser()?.email || '';
+            const isMaster = state.isMaster;
+            const userName = state.userData.name || 'Пользователь';
+            const userEmail = state.user?.email || '';
             
             container.innerHTML = `
-                <div class="card p-2 p-sm-3">
+                <div class="card p-2 p-sm-3 auth-block">
                     <div class="d-flex align-items-center gap-2 gap-sm-3">
-                        <div class="avatar-circle" style="width: 40px; height: 40px; min-width: 40px;">
-                            <i class="fas fa-user" style="font-size: 1.2rem;"></i>
+                        <div class="avatar-circle" style="width: 44px; height: 44px; min-width: 44px;">
+                            <i class="fas ${isMaster ? 'fa-user-tie' : 'fa-user'}" style="font-size: 1.3rem;"></i>
                         </div>
                         <div class="flex-grow-1" style="min-width: 0;">
-                            <h6 class="mb-0 text-truncate">${Utils.escapeHtml(userData?.name || 'Пользователь')}</h6>
-                            <small class="text-secondary text-truncate d-block">${isMaster ? '🔨 Мастер' : '👤 Клиент'}</small>
-                            <small class="text-muted text-truncate d-block d-sm-none">${userEmail}</small>
+                            <h6 class="mb-0 fw-bold">${Utils.escapeHtml(userName)}</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge ${isMaster ? 'bg-accent' : 'bg-secondary'}">${state.roleDisplay}</span>
+                                <small class="text-secondary text-truncate">${userEmail}</small>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger" data-action="logout" 
-                                style="padding: 6px 10px;" title="Выйти">
+                        <button class="btn btn-sm btn-outline-danger rounded-pill" data-action="logout" 
+                                style="padding: 8px 14px;" title="Выйти">
                             <i class="fas fa-sign-out-alt"></i>
                             <span class="d-none d-sm-inline ms-1">Выйти</span>
                         </button>
@@ -413,19 +465,19 @@ const AuthUI = (function() {
         } else {
             // Пользователь не авторизован
             container.innerHTML = `
-                <div class="card p-3">
+                <div class="card p-3 auth-block">
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
-                        <span class="text-secondary">
-                            <i class="fas fa-user-circle me-2 d-none d-sm-inline"></i>
-                            Войдите в личный кабинет
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-user-circle fa-2x" style="color: var(--accent);"></i>
+                            <span class="text-secondary">Войдите в личный кабинет</span>
+                        </div>
                         <div class="auth-buttons d-flex gap-2 w-100 w-sm-auto">
-                            <button class="btn btn-outline-secondary btn-sm flex-grow-1" 
+                            <button class="btn btn-outline-secondary btn-sm flex-grow-1 rounded-pill" 
                                     data-action="login">
                                 <i class="fas fa-sign-in-alt me-1"></i>
                                 <span>Вход</span>
                             </button>
-                            <button class="btn btn-primary btn-sm flex-grow-1" 
+                            <button class="btn btn-primary btn-sm flex-grow-1 rounded-pill" 
                                     data-action="register">
                                 <i class="fas fa-user-plus me-1"></i>
                                 <span>Регистрация</span>
@@ -438,24 +490,25 @@ const AuthUI = (function() {
     }
 
     // ===== ПУБЛИЧНОЕ API =====
-    return {
+    const api = {
         init,
         showLoginModal,
         showRegisterModal,
         hideModals,
         renderAuthBlock
     };
+
+    window.__AUTH_UI_INITIALIZED__ = true;
+    
+    return Object.freeze(api);
 })();
 
 // ===== АВТОИНИЦИАЛИЗАЦИЯ =====
 document.addEventListener('DOMContentLoaded', () => {
-    // Даём время на загрузку Auth и Bootstrap
     setTimeout(() => {
         AuthUI.init();
-    }, 300);
+    }, 500);
 });
 
-// ===== ГЛОБАЛЬНЫЙ ДОСТУП =====
 window.AuthUI = AuthUI;
-
 console.log('✅ AuthUI компонент загружен');
