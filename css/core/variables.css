@@ -1,16 +1,18 @@
 :root {
     /* Глубокая северная палитра */
-    --deep-blue: #0B1E33;        /* Основной фон — ночное небо */
-    --dark-blue: #102433;         /* Нижняя навигация */
-    --card-blue: #1A2C3E;         /* Карточки */
-    --border-blue: #2A3E52;       /* Границы */
-    --text-soft: #B0C4D9;         /* Мягкий текст */
-    --text-muted: #8099AA;        /* Приглушённый */
+    --deep-blue: #0B1E33;
+    --dark-blue: #102433;
+    --card-blue: #1A2C3E;
+    --border-blue: #2A3E52;
+    --text-soft: #B0C4D9;
+    --text-muted: #8099AA;
     
     /* Акценты — северное сияние */
-    --accent: #2CD5C4;            /* Бирюза */
-    --accent-urgent: #FF8A5C;     /* Тёплый оранжевый для срочных */
-    --accent-dark: #1f9e91;       /* Тёмная бирюза */
+    --accent: #2CD5C4;
+    --accent-urgent: #FF8A5C;
+    --accent-dark: #1f9e91;
+    --accent-soft: rgba(44, 213, 196, 0.1);
+    --accent-glow: 0 0 20px rgba(44, 213, 196, 0.5);
     
     /* Системные цвета */
     --text-primary: #FFFFFF;
@@ -22,28 +24,32 @@
     --border-soft: #2A3E52;
     
     /* Тени */
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-    --shadow-md: 0 6px 16px rgba(0,0,0,0.4);
-    --shadow-lg: 0 12px 24px rgba(0,0,0,0.5);
+    --shadow-sm: 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 16px 32px rgba(0,0,0,0.5);
+    --shadow-xl: 0 30px 60px rgba(0,0,0,0.6);
+    --shadow-glow: 0 0 30px rgba(44, 213, 196, 0.3);
     
     /* Скругления */
     --radius-sm: 16px;
-    --radius-md: 22px;
-    --radius-lg: 30px;
+    --radius-md: 24px;
+    --radius-lg: 32px;
     --radius-xl: 40px;
     --radius-full: 60px;
     
     /* Размеры */
-    --mobile-nav-height: 80px;
+    --mobile-nav-height: 75px;
     --floating-btn-bottom: 100px;
     --header-height: 70px;
     
     /* Анимации */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.25s ease;
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Тёмная тема уже встроена в цвета, но оставим для совместимости */
+/* Тёмная тема уже встроена */
 body.dark-theme {
     --bg-main: #0B1E33;
     --bg-white: #1A2C3E;

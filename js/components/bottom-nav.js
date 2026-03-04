@@ -7,8 +7,25 @@ const BottomNav = (function() {
         
         console.log('📱 Нижняя навигация инициализирована');
         
+        // Показываем навигацию только на мобилках/планшетах
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        
         highlightActive();
         setupListeners();
+    }
+    
+    function checkScreenSize() {
+        const nav = document.querySelector('.bottom-nav');
+        if (!nav) return;
+        
+        if (window.innerWidth < 992) {
+            nav.style.display = 'flex';
+            document.body.style.paddingBottom = 'var(--mobile-nav-height)';
+        } else {
+            nav.style.display = 'none';
+            document.body.style.paddingBottom = '0';
+        }
     }
     
     function highlightActive() {
@@ -26,6 +43,10 @@ const BottomNav = (function() {
                 item.classList.add('active');
             } else if (page === 'profile' && (currentPath.includes('master.html') || currentPath.includes('profile'))) {
                 item.classList.add('active');
+            } else if (page === 'search' && currentPath.includes('search.html')) {
+                item.classList.add('active');
+            } else if (page === 'favorites' && currentPath.includes('favorites.html')) {
+                item.classList.add('active');
             }
         });
     }
@@ -38,12 +59,17 @@ const BottomNav = (function() {
                 e.preventDefault();
                 const page = this.dataset.page;
                 
+                // Анимация клика
+                this.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+                
                 switch(page) {
                     case 'home':
                         window.location.href = '/HomeWork/';
                         break;
                     case 'search':
-                        // На главной скроллим к поиску, иначе переходим на главную
                         if (window.location.pathname.includes('index.html') || window.location.pathname === '/HomeWork/') {
                             document.querySelector('.search-bar')?.scrollIntoView({ behavior: 'smooth' });
                         } else {
@@ -52,7 +78,7 @@ const BottomNav = (function() {
                         break;
                     case 'favorites':
                         if (Auth.isAuthenticated()) {
-                            Utils.showNotification('Избранное (будет позже)', 'info');
+                            Utils.showNotification('⭐ Избранное появится soon!', 'info');
                         } else {
                             AuthUI.showLoginModal();
                         }

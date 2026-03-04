@@ -2,19 +2,21 @@
 .bottom-nav {
     background-color: var(--dark-blue);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    padding: 10px 20px;
+    padding: 8px 16px;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border-top: 1px solid var(--border);
-    backdrop-filter: blur(5px);
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    border-top: 2px solid var(--border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
     height: var(--mobile-nav-height);
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
+    transition: transform 0.3s ease;
 }
 
 .nav-item {
@@ -24,13 +26,32 @@
     gap: 4px;
     color: var(--text-muted);
     font-size: 0.7rem;
-    transition: all var(--transition-fast);
+    transition: all 0.2s ease;
     padding: 8px 12px;
     border-radius: 30px;
     cursor: pointer;
     text-decoration: none;
     background: transparent;
     border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.2s ease;
+    border-radius: 3px;
+}
+
+.nav-item.active::after {
+    width: 20px;
 }
 
 .nav-item.active {
@@ -45,6 +66,11 @@
 .nav-item span:first-child {
     font-size: 1.6rem;
     line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.nav-item:hover span:first-child {
+    transform: translateY(-2px);
 }
 
 /* Отступ для контента на мобилках */
@@ -52,45 +78,9 @@ body {
     padding-bottom: calc(var(--mobile-nav-height) + 10px) !important;
 }
 
-/* Мобильные фиксы */
-@media (max-width: 768px) {
-    .container {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-    
-    .order-header {
-        flex-wrap: wrap;
-    }
-    
-    .order-price {
-        font-size: 1.2rem;
-    }
-    
-    /* Фильтры скроллятся */
-    .filters-scroll {
-        flex-wrap: nowrap;
-    }
-    
-    /* Карточки в один столбец */
-    .orders-list {
-        display: block;
-    }
-    
-    /* Мастера скроллятся */
-    .masters-scroll {
-        display: flex;
-        overflow-x: auto;
-    }
-    
-    .master-card {
-        min-width: 140px;
-    }
-}
-
-@media (min-width: 769px) {
+@media (min-width: 992px) {
     .bottom-nav {
-        display: none; /* На десктопе не показываем */
+        display: none !important;
     }
     body {
         padding-bottom: 0 !important;
