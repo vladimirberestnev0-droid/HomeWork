@@ -1,128 +1,164 @@
+/* Базовые кнопки */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 20px;
+    gap: 10px;
+    padding: 12px 24px;
     border: none;
-    border-radius: var(--radius-md);
-    font-weight: 500;
+    border-radius: var(--radius-full);
+    font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-bounce);
     background: var(--bg-white);
     color: var(--text-primary);
     border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Эффект пульсации при клике */
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn:active::after {
+    width: 200px;
+    height: 200px;
 }
 
 .btn:hover {
-    background: var(--bg-light);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .btn:active {
     transform: translateY(0);
 }
 
+/* Основные кнопки */
 .btn-primary {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     color: white;
     border: none;
+    box-shadow: 0 4px 12px rgba(230, 122, 75, 0.3);
 }
 
 .btn-primary:hover {
-    background: var(--accent-dark);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+    box-shadow: 0 6px 16px rgba(230, 122, 75, 0.4);
 }
 
 .btn-success {
-    background: var(--success);
+    background: linear-gradient(135deg, var(--success), #008f56);
     color: white;
     border: none;
-}
-
-.btn-success:hover {
-    background: #008f56;
-    color: white;
+    box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);
 }
 
 .btn-danger {
-    background: var(--danger);
+    background: linear-gradient(135deg, var(--danger), #bb2d3b);
     color: white;
     border: none;
-}
-
-.btn-danger:hover {
-    background: #bb2d3b;
-    color: white;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
 .btn-outline-secondary {
     background: transparent;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     color: var(--text-secondary);
 }
 
 .btn-outline-secondary:hover {
-    background: var(--border);
-    color: var(--text-primary);
+    background: var(--bg-soft);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
+/* Размеры */
 .btn-sm {
-    padding: 6px 12px;
+    padding: 8px 16px;
     font-size: 0.875rem;
+    gap: 6px;
 }
 
 .btn-lg {
-    padding: 14px 28px;
+    padding: 16px 32px;
     font-size: 1.125rem;
+    gap: 12px;
 }
 
 /* Кнопки фильтров */
 .filter-btn {
-    padding: 6px 16px;
-    border: 1px solid var(--border);
+    padding: 8px 20px;
+    border: 2px solid var(--border);
     border-radius: var(--radius-full);
     background: var(--bg-white);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
+    font-weight: 500;
+    font-size: 0.95rem;
 }
 
-.filter-btn:hover,
+.filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+    transform: translateY(-2px);
+}
+
 .filter-btn.active {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+    box-shadow: 0 4px 12px rgba(230, 122, 75, 0.3);
 }
 
 /* Кнопка загрузки ещё */
 .load-more-btn {
-    padding: 12px 24px;
-    background: var(--bg-light);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    padding: 14px 28px;
+    background: var(--bg-soft);
+    border: 2px dashed var(--border-accent);
+    border-radius: var(--radius-full);
+    color: var(--accent);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-normal);
+    font-weight: 600;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
 }
 
 .load-more-btn:hover {
-    background: var(--border);
-    color: var(--text-primary);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    transform: scale(1.02);
 }
 
 /* Бейджи */
 .badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: var(--radius-full);
     font-size: 0.75rem;
-    font-weight: 500;
-    background: var(--bg-light);
+    font-weight: 600;
+    background: var(--bg-soft);
     color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
 }
 
 .badge-primary {
@@ -138,4 +174,34 @@
 .badge-danger {
     background: var(--danger);
     color: white;
+}
+
+.badge-warning {
+    background: var(--warning);
+    color: #2c3e50;
+}
+
+/* Кнопки действий */
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-soft);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    background: var(--accent);
+    color: white;
+    transform: rotate(5deg);
+}
+
+.btn-icon.danger:hover {
+    background: var(--danger);
 }

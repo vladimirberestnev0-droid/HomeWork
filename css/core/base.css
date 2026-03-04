@@ -1,22 +1,56 @@
-* {
+/* Сброс с учётом box-sizing */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Базовые стили */
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--text-primary);
-    background: var(--bg-light);
-    line-height: 1.5;
+    background: var(--bg-main);
+    line-height: 1.6;
+    font-size: 16px;
+    font-weight: 400;
     transition: background-color var(--transition-normal), color var(--transition-normal);
+    min-height: 100vh;
+    position: relative;
 }
 
 /* Контейнер */
 .container {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 16px;
+    }
+}
+
+/* Типографика */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-primary);
+    margin-bottom: 0.5em;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
 }
 
 /* Ссылки */
@@ -24,6 +58,7 @@ a {
     color: var(--accent);
     text-decoration: none;
     transition: color var(--transition-fast);
+    cursor: pointer;
 }
 
 a:hover {
@@ -31,15 +66,30 @@ a:hover {
 }
 
 /* Шапка */
+header {
+    height: var(--header-height);
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 0 24px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
+    background: rgba(var(--bg-white-rgb), 0.9);
+    position: sticky;
+    top: 16px;
+    z-index: 100;
+}
+
 header a {
-    color: var(--text-primary);
+    color: var(--text-secondary);
     font-weight: 500;
-    padding: 8px 12px;
+    padding: 8px 16px;
     border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
 }
 
 header a:hover {
-    background: var(--bg-light);
+    background: var(--bg-soft);
     color: var(--accent);
 }
 
@@ -53,43 +103,104 @@ header a.active {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary) !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .logo-link i {
     color: var(--accent);
+    font-size: 2rem;
 }
 
 /* Аватар */
 .avatar-circle {
     width: 80px;
     height: 80px;
-    background: var(--accent-light);
+    background: var(--accent-soft);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--accent);
+    border: 3px solid var(--bg-white);
+    box-shadow: var(--shadow-sm);
+}
+
+.avatar-circle.lg {
+    width: 100px;
+    height: 100px;
+}
+
+.avatar-circle.sm {
+    width: 40px;
+    height: 40px;
 }
 
 /* Табы */
 .nav-tabs {
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid var(--border-soft);
+    gap: 8px;
+    padding-bottom: 2px;
 }
 
 .nav-tabs .nav-link {
     color: var(--text-secondary);
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     font-weight: 500;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
+}
+
+.nav-tabs .nav-link:hover {
+    background: var(--bg-soft);
+    color: var(--text-primary);
 }
 
 .nav-tabs .nav-link.active {
     color: var(--accent);
-    background: none;
-    border-bottom: 2px solid var(--accent);
+    background: var(--accent-soft);
+}
+
+/* Карточки */
+.card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    backdrop-filter: blur(10px);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
 /* Скрытые элементы */
 .d-none {
     display: none !important;
+}
+
+/* Скроллбар — красивый */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-soft);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: var(--radius-full);
+    transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
 }

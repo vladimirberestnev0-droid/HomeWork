@@ -1,19 +1,88 @@
-/* Тёмная тема - минимальная */
+/* Тёмная тема — глубокие, насыщенные цвета */
 body.dark-theme {
-    --bg-light: #1a1a1a;
-    --bg-white: #2d2d2d;
-    --text-primary: #f8f9fa;
+    --bg-main: #121212;
+    --bg-white: #1e1e1e;
+    --bg-soft: #2d2d2d;
+    --bg-accent-soft: #2a1f1b;
+    
+    --text-primary: #e9ecef;
     --text-secondary: #adb5bd;
-    --border: #404040;
+    --text-muted: #6c757d;
+    
+    --border: #2d2d2d;
+    --border-soft: #262626;
+    --border-accent: #3d2a20;
+    
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.5);
+    --shadow-lg: 0 20px 40px rgba(0,0,0,0.6);
+    --shadow-xl: 0 30px 60px rgba(0,0,0,0.7);
 }
 
+/* Специфичные стили для тёмной темы */
 body.dark-theme .card {
-    background: var(--bg-white);
+    border-color: var(--border);
 }
 
 body.dark-theme .form-control,
 body.dark-theme .form-select {
-    background: var(--bg-white);
-    color: var(--text-primary);
+    background: var(--bg-soft);
     border-color: var(--border);
+    color: var(--text-primary);
+}
+
+body.dark-theme .form-control:focus,
+body.dark-theme .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(230, 122, 75, 0.2);
+}
+
+body.dark-theme .chat-card:hover {
+    background: var(--bg-soft);
+}
+
+body.dark-theme .message.received .message-bubble {
+    background: var(--bg-soft);
+    color: var(--text-primary);
+}
+
+body.dark-theme .modal-header {
+    background: linear-gradient(135deg, #2a1f1b, var(--bg-white));
+}
+
+body.dark-theme .modal-content {
+    background: var(--bg-white);
+    border-color: var(--border);
+}
+
+body.dark-theme .category-dropdown {
+    background: var(--bg-white);
+    border-color: var(--border);
+}
+
+body.dark-theme .category-item:hover {
+    background: var(--bg-soft);
+}
+
+body.dark-theme .filter-btn {
+    background: var(--bg-soft);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+body.dark-theme .filter-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-accent-soft);
+    color: var(--accent);
+}
+
+body.dark-theme .btn-outline-secondary {
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+body.dark-theme .btn-outline-secondary:hover {
+    background: var(--bg-soft);
+    border-color: var(--accent);
+    color: var(--accent);
 }

@@ -1,76 +1,108 @@
 .form-label {
     display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
+    margin-bottom: 8px;
+    font-weight: 600;
     color: var(--text-primary);
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
 }
 
 .form-control,
 .form-select {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
+    padding: 14px 16px;
+    border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--bg-white);
     color: var(--text-primary);
     font-size: 1rem;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: all var(--transition-fast);
+    outline: none;
 }
 
 .form-control:focus,
 .form-select:focus {
-    outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(230,122,75,0.1);
+    box-shadow: 0 0 0 4px rgba(230, 122, 75, 0.1);
 }
 
 .form-control::placeholder {
     color: var(--text-muted);
+    opacity: 0.7;
 }
 
 textarea.form-control {
-    min-height: 100px;
+    min-height: 120px;
     resize: vertical;
+    line-height: 1.6;
 }
 
 /* Группа фильтров */
 .filter-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
 /* Превью фото */
 .photo-preview {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     flex-wrap: wrap;
+    margin-top: 12px;
 }
 
 .photo-preview img {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     object-fit: cover;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 2px solid transparent;
+}
+
+.photo-preview img:hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
 }
 
 /* Звёзды рейтинга */
 .rating-stars {
     display: flex;
-    gap: 4px;
+    gap: 8px;
     justify-content: center;
+    padding: 8px;
 }
 
 .star {
-    font-size: 24px;
+    font-size: 32px;
     color: #ddd;
     cursor: pointer;
-    transition: color var(--transition-fast);
+    transition: all var(--transition-bounce);
 }
 
 .star.active,
 .star:hover {
     color: gold;
+    transform: scale(1.2) rotate(5deg);
+}
+
+/* Инпуты с иконками */
+.input-icon {
+    position: relative;
+}
+
+.input-icon i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.input-icon .form-control {
+    padding-left: 45px;
 }

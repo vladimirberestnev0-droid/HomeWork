@@ -1,29 +1,33 @@
 /* ===== МОБИЛЬНЫЕ ФИКСЫ ===== */
-/* Этот файл только для визуальных правок на телефонах */
-/* НЕ ломает логику, НЕ меняет JS, только CSS */
 
 @media (max-width: 768px) {
     /* Исправление шапки */
     header {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         text-align: center;
+        height: auto;
+        padding: 16px;
+        position: relative;
+        top: 0;
+        margin-bottom: 20px;
     }
     
     header nav {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 8px;
     }
     
-    /* Карточки заказов на мобилках */
+    /* Карточки заказов */
     .order-card {
-        padding: 15px;
+        padding: 18px;
     }
     
     .order-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 5px;
+        gap: 8px;
     }
     
     .order-price {
@@ -31,43 +35,42 @@
     }
     
     .order-meta {
-        flex-wrap: wrap;
-        gap: 8px;
+        gap: 12px;
+        font-size: 0.85rem;
     }
     
     /* Формы */
     .form-control, .form-select {
         font-size: 16px; /* Предотвращает зум на iOS */
+        padding: 12px 14px;
     }
     
     /* Кнопки фильтров */
     .filter-btn {
-        padding: 8px 12px;
-        font-size: 14px;
+        padding: 6px 14px;
+        font-size: 0.85rem;
     }
     
-    /* Модалки на весь экран */
+    /* Модалки */
     .modal-dialog {
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        align-items: flex-end;
+        margin: 10px;
+        min-height: auto;
+        display: block;
     }
     
     .modal-content {
-        border-radius: 20px 20px 0 0;
-        max-height: 90vh;
-        overflow-y: auto;
+        border-radius: var(--radius-lg);
+        max-height: 85vh;
     }
     
     /* Чаты */
     .chat-container {
         height: 100vh;
-        padding-bottom: 0;
+        border-radius: 0;
     }
     
     .messages-area {
-        height: calc(100vh - 140px);
+        padding: 16px;
     }
     
     .message {
@@ -80,6 +83,7 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
+        padding-bottom: 4px;
     }
     
     .nav-tabs::-webkit-scrollbar {
@@ -88,96 +92,91 @@
     
     .nav-tabs .nav-link {
         white-space: nowrap;
-        padding: 8px 12px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
     
     /* Карточки чатов */
     .chat-card {
-        padding: 10px;
+        padding: 12px;
     }
     
     .chat-avatar {
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
     }
     
     /* Уведомления */
     #notification-container {
-        left: 10px;
-        right: 10px;
-        top: 10px;
+        left: 12px;
+        right: 12px;
+        top: 12px;
     }
     
     .notification {
         min-width: auto;
         width: 100%;
+        font-size: 0.9rem;
     }
     
     /* Отступы */
     .container {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding-left: 16px;
+        padding-right: 16px;
     }
     
-    /* Исправление кнопок */
+    /* Кнопки */
     .btn {
-        padding: 8px 16px;
+        padding: 10px 18px;
     }
     
-    /* Исправление гридов */
-    .row {
-        margin-left: -8px;
-        margin-right: -8px;
-    }
-    
-    .col-4, .col-6, .col-8, .col-12 {
-        padding-left: 8px;
-        padding-right: 8px;
+    /* Комбо-бокс */
+    .category-dropdown {
+        width: 90vw;
+        left: 5vw !important;
     }
 }
 
 /* Для очень маленьких экранов */
 @media (max-width: 480px) {
-    /* Ещё более компактно */
     h1 { font-size: 1.8rem; }
     h2 { font-size: 1.5rem; }
     h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.2rem; }
     
     .order-title {
         font-size: 1rem;
     }
     
     .order-price {
-        font-size: 1.1rem;
-    }
-    
-    /* Скрываем некоторые иконки на мобилках */
-    .desktop-only {
-        display: none !important;
-    }
-    
-    /* Показываем мобильные элементы */
-    .mobile-only {
-        display: block !important;
+        font-size: 1.2rem;
+        padding: 2px 10px;
     }
     
     /* Компактные фильтры */
     .filter-group {
-        gap: 5px;
+        gap: 6px;
     }
     
     .filter-btn {
-        padding: 6px 10px;
-        font-size: 13px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
     }
     
-    /* Админка на мобилках */
+    /* Админка */
     .stat-card {
-        padding: 10px;
+        padding: 12px;
     }
     
     .stat-card .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
+    }
+    
+    /* Дропдаун */
+    .category-item {
+        padding: 10px 12px;
+        font-size: 0.9rem;
     }
 }
 
@@ -188,7 +187,11 @@
     }
     
     .order-meta {
-        gap: 10px;
+        gap: 15px;
+    }
+    
+    .card {
+        border-radius: var(--radius-md);
     }
 }
 
@@ -203,22 +206,15 @@
     justify-content: space-around;
     align-items: center;
     padding: 8px 4px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    z-index: 10000;
-    border-top: 1px solid var(--border);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: var(--z-modal);
+    border-top: 1px solid var(--border-soft);
+    backdrop-filter: blur(20px);
     background: rgba(var(--bg-white-rgb), 0.95);
     padding-bottom: max(8px, env(safe-area-inset-bottom));
-    transition: transform 0.3s ease;
+    height: var(--mobile-nav-height);
 }
 
-/* Анимация появления */
-.mobile-bottom-nav.show {
-    transform: translateY(0);
-}
-
-/* Элементы навигации */
 .mobile-nav-item {
     display: flex;
     flex-direction: column;
@@ -228,17 +224,17 @@
     color: var(--text-secondary);
     font-size: 11px;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all var(--transition-fast);
     flex: 1;
-    padding: 6px 0;
-    border-radius: 8px;
+    padding: 8px 0;
+    border-radius: var(--radius-md);
     -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-nav-item i {
     font-size: 22px;
-    margin-bottom: 2px;
-    transition: transform 0.2s;
+    margin-bottom: 4px;
+    transition: all var(--transition-bounce);
 }
 
 .mobile-nav-item:active i {
@@ -251,12 +247,12 @@
 
 .mobile-nav-item.active i {
     color: var(--accent);
-    text-shadow: 0 2px 8px rgba(230, 122, 75, 0.3);
+    transform: translateY(-2px);
 }
 
-/* Добавляем отступ внизу для контента */
+/* Отступ для контента */
 body {
-    padding-bottom: 70px !important;
+    padding-bottom: var(--mobile-nav-height) !important;
 }
 
 @media (min-width: 769px) {
@@ -265,125 +261,5 @@ body {
     }
     body {
         padding-bottom: 0 !important;
-    }
-}
-
-/* Тёмная тема */
-body.dark-theme .mobile-bottom-nav {
-    background: rgba(26, 26, 26, 0.95);
-    border-top-color: var(--border);
-}
-
-/* Индикатор активной вкладки */
-.mobile-nav-item.active::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    background: var(--accent);
-    border-radius: 50%;
-}
-
-/* Адаптация для очень маленьких экранов */
-@media (max-width: 360px) {
-    .mobile-nav-item span {
-        font-size: 10px;
-    }
-    .mobile-nav-item i {
-        font-size: 20px;
-    }
-}
-
-/* Фикс для ПК — ограничиваем максимальную ширину */
-@media (min-width: 992px) {
-    .container {
-        max-width: 1200px; /* или 1140px, как в Bootstrap */
-    }
-    
-    /* Возвращаем нормальные отступы для колонок */
-    .row {
-        margin-left: -12px;
-        margin-right: -12px;
-    }
-    
-    .col-md-6 {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-    
-    /* Ограничиваем ширину карточек */
-    .order-card {
-        max-width: 100%;
-    }
-}
-
-/* ===== ФИКСЫ ДЛЯ ПК ===== */
-@media (min-width: 992px) {
-    /* Центрируем контейнер */
-    .container {
-        max-width: 1200px !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-    }
-
-    /* Исправляем сетку Bootstrap */
-    .row {
-        margin-left: -12px !important;
-        margin-right: -12px !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
-    }
-
-    .col-md-6 {
-        flex: 0 0 50% !important;
-        max-width: 50% !important;
-        padding-left: 12px !important;
-        padding-right: 12px !important;
-    }
-
-    /* Ограничиваем ширину карточек */
-    .order-card {
-        max-width: 100% !important;
-        margin-bottom: 20px !important;
-    }
-
-    /* Фикс шапки */
-    header {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        flex-direction: row !important;
-    }
-
-    header nav {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 15px !important;
-    }
-
-    /* Убираем мобильные костыли */
-    body {
-        padding-bottom: 0 !important;
-    }
-
-    .mobile-bottom-nav {
-        display: none !important;
-    }
-}
-
-/* Для средних экранов */
-@media (min-width: 768px) and (max-width: 991px) {
-    .container {
-        max-width: 960px !important;
-    }
-    
-    .col-md-6 {
-        flex: 0 0 50% !important;
-        max-width: 50% !important;
     }
 }

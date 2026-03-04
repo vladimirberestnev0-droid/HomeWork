@@ -1,5 +1,4 @@
 /* ===== МОБИЛЬНЫЕ УТИЛИТЫ ===== */
-/* Классы для показа/скрытия элементов на разных устройствах */
 
 /* По умолчанию скрыто на мобилках */
 .mobile-only {
@@ -27,7 +26,7 @@
         height: auto;
     }
     
-    /* Убираем лишние отступы */
+    /* Компактные отступы */
     .py-4 {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
@@ -37,9 +36,21 @@
         margin-bottom: 1rem !important;
     }
     
+    .mt-4 {
+        margin-top: 1rem !important;
+    }
+    
+    .gap-3 {
+        gap: 12px !important;
+    }
+    
+    .gap-2 {
+        gap: 8px !important;
+    }
+    
     /* Компактные карточки */
     .card {
-        border-radius: 12px;
+        border-radius: var(--radius-md);
     }
     
     .card-body {
@@ -57,13 +68,18 @@
     }
     
     /* Убираем hover-эффекты на мобилках */
-    .btn:hover {
+    .btn:hover,
+    .card:hover,
+    .filter-btn:hover,
+    .chat-card:hover {
         transform: none;
+        box-shadow: var(--shadow-sm);
     }
     
-    .card:hover {
-        transform: none;
-        box-shadow: none;
+    .btn:active,
+    .filter-btn:active,
+    .chat-card:active {
+        transform: scale(0.98);
     }
 }
 
@@ -75,10 +91,15 @@
     
     .modal-dialog {
         align-items: center;
+        margin: 20px auto;
     }
     
     .modal-content {
-        border-radius: 20px;
+        border-radius: var(--radius-lg);
         max-height: 80vh;
+    }
+    
+    .messages-area {
+        max-height: 60vh;
     }
 }

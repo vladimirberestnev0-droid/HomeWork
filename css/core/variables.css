@@ -1,48 +1,94 @@
 :root {
-    /* Основные цвета */
-    --accent: #E67A4B;
-    --accent-dark: #d45c2f;
-    --accent-light: #fff1e8;
-    --success: #00A86B;
-    --danger: #DC3545;
-    --warning: #FFB020;
-    --info: #17a2b8;
+    /* Основные цвета — тёплая, уютная палитра */
+    --accent: #E67A4B;        /* Тёплый оранжевый — энергия, действие */
+    --accent-dark: #d45c2f;    /* Глубокий оранжевый для наведения */
+    --accent-light: #fff1e8;   /* Очень светлый фон для выделения */
+    --accent-soft: #fce6d9;     /* Мягкий персиковый */
     
-    /* Нейтральные цвета */
-    --text-primary: #212529;
-    --text-secondary: #6c757d;
-    --text-muted: #999;
-    --bg-light: #f8f9fa;
-    --bg-white: #ffffff;
-    --border: #e9ecef;
-    --border-dark: #dee2e6;
+    /* Системные цвета */
+    --success: #00A86B;        /* Зелёный — успех, деньги */
+    --danger: #DC3545;         /* Красный — ошибки, предупреждения */
+    --warning: #FFB020;        /* Жёлтый — внимание */
+    --info: #17a2b8;           /* Голубой — информация */
     
-    /* Тени */
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+    /* Нейтральные цвета — мягкие, гладкие */
+    --text-primary: #2c3e50;    /* Тёмно-синий — основной текст (меньше контраст, чем чёрный) */
+    --text-secondary: #5a6b7b;  /* Спокойный серо-синий */
+    --text-muted: #8a9aa8;      /* Приглушённый */
+    --text-light: #ffffff;      /* Белый */
     
-    /* Скругления */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 20px;
+    /* Фоны */
+    --bg-main: #f5f7fa;        /* Светло-серый с голубизной — основной фон */
+    --bg-white: #ffffff;        /* Белый для карточек */
+    --bg-soft: #f8fafc;         /* Очень мягкий фон */
+    --bg-accent-soft: #fff5f0;  /* Фон с акцентным подтоном */
+    
+    /* Границы */
+    --border: #e2e8f0;          /* Мягкая граница */
+    --border-soft: #edf2f7;     /* Ещё мягче */
+    --border-accent: #ffd5c2;    /* Акцентная граница */
+    
+    /* Тени — многослойные, реалистичные */
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.02);
+    --shadow-lg: 0 20px 40px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.02);
+    --shadow-xl: 0 30px 60px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.04);
+    
+    /* Скругления — плавные, дружелюбные */
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
     --radius-full: 999px;
     
     /* Анимации */
-    --transition-fast: 0.2s ease;
-    --transition-normal: 0.3s ease;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    /* Размеры */
+    --header-height: 80px;
+    --footer-height: 60px;
+    --mobile-nav-height: 70px;
+    
+    /* Z-index слои */
+    --z-dropdown: 1000;
+    --z-modal: 2000;
+    --z-popover: 3000;
+    --z-tooltip: 4000;
+    --z-toast: 5000;
 }
 
-/* Тёмная тема */
+/* Тёмная тема — глаза не устают */
 body.dark-theme {
-    --text-primary: #f8f9fa;
+    --text-primary: #e9ecef;
     --text-secondary: #adb5bd;
     --text-muted: #6c757d;
-    --bg-light: #2d2d2d;
-    --bg-white: #1a1a1a;
-    --border: #404040;
-    --border-dark: #4d4d4d;
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+    --text-light: #ffffff;
+    
+    --bg-main: #121212;
+    --bg-white: #1e1e1e;
+    --bg-soft: #2d2d2d;
+    --bg-accent-soft: #2a1f1b;
+    
+    --border: #2d2d2d;
+    --border-soft: #262626;
+    --border-accent: #3d2a20;
+    
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+/* Плавный скролл */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Убираем артефакты на мобилках */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
