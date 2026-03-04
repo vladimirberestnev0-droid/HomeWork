@@ -1,6 +1,6 @@
 /**
  * firebase.js - Инициализация Firebase
- * Версия 2.0 с улучшенной обработкой ошибок
+ * Версия 2.2 с исправленным persistence (убрана лишняя опция)
  */
 
 (function() {
@@ -82,10 +82,9 @@
                 merge: true
             });
 
-            // Включаем persistence с обработкой ошибок
+            // Включаем persistence с правильными опциями (только synchronizeTabs)
             window.db.enablePersistence({ 
-                synchronizeTabs: true,
-                experimentalForceOwningTab: true 
+                synchronizeTabs: true
             }).then(() => {
                 console.log('✅ Firestore persistence включен');
             }).catch(err => {

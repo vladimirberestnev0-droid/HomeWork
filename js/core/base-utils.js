@@ -11,6 +11,25 @@ const Utils = (function() {
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let notificationContainer = null;
 
+    // ===== ПРОВЕРКИ FIREBASE =====
+    
+    /**
+     * Проверка инициализации Firestore
+     */
+    function checkFirebase() {
+        return typeof window.db !== 'undefined' && 
+               window.db !== null && 
+               typeof window.auth !== 'undefined' && 
+               window.auth !== null;
+    }
+
+    /**
+     * Проверка инициализации Firestore (для обратной совместимости)
+     */
+    function checkFirestore() {
+        return checkFirebase();
+    }
+
     // ===== БЕЗОПАСНОСТЬ =====
     
     /**
@@ -382,17 +401,6 @@ const Utils = (function() {
     // ===== ПРОВЕРКИ =====
 
     /**
-     * Проверка инициализации Firestore
-     */
-    function checkFirestore() {
-        if (typeof window.db === 'undefined' || !window.db) {
-            console.warn('⏳ Firestore не инициализирован');
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Проверка авторизации
      */
     function checkAuth() {
@@ -666,6 +674,10 @@ const Utils = (function() {
 
     // Публичное API
     const utils = {
+        // Проверки Firebase
+        checkFirebase,
+        checkFirestore,
+        
         // Безопасность
         escapeHtml,
         escapeAttr,
@@ -704,7 +716,6 @@ const Utils = (function() {
         showInfo,
         
         // Проверки
-        checkFirestore,
         checkAuth,
         
         // Хранилище
