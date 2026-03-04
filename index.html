@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
     <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
     
     <!-- Мобильная оптимизация -->
@@ -50,89 +51,129 @@
             </nav>
         </header>
 
-        <!-- Блок авторизации -->
+        <!-- Блок авторизации (всегда виден) -->
         <div id="authBlockContainer" class="mb-4"></div>
 
-        <!-- Город (только Нягань, скрыто) -->
-        <input type="hidden" id="cityFilter" value="nyagan">
-
-        <!-- КОМБО-БОКС для категорий -->
-        <div class="filter-section mb-4">
-            <label class="form-label fw-bold mb-2" id="categoryLabel" style="cursor: pointer;">
-                <i class="fas fa-tags me-1" style="color: var(--accent);"></i>
-                Категория: <span id="selectedCategoryName">Все</span> 
-                <i class="fas fa-chevron-down ms-1" style="font-size: 14px;"></i>
-            </label>
-            
-            <!-- Выпадающий список с поиском -->
-            <div id="categoryDropdown" class="category-dropdown" style="display: none;">
-                <input type="text" id="categorySearch" class="form-control mb-2" placeholder="🔍 Поиск категории...">
-                <div id="categoryList" class="category-list" style="max-height: 300px; overflow-y: auto;"></div>
-            </div>
-            
-            <!-- Скрытое поле для хранения выбранной категории -->
-            <input type="hidden" id="selectedCategory" value="all">
-        </div>
-
-        <!-- Основной контейнер: форма + заказы -->
-        <div class="row g-4">
-            <!-- Левая колонка: форма создания заказа (для клиентов) -->
-            <div id="orderFormColumn" class="col-md-6">
-                <div class="card p-4">
-                    <h3 class="mb-4">
-                        <i class="fas fa-plus-circle me-2" style="color: var(--accent);"></i>
-                        Новая заявка
-                    </h3>
-                    <form id="orderForm">
-                        <div class="mb-3">
-                            <label class="form-label">Категория <span class="text-danger">*</span></label>
-                            <select class="form-select" id="category" required>
-                                <option value="">Выберите категорию</option>
-                            </select>
+        <!-- СКЕЛЕТОН ЗАГРУЗКИ -->
+        <div id="loadingSkeleton" class="loading-skeleton">
+            <div class="row g-4">
+                <!-- Скелетон фильтров -->
+                <div class="col-12">
+                    <div class="skeleton-line" style="width: 150px;"></div>
+                    <div class="skeleton-line short"></div>
+                </div>
+                
+                <!-- Скелетон формы -->
+                <div class="col-md-6">
+                    <div class="card p-4">
+                        <div class="skeleton-title"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-button"></div>
+                    </div>
+                </div>
+                
+                <!-- Скелетон списка заказов -->
+                <div class="col-md-6">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between mb-4">
+                            <div class="skeleton-title" style="width: 200px;"></div>
+                            <div class="skeleton-badge"></div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Название работы <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="title" required minlength="5">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Описание</label>
-                            <textarea class="form-control" id="description" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Бюджет (₽) <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="price" required min="500" max="1000000">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Адрес <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="address" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Фото (до 5 шт)</label>
-                            <input type="file" id="photoInput" accept="image/*" multiple class="form-control">
-                            <div id="photoPreview" class="d-flex gap-2 mt-2 flex-wrap"></div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 py-3">
-                            <i class="fas fa-paper-plane me-2"></i> Опубликовать заказ
-                        </button>
-                    </form>
+                        <div class="skeleton-order"></div>
+                        <div class="skeleton-order"></div>
+                        <div class="skeleton-order"></div>
+                        <div class="skeleton-order"></div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Правая колонка: список заказов -->
-            <div id="ordersColumn" class="col-md-6">
-                <div class="card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">
-                            <i class="fas fa-clipboard-list me-2" style="color: var(--accent);"></i>
-                            Актуальные заказы в Нягани
+        <!-- ОСНОВНОЙ КОНТЕНТ (изначально скрыт) -->
+        <div id="mainContent" style="display: none;">
+            <!-- Город (скрытое поле) -->
+            <input type="hidden" id="cityFilter" value="nyagan">
+
+            <!-- КОМБО-БОКС для категорий -->
+            <div class="filter-section mb-4">
+                <label class="form-label fw-bold mb-2" id="categoryLabel" style="cursor: pointer;">
+                    <i class="fas fa-tags me-1" style="color: var(--accent);"></i>
+                    Категория: <span id="selectedCategoryName">Все</span> 
+                    <i class="fas fa-chevron-down ms-1" style="font-size: 14px;"></i>
+                </label>
+                
+                <!-- Выпадающий список с поиском -->
+                <div id="categoryDropdown" class="category-dropdown" style="display: none;">
+                    <input type="text" id="categorySearch" class="form-control mb-2" placeholder="🔍 Поиск категории...">
+                    <div id="categoryList" class="category-list" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+                
+                <!-- Скрытое поле для хранения выбранной категории -->
+                <input type="hidden" id="selectedCategory" value="all">
+            </div>
+
+            <!-- Основной контейнер: форма + заказы -->
+            <div class="row g-4">
+                <!-- Левая колонка: форма создания заказа (для клиентов) -->
+                <div id="orderFormColumn" class="col-md-6">
+                    <div class="card p-4">
+                        <h3 class="mb-4">
+                            <i class="fas fa-plus-circle me-2" style="color: var(--accent);"></i>
+                            Новая заявка
                         </h3>
-                        <span class="badge bg-secondary" id="ordersCount">0</span>
+                        <form id="orderForm">
+                            <div class="mb-3">
+                                <label class="form-label">Категория <span class="text-danger">*</span></label>
+                                <select class="form-select" id="category" required>
+                                    <option value="">Выберите категорию</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Название работы <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" required minlength="5">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Бюджет (₽) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="price" required min="500" max="1000000">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Адрес <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="address" required placeholder="Улица, дом, квартира">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Фото (до 5 шт)</label>
+                                <input type="file" id="photoInput" accept="image/*" multiple class="form-control">
+                                <div id="photoPreview" class="d-flex gap-2 mt-2 flex-wrap"></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-3">
+                                <i class="fas fa-paper-plane me-2"></i> Опубликовать заказ
+                            </button>
+                        </form>
                     </div>
-                    <div id="ordersList"></div>
-                    <div id="loadMoreContainer" class="text-center mt-4 d-none">
-                        <button id="loadMoreBtn" class="btn btn-outline-secondary">
-                            Показать ещё <span id="remainingOrdersCount">0</span>
-                        </button>
+                </div>
+
+                <!-- Правая колонка: список заказов -->
+                <div id="ordersColumn" class="col-md-6">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="mb-0">
+                                <i class="fas fa-clipboard-list me-2" style="color: var(--accent);"></i>
+                                Актуальные заказы в Нягани
+                            </h3>
+                            <span class="badge bg-secondary" id="ordersCount">0</span>
+                        </div>
+                        <div id="ordersList"></div>
+                        <div id="loadMoreContainer" class="text-center mt-4 d-none">
+                            <button id="loadMoreBtn" class="btn btn-outline-secondary">
+                                Показать ещё <span id="remainingOrdersCount">0</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

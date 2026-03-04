@@ -4,39 +4,172 @@
     let displayedOrders = [];
     let filters = { 
         category: 'all', 
-        city: 'nyagan' // ТОЛЬКО НЯГАНЬ
+        city: 'nyagan'
     };
     let uploadedPhotos = [];
     let currentPage = 0;
     let hasMore = true;
 
-    // DOM элементы
     const $ = (id) => document.getElementById(id);
 
-    // Инициализация
+    // Инициализация с правильным порядком
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Главная страница загружается...');
-
-        // Заполняем select категорий
+        
+        // Сразу показываем скелетон
+        document.body.classList.remove('loaded');
+        
+        // Ждём инициализацию Firebase и Auth
+        await waitForFirebase();
+        
+        // Проверяем авторизацию
+        const authState = await checkAuthState();
+        
+        // Заполняем категории (делаем быстро)
         fillCategorySelect();
-
-        // Инициализируем комбо-бокс
         initCategoryCombo();
-
-        // Загружаем заказы
-        await loadOrders();
-
-        // Подписываемся на изменения авторизации
+        
+        // Загружаем заказы (параллельно)
+        await Promise.all([
+            loadOrders(),
+            loadUserData()
+        ]);
+        
+        // Применяем правильное состояние UI
+        applyUIState(authState);
+        
+        // Показываем контент, убираем скелетон
+        document.body.classList.add('loaded');
+        
+        // Подписываемся на изменения авторизации (на будущее)
         Auth.onAuthChange((state) => {
-            updateAuthUI(state);
-            toggleOrderForm(state);
+            // Плавно обновляем UI без перерисовки всего
+            smoothUIUpdate(state);
         });
 
-        // Инициализируем обработчики
         initEventListeners();
     });
 
-    // Заполнение select категорий для формы
+    // Ждём Firebase
+    function waitForFirebase() {
+        return new Promise((resolve) => {
+            if (window.db && window.auth) {
+                resolve();
+                return;
+            }
+            
+            let attempts = 0;
+            const check = setInterval(() => {
+                attempts++;
+                if (window.db && window.auth) {
+                    clearInterval(check);
+                    resolve();
+                }
+                if (attempts > 20) { // 5 секунд максимум
+                    clearInterval(check);
+                    console.warn('Firebase не загрузился, продолжаем...');
+                    resolve();
+                }
+            }, 250);
+        });
+    }
+
+    // Проверка состояния авторизации
+    function checkAuthState() {
+        return new Promise((resolve) => {
+            if (Auth.isAuthenticated()) {
+                resolve({
+                    isAuthenticated: true,
+                    isMaster: Auth.isMaster(),
+                    isClient: Auth.isClient()
+                });
+                return;
+            }
+            
+            // Если не авторизован, сразу резолвим
+            resolve({
+                isAuthenticated: false,
+                isMaster: false,
+                isClient: false
+            });
+        });
+    }
+
+    // Загрузка данных пользователя
+    async function loadUserData() {
+        // Просто триггерим загрузку, если нужно
+        if (Auth.isAuthenticated()) {
+            await Auth.getUserData();
+        }
+    }
+
+    // Применяем состояние UI без скачков
+    function applyUIState(state) {
+        const formColumn = $('orderFormColumn');
+        const ordersColumn = $('ordersColumn');
+        const authBlock = $('authBlockContainer');
+        
+        if (!formColumn || !ordersColumn) return;
+        
+        // Обновляем блок авторизации
+        if (window.AuthUI) {
+            AuthUI.renderAuthBlock();
+        }
+        
+        // Плавно скрываем/показываем форму
+        if (state.isAuthenticated && state.isMaster) {
+            formColumn.style.transition = 'opacity 0.3s ease';
+            formColumn.style.opacity = '0';
+            setTimeout(() => {
+                formColumn.style.display = 'none';
+                ordersColumn.className = 'col-md-12';
+                // Возвращаем прозрачность для следующего раза
+                setTimeout(() => {
+                    formColumn.style.opacity = '1';
+                }, 100);
+            }, 300);
+        } else {
+            formColumn.style.display = 'block';
+            formColumn.style.opacity = '1';
+            ordersColumn.className = 'col-md-6';
+        }
+    }
+
+    // Плавное обновление UI без перерисовки
+    function smoothUIUpdate(state) {
+        const formColumn = $('orderFormColumn');
+        const ordersColumn = $('ordersColumn');
+        
+        if (!formColumn || !ordersColumn) return;
+        
+        // Обновляем только то, что изменилось
+        if (window.AuthUI) {
+            AuthUI.renderAuthBlock();
+        }
+        
+        if (state.isAuthenticated && state.isMaster) {
+            if (formColumn.style.display !== 'none') {
+                formColumn.style.transition = 'opacity 0.3s ease';
+                formColumn.style.opacity = '0';
+                setTimeout(() => {
+                    formColumn.style.display = 'none';
+                    ordersColumn.className = 'col-md-12';
+                }, 300);
+            }
+        } else {
+            if (formColumn.style.display === 'none') {
+                formColumn.style.display = 'block';
+                // Небольшая задержка для плавности
+                setTimeout(() => {
+                    formColumn.style.transition = 'opacity 0.3s ease';
+                    formColumn.style.opacity = '1';
+                }, 50);
+                ordersColumn.className = 'col-md-6';
+            }
+        }
+    }
+
+    // Заполнение select категорий
     function fillCategorySelect() {
         const select = $('category');
         if (!select) return;
@@ -56,17 +189,17 @@
         const selectedInput = $('selectedCategory');
         const selectedNameSpan = $('selectedCategoryName');
         
-        let allCategories = ORDER_CATEGORIES || [];
-        let filteredCategories = allCategories;
+        if (!label || !dropdown) return;
         
-        // Функция рендера списка
+        let allCategories = ORDER_CATEGORIES || [];
+        
         function renderCategories(filter = '') {
             const filterLower = filter.toLowerCase();
-            filteredCategories = allCategories.filter(cat => 
+            const filtered = allCategories.filter(cat => 
                 cat.name.toLowerCase().includes(filterLower)
             );
             
-            list.innerHTML = filteredCategories.map(cat => {
+            list.innerHTML = filtered.map(cat => {
                 const isActive = cat.id === selectedInput.value;
                 return `
                     <div class="category-item ${isActive ? 'active' : ''}" data-category-id="${cat.id}">
@@ -77,18 +210,14 @@
                 `;
             }).join('');
             
-            // Если ничего не найдено
-            if (filteredCategories.length === 0) {
+            if (filtered.length === 0) {
                 list.innerHTML = '<div class="category-item disabled">Ничего не найдено</div>';
             }
         }
         
-        // Открыть/закрыть дропдаун
         label.addEventListener('click', (e) => {
             e.stopPropagation();
-            e.preventDefault();
-            
-            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+            if (dropdown.style.display === 'none' || !dropdown.style.display) {
                 dropdown.style.display = 'block';
                 renderCategories(searchInput.value);
                 searchInput.focus();
@@ -97,12 +226,10 @@
             }
         });
         
-        // Поиск
         searchInput.addEventListener('input', (e) => {
             renderCategories(e.target.value);
         });
         
-        // Выбор категории
         list.addEventListener('click', (e) => {
             const item = e.target.closest('.category-item');
             if (!item || !item.dataset.categoryId) return;
@@ -113,40 +240,30 @@
             if (category) {
                 selectedInput.value = categoryId;
                 selectedNameSpan.textContent = category.name;
-                
-                // Обновляем фильтр и загружаем заказы
                 filters.category = categoryId;
                 loadOrders();
-                
-                // Закрываем дропдаун
                 dropdown.style.display = 'none';
             }
         });
         
-        // Закрытие по клику вне
         document.addEventListener('click', (e) => {
             if (!label.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.style.display = 'none';
             }
         });
         
-        // Закрытие по Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             }
         });
         
-        // Останавливаем всплытие кликов внутри дропдауна
-        dropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        dropdown.addEventListener('click', (e) => e.stopPropagation());
         
-        // Первоначальный рендер
         renderCategories();
     }
 
-    // Загрузка заказов (только Нягань)
+    // Загрузка заказов
     async function loadOrders() {
         try {
             const orders = await Orders.getOpenOrders(filters);
@@ -162,10 +279,6 @@
             toggleLoadMore();
         } catch (error) {
             console.error('Ошибка загрузки заказов:', error);
-            const ordersList = $('ordersList');
-            if (ordersList) {
-                ordersList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
-            }
         }
     }
 
@@ -266,32 +379,8 @@
         }
     }
 
-    // Обновление UI при авторизации
-    function updateAuthUI(state) {
-        if (window.AuthUI) {
-            AuthUI.renderAuthBlock();
-        }
-    }
-
-    // Показ/скрытие формы для мастеров
-    function toggleOrderForm(state) {
-        const formColumn = $('orderFormColumn');
-        const ordersColumn = $('ordersColumn');
-        
-        if (!formColumn || !ordersColumn) return;
-        
-        if (state.isAuthenticated && state.isMaster) {
-            formColumn.style.display = 'none';
-            ordersColumn.className = 'col-md-12';
-        } else {
-            formColumn.style.display = 'block';
-            ordersColumn.className = 'col-md-6';
-        }
-    }
-
     // Инициализация обработчиков
     function initEventListeners() {
-        // Кнопка "Показать ещё"
         $('loadMoreBtn')?.addEventListener('click', () => {
             const start = displayedOrders.length;
             const end = start + 5;
@@ -303,7 +392,6 @@
             toggleLoadMore();
         });
 
-        // Форма создания заказа
         $('orderForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -322,11 +410,10 @@
                 title: $('title').value,
                 description: $('description').value,
                 price: parseInt($('price').value),
-                address: $('address').value + ', Нягань', // Автоматически добавляем Нягань
+                address: $('address').value + ', Нягань',
                 photos: uploadedPhotos
             };
 
-            // Валидация
             if (!formData.category) {
                 Utils.showNotification('Выберите категорию', 'warning');
                 return;
@@ -341,15 +428,12 @@
             }
         });
 
-        // Загрузка фото
         $('photoInput')?.addEventListener('change', (e) => {
             handleFiles(e.target.files);
         });
 
-        // Тема
         $('themeToggle')?.addEventListener('click', Auth.toggleTheme);
 
-        // Выход
         $('headerLogoutBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             Auth.logout();
@@ -389,7 +473,4 @@
             uploadedPhotos.push(file);
         }
     }
-
-    // Экспортируем функцию для перезагрузки (может пригодиться)
-    window.reloadOrders = loadOrders;
 })();
