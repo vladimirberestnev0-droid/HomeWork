@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>СВОЙ МАСТЕР 86 — мастера рядом</title>
     
-    <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#2CD5C4">
     
-    <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
@@ -62,7 +59,7 @@
         </div>
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
-        <div id="mainContent" style="display: none;">
+        <div id="mainContent">
             <!-- ФИЛЬТРЫ (скроллящиеся) -->
             <div class="filters-scroll" id="categoryFilters">
                 <!-- JS заполнит -->
@@ -97,7 +94,7 @@
         </div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ (ВСЕГДА ВИДНА) -->
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
         <button class="nav-item active" data-page="home">
             <span>🏠</span>
@@ -143,7 +140,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Core -->
     <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants.js"></script>
     <script src="/HomeWork/js/core/base-utils.js"></script>
@@ -151,17 +147,14 @@
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
     
-    <!-- Services -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
     <script src="/HomeWork/js/services/moderation.js"></script>
     
-    <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
-    <!-- Pages -->
     <script src="/HomeWork/js/pages/index.js"></script>
 </body>
 </html>

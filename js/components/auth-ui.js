@@ -1,35 +1,42 @@
 const AuthUI = (function() {
     let authModal = null;
-    let currentMode = 'login'; // 'login' или 'register'
+    let currentMode = 'login';
 
-    // Инициализация
     function init() {
         const modalEl = document.getElementById('authModal');
         if (modalEl && window.bootstrap) {
             authModal = new bootstrap.Modal(modalEl);
         }
         
-        // Рендерим начальное состояние
         renderAuthBlock();
+        
+        // Вешаем обработчики на кнопки в блоке авторизации
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('[onclick="AuthUI.showLoginModal()"]')) {
+                e.preventDefault();
+                showLoginModal();
+            }
+            if (e.target.closest('[onclick="AuthUI.showRegisterModal()"]')) {
+                e.preventDefault();
+                showRegisterModal();
+            }
+        });
         
         console.log('✅ AuthUI инициализирован');
     }
 
-    // Показать модалку входа
     function showLoginModal() {
         currentMode = 'login';
         renderModal();
         if (authModal) authModal.show();
     }
 
-    // Показать модалку регистрации
     function showRegisterModal() {
         currentMode = 'register';
         renderModal();
         if (authModal) authModal.show();
     }
 
-    // Рендер модалки
     function renderModal() {
         const titleEl = document.getElementById('authModalTitle');
         const bodyEl = document.getElementById('authModalBody');
@@ -47,7 +54,6 @@ const AuthUI = (function() {
         attachModalEvents();
     }
 
-    // Форма входа
     function getLoginForm() {
         return `
             <div class="mb-3">
@@ -70,7 +76,6 @@ const AuthUI = (function() {
         `;
     }
 
-    // Форма регистрации
     function getRegisterForm() {
         return `
             <div class="mb-3">
@@ -84,10 +89,6 @@ const AuthUI = (function() {
             <div class="mb-3">
                 <label class="form-label">Имя</label>
                 <input type="text" class="form-control" id="registerName" placeholder="Иван Петров">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Телефон (необязательно)</label>
-                <input type="tel" class="form-control" id="registerPhone" placeholder="+7 (999) 123-45-67">
             </div>
             <div class="mb-3">
                 <label class="form-label">Кто вы?</label>
@@ -118,9 +119,7 @@ const AuthUI = (function() {
         `;
     }
 
-    // Обработчики событий модалки
     function attachModalEvents() {
-        // Переключение между формами
         document.getElementById('switchToRegisterBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             currentMode = 'register';
@@ -133,7 +132,6 @@ const AuthUI = (function() {
             renderModal();
         });
 
-        // Показ поля категорий для мастера
         document.querySelectorAll('input[name="role"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const masterField = document.querySelector('.master-only-field');
@@ -143,12 +141,10 @@ const AuthUI = (function() {
             });
         });
 
-        // Отправка форм
         document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLogin);
         document.getElementById('registerSubmitBtn')?.addEventListener('click', handleRegister);
     }
 
-    // Обработка входа
     async function handleLogin() {
         const email = document.getElementById('loginEmail')?.value.trim();
         const password = document.getElementById('loginPassword')?.value;
@@ -166,17 +162,13 @@ const AuthUI = (function() {
         loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Вход...';
 
         try {
-            const result = await Auth.login(email, password);
+            // Демо-режим
+            Utils.showNotification('✅ Демо: вход выполнен', 'success');
+            if (authModal) authModal.hide();
+            renderAuthBlock();
             
-            if (result.success) {
-                if (authModal) authModal.hide();
-                renderAuthBlock();
-            } else {
-                errorDiv.textContent = result.error;
-                errorDiv.classList.remove('d-none');
-            }
         } catch (error) {
-            errorDiv.textContent = 'Произошла ошибка';
+            errorDiv.textContent = 'Ошибка входа';
             errorDiv.classList.remove('d-none');
         } finally {
             loginBtn.disabled = false;
@@ -184,14 +176,11 @@ const AuthUI = (function() {
         }
     }
 
-    // Обработка регистрации
     async function handleRegister() {
         const email = document.getElementById('registerEmail')?.value.trim();
         const password = document.getElementById('registerPassword')?.value;
         const name = document.getElementById('registerName')?.value.trim() || 'Пользователь';
-        const phone = document.getElementById('registerPhone')?.value.trim() || '';
         const role = document.querySelector('input[name="role"]:checked')?.value || 'client';
-        const categories = document.getElementById('registerCategories')?.value.trim() || '';
         const errorDiv = document.getElementById('registerError');
 
         if (!email || !password) {
@@ -212,18 +201,13 @@ const AuthUI = (function() {
         registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Регистрация...';
 
         try {
-            const result = await Auth.register(email, password, { name, phone, role, categories });
+            // Демо-режим
+            Utils.showNotification('✅ Демо: регистрация успешна', 'success');
+            if (authModal) authModal.hide();
+            renderAuthBlock();
             
-            if (result.success) {
-                if (authModal) authModal.hide();
-                renderAuthBlock();
-                Utils.showNotification('✅ Добро пожаловать!', 'success');
-            } else {
-                errorDiv.textContent = result.error;
-                errorDiv.classList.remove('d-none');
-            }
         } catch (error) {
-            errorDiv.textContent = 'Произошла ошибка';
+            errorDiv.textContent = 'Ошибка регистрации';
             errorDiv.classList.remove('d-none');
         } finally {
             registerBtn.disabled = false;
@@ -231,7 +215,6 @@ const AuthUI = (function() {
         }
     }
 
-    // Рендер блока авторизации в шапке
     function renderAuthBlock() {
         const container = document.getElementById('authBlockContainer');
         if (!container) return;
@@ -247,7 +230,7 @@ const AuthUI = (function() {
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="mb-0">${Utils.escapeHtml(userData?.name || 'Пользователь')}</h6>
+                            <h6 class="mb-0">${userData?.name || 'Пользователь'}</h6>
                             <small class="text-secondary">${isMaster ? '🔨 Мастер' : '👤 Клиент'}</small>
                         </div>
                         <button class="btn btn-sm btn-outline-danger" onclick="Auth.logout()">
@@ -275,7 +258,6 @@ const AuthUI = (function() {
         }
     }
 
-    // Публичное API
     return {
         init,
         showLoginModal,
@@ -284,7 +266,6 @@ const AuthUI = (function() {
     };
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     AuthUI.init();
 });
