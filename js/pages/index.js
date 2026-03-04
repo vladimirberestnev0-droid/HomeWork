@@ -1,3 +1,8 @@
+/**
+ * index.js — логика главной страницы
+ * Полностью переработанная версия с анимациями и фильтрацией
+ */
+
 (function() {
     // ===== СОСТОЯНИЕ =====
     let allOrders = [];
@@ -22,7 +27,7 @@
         // Ждём Firebase
         await waitForFirebase();
         
-        // Заполняем фильтры ВСЕМИ категориями (адаптивность через CSS)
+        // Заполняем фильтры
         renderCategoryFilters();
         
         // Загружаем реальные заказы
@@ -66,7 +71,6 @@
         const container = $('categoryFilters');
         if (!container) return;
 
-        // На мобилках скроллятся, на десктопе оборачиваются
         container.innerHTML = ORDER_CATEGORIES.map(cat => `
             <span class="filter-chip ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
                 <i class="fas ${cat.icon}"></i> ${cat.name}
@@ -194,26 +198,35 @@
                         { icon: 'fa-tag', name: order.category || 'Услуга' };
         const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
         
-        // Определяем, срочный ли заказ (можно добавить поле в БД)
+        // Определяем, срочный ли заказ
         const isUrgent = order.urgent || Math.random() > 0.7; // Для демо
+        
+        // Проверяем, есть ли фото
+        const hasPhotos = order.photos && order.photos.length > 0;
         
         return `
             <div class="order-card ${isUrgent ? 'urgent' : ''}" onclick="viewOrder('${order.id}')" style="opacity: 0;">
-                <div class="order-badge ${isUrgent ? 'urgent-badge' : ''}">
-                    ${isUrgent ? '<i class="fas fa-exclamation-circle"></i> Срочно' : ''}
-                </div>
+                ${isUrgent ? `
+                    <div class="order-badge urgent-badge">
+                        <i class="fas fa-exclamation-circle"></i> Срочно
+                    </div>
+                ` : ''}
+                
                 <div class="order-header">
                     <span class="order-category">
                         <i class="fas ${category.icon}"></i> ${category.name}
                     </span>
                     <span class="order-price">${Utils.formatMoney(order.price)}</span>
                 </div>
+                
                 <h3 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h3>
+                
                 <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 120)}</p>
                 
-                ${order.photos && order.photos.length > 0 ? `
+                ${hasPhotos ? `
                     <div class="order-photos">
-                        <img src="${order.photos[0]}" alt="Фото заказа" class="order-photo-thumb">
+                        <img src="${order.photos[0]}" alt="Фото заказа" class="order-photo-thumb" 
+                             onclick="event.stopPropagation(); window.open('${order.photos[0]}')">
                         ${order.photos.length > 1 ? `<span class="photo-count">+${order.photos.length-1}</span>` : ''}
                     </div>
                 ` : ''}
@@ -265,6 +278,8 @@
                     { name: 'Дмитрий В.', rating: 4, categories: 'Ремонт под ключ' },
                     { name: 'Елена П.', rating: 5, categories: 'Дизайн интерьера' },
                     { name: 'Алексей Н.', rating: 4, categories: 'Отделочные работы' },
+                    { name: 'Анна С.', rating: 5, categories: 'Уборка, Декорирование' },
+                    { name: 'Павел К.', rating: 4, categories: 'Сантехника, Электрика' }
                 ];
             }
             
@@ -306,19 +321,21 @@
             }
         }
         
+        const spec = master.categories ? master.categories.split(',')[0].trim() : 'Специалист';
+        
         div.innerHTML = `
             <div class="master-avatar">
                 <i class="fas fa-user-tie"></i>
             </div>
             <h4 class="master-name">${Utils.escapeHtml(master.name || 'Мастер')}</h4>
             <div class="master-rating">${stars} <span>${rating.toFixed(1)}</span></div>
-            <p class="master-spec">${master.categories?.split(',')[0] || 'Специалист'}</p>
+            <p class="master-spec">${Utils.escapeHtml(spec)}</p>
         `;
         
         return div;
     }
 
-    // ===== ПРОСМОТР ЗАКАЗА (ВРЕМЕННО) =====
+    // ===== ПРОСМОТР ЗАКАЗА (ЗАГЛУШКА) =====
     window.viewOrder = (orderId) => {
         Utils.showNotification('👀 Просмотр заказа будет доступен позже', 'info');
     };
@@ -343,6 +360,15 @@
                 50% { opacity: 0.5; }
             }
             
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            
+            @keyframes glow {
+                0%, 100% { box-shadow: 0 0 10px var(--accent); }
+                50% { box-shadow: 0 0 30px var(--accent); }
+            }
+            
             .spinner-glow {
                 width: 50px;
                 height: 50px;
@@ -351,11 +377,6 @@
                 border-radius: 50%;
                 animation: spin 1s linear infinite, glow 1.5s ease-in-out infinite;
                 margin: 0 auto;
-            }
-            
-            @keyframes glow {
-                0%, 100% { box-shadow: 0 0 10px var(--accent); }
-                50% { box-shadow: 0 0 30px var(--accent); }
             }
             
             .pulse-button {
@@ -374,6 +395,44 @@
             @keyframes fadeIn {
                 from { opacity: 0; }
                 to { opacity: 1; }
+            }
+            
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(30px);
+                }
+            }
+            
+            #notification-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                pointer-events: none;
+            }
+            
+            .notification {
+                pointer-events: auto;
+                animation: slideIn 0.3s ease;
             }
         `;
         document.head.appendChild(style);
@@ -397,11 +456,12 @@
             window.location.href = '/HomeWork/client.html';
         });
 
-        // Поиск с дебаунсом
+        // Поиск с дебаунсом (теперь debounce точно есть в Utils)
         const searchInput = $('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
                 const query = e.target.value.trim().toLowerCase();
+                
                 if (query.length < 3) {
                     loadRealOrders();
                     return;
@@ -409,9 +469,10 @@
                 
                 // Фильтруем уже загруженные заказы
                 const filtered = allOrders.filter(order => 
-                    order.title?.toLowerCase().includes(query) || 
-                    order.description?.toLowerCase().includes(query)
+                    (order.title && order.title.toLowerCase().includes(query)) || 
+                    (order.description && order.description.toLowerCase().includes(query))
                 );
+                
                 displayedOrders = filtered.slice(0, 6);
                 
                 const container = $('ordersList');
@@ -448,18 +509,4 @@
             }
         });
     }
-
-    // Добавляем стили для пустого состояния
-    const style = document.createElement('style');
-    style.textContent = `
-        .empty-state-icon {
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-    `;
-    document.head.appendChild(style);
 })();
