@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ С КЭШИРОВАНИЕМ
+// СЕРВИС АВТОРИЗАЦИИ С КЭШИРОВАНИЕМ И ЛОУДЕРОМ
 // ============================================
 
 const Auth = (function() {
@@ -189,7 +189,11 @@ const Auth = (function() {
         const redirect = urlParams.get('redirect');
         if (redirect) {
             setTimeout(() => {
-                window.location.href = decodeURIComponent(redirect);
+                if (window.Loader) {
+                    Loader.navigateTo(decodeURIComponent(redirect), 'Перенаправляем...');
+                } else {
+                    window.location.href = decodeURIComponent(redirect);
+                }
             }, 500);
         }
     }
@@ -223,6 +227,11 @@ const Auth = (function() {
 
     // ===== РЕГИСТРАЦИЯ =====
     async function register(email, password, userData = {}) {
+        // Показываем лоадер
+        if (window.Loader) {
+            Loader.show('Регистрация...');
+        }
+        
         try {
             if (!window.auth || !window.db) {
                 throw new Error('Firebase не инициализирован');
@@ -273,10 +282,21 @@ const Auth = (function() {
             setUserToCache(user.uid, firestoreData);
 
             Utils.showSuccess('Регистрация прошла успешно!');
+            
+            // Скрываем лоадер и показываем успех
+            if (window.Loader) {
+                Loader.showTemporary('✅ Регистрация успешна!', 1500);
+            }
+            
             return { success: true, user };
             
         } catch (error) {
             console.error('❌ Ошибка регистрации:', error);
+            
+            // Скрываем лоадер
+            if (window.Loader) {
+                Loader.hide();
+            }
             
             let errorMessage = 'Ошибка регистрации';
             if (error.code === 'auth/email-already-in-use') {
@@ -296,6 +316,11 @@ const Auth = (function() {
 
     // ===== ВХОД =====
     async function login(email, password) {
+        // Показываем лоадер
+        if (window.Loader) {
+            Loader.show('Вход в систему...');
+        }
+        
         try {
             if (!window.auth || !window.db) {
                 throw new Error('Firebase не инициализирован');
@@ -315,10 +340,21 @@ const Auth = (function() {
             }
             
             Utils.showSuccess('Вход выполнен успешно!');
+            
+            // Скрываем лоадер и показываем успех
+            if (window.Loader) {
+                Loader.showTemporary('✅ Вход выполнен! Перенаправляем...', 1500);
+            }
+            
             return { success: true };
             
         } catch (error) {
             console.error('❌ Ошибка входа:', error);
+            
+            // Скрываем лоадер
+            if (window.Loader) {
+                Loader.hide();
+            }
             
             let errorMessage = 'Ошибка входа';
             if (error.code === 'auth/user-not-found') {
@@ -340,6 +376,10 @@ const Auth = (function() {
 
     // ===== ВЫХОД =====
     async function logout(silent = false) {
+        if (!silent && window.Loader) {
+            Loader.show('Выход...');
+        }
+        
         try {
             if (!window.auth) {
                 throw new Error('Firebase не инициализирован');
@@ -357,11 +397,17 @@ const Auth = (function() {
             currentUserData = null;
             
             if (!silent) {
-                Utils.showNotification('👋 До свидания!', 'info');
+                if (window.Loader) {
+                    Loader.showTemporary('👋 До свидания!', 1000);
+                }
                 
                 setTimeout(() => {
                     if (window.location.pathname !== '/HomeWork/') {
-                        window.location.href = '/HomeWork/';
+                        if (window.Loader) {
+                            Loader.navigateTo('/HomeWork/');
+                        } else {
+                            window.location.href = '/HomeWork/';
+                        }
                     }
                 }, 1000);
             }
@@ -369,6 +415,9 @@ const Auth = (function() {
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка выхода:', error);
+            if (window.Loader) {
+                Loader.hide();
+            }
             if (!silent) {
                 Utils.showError('Ошибка при выходе');
             }
@@ -496,6 +545,10 @@ const Auth = (function() {
 
     // ===== ОБНОВЛЕНИЕ ПРОФИЛЯ =====
     async function updateProfile(data) {
+        if (window.Loader) {
+            Loader.show('Обновляем профиль...');
+        }
+        
         try {
             if (!currentUser || !window.db) {
                 throw new Error('Не авторизован');
@@ -513,11 +566,18 @@ const Auth = (function() {
                 setUserToCache(currentUser.uid, currentUserData);
             }
 
+            if (window.Loader) {
+                Loader.showTemporary('✅ Профиль обновлён', 1500);
+            }
+            
             Utils.showSuccess('Профиль обновлён');
             notifyListeners();
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка обновления профиля:', error);
+            if (window.Loader) {
+                Loader.hide();
+            }
             Utils.showError('Ошибка обновления');
             return { success: false, error: error.message };
         }
@@ -525,6 +585,10 @@ const Auth = (function() {
 
     // ===== СМЕНА ПАРОЛЯ =====
     async function changePassword(oldPassword, newPassword) {
+        if (window.Loader) {
+            Loader.show('Меняем пароль...');
+        }
+        
         try {
             if (!currentUser || !window.auth) {
                 throw new Error('Не авторизован');
@@ -538,10 +602,18 @@ const Auth = (function() {
 
             await currentUser.updatePassword(newPassword);
 
+            if (window.Loader) {
+                Loader.showTemporary('✅ Пароль изменён', 1500);
+            }
+            
             Utils.showSuccess('Пароль изменён');
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка смены пароля:', error);
+            
+            if (window.Loader) {
+                Loader.hide();
+            }
             
             let errorMessage = 'Ошибка';
             if (error.code === 'auth/wrong-password') {
@@ -592,7 +664,7 @@ const Auth = (function() {
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (с кэшированием)');
+    console.log('✅ Auth сервис загружен (с кэшированием и лоудером)');
     
     return Object.freeze(api);
 })();

@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ЧАТАМИ)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ЧАТАМИ И ЛОУДЕРОМ)
 // ============================================
 
 const BottomNav = (function() {
@@ -216,7 +216,7 @@ const BottomNav = (function() {
         }, 200);
     }
     
-    // ===== ОБРАБОТКА НАВИГАЦИИ =====
+    // ===== ОБРАБОТКА НАВИГАЦИИ С ЛОУДЕРОМ =====
     function handleNavigation(page) {
         if (!window.Auth || !window.AuthUI) {
             console.warn('Auth не загружен');
@@ -225,17 +225,26 @@ const BottomNav = (function() {
         
         const state = Auth.getAuthState();
         
+        // Функция для перехода с лоудером
+        function navigateWithLoader(url, text) {
+            if (window.Loader) {
+                Loader.navigateTo(url, text);
+            } else {
+                window.location.href = url;
+            }
+        }
+        
         switch(page) {
             case 'home':
-                window.location.href = '/HomeWork/';
+                navigateWithLoader('/HomeWork/', '🏠 На главную...');
                 break;
                 
             case 'search':
                 // Только для мастера - поиск заказов
                 if (state.isMaster) {
-                    window.location.href = '/HomeWork/?focus=search';
+                    navigateWithLoader('/HomeWork/?focus=search', '🔍 Поиск...');
                 } else {
-                    window.location.href = '/HomeWork/';
+                    navigateWithLoader('/HomeWork/', '🏠 На главную...');
                 }
                 break;
                 
@@ -243,9 +252,9 @@ const BottomNav = (function() {
                 if (state.isAuthenticated) {
                     // Переходим в кабинет с открытыми чатами
                     if (state.isClient) {
-                        window.location.href = '/HomeWork/client.html?tab=chats';
+                        navigateWithLoader('/HomeWork/client.html?tab=chats', '💬 Загружаем чаты...');
                     } else if (state.isMaster) {
-                        window.location.href = '/HomeWork/master.html?tab=chats';
+                        navigateWithLoader('/HomeWork/master.html?tab=chats', '💬 Загружаем чаты...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -259,9 +268,9 @@ const BottomNav = (function() {
             case 'orders':
                 if (state.isAuthenticated) {
                     if (state.isClient) {
-                        window.location.href = '/HomeWork/client.html';
+                        navigateWithLoader('/HomeWork/client.html', '📋 Мои заказы...');
                     } else if (state.isMaster) {
-                        window.location.href = '/HomeWork/master.html';
+                        navigateWithLoader('/HomeWork/master.html', '📋 Отклики...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -271,11 +280,11 @@ const BottomNav = (function() {
             case 'profile':
                 if (state.isAuthenticated) {
                     if (state.isClient) {
-                        window.location.href = '/HomeWork/client.html';
+                        navigateWithLoader('/HomeWork/client.html', '👤 Профиль...');
                     } else if (state.isMaster) {
-                        window.location.href = '/HomeWork/master.html';
+                        navigateWithLoader('/HomeWork/master.html', '👤 Профиль...');
                     } else if (state.isAdmin) {
-                        window.location.href = '/HomeWork/admin.html';
+                        navigateWithLoader('/HomeWork/admin.html', '👤 Админка...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -302,12 +311,20 @@ const BottomNav = (function() {
                 }));
             } else {
                 // Переходим в кабинет клиента с параметром
-                window.location.href = '/HomeWork/client.html?tab=new';
+                if (window.Loader) {
+                    Loader.navigateTo('/HomeWork/client.html?tab=new', '➕ Создание заказа...');
+                } else {
+                    window.location.href = '/HomeWork/client.html?tab=new';
+                }
             }
         } else if (state.isMaster) {
             // Мастер - поиск заказов
             Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
-            window.location.href = '/HomeWork/?focus=search';
+            if (window.Loader) {
+                Loader.navigateTo('/HomeWork/?focus=search', '🔍 Поиск...');
+            } else {
+                window.location.href = '/HomeWork/?focus=search';
+            }
         }
     }
     

@@ -91,6 +91,9 @@
                 <i class="fas ${cat.icon}"></i> ${cat.name}
             </span>
         `).join('');
+        
+        // Добавляем обработчики
+        attachFilterHandlers();
     }
 
     // ===== РЕНДЕР ФИЛЬТРА ГОРОДА =====
@@ -103,6 +106,34 @@
                 <i class="fas fa-map-marker-alt"></i> ${city.name}
             </span>
         `).join('');
+        
+        // Добавляем обработчики
+        attachCityHandlers();
+    }
+
+    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ =====
+    function attachFilterHandlers() {
+        document.querySelectorAll('[data-category]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                filters.category = this.dataset.category;
+                loadOrders(true);
+            });
+        });
+    }
+
+    function attachCityHandlers() {
+        document.querySelectorAll('[data-city]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-city]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                filters.city = this.dataset.city;
+                loadOrders(true);
+            });
+        });
     }
 
     // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ =====
@@ -123,6 +154,10 @@
             `;
             lastDoc = null;
             allOrders = [];
+            displayedOrders = [];
+            
+            // Очищаем кнопку загрузки
+            hideLoadMoreButton();
         }
 
         try {
@@ -130,45 +165,35 @@
                 throw new Error('Сервис заказов не найден');
             }
 
-            let query = db.collection('orders')
-                .where('status', '==', ORDER_STATUS.OPEN)
-                .orderBy('createdAt', 'desc')
-                .limit(6);
-
-            if (lastDoc && !reset) {
-                query = query.startAfter(lastDoc);
-            }
-
-            const snapshot = await query.get();
-            
-            if (snapshot.empty) {
-                if (reset) {
-                    showEmptyState(container);
-                }
-                hasMore = false;
-                isLoading = false;
-                return;
-            }
-
-            lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            hasMore = snapshot.docs.length === 6;
-
-            const newOrders = [];
-            snapshot.forEach(doc => {
-                newOrders.push({ id: doc.id, ...doc.data() });
+            // Загружаем заказы через сервис
+            const result = await Orders.getOpenOrders(filters, {
+                limit: 6,
+                lastDoc: reset ? null : lastDoc,
+                force: reset // Принудительно обновляем при сбросе
             });
 
-            let filtered = applyFilters(newOrders);
-
-            if (reset) {
-                allOrders = filtered;
-                displayedOrders = filtered;
-            } else {
-                allOrders = [...allOrders, ...filtered];
-                displayedOrders = [...displayedOrders, ...filtered];
+            if (!result || !result.orders) {
+                throw new Error('Не удалось загрузить заказы');
             }
 
-            renderOrders(container, reset);
+            const newOrders = result.orders;
+            lastDoc = result.lastDoc;
+            hasMore = result.hasMore;
+
+            if (reset) {
+                allOrders = newOrders;
+                displayedOrders = newOrders;
+            } else {
+                // Добавляем новые заказы к существующим
+                allOrders = [...allOrders, ...newOrders];
+                displayedOrders = [...displayedOrders, ...newOrders];
+            }
+
+            if (displayedOrders.length === 0) {
+                showEmptyState(container);
+            } else {
+                renderOrders(container, reset);
+            }
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
@@ -190,64 +215,41 @@
         }
     }
 
-    // ===== ПРИМЕНЕНИЕ ФИЛЬТРОВ =====
-    function applyFilters(orders) {
-        let filtered = [...orders];
-
-        if (filters.category && filters.category !== 'all') {
-            filtered = filtered.filter(o => o.category === filters.category);
-        }
-
-        if (filters.city && filters.city !== 'all') {
-            const cityName = CITIES.find(c => c.id === filters.city)?.name?.toLowerCase();
-            if (cityName) {
-                filtered = filtered.filter(o => 
-                    o.city === cityName || 
-                    (o.address && o.address.toLowerCase().includes(cityName))
-                );
-            }
-        }
-
-        if (filters.sort === 'price_asc') {
-            filtered.sort((a, b) => a.price - b.price);
-        } else if (filters.sort === 'price_desc') {
-            filtered.sort((a, b) => b.price - a.price);
-        }
-
-        return filtered;
-    }
-
     // ===== ОТРИСОВКА ЗАКАЗОВ =====
     function renderOrders(container, reset = true) {
         if (!container) container = $('ordersList');
         if (!container) return;
 
-        if (displayedOrders.length === 0) {
-            showEmptyState(container);
-            return;
-        }
-
         if (reset) {
             container.innerHTML = displayedOrders.map(order => createOrderCard(order)).join('');
         } else {
-            container.insertAdjacentHTML('beforeend', displayedOrders.slice(-6).map(order => createOrderCard(order)).join(''));
+            // Добавляем новые карточки в конец
+            const newOrdersHtml = displayedOrders.slice(-6).map(order => createOrderCard(order)).join('');
+            container.insertAdjacentHTML('beforeend', newOrdersHtml);
         }
 
+        // Анимация появления новых карточек
         setTimeout(() => {
-            document.querySelectorAll('.order-card:not(.animated)').forEach((card, index) => {
+            const newCards = reset 
+                ? container.querySelectorAll('.order-card')
+                : container.querySelectorAll('.order-card:not(.animated)');
+                
+            newCards.forEach((card, index) => {
                 card.classList.add('animated');
                 card.style.animation = `fadeInUp 0.5s ease ${index * 0.1}s forwards`;
                 card.style.opacity = '0';
             });
         }, 100);
 
+        // Обновляем счётчик
+        updateOrdersCount();
+
+        // Показываем/скрываем кнопку "Загрузить ещё"
         if (hasMore) {
             showLoadMoreButton(container);
         } else {
             hideLoadMoreButton();
         }
-        
-        updateOrdersCount();
     }
 
     // ===== ОБНОВЛЕНИЕ СЧЁТЧИКА ЗАКАЗОВ =====
@@ -260,16 +262,16 @@
 
     // ===== ПОКАЗ КНОПКИ "ЗАГРУЗИТЬ ЕЩЁ" =====
     function showLoadMoreButton(container) {
-        let loadMoreBtn = document.getElementById('loadMoreContainer');
+        let loadMoreContainer = document.getElementById('loadMoreContainer');
         
-        if (!loadMoreBtn) {
-            loadMoreBtn = document.createElement('div');
-            loadMoreBtn.id = 'loadMoreContainer';
-            loadMoreBtn.className = 'text-center mt-4 mb-3';
-            container.insertAdjacentElement('afterend', loadMoreBtn);
+        if (!loadMoreContainer) {
+            loadMoreContainer = document.createElement('div');
+            loadMoreContainer.id = 'loadMoreContainer';
+            loadMoreContainer.className = 'text-center mt-4 mb-3';
+            container.insertAdjacentElement('afterend', loadMoreContainer);
         }
         
-        loadMoreBtn.innerHTML = `
+        loadMoreContainer.innerHTML = `
             <button class="btn btn-outline-primary rounded-pill px-5 py-3" id="loadMoreBtn" ${isLoading ? 'disabled' : ''}>
                 ${isLoading ? 
                     '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...' : 
@@ -306,6 +308,10 @@
         document.getElementById('createFirstOrderBtn')?.addEventListener('click', () => {
             if (!Auth.isAuthenticated()) {
                 AuthUI.showLoginModal();
+                return;
+            }
+            if (Auth.isMaster()) {
+                Utils.showWarning('Мастера не могут создавать заказы');
                 return;
             }
             window.location.href = '/HomeWork/client.html?tab=new';
@@ -394,6 +400,7 @@
             
             if (window.db) {
                 try {
+                    // Пробуем с сортировкой (если есть индекс)
                     const snapshot = await db.collection('users')
                         .where('role', '==', 'master')
                         .where('banned', '==', false)
@@ -407,6 +414,7 @@
                 } catch (indexError) {
                     console.warn('⚠️ Индекс не найден, загружаем без сортировки');
                     
+                    // Загружаем без сортировки
                     const snapshot = await db.collection('users')
                         .where('role', '==', 'master')
                         .where('banned', '==', false)
@@ -417,6 +425,7 @@
                         masters.push({ id: doc.id, ...doc.data() });
                     });
                     
+                    // Сортируем на клиенте
                     masters.sort((a, b) => (b.rating || 0) - (a.rating || 0));
                     masters = masters.slice(0, 8);
                 }
@@ -491,31 +500,13 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        document.querySelectorAll('[data-category]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('[data-category]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                filters.category = this.dataset.category;
-                loadOrders(true);
-            });
-        });
-
-        document.querySelectorAll('[data-city]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('[data-city]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                filters.city = this.dataset.city;
-                loadOrders(true);
-            });
-        });
-
+        // Сортировка
         document.getElementById('sortSelect')?.addEventListener('change', (e) => {
             filters.sort = e.target.value;
             loadOrders(true);
         });
 
+        // Кнопка создания заказа
         const createBtn = document.getElementById('createOrderBtn');
         if (createBtn) {
             createBtn.addEventListener('click', () => {
@@ -531,6 +522,7 @@
             });
         }
 
+        // Поиск с дебаунсом
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
@@ -541,6 +533,7 @@
                     return;
                 }
                 
+                // Фильтруем по заголовку и описанию
                 const filtered = allOrders.filter(order => 
                     (order.title && order.title.toLowerCase().includes(query)) || 
                     (order.description && order.description.toLowerCase().includes(query))
@@ -557,6 +550,7 @@
                             <p class="text-muted">Попробуйте изменить запрос</p>
                         </div>
                     `;
+                    hideLoadMoreButton();
                 } else {
                     renderOrders(container);
                 }
@@ -566,8 +560,26 @@
 
     // ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ =====
     window.viewOrder = (orderId) => {
-        Utils.showInfo('👀 Просмотр заказа будет доступен позже');
+        // Вместо заглушки открываем модалку с деталями заказа
+        showOrderDetails(orderId);
     };
+
+    async function showOrderDetails(orderId) {
+        try {
+            const order = await Orders.getOrderById(orderId);
+            if (!order) {
+                Utils.showError('Заказ не найден');
+                return;
+            }
+
+            // Здесь можно открыть модалку с деталями заказа
+            // Пока показываем уведомление
+            Utils.showInfo(`Заказ: ${order.title} | Цена: ${Utils.formatMoney(order.price)}`);
+        } catch (error) {
+            console.error('Ошибка загрузки заказа:', error);
+            Utils.showError('Не удалось загрузить заказ');
+        }
+    }
 
     window.showRespondModal = (orderId, title, category, price) => {
         if (!Auth.isAuthenticated()) {
@@ -575,10 +587,31 @@
             return;
         }
         
+        if (!Auth.isMaster()) {
+            Utils.showWarning('Только мастера могут откликаться');
+            return;
+        }
+        
+        // Сохраняем в sessionStorage для страницы мастера
         sessionStorage.setItem('respond_order', JSON.stringify({
             orderId, title, category, price
         }));
         
-        window.location.href = `/HomeWork/master.html?respond=${orderId}`;
+        // Показываем лоудер и переходим
+        if (window.Loader) {
+            Loader.navigateTo(`/HomeWork/master.html?respond=${orderId}`, 'Переходим к отклику...');
+        } else {
+            window.location.href = `/HomeWork/master.html?respond=${orderId}`;
+        }
     };
+
+    // Обновляем данные при возврате на страницу
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            // Страница загружена из кэша браузера
+            loadOrders(true);
+            loadMasters(true);
+        }
+    });
+
 })();
