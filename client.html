@@ -37,6 +37,13 @@
         <!-- БЛОК АВТОРИЗАЦИИ -->
         <div id="authBlockContainer" class="mb-3"></div>
 
+        <!-- ПРИВЕТСТВИЕ (для авторизованных) -->
+        <div id="welcomeBanner" class="d-none">
+            <div class="card p-3 mb-4 bg-accent-soft">
+                <h4>👋 С возвращением, <span id="welcomeName"></span>!</h4>
+            </div>
+        </div>
+
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="authRequired" class="text-center p-5 d-none">
             <i class="fas fa-user-circle fa-4x mb-3" style="color: var(--accent);"></i>

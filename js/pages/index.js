@@ -1,6 +1,6 @@
 /**
  * index.js — логика главной страницы
- * Полностью переработанная версия с анимациями и фильтрацией
+ * Версия 2.0 (ПОЛНАЯ, с сохранением всей логики)
  */
 
 (function() {
@@ -53,14 +53,18 @@
                 resolve();
                 return;
             }
-            const check = setInterval(() => {
-                if (window.db && window.auth) {
-                    clearInterval(check);
-                    resolve();
-                }
-            }, 100);
+            
+            const onFirebaseReady = () => {
+                resolve();
+                document.removeEventListener('firebase-initialized', onFirebaseReady);
+            };
+            
+            document.addEventListener('firebase-initialized', onFirebaseReady);
+            
+            // Таймаут на случай проблем
             setTimeout(() => {
-                clearInterval(check);
+                document.removeEventListener('firebase-initialized', onFirebaseReady);
+                console.warn('⚠️ Таймаут ожидания Firebase');
                 resolve();
             }, 3000);
         });
@@ -113,7 +117,10 @@
         `;
 
         try {
-            if (!window.Orders) throw new Error('Сервис заказов не найден');
+            if (!window.Orders) {
+                console.error('❌ Сервис заказов не найден');
+                throw new Error('Сервис заказов не найден');
+            }
 
             const orders = await Orders.getOpenOrders(filters);
             
@@ -156,7 +163,7 @@
                 <div class="text-center p-5">
                     <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
                     <h5>Не удалось загрузить заказы</h5>
-                    <p class="text-muted">Попробуйте обновить страницу</p>
+                    <p class="text-muted">${error.message || 'Попробуйте обновить страницу'}</p>
                     <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
                         <i class="fas fa-sync-alt me-2"></i>Обновить
                     </button>
@@ -226,7 +233,7 @@
                 ${hasPhotos ? `
                     <div class="order-photos">
                         <img src="${order.photos[0]}" alt="Фото заказа" class="order-photo-thumb" 
-                             onclick="event.stopPropagation(); window.open('${order.photos[0]}')">
+                             onclick="event.stopPropagation(); window.open('${order.photos[0]}')" loading="lazy">
                         ${order.photos.length > 1 ? `<span class="photo-count">+${order.photos.length-1}</span>` : ''}
                     </div>
                 ` : ''}
@@ -241,7 +248,7 @@
                 </div>
                 
                 ${Auth.isAuthenticated() && Auth.isMaster() ? `
-                    <button class="respond-btn" onclick="event.stopPropagation(); window.location.href='/HomeWork/master.html?respond=${order.id}'">
+                    <button class="respond-btn" onclick="event.stopPropagation(); showRespondModal('${order.id}', '${Utils.escapeHtml(order.title)}', '${order.category}', ${order.price})">
                         <i class="fas fa-reply me-2"></i>Откликнуться
                     </button>
                 ` : ''}
@@ -289,8 +296,8 @@
             });
             
         } catch (error) {
-            console.error('Ошибка загрузки мастеров:', error);
-            container.innerHTML = '<div class="text-muted p-3">Ошибка загрузки мастеров</div>';
+            console.error('❌ Ошибка загрузки мастеров:', error);
+            container.innerHTML = '<div class="text-muted p-3 text-center">Ошибка загрузки мастеров</div>';
         }
     }
 
@@ -444,19 +451,22 @@
         attachFilterHandlers();
 
         // Кнопка создания заказа
-        $('createOrderBtn')?.addEventListener('click', () => {
-            if (!Auth.isAuthenticated()) {
-                AuthUI.showLoginModal();
-                return;
-            }
-            if (Auth.isMaster()) {
-                Utils.showNotification('Мастера не могут создавать заказы', 'warning');
-                return;
-            }
-            window.location.href = '/HomeWork/client.html';
-        });
+        const createBtn = $('createOrderBtn');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                if (!Auth.isAuthenticated()) {
+                    AuthUI.showLoginModal();
+                    return;
+                }
+                if (Auth.isMaster()) {
+                    Utils.showNotification('Мастера не могут создавать заказы', 'warning');
+                    return;
+                }
+                window.location.href = '/HomeWork/client.html';
+            });
+        }
 
-        // Поиск с дебаунсом (теперь debounce точно есть в Utils)
+        // Поиск с дебаунсом
         const searchInput = $('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
@@ -491,10 +501,13 @@
         }
 
         // Просмотр всех заказов
-        $('viewAllOrders')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            $('ordersList')?.scrollIntoView({ behavior: 'smooth' });
-        });
+        const viewAllLink = $('viewAllOrders');
+        if (viewAllLink) {
+            viewAllLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                $('ordersList')?.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
 
         // Анимация при скролле
         window.addEventListener('scroll', () => {

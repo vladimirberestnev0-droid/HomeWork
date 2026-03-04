@@ -1,3 +1,8 @@
+/**
+ * auth.js — сервис авторизации
+ * Версия 2.0 с исправленными подписками
+ */
+
 const Auth = (function() {
     let currentUser = null;
     let currentUserData = null;
@@ -16,6 +21,9 @@ const Auth = (function() {
                 setTimeout(init, 1000);
             } else {
                 console.error('❌ Firebase Auth не загрузился после 5 попыток');
+                if (typeof Utils !== 'undefined') {
+                    Utils.showError('Ошибка авторизации. Обновите страницу.');
+                }
             }
             return;
         }
@@ -23,6 +31,7 @@ const Auth = (function() {
         // Отписываемся от предыдущей подписки
         if (unsubscribe) {
             unsubscribe();
+            unsubscribe = null;
         }
 
         // Подписываемся на изменения авторизации
@@ -35,6 +44,7 @@ const Auth = (function() {
                     // Загружаем дополнительные данные пользователя из Firestore
                     if (!window.db) {
                         console.warn('⏳ Firestore ещё не готов, ждём...');
+                        // Пробуем загрузить через небольшую задержку
                         setTimeout(() => loadUserData(user.uid), 500);
                         return;
                     }
@@ -61,9 +71,25 @@ const Auth = (function() {
             if (!window.db) {
                 throw new Error('Firestore не инициализирован');
             }
+            
             const userDoc = await db.collection('users').doc(uid).get();
-            currentUserData = userDoc.exists ? userDoc.data() : null;
-            console.log('📦 Данные пользователя загружены:', currentUserData?.name);
+            
+            if (userDoc.exists) {
+                currentUserData = userDoc.data();
+                console.log('📦 Данные пользователя загружены:', currentUserData?.name);
+            } else {
+                console.log('📦 Документ пользователя не найден, создаем базовые данные');
+                // Создаем базовые данные если их нет
+                currentUserData = {
+                    name: 'Пользователь',
+                    email: currentUser?.email || '',
+                    role: 'client',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Сохраняем в Firestore
+                await db.collection('users').doc(uid).set(currentUserData);
+            }
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);
             currentUserData = null;
@@ -202,9 +228,11 @@ const Auth = (function() {
             currentUser = null;
             currentUserData = null;
             
-            // Очищаем storage (опционально)
-            // localStorage.clear();
-            // sessionStorage.clear();
+            // Очищаем слушатели
+            if (unsubscribe) {
+                unsubscribe();
+                unsubscribe = null;
+            }
             
             Utils.showNotification('👋 До свидания!', 'info');
             
@@ -235,7 +263,16 @@ const Auth = (function() {
                 isClient: isClient(),
                 isAdmin: isAdmin()
             });
+            
+            // Возвращаем функцию для отписки
+            return function unsubscribe() {
+                const index = authListeners.indexOf(callback);
+                if (index > -1) {
+                    authListeners.splice(index, 1);
+                }
+            };
         }
+        return null;
     }
 
     function notifyListeners() {
@@ -338,6 +375,7 @@ const Auth = (function() {
             unsubscribe();
             unsubscribe = null;
         }
+        authListeners = [];
     }
 
     // Публичное API

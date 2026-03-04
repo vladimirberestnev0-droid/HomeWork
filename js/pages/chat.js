@@ -1,3 +1,8 @@
+/**
+ * chat.js — логика страницы чата
+ * Версия 2.0 с исправленными подписками
+ */
+
 (function() {
     // Параметры URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -8,9 +13,6 @@
     let chatData = null;
     let partnerId = null;
     let partnerName = '';
-    let selectedFiles = [];
-    let unsubscribeMessages = null;
-    let unsubscribeAuth = null; // для отписки от Auth
     let lastMessageTime = 0;
     let messageCount = 0;
 
@@ -44,7 +46,7 @@
         initEventListeners();
     });
 
-    // Ожидание авторизации (ИСПРАВЛЕНО)
+    // Ожидание авторизации
     function waitForAuth() {
         return new Promise((resolve) => {
             // Если уже авторизован
@@ -53,29 +55,26 @@
                 return;
             }
             
-            let timeoutId = null;
-            let unsubscribe = null;
-            
-            // Подписываемся на изменения
-            unsubscribe = Auth.onAuthChange(function listener(state) {
-                if (state.isAuthenticated) {
-                    // Отписываемся
-                    if (typeof unsubscribe === 'function') {
-                        unsubscribe();
-                    }
-                    if (timeoutId) clearTimeout(timeoutId);
-                    resolve(true);
-                }
-            });
-            
-            // Таймаут на случай проблем
-            timeoutId = setTimeout(() => {
-                if (typeof unsubscribe === 'function') {
-                    unsubscribe();
+            let timeoutId = setTimeout(() => {
+                if (window._authUnsubscribe && typeof window._authUnsubscribe === 'function') {
+                    window._authUnsubscribe();
+                    window._authUnsubscribe = null;
                 }
                 console.log('⏳ Таймаут ожидания авторизации');
                 resolve(false);
             }, 5000);
+            
+            // Подписываемся на изменения
+            window._authUnsubscribe = Auth.onAuthChange(function listener(state) {
+                if (state.isAuthenticated) {
+                    clearTimeout(timeoutId);
+                    if (window._authUnsubscribe && typeof window._authUnsubscribe === 'function') {
+                        window._authUnsubscribe();
+                        window._authUnsubscribe = null;
+                    }
+                    resolve(true);
+                }
+            });
         });
     }
 
@@ -84,6 +83,7 @@
         try {
             if (!Utils.checkFirestore()) {
                 console.error('Firestore недоступен');
+                Utils.showNotification('❌ База данных недоступна', 'error');
                 return false;
             }
 
@@ -107,8 +107,8 @@
                     const parts = chatId.replace('chat_', '').split('_');
                     if (parts.length === 2) {
                         const [orderId, masterId] = parts;
-                        await tryRestoreChat(orderId, masterId, user.uid);
-                        return true;
+                        const restored = await tryRestoreChat(orderId, masterId, user.uid);
+                        if (restored) return true;
                     }
                 }
                 
@@ -222,9 +222,6 @@
                 type: 'system'
             });
             
-            chatId = newChatId;
-            chatData = (await chatRef.get()).data();
-            
             console.log('✅ Чат восстановлен');
             
             // Перезагружаем страницу с новым chatId
@@ -241,11 +238,12 @@
         if (!chatId) return;
         
         // Отписываемся от предыдущей подписки
-        if (unsubscribeMessages && typeof unsubscribeMessages === 'function') {
-            unsubscribeMessages();
+        if (window._messagesUnsubscribe && typeof window._messagesUnsubscribe === 'function') {
+            window._messagesUnsubscribe();
+            window._messagesUnsubscribe = null;
         }
         
-        unsubscribeMessages = Chat.subscribeToMessages(chatId, (messages) => {
+        window._messagesUnsubscribe = Chat.subscribeToMessages(chatId, (messages) => {
             displayMessages(messages);
             
             // Отмечаем как прочитанные при получении новых
@@ -283,15 +281,15 @@
         const isSent = message.senderId === user?.uid;
         
         let filesHtml = '';
-        if (message.files?.length > 0) {
+        if (message.files && message.files.length > 0) {
             filesHtml = '<div class="d-flex flex-column gap-2 mt-2">';
             message.files.forEach(file => {
-                if (file.type?.startsWith('image/')) {
+                if (file.type && file.type.startsWith('image/')) {
                     filesHtml += `<img src="${file.url}" class="message-image" onclick="window.open('${file.url}')" loading="lazy">`;
                 } else {
                     filesHtml += `
                         <a href="${file.url}" target="_blank" class="message-file">
-                            <i class="fas fa-file me-2"></i>${file.name}
+                            <i class="fas fa-file me-2"></i>${Utils.escapeHtml(file.name)}
                         </a>`;
                 }
             });
@@ -316,7 +314,7 @@
         const input = $('messageInput');
         const text = input?.value.trim();
 
-        if ((!text || text === '') && selectedFiles.length === 0) return;
+        if ((!text || text === '') && (!window.selectedFiles || window.selectedFiles.length === 0)) return;
 
         // Антиспам
         const now = Date.now();
@@ -335,17 +333,19 @@
         if (text && window.Moderation) {
             const modResult = Moderation.check(text, 'chat_message');
             if (!modResult.isValid) {
-                Utils.showNotification(`❌ ${modResult.reason}`, 'warning');
+                Utils.showNotification(`❌ ${modResult.reason || 'Текст не прошел модерацию'}`, 'warning');
                 return;
             }
         }
 
-        const result = await Chat.sendMessage(chatId, text || '', selectedFiles);
+        const result = await Chat.sendMessage(chatId, text || '', window.selectedFiles || []);
         
-        if (result.success) {
+        if (result && result.success) {
             if (input) input.value = '';
-            selectedFiles = [];
-            updateFilePreview();
+            window.selectedFiles = [];
+            if (typeof window.updateFilePreview === 'function') {
+                window.updateFilePreview();
+            }
         }
     }
 
@@ -353,48 +353,32 @@
     function handleFileSelect(files) {
         if (!files) return;
         
+        if (!window.selectedFiles) {
+            window.selectedFiles = [];
+        }
+        
         for (let file of files) {
             if (file.size > 10 * 1024 * 1024) {
                 Utils.showNotification('❌ Файл слишком большой (макс 10MB)', 'warning');
                 continue;
             }
-            selectedFiles.push(file);
-        }
-        updateFilePreview();
-    }
-
-    function updateFilePreview() {
-        const preview = $('filePreview');
-        if (!preview) return;
-        
-        if (selectedFiles.length === 0) {
-            preview.classList.add('d-none');
-            preview.innerHTML = '';
-            return;
+            window.selectedFiles.push(file);
         }
         
-        preview.classList.remove('d-none');
-        preview.innerHTML = selectedFiles.map((file, index) => `
-            <div class="file-preview-item">
-                <i class="fas ${file.type.startsWith('image/') ? 'fa-image' : 'fa-file'}"></i>
-                <span>${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</span>
-                <span class="remove-file" onclick="window.removeFile(${index})">×</span>
-            </div>
-        `).join('');
+        if (typeof window.updateFilePreview === 'function') {
+            window.updateFilePreview();
+        }
     }
-
-    window.removeFile = (index) => {
-        selectedFiles.splice(index, 1);
-        updateFilePreview();
-    };
 
     // Очистка
     function cleanup() {
-        if (unsubscribeMessages && typeof unsubscribeMessages === 'function') {
-            unsubscribeMessages();
+        if (window._messagesUnsubscribe && typeof window._messagesUnsubscribe === 'function') {
+            window._messagesUnsubscribe();
+            window._messagesUnsubscribe = null;
         }
-        if (unsubscribeAuth && typeof unsubscribeAuth === 'function') {
-            unsubscribeAuth();
+        if (window._authUnsubscribe && typeof window._authUnsubscribe === 'function') {
+            window._authUnsubscribe();
+            window._authUnsubscribe = null;
         }
     }
 

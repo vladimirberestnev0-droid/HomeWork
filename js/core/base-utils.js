@@ -1,6 +1,6 @@
 /**
  * base-utils.js — универсальные утилиты для всего проекта
- * Версия 2.0 с debounce, throttle и всеми нужными функциями
+ * Версия 3.0 с глобальными функциями для HTML
  */
 
 const Utils = (function() {
@@ -310,9 +310,6 @@ const Utils = (function() {
     
     /**
      * Debounce — ограничивает частоту вызова функции
-     * @param {Function} func - функция для выполнения
-     * @param {number} wait - задержка в мс
-     * @returns {Function} - обёрнутая функция
      */
     function debounce(func, wait) {
         let timeout;
@@ -328,9 +325,6 @@ const Utils = (function() {
 
     /**
      * Throttle — пропускает вызовы не чаще чем раз в указанный интервал
-     * @param {Function} func - функция для выполнения
-     * @param {number} limit - интервал в мс
-     * @returns {Function} - обёрнутая функция
      */
     function throttle(func, limit) {
         let inThrottle;
@@ -345,7 +339,6 @@ const Utils = (function() {
 
     /**
      * Копирование в буфер обмена
-     * @param {string} text - текст для копирования
      */
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
@@ -357,8 +350,6 @@ const Utils = (function() {
 
     /**
      * Задержка (промис)
-     * @param {number} ms - миллисекунд
-     * @returns {Promise}
      */
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -410,5 +401,272 @@ const Utils = (function() {
     };
 })();
 
+// ===== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ HTML =====
+
+/**
+ * Глобальные переменные состояния
+ */
+window.currentOrderId = null;
+window.currentMasterId = null;
+window.currentClientId = null;
+window.currentRating = 0;
+window.selectedFiles = [];
+window.currentFilter = 'all';
+window._authUnsubscribe = null;
+window._messagesUnsubscribe = null;
+
+/**
+ * Удаление файла из превью
+ */
+window.removeFile = function(index) {
+    if (window.selectedFiles && Array.isArray(window.selectedFiles)) {
+        window.selectedFiles.splice(index, 1);
+        updateFilePreview();
+    }
+};
+
+/**
+ * Обновление превью файлов
+ */
+window.updateFilePreview = function() {
+    const preview = document.getElementById('filePreview');
+    if (!preview) return;
+    
+    if (!window.selectedFiles || window.selectedFiles.length === 0) {
+        preview.classList.add('d-none');
+        preview.innerHTML = '';
+        return;
+    }
+    
+    preview.classList.remove('d-none');
+    preview.innerHTML = window.selectedFiles.map((file, index) => {
+        const icon = file.type && file.type.startsWith('image/') ? 'fa-image' : 'fa-file';
+        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+        return `
+            <div class="file-preview-item">
+                <i class="fas ${icon}"></i>
+                <span>${Utils.escapeHtml(fileName)}</span>
+                <span class="remove-file" onclick="window.removeFile(${index})">×</span>
+            </div>
+        `;
+    }).join('');
+};
+
+/**
+ * Просмотр заказа
+ */
+window.viewOrder = function(orderId) {
+    Utils.showNotification('👀 Просмотр заказа будет доступен позже', 'info');
+};
+
+/**
+ * Показать/скрыть отклики
+ */
+window.toggleResponses = function(orderId) {
+    const el = document.getElementById(`responses-${orderId}`);
+    if (el) {
+        const isHidden = el.style.display === 'none' || el.style.display === '';
+        el.style.display = isHidden ? 'block' : 'none';
+        
+        // Находим кнопку по data-атрибуту или тексту
+        const btns = document.querySelectorAll('button');
+        for (let btn of btns) {
+            if (btn.textContent.includes('Отклики') && btn.textContent.includes(orderId.substring(0, 8))) {
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = isHidden ? 'fas fa-chevron-up me-1' : 'fas fa-chevron-down me-1';
+                }
+                break;
+            }
+        }
+    }
+};
+
+/**
+ * Выбор мастера
+ */
+window.selectMaster = async function(orderId, masterId, price) {
+    if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
+    
+    try {
+        if (!window.Orders) {
+            throw new Error('Сервис заказов не загружен');
+        }
+        
+        const result = await Orders.selectMaster(orderId, masterId, price);
+        
+        if (result && result.success) {
+            Utils.showNotification('✅ Мастер выбран! Чат создан.', 'success');
+            
+            if (result.chatId) {
+                setTimeout(() => {
+                    window.location.href = `/HomeWork/chat.html?chatId=${result.chatId}`;
+                }, 1500);
+            } else {
+                // Перезагружаем страницу если нет chatId
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        } else {
+            Utils.showNotification(result?.error || '❌ Ошибка при выборе мастера', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка выбора мастера:', error);
+        Utils.showNotification('❌ Ошибка при выборе мастера', 'error');
+    }
+};
+
+/**
+ * Открыть чат
+ */
+window.openChat = function(orderId, partnerId) {
+    const user = Auth.getUser();
+    if (!user) {
+        AuthUI.showLoginModal();
+        return;
+    }
+    
+    // Формируем ID чата в зависимости от роли
+    let chatId;
+    if (Auth.isMaster()) {
+        chatId = `chat_${orderId}_${user.uid}`;
+    } else {
+        chatId = `chat_${orderId}_${partnerId}`;
+    }
+    
+    window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
+};
+
+/**
+ * Открыть модалку отзыва
+ */
+window.openReviewModal = function(orderId, masterId, masterName) {
+    window.currentOrderId = orderId;
+    window.currentMasterId = masterId;
+    window.currentRating = 0;
+    
+    const modalEl = document.getElementById('reviewModal');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        
+        // Сброс звёзд
+        document.querySelectorAll('#reviewModal .star').forEach(s => s.classList.remove('active'));
+        const reviewText = document.getElementById('reviewText');
+        if (reviewText) reviewText.value = '';
+        
+        modal.show();
+    } else {
+        Utils.showNotification('Не удалось открыть модалку отзыва', 'error');
+    }
+};
+
+/**
+ * Показать модалку отклика
+ */
+window.showRespondModal = function(orderId, orderTitle, orderCategory, orderPrice) {
+    window.currentOrderId = orderId;
+    
+    const infoBlock = document.getElementById('respondOrderInfo');
+    if (infoBlock) infoBlock.classList.remove('d-none');
+    
+    const titleEl = document.getElementById('respondOrderTitle');
+    if (titleEl) titleEl.textContent = orderTitle || 'Заказ';
+    
+    const categoryEl = document.getElementById('respondOrderCategory');
+    if (categoryEl) categoryEl.textContent = orderCategory || 'Категория';
+    
+    const priceEl = document.getElementById('respondOrderPrice');
+    if (priceEl) priceEl.textContent = Utils.formatMoney(orderPrice);
+    
+    const priceInput = document.getElementById('responsePrice');
+    if (priceInput) priceInput.value = '';
+    
+    const commentInput = document.getElementById('responseComment');
+    if (commentInput) commentInput.value = '';
+    
+    const modalEl = document.getElementById('respondModal');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+};
+
+/**
+ * Показать модалку отзыва о клиенте
+ */
+window.showClientReviewModal = function(orderId, clientId, clientName) {
+    window.currentOrderId = orderId;
+    window.currentClientId = clientId;
+    window.currentRating = 0;
+    
+    const nameEl = document.getElementById('reviewClientName');
+    if (nameEl) nameEl.textContent = clientName || 'Клиент';
+    
+    // Сброс звёзд
+    document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
+    
+    const textEl = document.getElementById('reviewClientText');
+    if (textEl) textEl.value = '';
+    
+    const modalEl = document.getElementById('reviewClientModal');
+    if (modalEl && window.bootstrap) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+};
+
+/**
+ * Очистка при уходе со страницы
+ */
+window.addEventListener('beforeunload', function() {
+    // Очищаем слушатели
+    if (window._authUnsubscribe && typeof window._authUnsubscribe === 'function') {
+        window._authUnsubscribe();
+        window._authUnsubscribe = null;
+    }
+    if (window._messagesUnsubscribe && typeof window._messagesUnsubscribe === 'function') {
+        window._messagesUnsubscribe();
+        window._messagesUnsubscribe = null;
+    }
+});
+
+// Добавляем стили для анимаций если их нет
+(function addAnimationStyles() {
+    if (document.getElementById('utils-animation-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'utils-animation-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+        }
+        
+        .notification {
+            pointer-events: auto;
+            animation: slideIn 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 window.Utils = Utils;
-console.log('✅ Utils loaded (полная версия с debounce)');
+console.log('✅ Utils loaded (полная версия с глобальными функциями)');

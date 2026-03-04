@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/chat.css">
     <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
 </head>
 <body>
     <div class="chat-container">
@@ -49,7 +50,7 @@
         <!-- Поле ввода -->
         <div class="chat-input p-3 border-top">
             <div class="d-flex gap-2">
-                <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf">
+                <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.txt">
                 <button class="btn btn-outline-secondary" id="attachButton" title="Прикрепить файл">
                     <i class="fas fa-paperclip"></i>
                 </button>
@@ -60,6 +61,30 @@
             </div>
             <div id="filePreview" class="d-flex gap-2 mt-2 flex-wrap d-none"></div>
         </div>
+    </div>
+
+    <!-- НИЖНЯЯ НАВИГАЦИЯ (только для мобильных) -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="home">
+            <span>🏠</span>
+            <span>Главная</span>
+        </button>
+        <button class="nav-item" data-page="search">
+            <span>🔍</span>
+            <span>Поиск</span>
+        </button>
+        <button class="nav-item" data-page="favorites">
+            <span>❤️</span>
+            <span>Избранное</span>
+        </button>
+        <button class="nav-item" data-page="orders">
+            <span>📋</span>
+            <span>Заказы</span>
+        </button>
+        <button class="nav-item" data-page="profile">
+            <span>👤</span>
+            <span>Профиль</span>
+        </button>
     </div>
 
     <!-- Скрипты -->
@@ -80,7 +105,8 @@
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
     
+    <script src="/HomeWork/js/components/bottom-nav.js"></script>
+    
     <script src="/HomeWork/js/pages/chat.js"></script>
-    <script src="/HomeWork/js/components/mobile-nav.js"></script>
 </body>
 </html>

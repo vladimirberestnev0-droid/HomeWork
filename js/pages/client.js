@@ -1,10 +1,12 @@
+/**
+ * client.js — логика кабинета клиента
+ * Версия 2.0 с исправленными обработчиками
+ */
+
 (function() {
     // Состояние
     let currentFilter = 'all';
     let allOrders = [];
-    let currentOrderId = null;
-    let currentMasterId = null;
-    let currentRating = 0;
 
     // DOM элементы
     const $ = (id) => document.getElementById(id);
@@ -18,13 +20,11 @@
             
             const authRequired = $('authRequired');
             const clientCabinet = $('clientCabinet');
-            const welcomeBanner = $('welcomeBanner');
 
             if (state.isAuthenticated && state.userData) {
                 if (state.isClient) {
                     authRequired?.classList.add('d-none');
                     clientCabinet?.classList.remove('d-none');
-                    welcomeBanner?.classList.remove('d-none');
                     
                     await loadClientProfile();
                     await loadClientOrders('all');
@@ -43,7 +43,6 @@
             } else {
                 authRequired?.classList.remove('d-none');
                 clientCabinet?.classList.add('d-none');
-                welcomeBanner?.classList.add('d-none');
             }
         });
 
@@ -56,12 +55,17 @@
             const userData = Auth.getUserData();
             if (!userData) return;
 
-            $('clientName').textContent = userData.name || 'Клиент';
-            $('welcomeName').textContent = userData.name || 'Клиент';
-            $('clientEmail').textContent = userData.email || '';
-            $('clientPhone').textContent = userData.phone || 'Телефон не указан';
-            $('clientRating').textContent = (userData.rating || 0).toFixed(1);
-            $('clientReviews').textContent = userData.reviews || 0;
+            const nameEl = $('clientName');
+            if (nameEl) nameEl.textContent = userData.name || 'Клиент';
+            
+            const emailEl = $('clientEmail');
+            if (emailEl) emailEl.textContent = userData.email || '';
+            
+            const ratingEl = $('clientRating');
+            if (ratingEl) ratingEl.innerHTML = '★'.repeat(5) + ' ' + (userData.rating || 0).toFixed(1);
+            
+            const reviewsEl = $('clientReviews');
+            if (reviewsEl) reviewsEl.textContent = userData.reviews || 0;
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
         }
@@ -83,7 +87,8 @@
             const orders = await Orders.getClientOrders(user.uid, filter);
             allOrders = orders;
             
-            $('clientOrdersCount').textContent = orders.length;
+            const countEl = $('clientOrdersCount');
+            if (countEl) countEl.textContent = orders.length;
 
             if (orders.length === 0) {
                 ordersList.innerHTML = `
@@ -121,7 +126,7 @@
         const hasMaster = !!order.selectedMasterId;
 
         return `
-            <div class="order-card mb-3">
+            <div class="order-card mb-3" data-order-id="${order.id}">
                 <div class="order-header">
                     <h5 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
                     <span class="order-price">${Utils.formatMoney(order.price)}</span>
@@ -129,10 +134,10 @@
                 
                 <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
                 
-                ${order.photos?.length ? `
+                ${order.photos && order.photos.length ? `
                     <div class="d-flex gap-2 mb-3">
                         ${order.photos.slice(0, 3).map(url => 
-                            `<img src="${url}" class="order-photo-thumb" onclick="window.open('${url}')">`
+                            `<img src="${url}" class="order-photo-thumb" onclick="window.open('${url}')" loading="lazy">`
                         ).join('')}
                         ${order.photos.length > 3 ? `<span class="text-secondary">+${order.photos.length-3}</span>` : ''}
                     </div>
@@ -140,7 +145,6 @@
                 
                 <div class="order-meta">
                     <span><i class="fas fa-tag me-1"></i>${order.category || 'Без категории'}</span>
-                    <span><i class="fas fa-map-marker-alt me-1"></i>${Utils.escapeHtml(order.address || '')}</span>
                     <span><i class="fas fa-calendar me-1"></i>${Utils.formatDate(order.createdAt)}</span>
                 </div>
                 
@@ -149,13 +153,16 @@
                     
                     ${order.status === 'open' && hasResponses ? 
                         `<button class="btn btn-sm btn-outline-primary" onclick="toggleResponses('${order.id}')">
-                            <i class="fas fa-users me-1"></i>Отклики (${order.responses.length})
+                            <i class="fas fa-chevron-down me-1"></i>Отклики (${order.responses.length})
                         </button>` : ''}
                     
                     ${order.status === 'in_progress' && hasMaster ?
                         `<button class="btn btn-sm btn-primary" onclick="openChat('${order.id}', '${order.selectedMasterId}')">
                             <i class="fas fa-comment me-1"></i>Чат
                         </button>` : ''}
+                    
+                    ${order.status === 'completed' ?
+                        `<span class="badge bg-success">Завершён</span>` : ''}
                 </div>
                 
                 ${order.status === 'open' && hasResponses ? `
@@ -172,7 +179,7 @@
         const isSelected = order.selectedMasterId === response.masterId;
         
         // Проверяем, оставлен ли уже отзыв
-        const hasReview = order.reviews?.some(r => r.masterId === response.masterId) || false;
+        const hasReview = order.reviews && order.reviews.some(r => r.masterId === response.masterId) || false;
         
         // Формируем звезды рейтинга
         const ratingStars = response.masterRating ? 
@@ -182,13 +189,13 @@
             '☆☆☆☆☆';
 
         return `
-            <div class="response-card ${isSelected ? 'selected' : ''}">
-                <div class="response-header">
+            <div class="response-card ${isSelected ? 'selected' : ''} p-3 mb-2 border rounded">
+                <div class="response-header d-flex justify-content-between mb-2">
                     <div>
-                        <span class="response-master">${Utils.escapeHtml(response.masterName || 'Мастер')}</span>
+                        <span class="fw-bold">${Utils.escapeHtml(response.masterName || 'Мастер')}</span>
                         <small class="text-secondary ms-2">${ratingStars} ${(response.masterRating || 0).toFixed(1)}</small>
                     </div>
-                    <span class="response-price">${Utils.formatMoney(response.price)}</span>
+                    <span class="fw-bold text-accent">${Utils.formatMoney(response.price)}</span>
                 </div>
                 
                 ${response.comment ? `<p class="small text-secondary mb-2">${Utils.escapeHtml(response.comment)}</p>` : ''}
@@ -197,14 +204,14 @@
                     <small class="text-muted">${Utils.formatDate(response.createdAt)}</small>
                     
                     <div class="d-flex gap-2">
-                        ${order.status === ORDER_STATUS.OPEN && !isSelected ? `
+                        ${order.status === 'open' && !isSelected ? `
                             <button class="btn btn-sm btn-success" onclick="selectMaster('${order.id}', '${response.masterId}', ${response.price})">
                                 <i class="fas fa-check me-1"></i>Выбрать
                             </button>
                         ` : ''}
                         
-                        ${order.status === ORDER_STATUS.COMPLETED && !hasReview ? `
-                            <button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${response.masterId}', '${response.masterName}')">
+                        ${order.status === 'completed' && !hasReview ? `
+                            <button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${response.masterId}', '${Utils.escapeHtml(response.masterName)}')">
                                 <i class="fas fa-star me-1"></i>Оценить
                             </button>
                         ` : ''}
@@ -218,79 +225,14 @@
         `;
     }
 
-    // Показать/скрыть отклики
-    window.toggleResponses = (orderId) => {
-        const el = $(`responses-${orderId}`);
-        if (el) {
-            const isHidden = el.style.display === 'none';
-            el.style.display = isHidden ? 'block' : 'none';
-            
-            // Меняем иконку у кнопки (опционально)
-            const btn = event?.currentTarget;
-            if (btn) {
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.className = isHidden ? 'fas fa-chevron-up me-1' : 'fas fa-chevron-down me-1';
-                }
-            }
-        }
-    };
-
-    // Выбор мастера
-    window.selectMaster = async (orderId, masterId, price) => {
-        if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
-
-        try {
-            const result = await Orders.selectMaster(orderId, masterId, price);
-            
-            if (result.success) {
-                Utils.showNotification('✅ Мастер выбран! Чат создан.', 'success');
-                await loadClientOrders(currentFilter);
-                
-                if (result.chatId) {
-                    setTimeout(() => {
-                        window.location.href = `/HomeWork/chat.html?chatId=${result.chatId}`;
-                    }, 1500);
-                }
-            }
-        } catch (error) {
-            console.error('❌ Ошибка выбора мастера:', error);
-            Utils.showNotification('❌ Ошибка при выборе мастера', 'error');
-        }
-    };
-
-    // Открыть чат
-    window.openChat = (orderId, masterId) => {
-        const chatId = `chat_${orderId}_${masterId}`;
-        window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
-    };
-
-    // Открыть модалку отзыва
-    window.openReviewModal = (orderId, masterId, masterName) => {
-        currentOrderId = orderId;
-        currentMasterId = masterId;
-        currentRating = 0;
-        
-        const modalEl = $('reviewModal');
-        if (!modalEl) return;
-        
-        const modal = new bootstrap.Modal(modalEl);
-        
-        // Сброс звёзд
-        document.querySelectorAll('#reviewModal .star').forEach(s => s.classList.remove('active'));
-        $('reviewText').value = '';
-        
-        modal.show();
-    };
-
     // Отправка отзыва
     async function submitReview() {
-        if (!currentRating) {
+        if (!window.currentRating) {
             Utils.showNotification('Поставьте оценку!', 'warning');
             return;
         }
 
-        const reviewText = $('reviewText')?.value || '';
+        const reviewText = document.getElementById('reviewText')?.value || '';
         const user = Auth.getUser();
         const userData = Auth.getUserData();
 
@@ -300,37 +242,41 @@
             const review = {
                 clientId: user.uid,
                 clientName: userData?.name || 'Клиент',
-                masterId: currentMasterId,
-                rating: currentRating,
+                masterId: window.currentMasterId,
+                rating: window.currentRating,
                 text: reviewText,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             // Добавляем отзыв в заказ
-            await db.collection('orders').doc(currentOrderId).update({
+            await db.collection('orders').doc(window.currentOrderId).update({
                 reviews: firebase.firestore.FieldValue.arrayUnion(review)
             });
 
             // Обновляем рейтинг мастера
-            const masterDoc = await db.collection('users').doc(currentMasterId).get();
+            const masterDoc = await db.collection('users').doc(window.currentMasterId).get();
             if (masterDoc.exists) {
                 const masterData = masterDoc.data();
                 const currentMasterRating = masterData.rating || 0;
                 const currentMasterReviews = masterData.reviews || 0;
-                const newRating = ((currentMasterRating * currentMasterReviews) + currentRating) / (currentMasterReviews + 1);
+                const newRating = ((currentMasterRating * currentMasterReviews) + window.currentRating) / (currentMasterReviews + 1);
                 
-                await db.collection('users').doc(currentMasterId).update({
+                await db.collection('users').doc(window.currentMasterId).update({
                     rating: newRating,
                     reviews: currentMasterReviews + 1
                 });
             }
 
             // Скрываем модалку
-            bootstrap.Modal.getInstance($('reviewModal'))?.hide();
+            const modalEl = document.getElementById('reviewModal');
+            if (modalEl && window.bootstrap) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
             
             Utils.showNotification('✅ Спасибо за отзыв!', 'success');
             
-            // Перезагружаем заказы, чтобы обновить состояние
+            // Перезагружаем заказы
             await loadClientOrders(currentFilter);
             
         } catch (error) {
@@ -341,7 +287,7 @@
 
     // Загрузка чатов
     async function loadChats() {
-        const chatsList = $('chatsList');
+        const chatsList = document.getElementById('chatsList');
         if (!chatsList) return;
 
         try {
@@ -377,12 +323,6 @@
                 </div>
             `).join('');
             
-            // Обновляем мобильную навигацию
-            if (window.MobileNav) {
-                document.querySelector('[data-tab="chats"]')?.classList.contains('active') ?
-                    MobileNav.setActiveTab('profile') : MobileNav.setActiveTab('orders');
-            }
-            
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
             chatsList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
@@ -391,7 +331,7 @@
 
     // Переключение табов
     function switchTab(tabName) {
-        const tabs = document.querySelectorAll('.nav-link');
+        const tabs = document.querySelectorAll('[data-tab]');
         const contents = document.querySelectorAll('.tab-content');
         
         tabs.forEach(tab => {
@@ -410,11 +350,6 @@
             }
         });
         
-        // Обновляем мобильную навигацию
-        if (window.MobileNav) {
-            MobileNav.setActiveTab(tabName === 'orders' ? 'orders' : 'profile');
-        }
-        
         // Загружаем данные если нужно
         if (tabName === 'chats') {
             loadChats();
@@ -424,16 +359,16 @@
     // Инициализация обработчиков
     function initEventListeners() {
         // Фильтры заказов
-        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+        document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 loadClientOrders(this.dataset.filter);
             });
         });
 
         // Табы
-        document.querySelectorAll('.nav-link[data-tab]').forEach(btn => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.addEventListener('click', function() {
                 switchTab(this.dataset.tab);
             });
@@ -443,7 +378,7 @@
         document.querySelectorAll('#reviewModal .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
-                currentRating = rating;
+                window.currentRating = rating;
                 
                 document.querySelectorAll('#reviewModal .star').forEach((s, i) => {
                     if (i < rating) s.classList.add('active');
@@ -453,21 +388,25 @@
         });
 
         // Отправка отзыва
-        $('submitReview')?.addEventListener('click', submitReview);
+        const submitBtn = document.getElementById('submitReview');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', submitReview);
+        }
 
         // Выход
-        $('logoutLink')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            Auth.logout();
-        });
+        const logoutLink = document.getElementById('logoutLink');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                Auth.logout();
+            });
+        }
 
         // Тема
-        $('themeToggle')?.addEventListener('click', Auth.toggleTheme);
-        
-        // Обработка кликов по документу для закрытия модалок и т.д.
-        document.addEventListener('click', (e) => {
-            // Закрытие превью фото при клике вне (если нужно)
-        });
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', Auth.toggleTheme);
+        }
     }
 
     // Экспортируем функцию переключения табов глобально
