@@ -1,4 +1,4 @@
-/* НИЖНЯЯ НАВИГАЦИЯ — ВСЕГДА ВИДНА */
+/* НИЖНЯЯ НАВИГАЦИЯ — ВСЕГДА ВИДНА НА МОБИЛКАХ */
 .bottom-nav {
     background-color: var(--dark-blue);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -47,7 +47,7 @@
     line-height: 1;
 }
 
-/* Отступ для контента */
+/* Отступ для контента на мобилках */
 body {
     padding-bottom: calc(var(--mobile-nav-height) + 10px) !important;
 }
@@ -65,6 +65,26 @@ body {
     
     .order-price {
         font-size: 1.2rem;
+    }
+    
+    /* Фильтры скроллятся */
+    .filters-scroll {
+        flex-wrap: nowrap;
+    }
+    
+    /* Карточки в один столбец */
+    .orders-list {
+        display: block;
+    }
+    
+    /* Мастера скроллятся */
+    .masters-scroll {
+        display: flex;
+        overflow-x: auto;
+    }
+    
+    .master-card {
+        min-width: 140px;
     }
 }
 

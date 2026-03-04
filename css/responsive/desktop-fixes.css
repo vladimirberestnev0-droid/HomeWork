@@ -1,0 +1,141 @@
+/* ===== ДЕСКТОПНЫЕ ФИКСЫ ===== */
+@media (min-width: 992px) {
+    /* Центрируем контент */
+    .app-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    /* Убираем мобильные ограничения */
+    body {
+        padding-bottom: 0 !important;
+        background-color: var(--deep-blue);
+    }
+    
+    /* Скрываем нижнюю навигацию на десктопе */
+    .bottom-nav {
+        display: none !important;
+    }
+    
+    /* Показываем десктопную шапку */
+    .header {
+        height: auto;
+        padding: 20px 0;
+    }
+    
+    /* Сетка для десктопа */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -15px;
+    }
+    
+    .col-md-4 {
+        width: 33.333%;
+        padding: 0 15px;
+    }
+    
+    .col-md-6 {
+        width: 50%;
+        padding: 0 15px;
+    }
+    
+    .col-md-8 {
+        width: 66.666%;
+        padding: 0 15px;
+    }
+    
+    .col-md-12 {
+        width: 100%;
+        padding: 0 15px;
+    }
+    
+    /* Карточки заказов на десктопе */
+    .orders-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .order-card {
+        margin-bottom: 0;
+    }
+    
+    /* Мастера на десктопе */
+    .masters-scroll {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        overflow-x: visible;
+    }
+    
+    .master-card {
+        min-width: auto;
+    }
+    
+    /* Фильтры на десктопе */
+    .filters-scroll {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        justify-content: flex-start;
+    }
+    
+    .filter-chip {
+        flex-shrink: 1;
+    }
+    
+    /* Поиск на десктопе */
+    .search-bar {
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Плавающая кнопка на десктопе */
+    .floating-action {
+        position: static;
+        margin: 30px 0;
+    }
+    
+    .btn-floating {
+        width: auto;
+        min-width: 300px;
+    }
+    
+    /* Профили на десктопе */
+    #masterCabinet .card,
+    #clientCabinet .card {
+        max-width: 100%;
+    }
+    
+    /* Табы на десктопе */
+    .nav-tabs {
+        border-bottom: 2px solid var(--border);
+    }
+    
+    .nav-tabs .nav-link {
+        color: var(--text-secondary);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--accent);
+        border-bottom: 2px solid var(--accent);
+    }
+}
+
+/* Планшеты */
+@media (min-width: 768px) and (max-width: 991px) {
+    .app-wrapper {
+        max-width: 90%;
+    }
+    
+    .orders-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .masters-scroll {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

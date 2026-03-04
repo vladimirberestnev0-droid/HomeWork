@@ -7,7 +7,6 @@
     let currentClientName = '';
     let currentRating = 0;
 
-    // DOM элементы
     const $ = (id) => document.getElementById(id);
 
     // Инициализация
@@ -29,9 +28,8 @@
                     await loadMasterResponses('all');
                     await loadChats();
                     
-                    // Обновляем мобильную навигацию
-                    if (window.MobileNav) {
-                        MobileNav.setActiveTab('masters');
+                    if (window.BottomNav) {
+                        BottomNav.highlightActive();
                     }
                 } else {
                     Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
@@ -46,9 +44,15 @@
         });
 
         initEventListeners();
+        
+        // Проверяем, не перешли ли с параметром для отклика
+        const urlParams = new URLSearchParams(window.location.search);
+        const respondOrderId = urlParams.get('respond');
+        if (respondOrderId) {
+            loadOrderForResponse(respondOrderId);
+        }
     });
 
-    // Загрузка профиля
     async function loadMasterProfile() {
         try {
             const userData = Auth.getUserData();
@@ -59,15 +63,18 @@
             $('masterRating').textContent = (userData.rating || 0).toFixed(1);
             $('masterReviews').textContent = userData.reviews || 0;
             
-            // Статистика
             const stats = await Orders.getMasterStats(Auth.getUser()?.uid);
             $('masterCompleted').textContent = stats.completed || 0;
+            
+            const stars = '★'.repeat(Math.floor(userData.rating || 0)) + 
+                         '☆'.repeat(5 - Math.floor(userData.rating || 0));
+            $('masterRatingDisplay').innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
         }
     }
 
-    // Загрузка откликов
     async function loadMasterResponses(filter = 'all') {
         currentFilter = filter;
         
@@ -110,7 +117,6 @@
         }
     }
 
-    // Создание карточки отклика
     function createResponseCard(item) {
         const order = item.order || {};
         const response = item.response || {};
@@ -165,10 +171,10 @@
                     
                     ${item.status === ORDER_STATUS.IN_PROGRESS ? `
                         <button class="btn btn-sm btn-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
-                            <i class="fas fa-comment me-1"></i>Чат с клиентом
+                            <i class="fas fa-comment me-1"></i>Чат
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="showCompleteOrderModal('${item.orderId}', '${Utils.escapeHtml(order.clientName || 'Клиент')}')">
-                            <i class="fas fa-check-double me-1"></i>Завершить заказ
+                        <button class="btn btn-sm btn-success" onclick="showClientReviewModal('${item.orderId}', '${order.clientId}', '${Utils.escapeHtml(order.clientName || 'Клиент')}')">
+                            <i class="fas fa-check-double me-1"></i>Завершить
                         </button>
                     ` : ''}
                     
@@ -185,7 +191,6 @@
         `;
     }
 
-    // Открыть чат
     window.openChat = (orderId, clientId) => {
         const user = Auth.getUser();
         if (!user) return;
@@ -194,52 +199,114 @@
         window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
     };
 
-    // Показать модалку завершения заказа
-    window.showCompleteOrderModal = (orderId, clientName) => {
+    // Функция для отклика с главной
+    async function loadOrderForResponse(orderId) {
+        try {
+            const order = await Orders.getOrderById(orderId);
+            if (order) {
+                showRespondModal(orderId, order.title, order.category, order.price);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки заказа:', error);
+        }
+    }
+
+    // Показать модалку отклика
+    window.showRespondModal = (orderId, orderTitle, orderCategory, orderPrice) => {
         currentOrderId = orderId;
-        currentClientName = clientName;
-        currentRating = 0;
-        
-        const modalEl = $('reviewClientModal');
-        if (!modalEl) return;
-        
-        const modal = new bootstrap.Modal(modalEl);
-        
-        // Сброс звёзд
-        document.querySelectorAll('#reviewClientModal .star').forEach(s => s.classList.remove('active'));
-        $('reviewClientText').value = '';
-        
+
+        const infoBlock = $('respondOrderInfo');
+        infoBlock.classList.remove('d-none');
+        $('respondOrderTitle').textContent = orderTitle || 'Заказ';
+        $('respondOrderCategory').textContent = orderCategory || 'Категория';
+        $('respondOrderPrice').textContent = Utils.formatMoney(orderPrice);
+
+        $('responsePrice').value = '';
+        $('responseComment').value = '';
+
+        const modal = new bootstrap.Modal($('respondModal'));
         modal.show();
     };
 
-    // Завершение заказа с отзывом
-    async function completeOrderWithReview() {
+    // Отправка отклика
+    $('submitResponse')?.addEventListener('click', async () => {
+        const price = parseInt($('responsePrice')?.value);
+        const comment = $('responseComment')?.value || '';
+
+        if (!price || price < 500) {
+            Utils.showNotification('Введите цену (минимум 500 ₽)', 'warning');
+            return;
+        }
+
+        if (price > 1000000) {
+            Utils.showNotification('Цена не может превышать 1 000 000 ₽', 'warning');
+            return;
+        }
+
+        const result = await Orders.respondToOrder(currentOrderId, price, comment);
+        
+        if (result && result.success) {
+            bootstrap.Modal.getInstance($('respondModal'))?.hide();
+            Utils.showNotification('✅ Отклик отправлен!', 'success');
+            await loadMasterResponses(currentFilter);
+        } else {
+            Utils.showNotification(result?.error || '❌ Ошибка при отправке', 'error');
+        }
+    });
+
+    // Показать модалку отзыва о клиенте
+    window.showClientReviewModal = (orderId, clientId, clientName) => {
+        currentOrderId = orderId;
+        currentClientId = clientId;
+        currentClientName = clientName;
+        currentRating = 0;
+
+        $('reviewClientName').textContent = clientName || 'Клиент';
+
+        document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
+        $('reviewClientText').value = '';
+
+        const modal = new bootstrap.Modal($('reviewClientModal'));
+        modal.show();
+    };
+
+    // Обработчик звёзд
+    document.querySelectorAll('#clientRatingStars .star').forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            currentRating = rating;
+            
+            document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
+                if (i < rating) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        });
+    });
+
+    // Отправка отзыва о клиенте
+    $('submitClientReview')?.addEventListener('click', async () => {
         if (!currentRating) {
             Utils.showNotification('Поставьте оценку клиенту', 'warning');
             return;
         }
 
-        const reviewText = $('reviewClientText')?.value || '';
-        
-        try {
-            const result = await Orders.completeOrder(currentOrderId, {
-                rating: currentRating,
-                text: reviewText
-            });
-            
-            if (result.success) {
-                bootstrap.Modal.getInstance($('reviewClientModal'))?.hide();
-                Utils.showNotification('✅ Заказ выполнен! Отзыв оставлен', 'success');
-                await loadMasterResponses(currentFilter);
-                await loadMasterProfile(); // Обновляем статистику
-            }
-        } catch (error) {
-            console.error('❌ Ошибка завершения заказа:', error);
-            Utils.showNotification('❌ Ошибка при завершении заказа', 'error');
-        }
-    }
+        const comment = $('reviewClientText')?.value || '';
 
-    // Загрузка чатов
+        const result = await Orders.completeOrder(currentOrderId, {
+            rating: currentRating,
+            text: comment
+        });
+        
+        if (result && result.success) {
+            bootstrap.Modal.getInstance($('reviewClientModal'))?.hide();
+            Utils.showNotification('✅ Заказ завершён! Отзыв оставлен', 'success');
+            await loadMasterResponses(currentFilter);
+            await loadMasterProfile();
+        } else {
+            Utils.showNotification(result?.error || '❌ Ошибка', 'error');
+        }
+    });
+
     async function loadChats() {
         const chatsList = $('chatsList');
         if (!chatsList) return;
@@ -277,32 +344,22 @@
                 </div>
             `).join('');
             
-            // Обновляем мобильную навигацию
-            if (window.MobileNav) {
-                document.querySelector('[data-tab="chats"]')?.classList.contains('active') ?
-                    MobileNav.setActiveTab('profile') : MobileNav.setActiveTab('masters');
-            }
-            
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
             chatsList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
         }
     }
 
-    // Переключение табов
     function switchTab(tabName) {
-        const tabs = document.querySelectorAll('.nav-link');
-        const contents = document.querySelectorAll('.tab-content');
-        
-        tabs.forEach(tab => {
-            if (tab.dataset.tab === tabName) {
-                tab.classList.add('active');
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('active');
             } else {
-                tab.classList.remove('active');
+                btn.classList.remove('active');
             }
         });
         
-        contents.forEach(content => {
+        document.querySelectorAll('.tab-content').forEach(content => {
             if (content.id === tabName + 'Tab') {
                 content.classList.remove('d-none');
             } else {
@@ -310,61 +367,31 @@
             }
         });
         
-        // Обновляем мобильную навигацию
-        if (window.MobileNav) {
-            MobileNav.setActiveTab(tabName === 'responses' ? 'masters' : 'profile');
-        }
-        
-        // Загружаем данные если нужно
         if (tabName === 'chats') {
             loadChats();
         }
     }
 
-    // Инициализация обработчиков
     function initEventListeners() {
-        // Фильтры откликов
-        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+        document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 loadMasterResponses(this.dataset.filter);
             });
         });
 
-        // Табы
-        document.querySelectorAll('.nav-link[data-tab]').forEach(btn => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.addEventListener('click', function() {
                 switchTab(this.dataset.tab);
             });
         });
 
-        // Звёзды в модалке отзыва о клиенте
-        document.querySelectorAll('#reviewClientModal .star').forEach(star => {
-            star.addEventListener('click', function() {
-                const rating = parseInt(this.dataset.rating);
-                currentRating = rating;
-                
-                document.querySelectorAll('#reviewClientModal .star').forEach((s, i) => {
-                    if (i < rating) s.classList.add('active');
-                    else s.classList.remove('active');
-                });
-            });
-        });
-
-        // Отправка отзыва о клиенте
-        $('submitClientReview')?.addEventListener('click', completeOrderWithReview);
-
-        // Выход
         $('logoutLink')?.addEventListener('click', (e) => {
             e.preventDefault();
             Auth.logout();
         });
 
-        // Тема
         $('themeToggle')?.addEventListener('click', Auth.toggleTheme);
     }
-
-    // Экспортируем функцию переключения табов глобально
-    window.switchMasterTab = switchTab;
 })();

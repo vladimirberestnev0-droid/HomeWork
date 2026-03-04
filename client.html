@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
     <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
 <body>
     <div class="app-wrapper">
@@ -47,11 +48,12 @@
             <!-- ПРОФИЛЬ -->
             <div class="card p-4 mb-4">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="master-avatar" style="width: 60px; height: 60px;">
-                        <i class="fas fa-user"></i>
+                    <div class="master-avatar" style="width: 70px; height: 70px;">
+                        <i class="fas fa-user fa-2x"></i>
                     </div>
                     <div>
                         <h4 id="clientName" class="mb-1">Загрузка...</h4>
+                        <p class="text-secondary mb-1" id="clientEmail"></p>
                         <div class="master-rating" id="clientRating">★★★★★ 0.0</div>
                     </div>
                 </div>
@@ -116,7 +118,7 @@
         </button>
     </div>
 
-    <!-- МОДАЛКИ -->
+    <!-- МОДАЛКА ОТЗЫВА -->
     <div class="modal fade" id="reviewModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">

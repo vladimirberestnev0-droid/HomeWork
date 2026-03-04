@@ -2,140 +2,237 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Свой Мастер 86 — Кабинет мастера</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>СВОЙ МАСТЕР 86 — Кабинет мастера</title>
     
     <link rel="manifest" href="/HomeWork/manifest.json">
-    <meta name="theme-color" content="#E67A4B">
+    <meta name="theme-color" content="#2CD5C4">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
     <link rel="stylesheet" href="/HomeWork/css/core/base.css">
     <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
     <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
     <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
+    <link rel="stylesheet" href="/HomeWork/css/components/filters.css">
     <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-    <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
+    <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
 </head>
 <body>
-    <div class="container py-4">
-        <header class="d-flex justify-content-between align-items-center mb-4">
-            <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2">
-                <i class="fas fa-house" style="color: var(--accent);"></i>
-                <span class="fw-bold">Свой Мастер 86</span>
-            </a>
-            <nav class="d-flex gap-3">
-                <a href="/HomeWork/">Главная</a>
-                <a href="/HomeWork/client.html">Клиентам</a>
-                <a href="/HomeWork/masters.html" class="active">Мастерам</a>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <a href="#" id="logoutLink" class="btn btn-sm btn-outline-danger rounded-pill">
-                    <i class="fas fa-sign-out-alt me-1"></i> Выйти
-                </a>
-            </nav>
-        </header>
+    <div class="app-wrapper">
+        <!-- ШАПКА -->
+        <div class="header">
+            <div class="logo">
+                СВОЙ<span>86</span>
+            </div>
+            <button class="geo-tag" onclick="window.location.href='/HomeWork/'">
+                <i class="fas fa-arrow-left"></i> На главную
+            </button>
+        </div>
 
+        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <div id="authBlockContainer" class="mb-3"></div>
+
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="authRequired" class="text-center p-5 d-none">
             <i class="fas fa-user-tie fa-4x mb-3" style="color: var(--accent);"></i>
             <h3>Вход в кабинет мастера</h3>
-            <button class="btn mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
+            <button class="btn btn-primary mt-3" onclick="AuthUI.showLoginModal()">Войти</button>
         </div>
 
         <div id="masterCabinet" class="d-none">
-            <div class="row g-4">
-                <!-- Левая колонка: профиль -->
-                <div class="col-md-4">
-                    <div class="card p-4 text-center">
-                        <div class="avatar-circle mx-auto mb-3">
-                            <i class="fas fa-user-tie fa-3x"></i>
-                        </div>
-                        <h4 id="masterName">Загрузка...</h4>
-                        <p class="text-secondary" id="masterCategories"></p>
-                        <hr>
-                        <div class="text-start">
-                            <p><i class="fas fa-star me-2" style="color: gold;"></i> Рейтинг: <span id="masterRating">0</span> (<span id="masterReviews">0</span> отзывов)</p>
-                            <p><i class="fas fa-box me-2"></i> Выполнено: <span id="masterCompleted">0</span></p>
-                        </div>
+            <!-- ПРОФИЛЬ -->
+            <div class="card p-4 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="master-avatar" style="width: 70px; height: 70px;">
+                        <i class="fas fa-user-tie fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 id="masterName" class="mb-1">Загрузка...</h4>
+                        <p class="text-secondary mb-1" id="masterCategories"></p>
+                        <div class="master-rating" id="masterRatingDisplay">★★★★★ 0.0</div>
                     </div>
                 </div>
+                <hr class="my-3" style="border-color: var(--border);">
+                <div class="d-flex justify-content-around">
+                    <div class="text-center">
+                        <div class="fw-bold" id="masterRating">0.0</div>
+                        <small class="text-muted">Рейтинг</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="fw-bold" id="masterReviews">0</div>
+                        <small class="text-muted">Отзывов</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="fw-bold" id="masterCompleted">0</div>
+                        <small class="text-muted">Выполнено</small>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Правая колонка: отклики и чаты -->
-                <div class="col-md-8">
-                    <ul class="nav nav-tabs mb-4">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-tab="responses">Отклики</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-tab="chats">Чаты</button>
-                        </li>
-                    </ul>
+            <!-- ТАБЫ -->
+            <div class="filters-scroll mb-4">
+                <button class="filter-chip active" data-tab="responses">📋 Отклики</button>
+                <button class="filter-chip" data-tab="chats">💬 Чаты</button>
+            </div>
 
-                    <div id="responsesTab" class="tab-content active">
-                        <div id="responsesList"></div>
+            <!-- ОТКЛИКИ -->
+            <div id="responsesTab" class="tab-content">
+                <div class="filters-scroll mb-3">
+                    <button class="filter-chip active" data-filter="all">Все</button>
+                    <button class="filter-chip" data-filter="pending">Ожидают</button>
+                    <button class="filter-chip" data-filter="accepted">В работе</button>
+                    <button class="filter-chip" data-filter="completed">Завершённые</button>
+                </div>
+                <div id="responsesList" class="orders-list"></div>
+            </div>
+
+            <!-- ЧАТЫ -->
+            <div id="chatsTab" class="tab-content d-none">
+                <div id="chatsList" class="orders-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
+        <button class="nav-item" data-page="home">
+            <span>🏠</span>
+            <span>Главная</span>
+        </button>
+        <button class="nav-item" data-page="search">
+            <span>🔍</span>
+            <span>Поиск</span>
+        </button>
+        <button class="nav-item" data-page="favorites">
+            <span>❤️</span>
+            <span>Избранное</span>
+        </button>
+        <button class="nav-item" data-page="orders">
+            <span>📋</span>
+            <span>Заказы</span>
+        </button>
+        <button class="nav-item active" data-page="profile">
+            <span>👤</span>
+            <span>Профиль</span>
+        </button>
+    </div>
+
+    <!-- МОДАЛКА ОТКЛИКА -->
+    <div class="modal fade" id="respondModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-reply me-2" style="color: var(--accent);"></i>
+                        Откликнуться на заказ
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="respondOrderInfo" class="bg-soft p-3 rounded-4 mb-4 d-none">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold" id="respondOrderTitle">Заказ</div>
+                                <small class="text-secondary" id="respondOrderCategory">Категория</small>
+                            </div>
+                            <span class="badge bg-accent" id="respondOrderPrice">0 ₽</span>
+                        </div>
                     </div>
 
-                    <div id="chatsTab" class="tab-content d-none">
-                        <div id="chatsList"></div>
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-1" style="color: var(--accent);"></i>
+                            Ваша цена <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control form-control-lg" id="responsePrice" 
+                               placeholder="Например: 1500" min="500" step="100">
+                        <small class="text-secondary">Минимальная сумма: 500 ₽</small>
                     </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-comment me-1" style="color: var(--accent);"></i>
+                            Комментарий к отклику
+                        </label>
+                        <textarea class="form-control" id="responseComment" rows="3" 
+                                  placeholder="Расскажите, как будете выполнять работу..."></textarea>
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-0" style="background: var(--accent-soft); border: none;">
+                        <i class="fas fa-info-circle" style="color: var(--accent);"></i>
+                        <small>Клиент увидит вашу цену и комментарий. Будьте вежливы!</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Отмена
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitResponse">
+                        <i class="fas fa-paper-plane me-2"></i>Отправить отклик
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модалка отклика -->
-    <div class="modal fade" id="respondModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- МОДАЛКА ОТЗЫВА О КЛИЕНТЕ -->
+    <div class="modal fade" id="reviewClientModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Откликнуться на заказ</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">
+                        <i class="fas fa-star me-2" style="color: gold;"></i>
+                        Оцените клиента
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Ваша цена (₽)</label>
-                        <input type="number" class="form-control" id="responsePrice" min="500">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Комментарий</label>
-                        <textarea class="form-control" id="responseComment" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="submitResponse">Откликнуться</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка отзыва о клиенте -->
-    <div class="modal fade" id="reviewClientModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Оцените клиента</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <div class="rating-stars">
-                            <span class="star" data-rating="1">★</span>
-                            <span class="star" data-rating="2">★</span>
-                            <span class="star" data-rating="3">★</span>
-                            <span class="star" data-rating="4">★</span>
-                            <span class="star" data-rating="5">★</span>
+                    <div class="text-center mb-4" id="reviewClientInfo">
+                        <div class="master-avatar mx-auto mb-3" style="width: 70px; height: 70px;">
+                            <i class="fas fa-user fa-2x"></i>
                         </div>
+                        <h5 id="reviewClientName">Клиент</h5>
                     </div>
-                    <textarea id="reviewClientText" class="form-control" rows="2" placeholder="Комментарий"></textarea>
+
+                    <label class="form-label text-center d-block mb-3">
+                        <i class="fas fa-star me-1" style="color: gold;"></i>
+                        Ваша оценка
+                    </label>
+                    <div class="rating-stars text-center mb-4" id="clientRatingStars">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-pen me-1" style="color: var(--accent);"></i>
+                            Комментарий (необязательно)
+                        </label>
+                        <textarea class="form-control" id="reviewClientText" rows="3" 
+                                  placeholder="Напишите пару слов о клиенте..."></textarea>
+                    </div>
+
+                    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <small>Оценка влияет на рейтинг клиента. Будьте объективны!</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Пропустить</button>
-                    <button type="button" class="btn btn-primary" id="submitClientReview">Отправить</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Пропустить
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitClientReview">
+                        <i class="fas fa-check me-2"></i>Отправить отзыв
+                    </button>
                 </div>
             </div>
         </div>
@@ -158,8 +255,10 @@
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
+    <script src="/HomeWork/js/services/moderation.js"></script>
     
     <script src="/HomeWork/js/components/auth-ui.js"></script>
+    <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
     <script src="/HomeWork/js/pages/masters.js"></script>
 </body>

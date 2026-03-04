@@ -24,7 +24,7 @@
         // Заполняем фильтры
         renderCategoryFilters();
         
-        // Загружаем РЕАЛЬНЫЕ заказы
+        // Загружаем реальные заказы
         await loadRealOrders();
         
         // Загружаем мастеров
@@ -61,6 +61,31 @@
         const container = $('categoryFilters');
         if (!container) return;
 
+        // Показываем первые 8 категорий
+        const visibleCategories = ORDER_CATEGORIES.slice(0, 8);
+        const hiddenCategories = ORDER_CATEGORIES.slice(8);
+
+        container.innerHTML = visibleCategories.map(cat => `
+            <span class="filter-chip ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
+                <i class="fas ${cat.icon}"></i> ${cat.name}
+            </span>
+        `).join('');
+
+        if (hiddenCategories.length > 0) {
+            const moreBtn = document.createElement('span');
+            moreBtn.className = 'filter-chip more-categories';
+            moreBtn.innerHTML = '<i class="fas fa-ellipsis-h"></i> Ещё';
+            moreBtn.addEventListener('click', showAllCategories);
+            container.appendChild(moreBtn);
+        }
+        
+        attachFilterHandlers();
+    }
+
+    function showAllCategories() {
+        const container = $('categoryFilters');
+        if (!container) return;
+        
         container.innerHTML = ORDER_CATEGORIES.map(cat => `
             <span class="filter-chip ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
                 <i class="fas ${cat.icon}"></i> ${cat.name}
@@ -77,17 +102,16 @@
                 this.classList.add('active');
                 
                 filters.category = this.dataset.category;
-                loadRealOrders(); // ← ЗАГРУЖАЕМ ЗАНОВО
+                loadRealOrders();
             });
         });
     }
 
-    // ===== ЗАГРУЗКА РЕАЛЬНЫХ ЗАКАЗОВ ИЗ FIREBASE =====
+    // Загрузка реальных заказов
     async function loadRealOrders() {
         const container = $('ordersList');
         if (!container) return;
 
-        // Показываем загрузку
         container.innerHTML = `
             <div class="text-center p-5">
                 <div class="spinner-border" style="color: var(--accent);"></div>
@@ -96,16 +120,11 @@
         `;
 
         try {
-            // Проверяем, есть ли Orders
-            if (!window.Orders) {
-                throw new Error('Сервис заказов не найден');
-            }
+            if (!window.Orders) throw new Error('Сервис заказов не найден');
 
-            // Загружаем заказы из Firebase
             const orders = await Orders.getOpenOrders(filters);
             
             if (!orders || orders.length === 0) {
-                // Если заказов нет — показываем красивое сообщение
                 container.innerHTML = `
                     <div class="text-center p-5">
                         <i class="fas fa-smile fa-3x mb-3" style="color: var(--text-muted);"></i>
@@ -122,18 +141,12 @@
                         AuthUI.showLoginModal();
                         return;
                     }
-                    if (Auth.isMaster()) {
-                        Utils.showNotification('Мастера не могут создавать заказы', 'warning');
-                        return;
-                    }
-                    // Скроллим к форме создания заказа
-                    document.getElementById('orderFormColumn')?.scrollIntoView({ behavior: 'smooth' });
+                    window.location.href = '/HomeWork/client.html';
                 });
                 
                 return;
             }
 
-            // Сохраняем и отображаем заказы
             allOrders = orders;
             displayedOrders = orders.slice(0, 5);
             renderOrders(container);
@@ -144,7 +157,6 @@
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
             
-            // Показываем ошибку
             container.innerHTML = `
                 <div class="text-center p-5 text-danger">
                     <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
@@ -158,7 +170,6 @@
         }
     }
 
-    // Отрисовка заказов
     function renderOrders(container) {
         if (!container) container = $('ordersList');
         if (!container) return;
@@ -177,19 +188,13 @@
         container.innerHTML = displayedOrders.map(order => createOrderCard(order)).join('');
     }
 
-    // Создание карточки заказа
     function createOrderCard(order) {
         const category = ORDER_CATEGORIES.find(c => c.id === order.category) || 
                         { icon: 'fa-tag', name: order.category || 'Услуга' };
-        
-        // Определяем, срочный ли заказ (можно добавить поле urgent в БД)
-        const isUrgent = order.urgent || false;
-        
-        // Форматируем дату
         const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
         
         return `
-            <div class="order-card ${isUrgent ? 'urgent' : ''}" onclick="viewOrder('${order.id}')">
+            <div class="order-card" onclick="viewOrder('${order.id}')">
                 <div class="order-header">
                     <span class="order-category">
                         <i class="fas ${category.icon}"></i> ${category.name}
@@ -201,17 +206,11 @@
                 <div class="order-footer">
                     <span><i class="far fa-clock"></i> ${dateStr}</span>
                     <span><i class="fas fa-map-marker-alt"></i> Нягань</span>
-                    ${Auth.isAuthenticated() && Auth.isMaster() ? `
-                        <button class="respond-btn" onclick="event.stopPropagation(); respondToOrder('${order.id}')">
-                            Отклик
-                        </button>
-                    ` : ''}
                 </div>
             </div>
         `;
     }
 
-    // Загрузка мастеров
     async function loadMasters() {
         const container = $('mastersList');
         if (!container) return;
@@ -273,48 +272,13 @@
         return div;
     }
 
-    // Отклик на заказ
-    window.respondToOrder = async (orderId) => {
-        if (!Auth.isAuthenticated()) {
-            AuthUI.showLoginModal();
-            return;
-        }
-
-        if (!Auth.isMaster()) {
-            Utils.showNotification('❌ Только мастера могут откликаться', 'warning');
-            return;
-        }
-
-        const price = prompt('Ваша цена (₽):');
-        if (!price) return;
-
-        const priceNum = parseInt(price);
-        if (isNaN(priceNum) || priceNum < 500 || priceNum > 1000000) {
-            Utils.showNotification('❌ Цена должна быть от 500 до 1 000 000 ₽', 'error');
-            return;
-        }
-
-        const comment = prompt('Комментарий (необязательно):', '');
-        
-        // Отправляем реальный отклик
-        const result = await Orders.respondToOrder(orderId, priceNum, comment || '');
-        
-        if (result && result.success) {
-            Utils.showNotification('✅ Отклик отправлен!', 'success');
-        } else {
-            Utils.showNotification('❌ Ошибка при отправке', 'error');
-        }
-    };
-
     window.viewOrder = (orderId) => {
         Utils.showNotification('Просмотр заказа (будет позже)', 'info');
     };
 
-    // Инициализация обработчиков
     function initEventListeners() {
         attachFilterHandlers();
 
-        // Создание заказа
         $('createOrderBtn')?.addEventListener('click', () => {
             if (!Auth.isAuthenticated()) {
                 AuthUI.showLoginModal();
@@ -324,11 +288,9 @@
                 Utils.showNotification('Мастера не могут создавать заказы', 'warning');
                 return;
             }
-            // Скроллим к форме
-            document.getElementById('orderFormColumn')?.scrollIntoView({ behavior: 'smooth' });
+            window.location.href = '/HomeWork/client.html';
         });
 
-        // Поиск
         const searchInput = $('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', Utils.debounce((e) => {
@@ -337,7 +299,6 @@
                     loadRealOrders();
                     return;
                 }
-                // Фильтруем уже загруженные заказы
                 const filtered = allOrders.filter(order => 
                     order.title?.toLowerCase().includes(query) || 
                     order.description?.toLowerCase().includes(query)
@@ -347,7 +308,6 @@
             }, 500));
         }
 
-        // Просмотр всех заказов
         $('viewAllOrders')?.addEventListener('click', (e) => {
             e.preventDefault();
             Utils.showNotification('Все заказы (будет позже)', 'info');

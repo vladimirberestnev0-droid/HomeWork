@@ -22,9 +22,9 @@ const BottomNav = (function() {
             
             if (page === 'home' && (currentPath.includes('index.html') || currentPath === '/HomeWork/')) {
                 item.classList.add('active');
-            } else if (page === 'orders' && currentPath.includes('client.html')) {
+            } else if (page === 'orders' && (currentPath.includes('client.html') || currentPath.includes('orders'))) {
                 item.classList.add('active');
-            } else if (page === 'profile' && currentPath.includes('master.html')) {
+            } else if (page === 'profile' && (currentPath.includes('master.html') || currentPath.includes('profile'))) {
                 item.classList.add('active');
             }
         });
@@ -43,16 +43,33 @@ const BottomNav = (function() {
                         window.location.href = '/HomeWork/';
                         break;
                     case 'search':
-                        document.querySelector('.search-bar')?.scrollIntoView({ behavior: 'smooth' });
+                        // На главной скроллим к поиску, иначе переходим на главную
+                        if (window.location.pathname.includes('index.html') || window.location.pathname === '/HomeWork/') {
+                            document.querySelector('.search-bar')?.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            window.location.href = '/HomeWork/';
+                        }
                         break;
                     case 'favorites':
                         if (Auth.isAuthenticated()) {
-                            Utils.showNotification('Избранное (демо)', 'info');
+                            Utils.showNotification('Избранное (будет позже)', 'info');
                         } else {
                             AuthUI.showLoginModal();
                         }
                         break;
                     case 'orders':
+                        if (Auth.isAuthenticated()) {
+                            if (Auth.isClient()) {
+                                window.location.href = '/HomeWork/client.html';
+                            } else if (Auth.isMaster()) {
+                                window.location.href = '/HomeWork/master.html';
+                            } else {
+                                window.location.href = '/HomeWork/';
+                            }
+                        } else {
+                            AuthUI.showLoginModal();
+                        }
+                        break;
                     case 'profile':
                         if (Auth.isAuthenticated()) {
                             if (Auth.isClient()) {
