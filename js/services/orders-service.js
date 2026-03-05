@@ -339,6 +339,7 @@ const Orders = (function() {
     // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО: защита Target ID) =====
     async function getOpenOrders(filters = {}, options = {}) {
         let attempt = 0;
+        let lastError = null;
         
         while (attempt < MAX_RETRIES) {
             try {
@@ -347,7 +348,10 @@ const Orders = (function() {
                 // Проверяем кэш (только для первого запроса, не для повторных)
                 if (attempt === 0 && !options.force && !options.lastDoc && window.Cache) {
                     const cached = Cache.get(cacheKey);
-                    if (cached) return cached;
+                    if (cached) {
+                        console.log('📦 Заказы из кэша');
+                        return cached;
+                    }
                 }
 
                 const constraints = [
@@ -423,6 +427,7 @@ const Orders = (function() {
                 
             } catch (error) {
                 attempt++;
+                lastError = error;
                 
                 // Проверяем, является ли ошибка Target ID
                 const isTargetIdError = error.code === 'failed-precondition' && 
@@ -433,18 +438,20 @@ const Orders = (function() {
                     
                     // Ждём с увеличивающейся задержкой
                     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+                    
+                    // Продолжаем цикл (делаем ещё попытку)
                     continue;
                 }
                 
-                // Другие ошибки или исчерпаны попытки
-                console.error('❌ Ошибка загрузки заказов:', error);
-                
-                // Возвращаем пустой результат, но не кэшируем
-                return { orders: [], lastDoc: null, hasMore: false };
+                // Если это не Target ID ошибка или исчерпаны попытки - выходим из цикла
+                break;
             }
         }
         
-        // Если дошли сюда - все попытки исчерпаны
+        // Если дошли сюда - все попытки исчерпаны или другая ошибка
+        console.error('❌ Ошибка загрузки заказов:', lastError);
+        
+        // Возвращаем пустой результат, но не кэшируем
         return { orders: [], lastDoc: null, hasMore: false };
     }
 
