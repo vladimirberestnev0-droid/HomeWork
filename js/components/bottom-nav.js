@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ЧАТАМИ И ЛОУДЕРОМ)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (ИСПРАВЛЕНО - URL из конфига)
 // ============================================
 
 const BottomNav = (function() {
@@ -13,6 +13,7 @@ const BottomNav = (function() {
     let navElement = null;
     let navItems = [];
     let lastClickTime = 0;
+    const CLICK_COOLDOWN = 500; // ms
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
@@ -26,7 +27,7 @@ const BottomNav = (function() {
         
         navItems = document.querySelectorAll('.nav-item');
         
-        console.log('📱 Нижняя навигация с чатами инициализирована');
+        console.log('📱 Нижняя навигация инициализирована');
         
         // Показываем навигацию только на мобилках/планшетах
         checkScreenSize();
@@ -57,7 +58,7 @@ const BottomNav = (function() {
         
         if (window.innerWidth < 992) {
             navElement.style.display = 'flex';
-            document.body.style.paddingBottom = 'var(--mobile-nav-height)';
+            document.body.style.paddingBottom = 'var(--mobile-nav-height, 70px)';
         } else {
             navElement.style.display = 'none';
             document.body.style.paddingBottom = '0';
@@ -96,14 +97,20 @@ const BottomNav = (function() {
                 }
                 
             } else if (isMaster) {
-                // МАСТЕР - главная, поиск, чаты, отклики, профиль
+                // МАСТЕР - главная, поиск, чаты, профиль
+                // Отклики показываем только если мы НЕ в кабинете мастера
                 switch(page) {
                     case 'home':
                     case 'search':
                     case 'chats':
-                    case 'orders':
                     case 'profile':
                         item.style.display = 'flex';
+                        break;
+                    case 'orders':
+                        // Показываем "Отклики" только если мы НЕ в кабинете мастера
+                        if (!window.CONFIG || !CONFIG.isCurrentPage('master')) {
+                            item.style.display = 'flex';
+                        }
                         break;
                 }
                 
@@ -117,6 +124,11 @@ const BottomNav = (function() {
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
+                }
+                
+                // Скрываем кнопку создания заказа для мастера
+                if (page === 'create-order') {
+                    item.style.display = 'none';
                 }
                 
             } else if (isClient) {
@@ -142,6 +154,11 @@ const BottomNav = (function() {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
                 }
+                
+                // Скрываем поиск для клиента
+                if (page === 'search') {
+                    item.style.display = 'none';
+                }
             }
         });
         
@@ -151,22 +168,37 @@ const BottomNav = (function() {
     
     // ===== ПОДСВЕТКА АКТИВНОГО ПУНКТА =====
     function highlightActive() {
-        const currentPath = window.location.pathname;
-        const currentUrl = window.location.href;
-        
         navItems.forEach(item => {
             item.classList.remove('active');
             
             const page = item.dataset.page;
             
-            if (page === 'home' && (currentPath.includes('index.html') || currentPath === '/HomeWork/')) {
-                item.classList.add('active');
-            } else if (page === 'orders' && (currentPath.includes('client.html') || currentPath.includes('master.html'))) {
-                item.classList.add('active');
-            } else if (page === 'profile' && (currentPath.includes('client.html') || currentPath.includes('master.html') || currentPath.includes('admin.html'))) {
-                item.classList.add('active');
-            } else if (page === 'chats' && currentUrl.includes('tab=chats')) {
-                item.classList.add('active');
+            // Используем CONFIG для проверки текущей страницы
+            if (window.CONFIG) {
+                if (page === 'home' && CONFIG.isCurrentPage('home')) {
+                    item.classList.add('active');
+                } else if (page === 'orders' && (CONFIG.isCurrentPage('client') || CONFIG.isCurrentPage('master'))) {
+                    item.classList.add('active');
+                } else if (page === 'profile' && (CONFIG.isCurrentPage('client') || CONFIG.isCurrentPage('master') || CONFIG.isCurrentPage('admin'))) {
+                    item.classList.add('active');
+                } else if (page === 'chats' && window.location.search.includes('tab=chats')) {
+                    item.classList.add('active');
+                } else if (page === 'create-order' && window.location.search.includes('tab=new')) {
+                    item.classList.add('active');
+                }
+            } else {
+                // Fallback если CONFIG не загружен
+                const currentPath = window.location.pathname;
+                
+                if (page === 'home' && (currentPath.includes('index.html') || currentPath === '/HomeWork/')) {
+                    item.classList.add('active');
+                } else if (page === 'orders' && (currentPath.includes('client.html') || currentPath.includes('master.html'))) {
+                    item.classList.add('active');
+                } else if (page === 'profile' && (currentPath.includes('client.html') || currentPath.includes('master.html') || currentPath.includes('admin.html'))) {
+                    item.classList.add('active');
+                } else if (page === 'chats' && window.location.search.includes('tab=chats')) {
+                    item.classList.add('active');
+                }
             }
         });
     }
@@ -193,11 +225,15 @@ const BottomNav = (function() {
     // ===== НАСТРОЙКА ОБРАБОТЧИКОВ =====
     function setupListeners() {
         navItems.forEach(item => {
-            item.addEventListener('click', function(e) {
+            // Удаляем старые обработчики
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
                 e.preventDefault();
                 
                 const now = Date.now();
-                if (now - lastClickTime < 500) return;
+                if (now - lastClickTime < CLICK_COOLDOWN) return;
                 lastClickTime = now;
                 
                 const page = this.dataset.page;
@@ -206,6 +242,9 @@ const BottomNav = (function() {
                 handleNavigation(page);
             });
         });
+        
+        // Обновляем ссылку на navItems
+        navItems = document.querySelectorAll('.nav-item');
     }
     
     // ===== АНИМАЦИЯ КЛИКА =====
@@ -216,7 +255,28 @@ const BottomNav = (function() {
         }, 200);
     }
     
-    // ===== ОБРАБОТКА НАВИГАЦИИ С ЛОУДЕРОМ =====
+    // ===== ФУНКЦИЯ ДЛЯ НАВИГАЦИИ С ЛОУДЕРОМ =====
+    function navigateWithLoader(urlKey, params = {}, text = 'Загрузка...') {
+        if (!window.CONFIG) {
+            console.warn('⚠️ CONFIG не загружен, используем прямой URL');
+            if (window.Loader) {
+                Loader.navigateTo(urlKey, text);
+            } else {
+                window.location.href = urlKey;
+            }
+            return;
+        }
+        
+        const url = CONFIG.getUrl(urlKey, params);
+        
+        if (window.Loader) {
+            Loader.navigateTo(url, text);
+        } else {
+            window.location.href = url;
+        }
+    }
+    
+    // ===== ОБРАБОТКА НАВИГАЦИИ =====
     function handleNavigation(page) {
         if (!window.Auth || !window.AuthUI) {
             console.warn('Auth не загружен');
@@ -225,26 +285,17 @@ const BottomNav = (function() {
         
         const state = Auth.getAuthState();
         
-        // Функция для перехода с лоудером
-        function navigateWithLoader(url, text) {
-            if (window.Loader) {
-                Loader.navigateTo(url, text);
-            } else {
-                window.location.href = url;
-            }
-        }
-        
         switch(page) {
             case 'home':
-                navigateWithLoader('/HomeWork/', '🏠 На главную...');
+                navigateWithLoader('home', {}, '🏠 На главную...');
                 break;
                 
             case 'search':
                 // Только для мастера - поиск заказов
                 if (state.isMaster) {
-                    navigateWithLoader('/HomeWork/?focus=search', '🔍 Поиск...');
+                    navigateWithLoader('home', { focus: 'search' }, '🔍 Поиск...');
                 } else {
-                    navigateWithLoader('/HomeWork/', '🏠 На главную...');
+                    navigateWithLoader('home', {}, '🏠 На главную...');
                 }
                 break;
                 
@@ -252,9 +303,9 @@ const BottomNav = (function() {
                 if (state.isAuthenticated) {
                     // Переходим в кабинет с открытыми чатами
                     if (state.isClient) {
-                        navigateWithLoader('/HomeWork/client.html?tab=chats', '💬 Загружаем чаты...');
+                        navigateWithLoader('client', { tab: 'chats' }, '💬 Загружаем чаты...');
                     } else if (state.isMaster) {
-                        navigateWithLoader('/HomeWork/master.html?tab=chats', '💬 Загружаем чаты...');
+                        navigateWithLoader('master', { tab: 'chats' }, '💬 Загружаем чаты...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -268,9 +319,9 @@ const BottomNav = (function() {
             case 'orders':
                 if (state.isAuthenticated) {
                     if (state.isClient) {
-                        navigateWithLoader('/HomeWork/client.html', '📋 Мои заказы...');
+                        navigateWithLoader('client', {}, '📋 Мои заказы...');
                     } else if (state.isMaster) {
-                        navigateWithLoader('/HomeWork/master.html', '📋 Отклики...');
+                        navigateWithLoader('master', {}, '📋 Отклики...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -280,11 +331,11 @@ const BottomNav = (function() {
             case 'profile':
                 if (state.isAuthenticated) {
                     if (state.isClient) {
-                        navigateWithLoader('/HomeWork/client.html', '👤 Профиль...');
+                        navigateWithLoader('client', {}, '👤 Профиль...');
                     } else if (state.isMaster) {
-                        navigateWithLoader('/HomeWork/master.html', '👤 Профиль...');
+                        navigateWithLoader('master', {}, '👤 Профиль...');
                     } else if (state.isAdmin) {
-                        navigateWithLoader('/HomeWork/admin.html', '👤 Админка...');
+                        navigateWithLoader('admin', {}, '👤 Админка...');
                     }
                 } else {
                     AuthUI.showLoginModal();
@@ -304,27 +355,19 @@ const BottomNav = (function() {
         
         if (state.isClient) {
             // Клиент - создаём заказ
-            if (window.location.pathname.includes('client.html')) {
+            if (window.CONFIG && CONFIG.isCurrentPage('client')) {
                 // Мы уже в кабинете клиента - переключаем на вкладку создания
                 document.dispatchEvent(new CustomEvent('switch-client-tab', { 
                     detail: { tab: 'new' } 
                 }));
             } else {
                 // Переходим в кабинет клиента с параметром
-                if (window.Loader) {
-                    Loader.navigateTo('/HomeWork/client.html?tab=new', '➕ Создание заказа...');
-                } else {
-                    window.location.href = '/HomeWork/client.html?tab=new';
-                }
+                navigateWithLoader('client', { tab: 'new' }, '➕ Создание заказа...');
             }
         } else if (state.isMaster) {
             // Мастер - поиск заказов
             Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
-            if (window.Loader) {
-                Loader.navigateTo('/HomeWork/?focus=search', '🔍 Поиск...');
-            } else {
-                window.location.href = '/HomeWork/?focus=search';
-            }
+            navigateWithLoader('home', { focus: 'search' }, '🔍 Поиск...');
         }
     }
     
@@ -341,7 +384,8 @@ const BottomNav = (function() {
     const api = {
         init,
         updateNavVisibility,
-        highlightActive
+        highlightActive,
+        navigateWithLoader
     };
 
     window.__BOTTOM_NAV_INITIALIZED__ = true;

@@ -1,84 +1,331 @@
-/* Отступы */
+/* ============================================
+   УТИЛИТЫ — ОТСТУПЫ, ВЫРАВНИВАНИЕ, ЦВЕТА
+   ============================================ */
+
+/* ===== ОТСТУПЫ MARGIN ===== */
+
+/* Все стороны */
 .m-0 { margin: 0 !important; }
+.m-1 { margin: 4px !important; }
+.m-2 { margin: 8px !important; }
+.m-3 { margin: 16px !important; }
+.m-4 { margin: 24px !important; }
+.m-5 { margin: 48px !important; }
+
+/* Горизонтальные */
+.mx-0 { margin-left: 0 !important; margin-right: 0 !important; }
+.mx-1 { margin-left: 4px !important; margin-right: 4px !important; }
+.mx-2 { margin-left: 8px !important; margin-right: 8px !important; }
+.mx-3 { margin-left: 16px !important; margin-right: 16px !important; }
+.mx-4 { margin-left: 24px !important; margin-right: 24px !important; }
+.mx-5 { margin-left: 48px !important; margin-right: 48px !important; }
+.mx-auto { margin-left: auto !important; margin-right: auto !important; }
+
+/* Вертикальные */
+.my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
+.my-1 { margin-top: 4px !important; margin-bottom: 4px !important; }
+.my-2 { margin-top: 8px !important; margin-bottom: 8px !important; }
+.my-3 { margin-top: 16px !important; margin-bottom: 16px !important; }
+.my-4 { margin-top: 24px !important; margin-bottom: 24px !important; }
+.my-5 { margin-top: 48px !important; margin-bottom: 48px !important; }
+
+/* Верх */
+.mt-0 { margin-top: 0 !important; }
 .mt-1 { margin-top: 4px !important; }
 .mt-2 { margin-top: 8px !important; }
 .mt-3 { margin-top: 16px !important; }
 .mt-4 { margin-top: 24px !important; }
 .mt-5 { margin-top: 48px !important; }
 
+/* Низ */
+.mb-0 { margin-bottom: 0 !important; }
 .mb-1 { margin-bottom: 4px !important; }
 .mb-2 { margin-bottom: 8px !important; }
 .mb-3 { margin-bottom: 16px !important; }
 .mb-4 { margin-bottom: 24px !important; }
 .mb-5 { margin-bottom: 48px !important; }
 
+/* Лево */
+.ms-0 { margin-left: 0 !important; }
 .ms-1 { margin-left: 4px !important; }
 .ms-2 { margin-left: 8px !important; }
 .ms-3 { margin-left: 16px !important; }
+.ms-4 { margin-left: 24px !important; }
+.ms-5 { margin-left: 48px !important; }
 
+/* Право */
+.me-0 { margin-right: 0 !important; }
 .me-1 { margin-right: 4px !important; }
 .me-2 { margin-right: 8px !important; }
 .me-3 { margin-right: 16px !important; }
+.me-4 { margin-right: 24px !important; }
+.me-5 { margin-right: 48px !important; }
 
-/* Паддинги */
+/* ===== ОТСТУПЫ PADDING ===== */
+
+/* Все стороны */
+.p-0 { padding: 0 !important; }
 .p-1 { padding: 4px !important; }
 .p-2 { padding: 8px !important; }
 .p-3 { padding: 16px !important; }
 .p-4 { padding: 24px !important; }
 .p-5 { padding: 48px !important; }
 
-/* Выравнивание */
+/* Горизонтальные */
+.px-0 { padding-left: 0 !important; padding-right: 0 !important; }
+.px-1 { padding-left: 4px !important; padding-right: 4px !important; }
+.px-2 { padding-left: 8px !important; padding-right: 8px !important; }
+.px-3 { padding-left: 16px !important; padding-right: 16px !important; }
+.px-4 { padding-left: 24px !important; padding-right: 24px !important; }
+.px-5 { padding-left: 48px !important; padding-right: 48px !important; }
+
+/* Вертикальные */
+.py-0 { padding-top: 0 !important; padding-bottom: 0 !important; }
+.py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
+.py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
+.py-3 { padding-top: 16px !important; padding-bottom: 16px !important; }
+.py-4 { padding-top: 24px !important; padding-bottom: 24px !important; }
+.py-5 { padding-top: 48px !important; padding-bottom: 48px !important; }
+
+/* Верх */
+.pt-0 { padding-top: 0 !important; }
+.pt-1 { padding-top: 4px !important; }
+.pt-2 { padding-top: 8px !important; }
+.pt-3 { padding-top: 16px !important; }
+.pt-4 { padding-top: 24px !important; }
+.pt-5 { padding-top: 48px !important; }
+
+/* Низ */
+.pb-0 { padding-bottom: 0 !important; }
+.pb-1 { padding-bottom: 4px !important; }
+.pb-2 { padding-bottom: 8px !important; }
+.pb-3 { padding-bottom: 16px !important; }
+.pb-4 { padding-bottom: 24px !important; }
+.pb-5 { padding-bottom: 48px !important; }
+
+/* Лево */
+.ps-0 { padding-left: 0 !important; }
+.ps-1 { padding-left: 4px !important; }
+.ps-2 { padding-left: 8px !important; }
+.ps-3 { padding-left: 16px !important; }
+.ps-4 { padding-left: 24px !important; }
+.ps-5 { padding-left: 48px !important; }
+
+/* Право */
+.pe-0 { padding-right: 0 !important; }
+.pe-1 { padding-right: 4px !important; }
+.pe-2 { padding-right: 8px !important; }
+.pe-3 { padding-right: 16px !important; }
+.pe-4 { padding-right: 24px !important; }
+.pe-5 { padding-right: 48px !important; }
+
+/* ===== ВЫРАВНИВАНИЕ ТЕКСТА ===== */
+
 .text-center { text-align: center !important; }
 .text-start { text-align: left !important; }
 .text-end { text-align: right !important; }
+.text-justify { text-align: justify !important; }
 
-.d-flex { display: flex !important; }
-.d-block { display: block !important; }
+/* ===== ТРАНСФОРМАЦИЯ ТЕКСТА ===== */
+
+.text-lowercase { text-transform: lowercase !important; }
+.text-uppercase { text-transform: uppercase !important; }
+.text-capitalize { text-transform: capitalize !important; }
+
+/* ===== ВЕС ТЕКСТА ===== */
+
+.fw-light { font-weight: 300 !important; }
+.fw-normal { font-weight: 400 !important; }
+.fw-medium { font-weight: 500 !important; }
+.fw-semibold { font-weight: 600 !important; }
+.fw-bold { font-weight: 700 !important; }
+.fw-extrabold { font-weight: 800 !important; }
+.fw-black { font-weight: 900 !important; }
+
+/* ===== РАЗМЕР ТЕКСТА ===== */
+
+.fs-1 { font-size: 2.5rem !important; }
+.fs-2 { font-size: 2rem !important; }
+.fs-3 { font-size: 1.75rem !important; }
+.fs-4 { font-size: 1.5rem !important; }
+.fs-5 { font-size: 1.25rem !important; }
+.fs-6 { font-size: 1rem !important; }
+.fs-7 { font-size: 0.875rem !important; }
+.fs-8 { font-size: 0.75rem !important; }
+
+/* ===== ЦВЕТА ТЕКСТА ===== */
+
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-soft { color: var(--text-soft) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-accent { color: var(--accent) !important; }
+.text-urgent { color: var(--accent-urgent) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-info { color: var(--info) !important; }
+.text-white { color: #ffffff !important; }
+.text-black { color: #000000 !important; }
+
+/* ===== ЦВЕТА ФОНА ===== */
+
+.bg-primary { background: var(--text-primary) !important; }
+.bg-secondary { background: var(--text-secondary) !important; }
+.bg-soft { background: var(--bg-soft) !important; }
+.bg-white { background: var(--bg-white) !important; }
+.bg-accent { background: var(--accent) !important; }
+.bg-accent-soft { background: var(--accent-soft) !important; }
+.bg-urgent { background: var(--accent-urgent) !important; }
+.bg-success { background: var(--success) !important; }
+.bg-success-light { background: var(--success-light) !important; }
+.bg-danger { background: var(--danger) !important; }
+.bg-danger-light { background: var(--danger-light) !important; }
+.bg-warning { background: var(--warning) !important; }
+.bg-warning-light { background: var(--warning-light) !important; }
+.bg-info { background: var(--info) !important; }
+.bg-info-light { background: var(--info-light) !important; }
+.bg-transparent { background: transparent !important; }
+
+/* ===== ГРАНИЦЫ ===== */
+
+.border { border: 1px solid var(--border) !important; }
+.border-0 { border: none !important; }
+.border-top { border-top: 1px solid var(--border) !important; }
+.border-bottom { border-bottom: 1px solid var(--border) !important; }
+.border-start { border-left: 1px solid var(--border) !important; }
+.border-end { border-right: 1px solid var(--border) !important; }
+
+.border-primary { border-color: var(--text-primary) !important; }
+.border-accent { border-color: var(--accent) !important; }
+.border-urgent { border-color: var(--accent-urgent) !important; }
+.border-success { border-color: var(--success) !important; }
+.border-danger { border-color: var(--danger) !important; }
+.border-warning { border-color: var(--warning) !important; }
+
+.border-2 { border-width: 2px !important; }
+.border-3 { border-width: 3px !important; }
+.border-4 { border-width: 4px !important; }
+
+/* ===== СКРУГЛЕНИЯ ===== */
+
+.rounded-0 { border-radius: 0 !important; }
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded-md { border-radius: var(--radius-md) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-xl { border-radius: var(--radius-xl) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+.rounded-circle { border-radius: 50% !important; }
+
+/* ===== ОТОБРАЖЕНИЕ ===== */
+
+.d-none { display: none !important; }
 .d-inline { display: inline !important; }
 .d-inline-block { display: inline-block !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.d-inline-flex { display: inline-flex !important; }
+.d-grid { display: grid !important; }
 
+/* ===== ФЛЕКС ===== */
+
+.flex-row { flex-direction: row !important; }
 .flex-column { flex-direction: column !important; }
+.flex-row-reverse { flex-direction: row-reverse !important; }
+.flex-column-reverse { flex-direction: column-reverse !important; }
+
 .flex-wrap { flex-wrap: wrap !important; }
+.flex-nowrap { flex-wrap: nowrap !important; }
+.flex-wrap-reverse { flex-wrap: wrap-reverse !important; }
+
+.flex-fill { flex: 1 1 auto !important; }
+.flex-grow-0 { flex-grow: 0 !important; }
+.flex-grow-1 { flex-grow: 1 !important; }
+.flex-shrink-0 { flex-shrink: 0 !important; }
+.flex-shrink-1 { flex-shrink: 1 !important; }
+
+/* ===== ВЫРАВНИВАНИЕ ПО ГОРИЗОНТАЛИ ===== */
+
 .justify-content-start { justify-content: flex-start !important; }
 .justify-content-end { justify-content: flex-end !important; }
 .justify-content-center { justify-content: center !important; }
 .justify-content-between { justify-content: space-between !important; }
+.justify-content-around { justify-content: space-around !important; }
+.justify-content-evenly { justify-content: space-evenly !important; }
+
+/* ===== ВЫРАВНИВАНИЕ ПО ВЕРТИКАЛИ ===== */
+
 .align-items-start { align-items: flex-start !important; }
 .align-items-end { align-items: flex-end !important; }
 .align-items-center { align-items: center !important; }
+.align-items-baseline { align-items: baseline !important; }
+.align-items-stretch { align-items: stretch !important; }
 
+/* ===== ВЫРАВНИВАНИЕ СЕБЯ ===== */
+
+.align-self-start { align-self: flex-start !important; }
+.align-self-end { align-self: flex-end !important; }
+.align-self-center { align-self: center !important; }
+.align-self-baseline { align-self: baseline !important; }
+.align-self-stretch { align-self: stretch !important; }
+
+/* ===== ОТСТУПЫ МЕЖДУ ЭЛЕМЕНТАМИ ===== */
+
+.gap-0 { gap: 0 !important; }
 .gap-1 { gap: 4px !important; }
 .gap-2 { gap: 8px !important; }
 .gap-3 { gap: 16px !important; }
 .gap-4 { gap: 24px !important; }
+.gap-5 { gap: 48px !important; }
 
-/* Цвета */
-.text-primary { color: var(--text-primary) !important; }
-.text-secondary { color: var(--text-secondary) !important; }
-.text-muted { color: var(--text-muted) !important; }
-.text-accent { color: var(--accent) !important; }
-.text-success { color: var(--success) !important; }
-.text-danger { color: var(--danger) !important; }
-.text-warning { color: var(--warning) !important; }
+/* ===== ШИРИНА ===== */
 
-.bg-light { background: var(--bg-light) !important; }
-.bg-white { background: var(--bg-white) !important; }
-.bg-accent { background: var(--accent) !important; }
-
-/* Границы */
-.border { border: 1px solid var(--border) !important; }
-.border-top { border-top: 1px solid var(--border) !important; }
-.border-bottom { border-bottom: 1px solid var(--border) !important; }
-.rounded-sm { border-radius: var(--radius-sm) !important; }
-.rounded-md { border-radius: var(--radius-md) !important; }
-.rounded-lg { border-radius: var(--radius-lg) !important; }
-.rounded-full { border-radius: var(--radius-full) !important; }
-
-/* Ширина */
+.w-25 { width: 25% !important; }
+.w-50 { width: 50% !important; }
+.w-75 { width: 75% !important; }
 .w-100 { width: 100% !important; }
-.h-100 { height: 100% !important; }
+.w-auto { width: auto !important; }
+.w-fit { width: fit-content !important; }
 
-/* Утилиты для текста */
+/* ===== ВЫСОТА ===== */
+
+.h-25 { height: 25% !important; }
+.h-50 { height: 50% !important; }
+.h-75 { height: 75% !important; }
+.h-100 { height: 100% !important; }
+.h-auto { height: auto !important; }
+
+/* ===== ПОЗИЦИОНИРОВАНИЕ ===== */
+
+.position-static { position: static !important; }
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.position-fixed { position: fixed !important; }
+.position-sticky { position: sticky !important; }
+
+.top-0 { top: 0 !important; }
+.bottom-0 { bottom: 0 !important; }
+.start-0 { left: 0 !important; }
+.end-0 { right: 0 !important; }
+
+/* ===== ПЕРЕПОЛНЕНИЕ ===== */
+
+.overflow-auto { overflow: auto !important; }
+.overflow-hidden { overflow: hidden !important; }
+.overflow-visible { overflow: visible !important; }
+.overflow-scroll { overflow: scroll !important; }
+.overflow-x-auto { overflow-x: auto !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+.overflow-x-hidden { overflow-x: hidden !important; }
+.overflow-y-hidden { overflow-y: hidden !important; }
+
+/* ===== ВИДИМОСТЬ ===== */
+
+.visible { visibility: visible !important; }
+.invisible { visibility: hidden !important; }
+
+/* ===== УТИЛИТЫ ДЛЯ ТЕКСТА ===== */
+
 .text-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -90,18 +337,91 @@
     word-break: break-word;
 }
 
-/* Адаптивные утилиты */
-@media (max-width: 768px) {
-    .w-sm-auto { width: auto !important; }
-    .w-sm-100 { width: 100% !important; }
-    .d-sm-none { display: none !important; }
-    .d-sm-inline { display: inline !important; }
-    .d-sm-block { display: block !important; }
-    .d-sm-flex { display: flex !important; }
+.text-nowrap {
+    white-space: nowrap !important;
 }
 
+.text-break {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* ===== ТЕНИ ===== */
+
+.shadow-none { box-shadow: none !important; }
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-xl { box-shadow: var(--shadow-xl) !important; }
+.shadow-glow { box-shadow: var(--shadow-glow) !important; }
+
+/* ===== ПРОЗРАЧНОСТЬ ===== */
+
+.opacity-0 { opacity: 0 !important; }
+.opacity-25 { opacity: 0.25 !important; }
+.opacity-50 { opacity: 0.5 !important; }
+.opacity-75 { opacity: 0.75 !important; }
+.opacity-100 { opacity: 1 !important; }
+
+/* ===== КУРСОР ===== */
+
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }
+.cursor-wait { cursor: wait !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
+.cursor-grab { cursor: grab !important; }
+
+/* ===== ПОЛЬЗОВАТЕЛЬСКИЙ ВЫБОР ===== */
+
+.user-select-none { user-select: none !important; }
+.user-select-auto { user-select: auto !important; }
+.user-select-all { user-select: all !important; }
+
+/* ===== УКАЗАТЕЛЬ СОБЫТИЙ ===== */
+
+.pointer-events-none { pointer-events: none !important; }
+.pointer-events-auto { pointer-events: auto !important; }
+
+/* ===== АДАПТИВНЫЕ УТИЛИТЫ ===== */
+
+/* Для планшетов */
+@media (min-width: 768px) and (max-width: 991px) {
+    .w-md-100 { width: 100% !important; }
+    .w-md-auto { width: auto !important; }
+    .d-md-none { display: none !important; }
+    .d-md-block { display: block !important; }
+    .d-md-flex { display: flex !important; }
+    .text-md-center { text-align: center !important; }
+}
+
+/* Для мобилок */
+@media (max-width: 768px) {
+    .w-sm-100 { width: 100% !important; }
+    .w-sm-auto { width: auto !important; }
+    .d-sm-none { display: none !important; }
+    .d-sm-block { display: block !important; }
+    .d-sm-flex { display: flex !important; }
+    .text-sm-center { text-align: center !important; }
+    .flex-sm-column { flex-direction: column !important; }
+}
+
+/* Для маленьких мобилок */
 @media (max-width: 480px) {
-    .w-xs-auto { width: auto !important; }
     .w-xs-100 { width: 100% !important; }
+    .w-xs-auto { width: auto !important; }
     .d-xs-none { display: none !important; }
+    .d-xs-block { display: block !important; }
+    .d-xs-flex { display: flex !important; }
+    .text-xs-center { text-align: center !important; }
+    .flex-xs-column { flex-direction: column !important; }
+    .gap-xs-1 { gap: 4px !important; }
+    .gap-xs-2 { gap: 8px !important; }
+}
+
+/* ===== ПЕЧАТЬ ===== */
+
+@media print {
+    .d-print-none { display: none !important; }
+    .d-print-block { display: block !important; }
+    .d-print-inline { display: inline !important; }
 }

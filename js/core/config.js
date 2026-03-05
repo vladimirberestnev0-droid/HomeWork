@@ -1,5 +1,5 @@
 // ============================================
-// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ
+// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ (ИСПРАВЛЕНО)
 // ============================================
 
 const CONFIG = (function() {
@@ -12,8 +12,17 @@ const CONFIG = (function() {
     const isLocal = window.location.hostname === 'localhost' || 
                     window.location.hostname === '127.0.0.1';
     
-    // Базовый путь для GitHub Pages
-    const BASE_PATH = '/HomeWork/';
+    // Базовый путь для GitHub Pages (автоопределение)
+    const BASE_PATH = (() => {
+        const path = window.location.pathname;
+        if (path.includes('/HomeWork/')) {
+            return '/HomeWork/';
+        }
+        if (path.includes('/svoy-master/')) {
+            return '/svoy-master/';
+        }
+        return '/';
+    })();
     
     // Firebase конфигурация
     const firebase = {
@@ -25,6 +34,24 @@ const CONFIG = (function() {
         appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
     };
 
+    // ===== УНИФИЦИРОВАННЫЕ URL =====
+    const urls = {
+        // Основные страницы
+        home: BASE_PATH,
+        index: BASE_PATH + 'index.html',
+        client: BASE_PATH + 'client.html',
+        master: BASE_PATH + 'masters.html', // ИСПРАВЛЕНО: было master.html
+        chat: BASE_PATH + 'chat.html',
+        admin: BASE_PATH + 'admin.html',
+        
+        // Для редиректов
+        login: BASE_PATH + '?auth=login',
+        register: BASE_PATH + '?auth=register',
+        
+        // API маршруты (для будущего использования)
+        api: isLocal ? 'http://localhost:3000/api/' : '/api/'
+    };
+
     // Настройки приложения
     const app = {
         name: 'СВОЙ МАСТЕР 86',
@@ -32,24 +59,19 @@ const CONFIG = (function() {
         description: 'Мастера рядом в ХМАО',
         supportEmail: 'support@svoymaster86.ru',
         adminUid: "dUUNkDJbXmN3efOr3JPKOyBrc8M2",
-        version: '2.0.0',
+        version: '2.1.0',
         
-        // ===== УНИФИЦИРОВАННЫЕ URL =====
-        urls: {
-            home: BASE_PATH,
-            client: BASE_PATH + 'client.html',
-            master: BASE_PATH + 'masters.html',
-            chat: BASE_PATH + 'chat.html',
-            admin: BASE_PATH + 'admin.html',
-            index: BASE_PATH + 'index.html'
-        },
+        // URL-ы (для доступа через ключи)
+        urls: urls,
         
         // Пагинация
         pagination: {
             ordersPerPage: 20,
             ordersInitial: 7,
             ordersLoadMore: 5,
-            mastersPerPage: 10
+            mastersPerPage: 10,
+            chatsPerPage: 30,
+            messagesPerPage: 50
         },
 
         // Лимиты
@@ -61,7 +83,11 @@ const CONFIG = (function() {
             messageCooldown: 1000, // 1 секунда между сообщениями
             maxMessageLength: 5000,
             minOrderPrice: 500,
-            maxOrderPrice: 1000000
+            maxOrderPrice: 1000000,
+            maxTitleLength: 100,
+            maxDescriptionLength: 1000,
+            maxCommentLength: 500,
+            maxAddressLength: 200
         },
 
         // Таймауты
@@ -70,7 +96,14 @@ const CONFIG = (function() {
             sessionCheck: 30000,
             firebaseInit: 10000,
             authWait: 5000,
-            offlineCheck: 3000 // Проверка офлайн режима
+            offlineCheck: 3000,
+            cacheTTL: {
+                orders: 5 * 60 * 1000, // 5 минут
+                masters: 10 * 60 * 1000, // 10 минут
+                chats: 5 * 60 * 1000,
+                messages: 2 * 60 * 1000,
+                unread: 30 * 1000 // 30 секунд
+            }
         },
 
         // Город по умолчанию
@@ -113,29 +146,77 @@ const CONFIG = (function() {
         isLocal,
         mode: isLocal ? 'development' : 'production',
         
-        // Хелперы
+        // ===== ХЕЛПЕРЫ ДЛЯ URL =====
+        getUrl: (key, params = {}) => {
+            let url = app.urls[key] || app.urls.home;
+            
+            // Добавляем параметры если есть
+            if (Object.keys(params).length > 0) {
+                const urlObj = new URL(url, window.location.origin);
+                Object.entries(params).forEach(([key, value]) => {
+                    urlObj.searchParams.set(key, value);
+                });
+                return urlObj.pathname + urlObj.search;
+            }
+            
+            return url;
+        },
+        
         getApiUrl: (path) => {
-            return isLocal ? `http://localhost:3000/api/${path}` : `/api/${path}`;
+            return app.urls.api + path;
         },
-        
-        getUrl: (key) => {
-            return app.urls[key] || app.urls.home;
-        },
-        
-        isProduction: () => !isLocal,
-        isDevelopment: () => isLocal,
-        
-        // Проверка офлайн режима
-        isOnline: () => navigator.onLine,
         
         // Получение базового пути
-        getBasePath: () => BASE_PATH
+        getBasePath: () => BASE_PATH,
+        
+        // Проверка текущего URL
+        isCurrentPage: (pageKey) => {
+            const targetUrl = app.urls[pageKey];
+            if (!targetUrl) return false;
+            
+            const currentPath = window.location.pathname;
+            // Убираем базовый путь для сравнения
+            const relativePath = currentPath.replace(BASE_PATH, '');
+            const targetPath = targetUrl.replace(BASE_PATH, '');
+            
+            return relativePath === targetPath || 
+                   (pageKey === 'home' && (relativePath === '' || relativePath === 'index.html'));
+        },
+        
+        // Построение полного URL
+        buildUrl: (path, params = {}) => {
+            let url = path.startsWith('http') ? path : BASE_PATH + path.replace(/^\//, '');
+            
+            if (Object.keys(params).length > 0) {
+                const urlObj = new URL(url, window.location.origin);
+                Object.entries(params).forEach(([key, value]) => {
+                    urlObj.searchParams.set(key, value);
+                });
+                return urlObj.pathname + urlObj.search;
+            }
+            
+            return url;
+        },
+        
+        // ===== ПРОВЕРКИ =====
+        isProduction: () => !isLocal,
+        isDevelopment: () => isLocal,
+        isOnline: () => navigator.onLine,
+        
+        // ===== КЭШИРОВАНИЕ =====
+        getCacheTTL: (type) => {
+            return app.timeouts.cacheTTL[type] || app.timeouts.cacheTTL.orders;
+        }
     };
 
     // Заморозка объекта (нельзя изменить)
     window.__CONFIG_INITIALIZED__ = true;
     
-    console.log(`✅ Конфиг загружен [${config.mode}]`);
+    console.log(`✅ Конфиг загружен [${config.mode}]`, {
+        basePath: BASE_PATH,
+        urls: app.urls
+    });
+    
     return Object.freeze(config);
 })();
 

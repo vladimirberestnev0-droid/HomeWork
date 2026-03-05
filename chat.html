@@ -8,82 +8,100 @@
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#E67A4B">
     
+    <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/base.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/chat.css">
-    <link rel="stylesheet" href="/HomeWork/css/themes/dark.css">
-    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
 <body>
     <div class="chat-container">
         <!-- Шапка чата -->
-        <div class="chat-header p-3 border-bottom d-flex align-items-center gap-3">
-            <a href="javascript:history.back()" class="back-btn">
-                <i class="fas fa-arrow-left fa-lg"></i>
+        <div class="chat-header">
+            <a href="javascript:history.back()" class="chat-back-btn">
+                <i class="fas fa-arrow-left"></i>
             </a>
-            <div class="chat-avatar">
-                <i class="fas fa-user-circle fa-2x" style="color: var(--accent);"></i>
+            <div class="chat-user-info">
+                <div class="chat-user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="chat-user-text">
+                    <div class="chat-user-name">
+                        <span id="chatPartnerName">Загрузка...</span>
+                        <span class="chat-order-ref" id="chatOrderRef"></span>
+                    </div>
+                    <div class="chat-user-status">
+                        <span class="status-dot" id="userStatus"></span>
+                        <span id="chatPartnerRole">Загрузка...</span>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h5 id="chatPartnerName" class="mb-0">Загрузка...</h5>
-                <small id="chatPartnerRole" class="text-secondary"></small>
+            <div class="chat-header-actions">
+                <button class="chat-header-btn" id="chatMenuBtn" title="Меню">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
             </div>
         </div>
 
         <!-- Закреплённый заказ -->
-        <div id="pinnedOrder" class="p-2 bg-light border-bottom d-none">
+        <div id="pinnedOrder" class="p-3 bg-soft border-bottom d-none">
             <small>
-                <i class="fas fa-clipboard-list me-1"></i>
+                <i class="fas fa-clipboard-list me-1 text-accent"></i>
                 <span id="pinnedTitle"></span> · <span id="pinnedPrice"></span> ₽
             </small>
         </div>
 
         <!-- Сообщения -->
-        <div id="messagesArea" class="messages-area p-3" style="height: 60vh; overflow-y: auto;"></div>
+        <div id="messagesArea" class="messages-area"></div>
+
+        <!-- Индикатор печатает... -->
+        <div id="typingIndicator" class="typing-indicator d-none">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
 
         <!-- Поле ввода -->
-        <div class="chat-input p-3 border-top">
-            <div class="d-flex gap-2">
-                <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.txt">
-                <button class="btn btn-outline-secondary" id="attachButton" title="Прикрепить файл">
-                    <i class="fas fa-paperclip"></i>
-                </button>
-                <input type="text" id="messageInput" class="form-control" placeholder="Сообщение...">
-                <button class="btn btn-primary" id="sendButton">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+        <div class="chat-footer">
+            <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+            <button class="chat-attach-btn" id="attachButton" title="Прикрепить файл">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <div class="chat-input-wrapper">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение...">
             </div>
-            <div id="filePreview" class="d-flex gap-2 mt-2 flex-wrap d-none"></div>
+            <button class="chat-send-btn" id="sendButton" title="Отправить">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
+
+        <!-- Превью файлов -->
+        <div id="filePreview" class="file-preview-container d-none"></div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ (только для мобильных) -->
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
         <button class="nav-item" data-page="home">
-            <span>🏠</span>
-            <span>Главная</span>
+            <span class="nav-icon"><i class="fas fa-home"></i></span>
+            <span class="nav-label">Главная</span>
         </button>
         <button class="nav-item" data-page="search">
-            <span>🔍</span>
-            <span>Поиск</span>
+            <span class="nav-icon"><i class="fas fa-search"></i></span>
+            <span class="nav-label">Поиск</span>
         </button>
         <button class="nav-item" data-page="favorites">
-            <span>❤️</span>
-            <span>Избранное</span>
+            <span class="nav-icon"><i class="fas fa-heart"></i></span>
+            <span class="nav-label">Избранное</span>
         </button>
         <button class="nav-item" data-page="orders">
-            <span>📋</span>
-            <span>Заказы</span>
+            <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+            <span class="nav-label">Заказы</span>
         </button>
         <button class="nav-item" data-page="profile">
-            <span>👤</span>
-            <span>Профиль</span>
+            <span class="nav-icon"><i class="fas fa-user"></i></span>
+            <span class="nav-label">Профиль</span>
         </button>
     </div>
 
@@ -100,6 +118,7 @@
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
+    <script src="/HomeWork/js/core/loader.js"></script>
     
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
@@ -107,5 +126,6 @@
     
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
+    <script src="/HomeWork/js/pages/chat.js"></script>
 </body>
 </html>

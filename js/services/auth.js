@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ С КЭШИРОВАНИЕМ И ЛОУДЕРОМ
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО - проверка бана, редиректы)
 // ============================================
 
 const Auth = (function() {
@@ -7,20 +7,23 @@ const Auth = (function() {
         return window.Auth;
     }
 
+    // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let currentUser = null;
     let currentUserData = null;
     let authListeners = [];
     let unsubscribe = null;
     let initAttempts = 0;
+    let banCheckInterval = null;
     const MAX_ATTEMPTS = 5;
     let isInitialized = false;
     
+    // Кэш пользователей
     const userCache = new Map();
-    const USER_CACHE_TTL = 5 * 60 * 1000;
+    const USER_CACHE_TTL = 5 * 60 * 1000; // 5 минут
 
     // ===== ПОЛУЧЕНИЕ КОНСТАНТ БЕЗОПАСНО =====
     function getAdminUid() {
-        return window.ADMIN_UID || CONFIG?.adminUid || null;
+        return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
 
     function getUserRoleConstants() {
@@ -55,6 +58,71 @@ const Auth = (function() {
             userCache.delete(uid);
         } else {
             userCache.clear();
+        }
+    }
+
+    // ===== ПРОВЕРКА БАНА =====
+    async function checkBanStatus(user) {
+        if (!user || !window.db) return false;
+        
+        try {
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            
+            if (userDoc.exists && userDoc.data().banned === true) {
+                console.warn('🚫 Пользователь забанен, принудительный выход');
+                
+                // Показываем уведомление
+                if (window.Utils) {
+                    Utils.showError('Ваш аккаунт заблокирован');
+                }
+                
+                // Выходим из системы
+                await auth.signOut();
+                
+                // Очищаем данные
+                currentUser = null;
+                currentUserData = null;
+                
+                // Уведомляем слушателей
+                notifyListeners();
+                
+                // Редирект на главную
+                setTimeout(() => {
+                    if (window.CONFIG) {
+                        window.location.href = CONFIG.getUrl('home');
+                    } else {
+                        window.location.href = '/';
+                    }
+                }, 1500);
+                
+                return true; // Был забанен
+            }
+            
+            return false; // Не забанен
+        } catch (error) {
+            console.error('Ошибка проверки бана:', error);
+            return false;
+        }
+    }
+
+    // ===== ПЕРИОДИЧЕСКАЯ ПРОВЕРКА БАНА =====
+    function startBanCheck(user) {
+        if (banCheckInterval) {
+            clearInterval(banCheckInterval);
+        }
+        
+        // Проверяем бан каждые 30 секунд
+        banCheckInterval = setInterval(async () => {
+            if (currentUser && window.navigator.onLine) {
+                await checkBanStatus(currentUser);
+            }
+        }, 30000);
+    }
+
+    function stopBanCheck() {
+        if (banCheckInterval) {
+            clearInterval(banCheckInterval);
+            banCheckInterval = null;
         }
     }
 
@@ -93,19 +161,36 @@ const Auth = (function() {
             
             if (user) {
                 try {
+                    // Сначала проверяем бан
+                    const isBanned = await checkBanStatus(user);
+                    if (isBanned) {
+                        // Если забанен, данные не загружаем
+                        return;
+                    }
+                    
+                    // Загружаем данные пользователя
                     const cachedData = getUserFromCache(user.uid);
                     if (cachedData) {
                         console.log(`📦 Данные из кэша: ${cachedData?.name || 'Без имени'}`);
                         currentUserData = cachedData;
+                        
+                        // В фоне обновляем данные
+                        setTimeout(() => refreshUserData(user.uid), 1000);
                     } else {
                         await loadUserData(user.uid);
                     }
+                    
+                    // Запускаем периодическую проверку бана
+                    startBanCheck(user);
+                    
                 } catch (error) {
                     console.error('❌ Ошибка загрузки данных:', error);
                     currentUserData = null;
                 }
             } else {
                 currentUserData = null;
+                stopBanCheck();
+                
                 if (previousUser) {
                     clearUserCache(previousUser.uid);
                 }
@@ -121,7 +206,34 @@ const Auth = (function() {
 
         initTheme();
         isInitialized = true;
-        console.log('✅ Auth инициализирован (с кэшированием)');
+        console.log('✅ Auth инициализирован (с защитой от бана)');
+    }
+
+    // ===== ОБНОВЛЕНИЕ ДАННЫХ В ФОНЕ =====
+    async function refreshUserData(uid) {
+        try {
+            if (!window.db || !window.navigator.onLine) return;
+            
+            const userDoc = await db.collection('users').doc(uid).get();
+            if (userDoc.exists) {
+                const freshData = userDoc.data();
+                
+                // Проверяем бан при фоновом обновлении
+                if (freshData.banned) {
+                    await checkBanStatus({ uid });
+                    return;
+                }
+                
+                currentUserData = freshData;
+                setUserToCache(uid, freshData);
+                notifyListeners();
+                updateUI();
+                
+                console.log('📦 Данные обновлены в фоне');
+            }
+        } catch (error) {
+            console.error('Ошибка фонового обновления:', error);
+        }
     }
 
     async function loadUserData(uid) {
@@ -137,12 +249,6 @@ const Auth = (function() {
                 console.log(`📦 Данные загружены из Firestore: ${currentUserData?.name || 'Без имени'}`);
                 
                 setUserToCache(uid, currentUserData);
-                
-                if (currentUserData.banned) {
-                    console.warn('🚫 Пользователь забанен');
-                    await logout(true);
-                    Utils.showError('Ваш аккаунт заблокирован');
-                }
             } else {
                 console.log('📦 Документ не найден, создаём...');
                 const roleConst = getUserRoleConstants();
@@ -153,7 +259,11 @@ const Auth = (function() {
                     rating: 0,
                     reviews: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    banned: false
+                    banned: false,
+                    settings: {
+                        notifications: true,
+                        theme: localStorage.getItem('theme') || 'dark'
+                    }
                 };
                 
                 await db.collection('users').doc(uid).set(currentUserData);
@@ -182,19 +292,31 @@ const Auth = (function() {
             }
         }
         
+        // Обработка редиректа после логина
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
+        
         if (redirect) {
             setTimeout(() => {
-                if (window.Loader) {
-                    Loader.navigateTo(decodeURIComponent(redirect), 'Перенаправляем...');
-                } else {
-                    window.location.href = decodeURIComponent(redirect);
+                try {
+                    const decodedUrl = decodeURIComponent(redirect);
+                    
+                    // Проверяем, не ведёт ли редирект на текущую страницу (защита от цикла)
+                    if (decodedUrl !== window.location.href && !decodedUrl.includes('auth=login')) {
+                        if (window.Loader) {
+                            Loader.navigateTo(decodedUrl, 'Перенаправляем...');
+                        } else {
+                            window.location.href = decodedUrl;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Ошибка редиректа:', e);
                 }
             }, 500);
         }
     }
 
+    // ===== ГЕТТЕРЫ =====
     function getUser() { return currentUser; }
     function getUserData() { return currentUserData; }
     function isAuthenticated() { return !!currentUser; }
@@ -225,6 +347,7 @@ const Auth = (function() {
         return roleConst?.getDisplayName ? roleConst.getDisplayName(role) : role;
     }
 
+    // ===== РЕГИСТРАЦИЯ =====
     async function register(email, password, userData = {}) {
         if (window.Loader) {
             Loader.show('Регистрация...');
@@ -267,7 +390,7 @@ const Auth = (function() {
                 banned: false,
                 settings: {
                     notifications: true,
-                    theme: 'dark'
+                    theme: localStorage.getItem('theme') || 'dark'
                 }
             };
 
@@ -305,6 +428,7 @@ const Auth = (function() {
         }
     }
 
+    // ===== ВХОД =====
     async function login(email, password) {
         if (window.Loader) {
             Loader.show('Вход в систему...');
@@ -321,10 +445,10 @@ const Auth = (function() {
             
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             
-            const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
-            if (userDoc.exists && userDoc.data().banned) {
-                await auth.signOut();
-                throw new Error('Ваш аккаунт заблокирован');
+            // Проверяем бан сразу после входа
+            const isBanned = await checkBanStatus(userCredential.user);
+            if (isBanned) {
+                return { success: false, error: 'Аккаунт заблокирован' };
             }
             
             Utils.showSuccess('Вход выполнен успешно!');
@@ -360,7 +484,7 @@ const Auth = (function() {
         }
     }
 
-    // ===== ИСПРАВЛЕННЫЙ LOGOUT С УМНЫМ РЕДИРЕКТОМ =====
+    // ===== ВЫХОД =====
     async function logout(silent = false) {
         if (!silent && window.Loader) {
             Loader.show('Выход...');
@@ -370,6 +494,9 @@ const Auth = (function() {
             if (!window.auth) {
                 throw new Error('Firebase не инициализирован');
             }
+            
+            // Останавливаем проверку бана
+            stopBanCheck();
             
             if (currentUser) {
                 clearUserCache(currentUser.uid);
@@ -387,7 +514,11 @@ const Auth = (function() {
                 
                 setTimeout(() => {
                     // Всегда на главную после выхода
-                    window.location.href = '/HomeWork/';
+                    if (window.CONFIG) {
+                        window.location.href = CONFIG.getUrl('home');
+                    } else {
+                        window.location.href = '/';
+                    }
                 }, 1000);
             }
             
@@ -404,6 +535,7 @@ const Auth = (function() {
         }
     }
 
+    // ===== СЛУШАТЕЛИ =====
     function onAuthChange(callback) {
         if (typeof callback === 'function') {
             authListeners.push(callback);
@@ -442,6 +574,7 @@ const Auth = (function() {
         });
     }
 
+    // ===== ОБНОВЛЕНИЕ UI =====
     function updateUI() {
         const isAuth = !!currentUser;
         const isMasterRole = isMaster();
@@ -486,12 +619,14 @@ const Auth = (function() {
         }
     }
 
+    // ===== ТЕМА =====
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.body.classList.add('dark-theme');
             updateThemeIcon(true);
         } else {
+            document.body.classList.remove('dark-theme');
             updateThemeIcon(false);
         }
     }
@@ -515,6 +650,7 @@ const Auth = (function() {
         }
     }
 
+    // ===== ОБНОВЛЕНИЕ ПРОФИЛЯ =====
     async function updateProfile(data) {
         if (window.Loader) {
             Loader.show('Обновляем профиль...');
@@ -552,6 +688,7 @@ const Auth = (function() {
         }
     }
 
+    // ===== СМЕНА ПАРОЛЯ =====
     async function changePassword(oldPassword, newPassword) {
         if (window.Loader) {
             Loader.show('Меняем пароль...');
@@ -594,16 +731,21 @@ const Auth = (function() {
         }
     }
 
+    // ===== ОЧИСТКА =====
     function cleanup() {
         if (unsubscribe) {
             unsubscribe();
             unsubscribe = null;
         }
+        
+        stopBanCheck();
+        
         authListeners = [];
         isInitialized = false;
         userCache.clear();
     }
 
+    // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
         getUser,
@@ -623,11 +765,15 @@ const Auth = (function() {
         updateProfile,
         changePassword,
         cleanup,
-        clearUserCache
+        clearUserCache,
+        
+        // Экспортируем для внутреннего использования
+        getUserFromCache,
+        setUserToCache
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (с кэшированием и лоудером)');
+    console.log('✅ Auth сервис загружен (с защитой от бана)');
     
     return Object.freeze(api);
 })();

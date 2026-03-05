@@ -1,12 +1,13 @@
 /**
- * client.js — логика кабинета клиента
- * Версия 3.0 с поддержкой новой навигации и кнопкой выхода
+ * client.js — логика кабинета клиента (ИСПРАВЛЕНО - завершение заказов)
+ * Версия 3.1 с поддержкой подтверждения завершения
  */
 
 (function() {
     // ===== СОСТОЯНИЕ =====
     let currentFilter = 'all';
     let allOrders = [];
+    let currentOrderForReview = null;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
@@ -37,7 +38,13 @@
                     checkUrlParams();
                 } else {
                     Utils.showNotification('❌ Эта страница только для клиентов', 'warning');
-                    setTimeout(() => window.location.href = '/HomeWork/', 2000);
+                    setTimeout(() => {
+                        if (window.CONFIG) {
+                            window.location.href = CONFIG.getUrl('home');
+                        } else {
+                            window.location.href = '/';
+                        }
+                    }, 2000);
                 }
             } else if (state.isAuthenticated && !state.userData) {
                 console.log('⏳ Ожидание данных...');
@@ -48,7 +55,41 @@
         });
 
         initEventListeners();
+        initReviewModal();
     });
+
+    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
+    function initReviewModal() {
+        // Обработчики звезд
+        document.querySelectorAll('#reviewModal .star').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                window.currentRating = rating;
+                
+                document.querySelectorAll('#reviewModal .star').forEach((s, i) => {
+                    if (i < rating) s.classList.add('active');
+                    else s.classList.remove('active');
+                });
+            });
+        });
+
+        // Кнопка отправки
+        const submitBtn = document.getElementById('submitReview');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', submitReview);
+        }
+
+        // Очистка при закрытии
+        const modal = document.getElementById('reviewModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.getElementById('reviewText').value = '';
+                document.querySelectorAll('#reviewModal .star').forEach(s => s.classList.remove('active'));
+                window.currentRating = 0;
+                window.currentOrderForReview = null;
+            });
+        }
+    }
 
     // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
     function checkUrlParams() {
@@ -79,7 +120,13 @@
             if (emailEl) emailEl.textContent = userData.email || '';
             
             const ratingEl = $('clientRating');
-            if (ratingEl) ratingEl.innerHTML = '★'.repeat(5) + ' ' + (userData.rating || 0).toFixed(1);
+            if (ratingEl) {
+                const rating = userData.rating || 0;
+                const stars = '★'.repeat(Math.floor(rating)) + 
+                             (rating % 1 >= 0.5 ? '½' : '') + 
+                             '☆'.repeat(5 - Math.ceil(rating));
+                ratingEl.innerHTML = `${stars} ${rating.toFixed(1)}`;
+            }
             
             const reviewsEl = $('clientReviews');
             if (reviewsEl) reviewsEl.textContent = userData.reviews || 0;
@@ -112,7 +159,7 @@
                     <div class="text-center p-5">
                         <i class="fas fa-clipboard-list fa-3x mb-3" style="color: var(--border);"></i>
                         <h5>Нет заказов</h5>
-                        <a href="/HomeWork/" class="btn btn-primary mt-3">Создать заказ</a>
+                        <a href="${CONFIG?.getUrl('client', { tab: 'new' }) || '/client.html?tab=new'}" class="btn btn-primary mt-3">Создать заказ</a>
                     </div>
                 `;
                 return;
@@ -130,17 +177,21 @@
         const statusText = {
             'open': '🔵 Активен',
             'in_progress': '🟠 В работе',
+            'awaiting_confirmation': '🟡 Ожидает подтверждения',
             'completed': '✅ Завершён'
         }[order.status] || order.status;
 
         const statusClass = {
             'open': 'bg-primary',
             'in_progress': 'bg-warning text-dark',
+            'awaiting_confirmation': 'bg-info text-dark',
             'completed': 'bg-success'
         }[order.status] || 'bg-secondary';
 
         const hasResponses = order.responses && order.responses.length > 0;
         const hasMaster = !!order.selectedMasterId;
+        const needsConfirmation = order.status === 'awaiting_confirmation';
+        const canReview = order.status === 'completed' && !order.clientReview;
 
         return `
             <div class="order-card mb-3" data-order-id="${order.id}">
@@ -168,23 +219,43 @@
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <span class="badge ${statusClass}">${statusText}</span>
                     
-                    ${order.status === 'open' && hasResponses ? 
-                        `<button class="btn btn-sm btn-outline-primary" onclick="toggleResponses('${order.id}')">
-                            <i class="fas fa-chevron-down me-1"></i>Отклики (${order.responses.length})
-                        </button>` : ''}
-                    
-                    ${order.status === 'in_progress' && hasMaster ?
-                        `<button class="btn btn-sm btn-primary" onclick="openChat('${order.id}', '${order.selectedMasterId}')">
-                            <i class="fas fa-comment me-1"></i>Чат
-                        </button>` : ''}
-                    
-                    ${order.status === 'completed' ?
-                        `<span class="badge bg-success">Завершён</span>` : ''}
+                    <div class="d-flex gap-2">
+                        ${needsConfirmation ? `
+                            <button class="btn btn-sm btn-success" onclick="showConfirmCompletionModal('${order.id}')">
+                                <i class="fas fa-check-circle me-1"></i>Подтвердить выполнение
+                            </button>
+                        ` : ''}
+                        
+                        ${order.status === 'open' && hasResponses ? 
+                            `<button class="btn btn-sm btn-outline-primary" onclick="toggleResponses('${order.id}')">
+                                <i class="fas fa-chevron-down me-1"></i>Отклики (${order.responses.length})
+                            </button>` : ''}
+                        
+                        ${order.status === 'in_progress' && hasMaster ?
+                            `<button class="btn btn-sm btn-primary" onclick="openChat('${order.id}', '${order.selectedMasterId}')">
+                                <i class="fas fa-comment me-1"></i>Чат
+                            </button>` : ''}
+                        
+                        ${canReview ?
+                            `<button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${order.selectedMasterId}')">
+                                <i class="fas fa-star me-1"></i>Оставить отзыв
+                            </button>` : ''}
+                    </div>
                 </div>
                 
                 ${order.status === 'open' && hasResponses ? `
                     <div id="responses-${order.id}" class="responses-list mt-3" style="display: none;">
                         ${order.responses.map(response => createResponseCard(order, response)).join('')}
+                    </div>
+                ` : ''}
+                
+                ${order.status === 'completed' && order.clientReview ? `
+                    <div class="mt-3 p-3 bg-dark rounded">
+                        <small class="text-secondary">Ваш отзыв:</small>
+                        <div class="d-flex align-items-center mt-1">
+                            <div class="me-2">${'★'.repeat(order.clientReview.rating)}${'☆'.repeat(5 - order.clientReview.rating)}</div>
+                            <span class="text-secondary">${Utils.escapeHtml(order.clientReview.text || '')}</span>
+                        </div>
                     </div>
                 ` : ''}
             </div>
@@ -194,8 +265,6 @@
     // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
     function createResponseCard(order, response) {
         const isSelected = order.selectedMasterId === response.masterId;
-        
-        const hasReview = order.reviews && order.reviews.some(r => r.masterId === response.masterId) || false;
         
         const ratingStars = response.masterRating ? 
             '★'.repeat(Math.floor(response.masterRating)) + 
@@ -225,12 +294,6 @@
                             </button>
                         ` : ''}
                         
-                        ${order.status === 'completed' && !hasReview ? `
-                            <button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${response.masterId}', '${Utils.escapeHtml(response.masterName)}')">
-                                <i class="fas fa-star me-1"></i>Оценить
-                            </button>
-                        ` : ''}
-                        
                         <button class="btn btn-sm btn-outline-secondary" onclick="openChat('${order.id}', '${response.masterId}')">
                             <i class="fas fa-comment"></i>
                         </button>
@@ -240,44 +303,80 @@
         `;
     }
 
-    // ===== ОТПРАВКА ОТЗЫВА =====
+    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
+    window.showConfirmCompletionModal = function(orderId) {
+        currentOrderForReview = orderId;
+        
+        // Показываем модалку с отзывом
+        const modalEl = document.getElementById('reviewModal');
+        if (!modalEl) return;
+        
+        document.getElementById('reviewModalTitle').innerHTML = `
+            <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
+            Подтверждение выполнения
+        `;
+        
+        document.querySelector('#reviewModal .modal-body').innerHTML = `
+            <p class="mb-4">Заказ выполнен качественно?</p>
+            <div class="mb-3">
+                <label class="form-label">Оцените мастера</label>
+                <div class="rating-stars mb-2" id="confirmRatingStars">
+                    <span class="star" data-rating="1">☆</span>
+                    <span class="star" data-rating="2">☆</span>
+                    <span class="star" data-rating="3">☆</span>
+                    <span class="star" data-rating="4">☆</span>
+                    <span class="star" data-rating="5">☆</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Отзыв (необязательно)</label>
+                <textarea class="form-control" id="reviewText" rows="3" placeholder="Напишите пару слов о работе..."></textarea>
+            </div>
+        `;
+        
+        // Переназначаем обработчики звезд
+        document.querySelectorAll('#confirmRatingStars .star').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                window.currentRating = rating;
+                
+                document.querySelectorAll('#confirmRatingStars .star').forEach((s, i) => {
+                    if (i < rating) s.innerHTML = '★';
+                    else s.innerHTML = '☆';
+                });
+            });
+        });
+        
+        // Меняем текст кнопки
+        const submitBtn = document.getElementById('submitReview');
+        submitBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Подтвердить выполнение';
+        
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    };
+
+    // ===== ОТПРАВКА ОТЗЫВА И ПОДТВЕРЖДЕНИЕ =====
     async function submitReview() {
-        if (!window.currentRating) {
+        if (!window.currentRating && !currentOrderForReview) {
             Utils.showNotification('Поставьте оценку!', 'warning');
             return;
         }
 
         const reviewText = document.getElementById('reviewText')?.value || '';
-        const user = Auth.getUser();
-        const userData = Auth.getUserData();
-
+        
         try {
-            if (!user || !userData) throw new Error('Пользователь не авторизован');
-
-            const review = {
-                clientId: user.uid,
-                clientName: userData?.name || 'Клиент',
-                masterId: window.currentMasterId,
-                rating: window.currentRating,
-                text: reviewText,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            await db.collection('orders').doc(window.currentOrderId).update({
-                reviews: firebase.firestore.FieldValue.arrayUnion(review)
-            });
-
-            const masterDoc = await db.collection('users').doc(window.currentMasterId).get();
-            if (masterDoc.exists) {
-                const masterData = masterDoc.data();
-                const currentMasterRating = masterData.rating || 0;
-                const currentMasterReviews = masterData.reviews || 0;
-                const newRating = ((currentMasterRating * currentMasterReviews) + window.currentRating) / (currentMasterReviews + 1);
-                
-                await db.collection('users').doc(window.currentMasterId).update({
-                    rating: newRating,
-                    reviews: currentMasterReviews + 1
+            let result;
+            
+            if (currentOrderForReview) {
+                // Это подтверждение завершения
+                result = await Orders.confirmCompletion(currentOrderForReview, {
+                    rating: window.currentRating,
+                    text: reviewText
                 });
+                
+                if (result.success) {
+                    Utils.showSuccess('✅ Заказ завершён! Спасибо за отзыв!');
+                }
             }
 
             const modalEl = document.getElementById('reviewModal');
@@ -286,15 +385,120 @@
                 if (modal) modal.hide();
             }
             
-            Utils.showNotification('✅ Спасибо за отзыв!', 'success');
-            
             await loadClientOrders(currentFilter);
+            await loadClientProfile();
             
         } catch (error) {
-            console.error('❌ Ошибка при отправке отзыва:', error);
-            Utils.showNotification('❌ Ошибка при отправке отзыва', 'error');
+            console.error('❌ Ошибка:', error);
+            Utils.showNotification('❌ Ошибка', 'error');
+        } finally {
+            window.currentRating = 0;
+            currentOrderForReview = null;
         }
     }
+
+    // ===== ОТКРЫТЬ МОДАЛКУ ОТЗЫВА (для уже завершенных) =====
+    window.openReviewModal = function(orderId, masterId) {
+        currentOrderForReview = orderId;
+        
+        const modalEl = document.getElementById('reviewModal');
+        if (!modalEl) return;
+        
+        document.getElementById('reviewModalTitle').innerHTML = `
+            <i class="fas fa-star me-2" style="color: var(--warning);"></i>
+            Оцените работу мастера
+        `;
+        
+        document.querySelector('#reviewModal .modal-body').innerHTML = `
+            <p class="mb-4">Как прошло сотрудничество?</p>
+            <div class="mb-3">
+                <label class="form-label">Оценка</label>
+                <div class="rating-stars mb-2" id="reviewRatingStars">
+                    <span class="star" data-rating="1">☆</span>
+                    <span class="star" data-rating="2">☆</span>
+                    <span class="star" data-rating="3">☆</span>
+                    <span class="star" data-rating="4">☆</span>
+                    <span class="star" data-rating="5">☆</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Отзыв</label>
+                <textarea class="form-control" id="reviewText" rows="3" placeholder="Напишите пару слов о работе..."></textarea>
+            </div>
+        `;
+        
+        document.querySelectorAll('#reviewRatingStars .star').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                window.currentRating = rating;
+                
+                document.querySelectorAll('#reviewRatingStars .star').forEach((s, i) => {
+                    if (i < rating) s.innerHTML = '★';
+                    else s.innerHTML = '☆';
+                });
+            });
+        });
+        
+        const submitBtn = document.getElementById('submitReview');
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Отправить отзыв';
+        
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    };
+
+    // ===== ВЫБОР МАСТЕРА =====
+    window.selectMaster = async (orderId, masterId, price) => {
+        if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
+        
+        try {
+            const result = await Orders.selectMaster(orderId, masterId, price);
+            
+            if (result.success) {
+                Utils.showSuccess('✅ Мастер выбран! Чат открыт.');
+                await loadClientOrders(currentFilter);
+                
+                // Переход в чат
+                setTimeout(() => {
+                    if (result.chatId) {
+                        if (window.CONFIG) {
+                            window.location.href = CONFIG.getUrl('chat', { chatId: result.chatId });
+                        } else {
+                            window.location.href = `/chat.html?chatId=${result.chatId}`;
+                        }
+                    }
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            Utils.showError('Ошибка при выборе мастера');
+        }
+    };
+
+    // ===== ОТКРЫТЬ ЧАТ =====
+    window.openChat = (orderId, partnerId) => {
+        const user = Auth.getUser();
+        if (!user) return;
+        
+        const chatId = `chat_${orderId}_${partnerId}`;
+        
+        if (window.CONFIG) {
+            window.location.href = CONFIG.getUrl('chat', { chatId });
+        } else {
+            window.location.href = `/chat.html?chatId=${chatId}`;
+        }
+    };
+
+    // ===== ПОКАЗ/СКРЫТИЕ ОТКЛИКОВ =====
+    window.toggleResponses = (orderId) => {
+        const container = document.getElementById(`responses-${orderId}`);
+        if (container) {
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+    };
 
     // ===== ЗАГРУЗКА ЧАТОВ =====
     async function loadChats() {
@@ -319,7 +523,7 @@
             }
 
             chatsList.innerHTML = chats.map(chat => `
-                <div class="chat-card" onclick="window.location.href='/HomeWork/chat.html?chatId=${chat.id}'">
+                <div class="chat-card" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/chat.html?chatId=' + chat.id}'">
                     <div class="chat-avatar">
                         <i class="fas ${chat.partnerRole === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
                     </div>
@@ -365,9 +569,12 @@
             loadChats();
         }
         
-        const url = new URL(window.location);
-        url.searchParams.set('tab', tabName);
-        window.history.replaceState({}, '', url);
+        // Обновляем URL
+        if (window.CONFIG) {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+        }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
@@ -385,23 +592,6 @@
                 switchTab(this.dataset.tab);
             });
         });
-
-        document.querySelectorAll('#reviewModal .star').forEach(star => {
-            star.addEventListener('click', function() {
-                const rating = parseInt(this.dataset.rating);
-                window.currentRating = rating;
-                
-                document.querySelectorAll('#reviewModal .star').forEach((s, i) => {
-                    if (i < rating) s.classList.add('active');
-                    else s.classList.remove('active');
-                });
-            });
-        });
-
-        const submitBtn = document.getElementById('submitReview');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', submitReview);
-        }
 
         // ===== КНОПКА ВЫХОДА =====
         const logoutBtn = document.getElementById('logoutBtn');

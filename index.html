@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>СВОЙ МАСТЕР 86 — мастера рядом</title>
     
-    <!-- Мета-теги -->
-    <meta name="description" content="Найдите проверенных мастеров в Нягани и ХМАО. Ремонт, сантехника, электрика и другие услуги.">
-    <meta name="keywords" content="мастера Нягань, ремонт, сантехник, электрик, услуги ХМАО">
-    <meta name="author" content="СВОЙ МАСТЕР 86">
+    <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#2CD5C4">
     
     <!-- Open Graph -->
@@ -18,7 +15,6 @@
     <meta property="og:url" content="https://svoymaster86.ru">
     
     <!-- PWA -->
-    <link rel="manifest" href="/HomeWork/manifest.json">
     <link rel="apple-touch-icon" href="/HomeWork/icons/icon-192x192.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,27 +24,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Наши стили -->
-    <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/base.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/filters.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/masters.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/dropdown.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/loaders.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
-    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
-    <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
 <body>
-    <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР ДЛЯ ПЛАВНЫХ ПЕРЕХОДОВ -->
+    <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР -->
     <div id="global-loader" class="global-loader">
         <div class="loader-content">
-            <div class="spinner-glow" style="width: 60px; height: 60px;"></div>
+            <div class="spinner-glow"></div>
             <p class="loader-text" id="loader-text">Загрузка...</p>
         </div>
     </div>
@@ -63,18 +46,19 @@
                 <button class="geo-tag" id="citySelector">
                     <i class="fas fa-map-marker-alt"></i>
                     <span id="selectedCity">Нягань</span>
-                    <i class="fas fa-chevron-down ms-1" style="font-size: 0.7rem;"></i>
+                    <i class="fas fa-chevron-down ms-1"></i>
                 </button>
-                <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
         </div>
 
         <!-- ПОИСК -->
-        <div class="search-bar">
-            <span>🔍</span>
-            <input type="text" id="searchInput" placeholder="Поиск мастеров или услуг..." aria-label="Поиск">
+        <div class="search-bar" id="searchBar">
+            <span><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" placeholder="Поиск мастеров или услуг...">
+            <span class="clear-search" id="clearSearch"><i class="fas fa-times"></i></span>
         </div>
 
         <!-- БЛОК АВТОРИЗАЦИИ -->
@@ -96,12 +80,10 @@
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="mainContent" style="display: none;">
-            <!-- ФИЛЬТРЫ (скроллящиеся) -->
-            <div class="filters-scroll" id="categoryFilters">
-                <!-- JS заполнит -->
-            </div>
+            <!-- ФИЛЬТРЫ -->
+            <div class="filters-scroll" id="categoryFilters"></div>
 
-            <!-- БЛОК: СВЕЖИЕ ЗАКАЗЫ -->
+            <!-- СВЕЖИЕ ЗАКАЗЫ -->
             <div class="section-title">
                 <h2>
                     <i class="fas fa-fire" style="color: var(--accent);"></i> 
@@ -117,11 +99,9 @@
                 </div>
             </div>
 
-            <div id="ordersList" class="orders-list">
-                <!-- JS заполнит -->
-            </div>
+            <div id="ordersList" class="orders-list"></div>
 
-            <!-- БЛОК: ПОПУЛЯРНЫЕ МАСТЕРА -->
+            <!-- МАСТЕРА -->
             <div class="section-title">
                 <h2>
                     <i class="fas fa-crown" style="color: var(--accent);"></i> 
@@ -130,9 +110,7 @@
                 <a href="/HomeWork/masters.html" class="nav-link" data-no-loader="false">Все →</a>
             </div>
 
-            <div class="masters-scroll" id="mastersList">
-                <!-- JS заполнит -->
-            </div>
+            <div class="masters-scroll" id="mastersList"></div>
 
             <!-- ПЛАВАЮЩАЯ КНОПКА -->
             <div class="floating-action">
@@ -145,40 +123,30 @@
 
     <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
-        <!-- Главная (всегда) -->
         <button class="nav-item" data-page="home">
-            <span>🏠</span>
-            <span>Главная</span>
+            <span class="nav-icon"><i class="fas fa-home"></i></span>
+            <span class="nav-label">Главная</span>
         </button>
-        
-        <!-- Поиск (только для мастера) -->
         <button class="nav-item" data-page="search" style="display: none;">
-            <span>🔍</span>
-            <span>Поиск</span>
+            <span class="nav-icon"><i class="fas fa-search"></i></span>
+            <span class="nav-label">Поиск</span>
         </button>
-        
-        <!-- Чаты (для авторизованных) -->
         <button class="nav-item" data-page="chats" style="display: none;">
-            <span>💬</span>
-            <span>Чаты</span>
+            <span class="nav-icon"><i class="fas fa-comments"></i></span>
+            <span class="nav-label">Чаты</span>
+            <span class="nav-badge hidden" id="chatsNavBadge">0</span>
         </button>
-        
-        <!-- Заявка (для всех, но с разным поведением) -->
         <button class="nav-item create-order-btn" data-page="create-order">
-            <span class="plus-icon">➕</span>
+            <span class="plus-icon"><i class="fas fa-plus-circle"></i></span>
             <span>Заявка</span>
         </button>
-        
-        <!-- Заказы/Отклики (в зависимости от роли) -->
         <button class="nav-item" data-page="orders" style="display: none;">
-            <span>📋</span>
-            <span>Заказы</span>
+            <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+            <span class="nav-label">Заказы</span>
         </button>
-        
-        <!-- Профиль/Войти -->
         <button class="nav-item" data-page="profile">
-            <span>👤</span>
-            <span>Профиль</span>
+            <span class="nav-icon"><i class="fas fa-user"></i></span>
+            <span class="nav-label">Профиль</span>
         </button>
     </div>
 
@@ -188,11 +156,11 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="authModalTitle">Вход</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="modal-close" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <div id="authModalBody"></div>
-                </div>
+                <div class="modal-body" id="authModalBody"></div>
             </div>
         </div>
     </div>
@@ -206,18 +174,18 @@
                         <i class="fas fa-map-marker-alt me-2" style="color: var(--accent);"></i>
                         Выберите город
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="modal-close" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <div class="list-group" id="cityList">
-                        <!-- JS заполнит -->
-                    </div>
+                    <div class="list-group" id="cityList"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ===== МОДАЛКА ОТКЛИКА (ДОБАВЛЕНА) ===== -->
+    <!-- МОДАЛКА ОТКЛИКА -->
     <div class="modal fade" id="respondModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -226,7 +194,9 @@
                         <i class="fas fa-reply me-2" style="color: var(--accent);"></i>
                         Откликнуться на заказ
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="modal-close" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <div id="respondOrderInfo" class="bg-soft p-3 rounded-4 mb-4">
@@ -240,20 +210,17 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">
-                            <i class="fas fa-tag me-1" style="color: var(--accent);"></i>
-                            Ваша цена <span class="text-danger">*</span>
-                        </label>
-                        <input type="number" class="form-control form-control-lg" id="responsePrice" 
-                               placeholder="Например: 1500" min="500" max="1000000" step="100">
+                        <label class="form-label required">Ваша цена</label>
+                        <div class="price-input-wrapper">
+                            <input type="number" class="form-control form-control-lg" id="responsePrice" 
+                                   placeholder="1500" min="500" max="1000000" step="100">
+                            <span class="currency">₽</span>
+                        </div>
                         <small class="text-secondary">от 500 до 1 000 000 ₽</small>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">
-                            <i class="fas fa-comment me-1" style="color: var(--accent);"></i>
-                            Комментарий
-                        </label>
+                        <label class="form-label">Комментарий</label>
                         <textarea class="form-control" id="responseComment" rows="3" 
                                   placeholder="Расскажите, как будете выполнять работу..." maxlength="500"></textarea>
                         <small class="text-secondary">Максимум 500 символов</small>
@@ -283,27 +250,23 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Core -->
     <script src="/HomeWork/js/core/config.js"></script>
     <script src="/HomeWork/js/core/constants.js"></script>
     <script src="/HomeWork/js/core/base-utils.js"></script>
-    <script src="/HomeWork/js/core/loader.js"></script>
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
+    <script src="/HomeWork/js/core/loader.js"></script>
     
-    <!-- Services -->
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>
     <script src="/HomeWork/js/services/chat.js"></script>
     <script src="/HomeWork/js/services/moderation.js"></script>
     
-    <!-- Components -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     <script src="/HomeWork/js/components/notifications.js"></script>
     
-    <!-- Pages -->
     <script src="/HomeWork/js/pages/index.js"></script>
 </body>
 </html>

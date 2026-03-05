@@ -1,5 +1,10 @@
-/* ===== ДЕСКТОПНЫЕ СТИЛИ (от 992px) ===== */
+/* ============================================
+   ДЕСКТОПНЫЕ СТИЛИ (от 992px)
+   ============================================ */
+
 @media (min-width: 992px) {
+    /* ===== ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===== */
+    
     /* Центрируем контент */
     .app-wrapper {
         max-width: 1200px;
@@ -11,6 +16,7 @@
     body {
         padding-bottom: 0 !important;
         background: radial-gradient(circle at top, #1a2f44, var(--deep-blue));
+        padding-top: 80px !important; /* Отступ под десктопную навигацию */
     }
     
     /* Скрываем нижнюю навигацию на десктопе */
@@ -18,10 +24,17 @@
         display: none !important;
     }
     
-    /* Шапка на десктопе */
+    /* Показываем десктопную навигацию */
+    .desktop-nav {
+        display: block;
+    }
+    
+    /* ===== ШАПКА ===== */
+    
     .header {
         height: auto;
         padding: 30px 0 20px 0;
+        margin-bottom: 20px;
     }
     
     .logo {
@@ -40,7 +53,8 @@
         transform: translateY(-2px);
     }
     
-    /* Поиск — красивая строка */
+    /* ===== ПОИСК ===== */
+    
     .search-bar {
         max-width: 700px;
         margin: 0 auto 30px auto;
@@ -50,6 +64,7 @@
         transition: all var(--transition-normal);
         background: rgba(30, 47, 64, 0.8);
         backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
     
     .search-bar:focus-within {
@@ -63,7 +78,8 @@
         font-size: 1.1rem;
     }
     
-    /* ФИЛЬТРЫ */
+    /* ===== ФИЛЬТРЫ ===== */
+    
     .filters-scroll {
         display: flex;
         flex-wrap: wrap;
@@ -71,6 +87,11 @@
         overflow-x: visible;
         justify-content: center;
         padding: 10px 0 30px 0;
+    }
+    
+    .filters-scroll::after,
+    .filters-scroll::before {
+        display: none;
     }
     
     .filter-chip {
@@ -107,7 +128,12 @@
         box-shadow: var(--shadow-md), 0 0 15px var(--accent);
     }
     
-    /* Заголовки секций */
+    .filter-chip.active {
+        border-width: 2px;
+    }
+    
+    /* ===== ЗАГОЛОВКИ СЕКЦИЙ ===== */
+    
     .section-title {
         margin: 30px 0 20px 0;
     }
@@ -115,6 +141,11 @@
     .section-title h2 {
         font-size: 1.8rem;
         text-shadow: 0 0 10px var(--accent);
+    }
+    
+    .section-title h2::after {
+        width: 60px;
+        height: 4px;
     }
     
     .section-title a {
@@ -127,7 +158,8 @@
         transform: translateX(5px);
     }
     
-    /* СЕТКА ЗАКАЗОВ — 2 КОЛОНКИ */
+    /* ===== СЕТКА ЗАКАЗОВ ===== */
+    
     .orders-list {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -136,9 +168,15 @@
     
     .order-card {
         margin-bottom: 0;
+        height: fit-content;
     }
     
-    /* МАСТЕРА — СЕТКА 5 КОЛОНОК */
+    .order-card:hover {
+        transform: translateY(-6px) scale(1.02);
+    }
+    
+    /* ===== МАСТЕРА ===== */
+    
     .masters-scroll {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -147,11 +185,21 @@
         padding: 10px 0 30px 0;
     }
     
-    .master-card {
-        min-width: auto;
+    .masters-scroll::after {
+        display: none;
     }
     
-    /* Плавающая кнопка на десктопе */
+    .master-card {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .master-card:hover {
+        transform: translateY(-8px) scale(1.05);
+    }
+    
+    /* ===== ПЛАВАЮЩАЯ КНОПКА ===== */
+    
     .floating-action {
         position: relative;
         bottom: auto;
@@ -165,16 +213,34 @@
         font-size: 1.3rem;
     }
     
-    /* Профили на десктопе */
+    /* ===== ПРОФИЛИ ===== */
+    
     #masterCabinet .card,
     #clientCabinet .card {
         max-width: 100%;
         padding: 30px;
     }
     
-    /* Табы */
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        font-size: 3.5rem;
+    }
+    
+    /* ===== ТАБЫ ===== */
+    
     .nav-tabs {
         gap: 15px;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 10px;
+        margin-bottom: 30px;
     }
     
     .nav-tabs .nav-link {
@@ -182,18 +248,27 @@
         padding: 12px 28px;
         position: relative;
         overflow: hidden;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-fast);
     }
     
     .nav-tabs .nav-link::before {
         content: '';
         position: absolute;
-        bottom: 0;
+        bottom: -10px;
         left: 50%;
         transform: translateX(-50%);
         width: 0;
-        height: 2px;
+        height: 3px;
         background: var(--accent);
         transition: width 0.3s;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--accent);
     }
     
     .nav-tabs .nav-link:hover::before,
@@ -201,9 +276,19 @@
         width: 80%;
     }
     
-    /* Модалки на десктопе */
+    .nav-tabs .nav-link.active {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    
+    /* ===== МОДАЛКИ ===== */
+    
     .modal-dialog {
         max-width: 500px;
+    }
+    
+    .modal-dialog.modal-lg {
+        max-width: 800px;
     }
     
     .modal-content {
@@ -220,6 +305,68 @@
             opacity: 1;
             transform: scale(1) translateY(0);
         }
+    }
+    
+    /* ===== ЧАТ ===== */
+    
+    .chat-container {
+        max-width: 1000px;
+        height: 80vh;
+        margin: 20px auto;
+    }
+    
+    .message {
+        max-width: 60%;
+    }
+    
+    .message:hover .message-bubble {
+        transform: scale(1.02);
+    }
+    
+    /* ===== КАРТОЧКИ ===== */
+    
+    .order-card .order-footer span:hover {
+        color: var(--accent);
+    }
+    
+    .chat-card:hover {
+        transform: translateX(8px) scale(1.02);
+    }
+    
+    /* ===== КНОПКИ ===== */
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 10px 30px rgba(44, 213, 196, 0.6);
+    }
+    
+    /* ===== ФОРМЫ ===== */
+    
+    .form-control:hover {
+        border-color: var(--accent);
+    }
+    
+    /* ===== УТИЛИТЫ ===== */
+    
+    .desktop-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+    
+    .desktop-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+    
+    .desktop-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
     }
 }
 
@@ -243,6 +390,10 @@
         overflow-x: visible;
     }
     
+    .masters-scroll::after {
+        display: none;
+    }
+    
     .master-card {
         min-width: auto;
     }
@@ -252,12 +403,21 @@
         justify-content: center;
     }
     
+    .filters-scroll::after,
+    .filters-scroll::before {
+        display: none;
+    }
+    
     .bottom-nav {
         display: flex;
     }
     
     body {
         padding-bottom: calc(var(--mobile-nav-height) + 10px) !important;
+    }
+    
+    .desktop-nav {
+        display: none;
     }
 }
 
@@ -295,5 +455,9 @@
     .master-card {
         min-width: 140px;
         flex-shrink: 0;
+    }
+    
+    .desktop-nav {
+        display: none;
     }
 }

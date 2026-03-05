@@ -1,19 +1,333 @@
-<!-- Мобильная навигация -->
-<div class="mobile-bottom-nav">
-    <a href="/HomeWork/" class="mobile-nav-item">
-        <i class="fas fa-home"></i>
-        <span>Главная</span>
+<!-- ============================================
+     МОБИЛЬНАЯ НАВИГАЦИЯ
+     ============================================ -->
+
+<div class="bottom-nav">
+    <!-- Главная -->
+    <a href="/HomeWork/" class="nav-item" id="navHome">
+        <span class="nav-icon"><i class="fas fa-home"></i></span>
+        <span class="nav-label">Главная</span>
     </a>
-    <a href="/HomeWork/client.html" class="mobile-nav-item">
-        <i class="fas fa-clipboard-list"></i>
-        <span>Заказы</span>
+
+    <!-- Заказы / Лента -->
+    <a href="/HomeWork/orders.html" class="nav-item" id="navOrders">
+        <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+        <span class="nav-label">Заказы</span>
+        <!-- Бейдж новых заказов (скрыт по умолчанию) -->
+        <span class="nav-badge hidden" id="ordersBadge">3</span>
     </a>
-    <a href="/HomeWork/master.html" class="mobile-nav-item">
-        <i class="fas fa-user-tie"></i>
-        <span>Мастерам</span>
+
+    <!-- КНОПКА СОЗДАНИЯ ЗАКАЗА (ЦЕНТРАЛЬНАЯ) -->
+    <div class="nav-item create-order-btn" id="createOrderBtn" role="button" tabindex="0">
+        <span class="plus-icon"><i class="fas fa-plus-circle"></i></span>
+        <span>Заявка</span>
+    </div>
+
+    <!-- Мастера / Для мастеров -->
+    <a href="/HomeWork/masters.html" class="nav-item" id="navMasters">
+        <span class="nav-icon"><i class="fas fa-user-tie"></i></span>
+        <span class="nav-label">Мастера</span>
     </a>
-    <a href="#" class="mobile-nav-item" id="mobileProfileBtn">
-        <i class="fas fa-user"></i>
-        <span>Профиль</span>
+
+    <!-- Профиль -->
+    <a href="#" class="nav-item" id="navProfile">
+        <span class="nav-icon"><i class="fas fa-user"></i></span>
+        <span class="nav-label">Профиль</span>
+        <!-- Бейдж уведомлений профиля -->
+        <span class="nav-badge hidden" id="profileBadge">5</span>
     </a>
 </div>
+
+<!-- ============================================
+     ДЕСКТОПНАЯ НАВИГАЦИЯ (альтернатива)
+     ============================================ -->
+
+<div class="desktop-nav desktop-only">
+    <div class="desktop-nav-container">
+        <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+            <i class="fas fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="/HomeWork/orders.html" class="desktop-nav-item" id="desktopNavOrders">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Заказы</span>
+            <span class="nav-badge hidden" id="desktopOrdersBadge">3</span>
+        </a>
+        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+            <i class="fas fa-user-tie"></i>
+            <span>Мастера</span>
+        </a>
+        <a href="/HomeWork/chats.html" class="desktop-nav-item" id="desktopNavChats">
+            <i class="fas fa-comments"></i>
+            <span>Чаты</span>
+            <span class="nav-badge hidden" id="desktopChatsBadge">2</span>
+        </a>
+        <div class="desktop-nav-item desktop-create-btn" id="desktopCreateBtn" role="button">
+            <i class="fas fa-plus-circle"></i>
+            <span>Создать заказ</span>
+        </div>
+        <div class="desktop-nav-item desktop-profile" id="desktopProfileBtn" role="button">
+            <i class="fas fa-user-circle"></i>
+            <span>Профиль</span>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     СКРИПТ ДЛЯ НАВИГАЦИИ
+     ============================================ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Определение текущей страницы
+    const currentPage = window.location.pathname;
+    
+    // Функция активации пункта навигации
+    function setActiveNavItem() {
+        // Мобильная навигация
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            const href = item.getAttribute('href');
+            if (href && currentPage.includes(href)) {
+                item.classList.add('active');
+            }
+        });
+
+        // Десктопная навигация
+        const desktopItems = document.querySelectorAll('.desktop-nav-item');
+        desktopItems.forEach(item => {
+            const href = item.getAttribute('href');
+            if (href && currentPage.includes(href)) {
+                item.classList.add('active');
+            }
+        });
+
+        // Особая обработка для главной
+        if (currentPage === '/' || currentPage === '/HomeWork/' || currentPage.endsWith('index.html')) {
+            document.getElementById('navHome')?.classList.add('active');
+            document.getElementById('desktopNavHome')?.classList.add('active');
+        }
+    }
+
+    // Функция обновления бейджей
+    function updateBadges() {
+        // Здесь должна быть логика получения количества непрочитанных
+        // Из локального хранилища или с сервера
+        const ordersCount = localStorage.getItem('newOrdersCount') || 0;
+        const profileCount = localStorage.getItem('notificationsCount') || 0;
+        const chatsCount = localStorage.getItem('unreadChatsCount') || 0;
+
+        // Обновление бейджей
+        const ordersBadge = document.getElementById('ordersBadge');
+        const profileBadge = document.getElementById('profileBadge');
+        const desktopOrdersBadge = document.getElementById('desktopOrdersBadge');
+        const desktopChatsBadge = document.getElementById('desktopChatsBadge');
+
+        if (ordersCount > 0) {
+            ordersBadge.textContent = ordersCount;
+            ordersBadge.classList.remove('hidden');
+            desktopOrdersBadge.textContent = ordersCount;
+            desktopOrdersBadge.classList.remove('hidden');
+        }
+
+        if (profileCount > 0) {
+            profileBadge.textContent = profileCount;
+            profileBadge.classList.remove('hidden');
+        }
+
+        if (chatsCount > 0) {
+            desktopChatsBadge.textContent = chatsCount;
+            desktopChatsBadge.classList.remove('hidden');
+        }
+    }
+
+    // Функция переключения режима (заказчик/мастер)
+    function setUserRole(role) {
+        const createBtn = document.getElementById('createOrderBtn');
+        const desktopCreateBtn = document.getElementById('desktopCreateBtn');
+        
+        if (role === 'master') {
+            createBtn?.classList.add('master-mode');
+            desktopCreateBtn?.classList.add('master-mode');
+        } else {
+            createBtn?.classList.remove('master-mode');
+            desktopCreateBtn?.classList.remove('master-mode');
+        }
+        
+        localStorage.setItem('userRole', role);
+    }
+
+    // Обработчики для кнопок
+    document.getElementById('createOrderBtn')?.addEventListener('click', function(e) {
+        const role = localStorage.getItem('userRole') || 'client';
+        if (role === 'master') {
+            // Показать уведомление, что мастера не могут создавать заказы
+            showNotification('Мастера не могут создавать заказы', 'warning');
+            return;
+        }
+        window.location.href = '/HomeWork/create-order.html';
+    });
+
+    document.getElementById('desktopCreateBtn')?.addEventListener('click', function(e) {
+        const role = localStorage.getItem('userRole') || 'client';
+        if (role === 'master') {
+            showNotification('Мастера не могут создавать заказы', 'warning');
+            return;
+        }
+        window.location.href = '/HomeWork/create-order.html';
+    });
+
+    document.getElementById('navProfile')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        const role = localStorage.getItem('userRole') || 'client';
+        if (role === 'master') {
+            window.location.href = '/HomeWork/master-cabinet.html';
+        } else {
+            window.location.href = '/HomeWork/client-cabinet.html';
+        }
+    });
+
+    document.getElementById('desktopProfileBtn')?.addEventListener('click', function(e) {
+        const role = localStorage.getItem('userRole') || 'client';
+        if (role === 'master') {
+            window.location.href = '/HomeWork/master-cabinet.html';
+        } else {
+            window.location.href = '/HomeWork/client-cabinet.html';
+        }
+    });
+
+    // Функция показа уведомления (заглушка)
+    function showNotification(message, type) {
+        // Здесь должен быть вызов системы уведомлений
+        console.log(`[${type}] ${message}`);
+    }
+
+    // Инициализация
+    setActiveNavItem();
+    updateBadges();
+
+    // Проверка роли при загрузке
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole) {
+        setUserRole(savedRole);
+    }
+
+    // Слушаем изменения в localStorage (для синхронизации между вкладками)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'userRole') {
+            setUserRole(e.newValue);
+        }
+        if (e.key === 'newOrdersCount' || e.key === 'notificationsCount' || e.key === 'unreadChatsCount') {
+            updateBadges();
+        }
+    });
+});
+</script>
+
+<!-- ============================================
+     СТИЛИ ДЛЯ НАВИГАЦИИ (подключаются отдельно)
+     ============================================ -->
+<style>
+/* Эти стили дублируются из CSS файлов для надежности */
+.desktop-nav {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .desktop-nav {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: var(--dark-blue);
+        border-bottom: 2px solid var(--accent);
+        padding: 10px 0;
+        z-index: 1000;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .desktop-nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 20px;
+        padding: 0 30px;
+    }
+    
+    .desktop-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: var(--radius-full);
+        transition: all var(--transition-fast);
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .desktop-nav-item:hover {
+        color: var(--accent);
+        background: var(--accent-soft);
+    }
+    
+    .desktop-nav-item.active {
+        color: var(--accent);
+        background: var(--accent-soft);
+        font-weight: 600;
+    }
+    
+    .desktop-create-btn {
+        background: var(--gradient-primary);
+        color: var(--deep-blue) !important;
+        font-weight: 700;
+        margin-left: 20px;
+    }
+    
+    .desktop-create-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(44, 213, 196, 0.3);
+    }
+    
+    .desktop-create-btn.master-mode {
+        opacity: 0.5;
+        pointer-events: none;
+        background: var(--bg-soft);
+        color: var(--text-muted) !important;
+    }
+    
+    body {
+        padding-top: 70px !important;
+    }
+}
+
+.master-mode {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.nav-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+}
+
+.nav-badge.hidden {
+    display: none !important;
+}
+</style>

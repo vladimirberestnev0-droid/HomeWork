@@ -1,6 +1,6 @@
 /**
- * masters.js — логика кабинета мастера
- * Версия 3.0 с поддержкой новой навигации и кнопкой выхода
+ * masters.js — логика кабинета мастера (ИСПРАВЛЕНО - завершение заказов)
+ * Версия 3.1 с поддержкой инициации завершения
  */
 
 (function() {
@@ -41,7 +41,13 @@
                     checkUrlParams();
                 } else {
                     Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
-                    setTimeout(() => window.location.href = '/HomeWork/', 2000);
+                    setTimeout(() => {
+                        if (window.CONFIG) {
+                            window.location.href = CONFIG.getUrl('home');
+                        } else {
+                            window.location.href = '/';
+                        }
+                    }, 2000);
                 }
             } else if (state.isAuthenticated && !state.userData) {
                 console.log('⏳ Ожидание данных...');
@@ -52,6 +58,7 @@
         });
 
         initEventListeners();
+        initReviewModal();
         
         const urlParams = new URLSearchParams(window.location.search);
         const respondOrderId = urlParams.get('respond');
@@ -59,6 +66,34 @@
             loadOrderForResponse(respondOrderId);
         }
     });
+
+    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
+    function initReviewModal() {
+        document.querySelectorAll('#clientRatingStars .star').forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                currentRating = rating;
+                
+                document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
+                    if (i < rating) s.classList.add('active');
+                    else s.classList.remove('active');
+                });
+            });
+        });
+
+        $('submitClientReview')?.addEventListener('click', submitClientReview);
+
+        const modal = document.getElementById('reviewClientModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                $('reviewClientText').value = '';
+                document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
+                currentRating = 0;
+                currentOrderId = null;
+                currentClientId = null;
+            });
+        }
+    }
 
     // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
     function checkUrlParams() {
@@ -85,6 +120,7 @@
             
             const stats = await Orders.getMasterStats(Auth.getUser()?.uid);
             $('masterCompleted').textContent = stats.completed || 0;
+            $('masterAwaiting').textContent = stats.awaiting || 0;
             
             const stars = '★'.repeat(Math.floor(userData.rating || 0)) + 
                          '☆'.repeat(5 - Math.floor(userData.rating || 0));
@@ -113,11 +149,13 @@
             
             let filtered = responses;
             if (filter === 'pending') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.OPEN);
+                filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.OPEN);
             } else if (filter === 'accepted') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.IN_PROGRESS);
+                filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.IN_PROGRESS);
+            } else if (filter === 'awaiting') {
+                filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION);
             } else if (filter === 'completed') {
-                filtered = responses.filter(r => r.status === ORDER_STATUS.COMPLETED);
+                filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.COMPLETED);
             }
 
             if (filtered.length === 0) {
@@ -125,7 +163,7 @@
                     <div class="text-center p-5">
                         <i class="fas fa-inbox fa-3x mb-3" style="color: var(--border);"></i>
                         <h5>Нет откликов</h5>
-                        <a href="/HomeWork/" class="btn btn-primary mt-3">Найти заказы</a>
+                        <a href="${CONFIG?.getUrl('home', { focus: 'search' }) || '/?focus=search'}" class="btn btn-primary mt-3">Найти заказы</a>
                     </div>
                 `;
                 return;
@@ -146,10 +184,12 @@
         const statusConfig = {
             'open': { class: 'bg-warning text-dark', text: '⏳ Ожидает', icon: 'fa-clock' },
             'in_progress': { class: 'bg-primary', text: '🔨 В работе', icon: 'fa-spinner fa-spin' },
+            'awaiting_confirmation': { class: 'bg-info text-dark', text: '🟡 Ждёт подтверждения', icon: 'fa-hourglass-half' },
             'completed': { class: 'bg-success', text: '✅ Выполнен', icon: 'fa-check-circle' }
         };
         
         const status = statusConfig[item.status] || statusConfig.open;
+        const canComplete = item.status === Orders.ORDER_STATUS.IN_PROGRESS;
 
         return `
             <div class="order-card mb-3">
@@ -185,22 +225,31 @@
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 flex-wrap">
-                    ${item.status === ORDER_STATUS.OPEN ? `
+                    ${item.status === Orders.ORDER_STATUS.OPEN ? `
                         <button class="btn btn-sm btn-outline-secondary" disabled>
                             <i class="fas fa-hourglass-half me-1"></i>Ожидает ответа
                         </button>
                     ` : ''}
                     
-                    ${item.status === ORDER_STATUS.IN_PROGRESS ? `
+                    ${canComplete ? `
+                        <button class="btn btn-sm btn-success" onclick="showCompleteModal('${item.orderId}', '${order.clientId}', '${Utils.escapeHtml(order.clientName || 'Клиент')}')">
+                            <i class="fas fa-check-double me-1"></i>Завершить
+                        </button>
                         <button class="btn btn-sm btn-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
                             <i class="fas fa-comment me-1"></i>Чат
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="showClientReviewModal('${item.orderId}', '${order.clientId}', '${Utils.escapeHtml(order.clientName || 'Клиент')}')">
-                            <i class="fas fa-check-double me-1"></i>Завершить
+                    ` : ''}
+                    
+                    ${item.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION ? `
+                        <button class="btn btn-sm btn-outline-warning" disabled>
+                            <i class="fas fa-hourglass-half me-1"></i>Ожидает подтверждения клиента
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
+                            <i class="fas fa-comment me-1"></i>Чат
                         </button>
                     ` : ''}
                     
-                    ${item.status === ORDER_STATUS.COMPLETED ? `
+                    ${item.status === Orders.ORDER_STATUS.COMPLETED ? `
                         <button class="btn btn-sm btn-outline-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
                             <i class="fas fa-comment me-1"></i>Чат
                         </button>
@@ -209,8 +258,58 @@
                         </span>
                     ` : ''}
                 </div>
+                
+                ${item.status === Orders.ORDER_STATUS.COMPLETED && order.clientReview ? `
+                    <div class="mt-3 p-3 bg-dark rounded">
+                        <small class="text-secondary">Отзыв клиента:</small>
+                        <div class="d-flex align-items-center mt-1">
+                            <div class="me-2">${'★'.repeat(order.clientReview.rating)}${'☆'.repeat(5 - order.clientReview.rating)}</div>
+                            <span class="text-secondary">${Utils.escapeHtml(order.clientReview.text || '')}</span>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
+    }
+
+    // ===== ПОКАЗ МОДАЛКИ ЗАВЕРШЕНИЯ =====
+    window.showCompleteModal = (orderId, clientId, clientName) => {
+        currentOrderId = orderId;
+        currentClientId = clientId;
+        currentClientName = clientName;
+        currentRating = 0;
+
+        $('reviewClientName').textContent = clientName || 'Клиент';
+        $('reviewClientText').value = '';
+
+        document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
+
+        const modal = new bootstrap.Modal($('reviewClientModal'));
+        modal.show();
+    };
+
+    // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ И ЗАВЕРШЕНИЕ =====
+    async function submitClientReview() {
+        if (!currentRating) {
+            Utils.showNotification('Поставьте оценку клиенту', 'warning');
+            return;
+        }
+
+        const comment = $('reviewClientText')?.value || '';
+
+        const result = await Orders.initiateCompletion(currentOrderId, {
+            rating: currentRating,
+            text: comment
+        });
+        
+        if (result && result.success) {
+            bootstrap.Modal.getInstance($('reviewClientModal'))?.hide();
+            Utils.showNotification('✅ Запрос на завершение отправлен клиенту', 'success');
+            await loadMasterResponses(currentFilter);
+            await loadMasterProfile();
+        } else {
+            Utils.showNotification(result?.error || '❌ Ошибка', 'error');
+        }
     }
 
     // ===== ОТКРЫТЬ ЧАТ =====
@@ -219,7 +318,12 @@
         if (!user) return;
         
         const chatId = `chat_${orderId}_${user.uid}`;
-        window.location.href = `/HomeWork/chat.html?chatId=${chatId}`;
+        
+        if (window.CONFIG) {
+            window.location.href = CONFIG.getUrl('chat', { chatId });
+        } else {
+            window.location.href = `/chat.html?chatId=${chatId}`;
+        }
     };
 
     // ===== ЗАГРУЗКА ЗАКАЗА ДЛЯ ОТКЛИКА =====
@@ -239,7 +343,8 @@
         currentOrderId = orderId;
 
         const infoBlock = $('respondOrderInfo');
-        infoBlock.classList.remove('d-none');
+        if (infoBlock) infoBlock.classList.remove('d-none');
+        
         $('respondOrderTitle').textContent = orderTitle || 'Заказ';
         $('respondOrderCategory').textContent = orderCategory || 'Категория';
         $('respondOrderPrice').textContent = Utils.formatMoney(orderPrice);
@@ -277,59 +382,6 @@
         }
     });
 
-    // ===== ПОКАЗ МОДАЛКИ ОТЗЫВА О КЛИЕНТЕ =====
-    window.showClientReviewModal = (orderId, clientId, clientName) => {
-        currentOrderId = orderId;
-        currentClientId = clientId;
-        currentClientName = clientName;
-        currentRating = 0;
-
-        $('reviewClientName').textContent = clientName || 'Клиент';
-
-        document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
-        $('reviewClientText').value = '';
-
-        const modal = new bootstrap.Modal($('reviewClientModal'));
-        modal.show();
-    };
-
-    // ===== ОБРАБОТЧИК ЗВЁЗД =====
-    document.querySelectorAll('#clientRatingStars .star').forEach(star => {
-        star.addEventListener('click', function() {
-            const rating = parseInt(this.dataset.rating);
-            currentRating = rating;
-            
-            document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
-                if (i < rating) s.classList.add('active');
-                else s.classList.remove('active');
-            });
-        });
-    });
-
-    // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ =====
-    $('submitClientReview')?.addEventListener('click', async () => {
-        if (!currentRating) {
-            Utils.showNotification('Поставьте оценку клиенту', 'warning');
-            return;
-        }
-
-        const comment = $('reviewClientText')?.value || '';
-
-        const result = await Orders.completeOrder(currentOrderId, {
-            rating: currentRating,
-            text: comment
-        });
-        
-        if (result && result.success) {
-            bootstrap.Modal.getInstance($('reviewClientModal'))?.hide();
-            Utils.showNotification('✅ Заказ завершён! Отзыв оставлен', 'success');
-            await loadMasterResponses(currentFilter);
-            await loadMasterProfile();
-        } else {
-            Utils.showNotification(result?.error || '❌ Ошибка', 'error');
-        }
-    });
-
     // ===== ЗАГРУЗКА ЧАТОВ =====
     async function loadChats() {
         const chatsList = $('chatsList');
@@ -353,7 +405,7 @@
             }
 
             chatsList.innerHTML = chats.map(chat => `
-                <div class="chat-card" onclick="window.location.href='/HomeWork/chat.html?chatId=${chat.id}'">
+                <div class="chat-card" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/chat.html?chatId=' + chat.id}'">
                     <div class="chat-avatar">
                         <i class="fas fa-user"></i>
                     </div>
@@ -396,9 +448,11 @@
             loadChats();
         }
         
-        const url = new URL(window.location);
-        url.searchParams.set('tab', tabName);
-        window.history.replaceState({}, '', url);
+        if (window.CONFIG) {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+        }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====

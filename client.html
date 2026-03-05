@@ -8,20 +8,13 @@
     <link rel="manifest" href="/HomeWork/manifest.json">
     <meta name="theme-color" content="#2CD5C4">
     
+    <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="/HomeWork/css/core/variables.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/base.css">
-    <link rel="stylesheet" href="/HomeWork/css/core/utils.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/buttons.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/cards.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/forms.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/modals.css">
-    <link rel="stylesheet" href="/HomeWork/css/components/notifications.css">
-    <link rel="stylesheet" href="/HomeWork/css/responsive/mobile-fixes.css">
-    <link rel="stylesheet" href="/HomeWork/css/responsive/desktop-fixes.css">
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
 <body>
     <div class="app-wrapper">
@@ -38,7 +31,7 @@
                     <i class="fas fa-sign-out-alt"></i>
                     <span class="d-none d-sm-inline ms-1">Выйти</span>
                 </button>
-                <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
@@ -53,8 +46,8 @@
                 <div class="empty-state-icon">
                     <i class="fas fa-user-circle"></i>
                 </div>
-                <h5>Войдите в кабинет</h5>
-                <p class="text-secondary mb-4">Чтобы управлять заказами, нужно авторизоваться</p>
+                <h4>Войдите в кабинет</h4>
+                <p>Чтобы управлять заказами, нужно авторизоваться</p>
                 <button class="btn btn-primary btn-lg px-5" onclick="AuthUI.showLoginModal()">
                     <i class="fas fa-sign-in-alt me-2"></i>Войти
                 </button>
@@ -77,7 +70,7 @@
                         </div>
                     </div>
                 </div>
-                <hr class="my-3" style="border-color: var(--border);">
+                <hr class="my-3">
                 <div class="d-flex justify-content-around">
                     <div class="text-center">
                         <div class="fw-bold fs-4" id="clientOrdersCount">0</div>
@@ -101,7 +94,7 @@
                 </button>
                 <button class="filter-chip" data-tab="chats">
                     <i class="fas fa-comments me-1"></i>Чаты
-                    <span class="unread-badge-tab d-none" id="chatsUnread">0</span>
+                    <span class="tab-badge d-none" id="chatsUnread">0</span>
                 </button>
                 <button class="filter-chip" data-tab="new">
                     <i class="fas fa-plus-circle me-1"></i>Создать
@@ -130,14 +123,14 @@
                     <h5 class="mb-4">Создать новый заказ</h5>
                     
                     <div class="mb-3">
-                        <label class="form-label">Категория <span class="text-danger">*</span></label>
+                        <label class="form-label required">Категория</label>
                         <select class="form-select" id="orderCategory">
                             <option value="">Выберите категорию</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Название <span class="text-danger">*</span></label>
+                        <label class="form-label required">Название</label>
                         <input type="text" class="form-control" id="orderTitle" 
                                placeholder="Например: Замена смесителя" maxlength="100">
                     </div>
@@ -149,25 +142,30 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Цена (₽) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="orderPrice" 
-                               placeholder="Например: 1500" min="500" max="1000000" step="100">
+                        <label class="form-label required">Цена</label>
+                        <div class="price-input-wrapper">
+                            <input type="number" class="form-control" id="orderPrice" 
+                                   placeholder="1500" min="500" max="1000000" step="100">
+                            <span class="currency">₽</span>
+                        </div>
                         <small class="text-secondary">от 500 до 1 000 000 ₽</small>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Адрес <span class="text-danger">*</span></label>
+                        <label class="form-label required">Адрес</label>
                         <input type="text" class="form-control" id="orderAddress" 
                                placeholder="ул. Ленина, д. 10, кв. 5" maxlength="200">
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label">Фотографии (до 5 шт)</label>
-                        <input type="file" class="form-control" id="orderPhotos" 
-                               multiple accept="image/*" style="display: none;">
-                        <button class="btn btn-outline-secondary w-100" id="uploadPhotoBtn">
-                            <i class="fas fa-camera me-2"></i>Загрузить фото
-                        </button>
+                        <div class="file-input-wrapper">
+                            <input type="file" class="file-input" id="orderPhotos" 
+                                   multiple accept="image/*">
+                            <label for="orderPhotos" class="file-label" id="uploadPhotoBtn">
+                                <i class="fas fa-camera me-2"></i>Загрузить фото
+                            </label>
+                        </div>
                         <div id="photoPreview" class="d-flex gap-2 mt-2 flex-wrap"></div>
                     </div>
                     
@@ -190,24 +188,24 @@
     <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
         <button class="nav-item" data-page="home">
-            <span>🏠</span>
-            <span>Главная</span>
+            <span class="nav-icon"><i class="fas fa-home"></i></span>
+            <span class="nav-label">Главная</span>
         </button>
         <button class="nav-item" data-page="search">
-            <span>🔍</span>
-            <span>Поиск</span>
+            <span class="nav-icon"><i class="fas fa-search"></i></span>
+            <span class="nav-label">Поиск</span>
         </button>
-        <button class="nav-item" data-page="favorites">
-            <span>❤️</span>
-            <span>Избранное</span>
+        <button class="nav-item create-order-btn" data-page="create-order">
+            <span class="plus-icon"><i class="fas fa-plus-circle"></i></span>
+            <span>Заявка</span>
         </button>
         <button class="nav-item active" data-page="orders">
-            <span>📋</span>
-            <span>Заказы</span>
+            <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+            <span class="nav-label">Мои заказы</span>
         </button>
         <button class="nav-item" data-page="profile">
-            <span>👤</span>
-            <span>Профиль</span>
+            <span class="nav-icon"><i class="fas fa-user"></i></span>
+            <span class="nav-label">Профиль</span>
         </button>
     </div>
 
@@ -216,16 +214,21 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Оцените мастера</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">
+                        <i class="fas fa-star me-2" style="color: gold;"></i>
+                        Оцените мастера
+                    </h5>
+                    <button type="button" class="modal-close" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <div class="rating-stars mb-3 text-center">
-                        <span class="star" data-rating="1">★</span>
-                        <span class="star" data-rating="2">★</span>
-                        <span class="star" data-rating="3">★</span>
-                        <span class="star" data-rating="4">★</span>
-                        <span class="star" data-rating="5">★</span>
+                    <div class="rating-stars mb-3 text-center" id="reviewStars">
+                        <span class="star" data-rating="1">☆</span>
+                        <span class="star" data-rating="2">☆</span>
+                        <span class="star" data-rating="3">☆</span>
+                        <span class="star" data-rating="4">☆</span>
+                        <span class="star" data-rating="5">☆</span>
                     </div>
                     <textarea id="reviewText" class="form-control" rows="3" 
                               placeholder="Ваш отзыв (необязательно)"></textarea>
@@ -251,6 +254,7 @@
     <script src="/HomeWork/js/core/firebase.js"></script>
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
+    <script src="/HomeWork/js/core/loader.js"></script>
     
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/orders.js"></script>

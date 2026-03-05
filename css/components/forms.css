@@ -1,4 +1,7 @@
-/* Поиск как в Авито */
+/* ============================================
+   ПОИСК
+   ============================================ */
+
 .search-bar {
     background-color: var(--bg-soft);
     border-radius: 18px;
@@ -8,11 +11,20 @@
     align-items: center;
     gap: 10px;
     border: 1px solid var(--border);
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.search-bar:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background-color: var(--bg-white);
 }
 
 .search-bar span {
     font-size: 1.2rem;
     opacity: 0.7;
+    color: var(--text-muted);
 }
 
 .search-bar input {
@@ -26,9 +38,34 @@
 
 .search-bar input::placeholder {
     color: var(--text-muted);
+    font-weight: 400;
 }
 
-/* Формы */
+.search-bar .clear-search {
+    display: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    border-radius: 50%;
+}
+
+.search-bar .clear-search:hover {
+    color: var(--danger);
+    background: var(--danger-light);
+}
+
+.search-bar.has-text .clear-search {
+    display: block;
+}
+
+/* ============================================
+   ФОРМЫ
+   ============================================ */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
 .form-label {
     display: block;
     margin-bottom: 8px;
@@ -37,8 +74,15 @@
     font-weight: 500;
 }
 
+.form-label.required::after {
+    content: '*';
+    color: var(--danger);
+    margin-left: 4px;
+}
+
 .form-control,
-.form-select {
+.form-select,
+textarea.form-control {
     width: 100%;
     padding: 14px 16px;
     background-color: var(--bg-soft);
@@ -47,15 +91,251 @@
     color: var(--text-primary);
     font-size: 1rem;
     transition: all var(--transition-fast);
+    font-family: inherit;
+}
+
+textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
 }
 
 .form-control:focus,
-.form-select:focus {
+.form-select:focus,
+textarea.form-control:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(44, 213, 196, 0.2);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background-color: var(--bg-white);
 }
 
-.form-control::placeholder {
+.form-control::placeholder,
+textarea.form-control::placeholder {
     color: var(--text-muted);
+    font-weight: 400;
+}
+
+.form-control:disabled,
+.form-select:disabled,
+textarea.form-control:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--bg-main);
+}
+
+/* Select */
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238099AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+}
+
+.form-select option {
+    background-color: var(--bg-white);
+    color: var(--text-primary);
+}
+
+/* Radio и Checkbox */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.form-check-label {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+/* Инлайн группа */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* Ошибки валидации */
+.form-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-control.error {
+    border-color: var(--danger);
+    background-color: var(--danger-light);
+}
+
+.form-control.error:focus {
+    box-shadow: 0 0 0 3px var(--danger-light);
+}
+
+/* Успешная валидация */
+.form-control.success {
+    border-color: var(--success);
+    background-color: var(--success-light);
+}
+
+/* ============================================
+   ФАЙЛОВЫЙ ИНПУТ
+   ============================================ */
+
+.file-input-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.file-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.file-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--bg-soft);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: center;
+}
+
+.file-label:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.file-label i {
+    font-size: 1.2rem;
+}
+
+.file-info {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   ЦЕНА И ВАЛЮТА
+   ============================================ */
+
+.price-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.price-input-wrapper .currency {
+    position: absolute;
+    right: 16px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.price-input-wrapper input {
+    padding-right: 50px;
+}
+
+/* ============================================
+   АДАПТАЦИЯ
+   ============================================ */
+
+@media (max-width: 768px) {
+    .search-bar {
+        padding: 12px 16px;
+    }
+    
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        padding: 12px 14px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-bar {
+        padding: 10px 14px;
+        border-radius: 16px;
+    }
+    
+    .search-bar span {
+        font-size: 1rem;
+    }
+    
+    .search-bar input {
+        font-size: 0.95rem;
+    }
+    
+    .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 6px;
+    }
+    
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        border-radius: var(--radius-sm);
+    }
+    
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+    
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .file-label {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .search-bar {
+        padding: 8px 12px;
+    }
+    
+    .search-bar input {
+        font-size: 0.85rem;
+    }
+    
+    .form-row {
+        gap: 10px;
+    }
 }

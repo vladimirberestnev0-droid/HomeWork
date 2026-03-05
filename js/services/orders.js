@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС ЗАКАЗОВ С ОПТИМИЗАЦИЕЙ (ПОЛНОСТЬЮ ИСПРАВЛЕНО)
+// СЕРВИС ЗАКАЗОВ (ИСПРАВЛЕНО - пагинация, отклики, завершение)
 // ============================================
 
 const Orders = (function() {
@@ -8,8 +8,16 @@ const Orders = (function() {
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     const spamPrevention = new Map();
     const orderCache = new Map();
-    const CACHE_TTL = 5 * 60 * 1000; // 5 минут
     let activeListeners = new Map();
+    
+    // Константы
+    const ORDER_STATUS = window.ORDER_STATUS || {
+        OPEN: 'open',
+        IN_PROGRESS: 'in_progress',
+        COMPLETED: 'completed',
+        CANCELLED: 'cancelled',
+        AWAITING_CONFIRMATION: 'awaiting_confirmation' // Новый статус
+    };
 
     // ===== ПРОВЕРКИ =====
     function checkFirebase() {
@@ -43,7 +51,11 @@ const Orders = (function() {
         return { isValid: true };
     }
 
-    // ===== РАБОТА С КЭШЕМ (ОПТИМИЗИРОВАНО) =====
+    // ===== РАБОТА С КЭШЕМ =====
+    function getCacheTTL() {
+        return CONFIG?.app?.timeouts?.cacheTTL?.orders || 5 * 60 * 1000;
+    }
+
     function setCache(key, data) {
         if (!key) return;
         orderCache.set(key, { 
@@ -54,17 +66,17 @@ const Orders = (function() {
         // Автоматическая очистка через TTL
         setTimeout(() => {
             const cached = orderCache.get(key);
-            if (cached && Date.now() - cached.timestamp > CACHE_TTL) {
+            if (cached && Date.now() - cached.timestamp > getCacheTTL()) {
                 orderCache.delete(key);
             }
-        }, CACHE_TTL);
+        }, getCacheTTL());
     }
 
     function getCache(key) {
         if (!key) return null;
         const cached = orderCache.get(key);
         if (!cached) return null;
-        if (Date.now() - cached.timestamp > CACHE_TTL) {
+        if (Date.now() - cached.timestamp > getCacheTTL()) {
             orderCache.delete(key);
             return null;
         }
@@ -78,7 +90,6 @@ const Orders = (function() {
             return;
         }
         
-        // Очищаем все кэши, содержащие паттерн
         const keysToDelete = [];
         for (const key of orderCache.keys()) {
             if (key.includes(pattern)) {
@@ -86,11 +97,6 @@ const Orders = (function() {
             }
         }
         keysToDelete.forEach(key => orderCache.delete(key));
-        
-        // Также очищаем кэш открытых заказов
-        if (pattern !== 'open_orders') {
-            clearCache('open_orders');
-        }
     }
 
     // ===== СОЗДАНИЕ ЧАТА =====
@@ -154,12 +160,22 @@ const Orders = (function() {
                 return { success: false, error: 'Только клиенты могут создавать заказы' };
             }
 
-            // Валидация
+            // Валидация с использованием CONFIG
+            const limits = CONFIG?.app?.limits || {
+                maxTitleLength: 100,
+                maxDescriptionLength: 1000,
+                maxAddressLength: 200,
+                minOrderPrice: 500,
+                maxOrderPrice: 1000000,
+                maxPhotosPerOrder: 5,
+                maxPhotoSize: 10 * 1024 * 1024
+            };
+
             if (!orderData.title || orderData.title.length < 5) {
                 return { success: false, error: 'Название должно быть не менее 5 символов' };
             }
-            if (orderData.title.length > 100) {
-                return { success: false, error: 'Название слишком длинное (макс 100 символов)' };
+            if (orderData.title.length > limits.maxTitleLength) {
+                return { success: false, error: `Название слишком длинное (макс ${limits.maxTitleLength} символов)` };
             }
 
             if (!orderData.category || orderData.category === 'all') {
@@ -167,18 +183,18 @@ const Orders = (function() {
             }
 
             if (!Utils.validatePrice(orderData.price)) {
-                return { success: false, error: `Цена должна быть от ${CONFIG.app.limits.minOrderPrice} до ${CONFIG.app.limits.maxOrderPrice} ₽` };
+                return { success: false, error: `Цена должна быть от ${limits.minOrderPrice} до ${limits.maxOrderPrice} ₽` };
             }
 
             if (!orderData.address) {
                 return { success: false, error: 'Укажите адрес' };
             }
-            if (orderData.address.length > 200) {
+            if (orderData.address.length > limits.maxAddressLength) {
                 return { success: false, error: 'Адрес слишком длинный' };
             }
 
-            if (orderData.description && orderData.description.length > 1000) {
-                return { success: false, error: 'Описание слишком длинное (макс 1000 символов)' };
+            if (orderData.description && orderData.description.length > limits.maxDescriptionLength) {
+                return { success: false, error: `Описание слишком длинное (макс ${limits.maxDescriptionLength} символов)` };
             }
 
             // Модерация
@@ -197,13 +213,13 @@ const Orders = (function() {
             // Загрузка фото
             const photoUrls = [];
             if (orderData.photos && orderData.photos.length > 0) {
-                if (orderData.photos.length > CONFIG.app.limits.maxPhotosPerOrder) {
-                    return { success: false, error: `Максимум ${CONFIG.app.limits.maxPhotosPerOrder} фото` };
+                if (orderData.photos.length > limits.maxPhotosPerOrder) {
+                    return { success: false, error: `Максимум ${limits.maxPhotosPerOrder} фото` };
                 }
 
                 for (const file of orderData.photos) {
                     try {
-                        if (file.size > CONFIG.app.limits.maxPhotoSize) {
+                        if (file.size > limits.maxPhotoSize) {
                             Utils.showWarning(`Файл ${file.name} слишком большой, пропущен`);
                             continue;
                         }
@@ -244,7 +260,6 @@ const Orders = (function() {
 
             const docRef = await db.collection('orders').add(order);
             
-            // Очищаем ВЕСЬ кэш заказов
             clearCache();
             
             Utils.showSuccess('✅ Заказ создан!');
@@ -257,12 +272,12 @@ const Orders = (function() {
         }
     }
 
-    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (С ПАГИНАЦИЕЙ - ИСПРАВЛЕНО) =====
+    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕННАЯ ПАГИНАЦИЯ) =====
     async function getOpenOrders(filters = {}, options = {}) {
         try {
             if (!checkFirebase()) return { orders: [], lastDoc: null, hasMore: false };
 
-            const limit = options.limit || 20;
+            const limit = options.limit || CONFIG?.app?.pagination?.ordersPerPage || 20;
             const cacheKey = `open_orders_${JSON.stringify(filters)}_${limit}_${options.lastDoc?.id || ''}`;
             
             // Не используем кэш для пагинации, если есть lastDoc
@@ -279,19 +294,18 @@ const Orders = (function() {
                 query = query.where('category', '==', filters.category);
             }
 
-            // ВАЖНО: Добавляем лимит
             query = query.limit(limit);
 
-            // ВАЖНО: Правильная обработка lastDoc
+            // ИСПРАВЛЕНО: правильная обработка lastDoc
             if (options.lastDoc) {
-                if (options.lastDoc.id) {
-                    // Получаем DocumentSnapshot по ID
+                if (options.lastDoc.id && options.lastDoc.exists === undefined) {
+                    // Это просто объект с id, получаем DocumentSnapshot
                     const lastDocSnapshot = await db.collection('orders').doc(options.lastDoc.id).get();
                     if (lastDocSnapshot.exists) {
                         query = query.startAfter(lastDocSnapshot);
                     }
-                } else if (options.lastDoc._document) {
-                    // Это уже DocumentSnapshot
+                } else if (options.lastDoc.id && typeof options.lastDoc.data === 'function') {
+                    // Это DocumentSnapshot
                     query = query.startAfter(options.lastDoc);
                 }
             }
@@ -310,13 +324,17 @@ const Orders = (function() {
                 });
                 
                 if (index === snapshot.docs.length - 1) {
-                    lastDoc = doc; // Сохраняем весь DocumentSnapshot
+                    lastDoc = {
+                        id: doc.id,
+                        exists: true,
+                        data: () => doc.data()
+                    };
                 }
             });
 
             // Фильтр по городу (на клиенте)
             if (filters.city && filters.city !== 'all') {
-                const cityName = CITIES.find(c => c.id === filters.city)?.name?.toLowerCase();
+                const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
                 if (cityName) {
                     orders = orders.filter(o => 
                         o.city === cityName || 
@@ -342,7 +360,7 @@ const Orders = (function() {
 
             const result = {
                 orders,
-                lastDoc: lastDoc, // Возвращаем DocumentSnapshot
+                lastDoc: lastDoc,
                 hasMore: snapshot.docs.length === limit
             };
             
@@ -372,7 +390,7 @@ const Orders = (function() {
                 .where('clientId', '==', clientId)
                 .orderBy('createdAt', 'desc');
 
-            if (filter !== 'all' && ORDER_STATUS.isValid(filter)) {
+            if (filter !== 'all' && ORDER_STATUS[filter.toUpperCase()]) {
                 query = query.where('status', '==', filter);
             }
 
@@ -408,7 +426,8 @@ const Orders = (function() {
             const cached = getCache(cacheKey);
             if (cached && !options.force) return cached;
             
-            // Получаем заказы, где есть отклики этого мастера
+            // Получаем все заказы, где есть отклики этого мастера
+            // В идеале нужно создать отдельную коллекцию responses, но пока так
             const snapshot = await db.collection('orders')
                 .orderBy('createdAt', 'desc')
                 .limit(options.limit || 100)
@@ -469,22 +488,29 @@ const Orders = (function() {
             }
 
             // Антиспам
+            const limits = CONFIG?.app?.limits || { responseCooldown: 5000 };
             const now = Date.now();
             const lastResponse = spamPrevention.get(user.uid) || 0;
-            if (now - lastResponse < CONFIG.app.limits.responseCooldown) {
-                const wait = Math.ceil((CONFIG.app.limits.responseCooldown - (now - lastResponse)) / 1000);
+            
+            if (now - lastResponse < limits.responseCooldown) {
+                const wait = Math.ceil((limits.responseCooldown - (now - lastResponse)) / 1000);
                 return { success: false, error: `Подождите ${wait} сек. перед следующим откликом` };
             }
+            
             spamPrevention.set(user.uid, now);
-            setTimeout(() => spamPrevention.delete(user.uid), CONFIG.app.limits.responseCooldown);
+            setTimeout(() => spamPrevention.delete(user.uid), limits.responseCooldown);
 
             // Валидация
+            const minPrice = CONFIG?.app?.limits?.minOrderPrice || 500;
+            const maxPrice = CONFIG?.app?.limits?.maxOrderPrice || 1000000;
+            const maxCommentLength = CONFIG?.app?.limits?.maxCommentLength || 500;
+
             if (!Utils.validatePrice(price)) {
-                return { success: false, error: `Цена должна быть от ${CONFIG.app.limits.minOrderPrice} до ${CONFIG.app.limits.maxOrderPrice} ₽` };
+                return { success: false, error: `Цена должна быть от ${minPrice} до ${maxPrice} ₽` };
             }
 
-            if (comment && comment.length > 500) {
-                return { success: false, error: 'Комментарий слишком длинный (макс 500 символов)' };
+            if (comment && comment.length > maxCommentLength) {
+                return { success: false, error: `Комментарий слишком длинный (макс ${maxCommentLength} символов)` };
             }
 
             if (comment) {
@@ -535,7 +561,6 @@ const Orders = (function() {
                 return response;
             });
 
-            // Очищаем кэш
             clearCache();
             clearCache(`master_responses_${user.uid}`);
 
@@ -588,7 +613,6 @@ const Orders = (function() {
 
             const chatResult = await createChat(orderId, masterId, user.uid, result);
 
-            // Очищаем кэш
             clearCache();
 
             Utils.showSuccess('✅ Мастер выбран!');
@@ -601,8 +625,8 @@ const Orders = (function() {
         }
     }
 
-    // ===== ЗАВЕРШЕНИЕ ЗАКАЗА =====
-    async function completeOrder(orderId, clientReview = null) {
+    // ===== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНИЯ ЗАКАЗА (МАСТЕР) =====
+    async function initiateCompletion(orderId, clientReview = null) {
         try {
             if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
@@ -612,53 +636,139 @@ const Orders = (function() {
             
             const orderRef = db.collection('orders').doc(orderId);
             
-            await db.runTransaction(async (transaction) => {
+            const orderDoc = await orderRef.get();
+            if (!orderDoc.exists) throw new Error('Заказ не найден');
+            
+            const orderData = orderDoc.data();
+            
+            // Проверяем, что мастер действительно назначен на этот заказ
+            if (orderData.selectedMasterId !== user.uid) {
+                throw new Error('Только назначенный мастер может завершить заказ');
+            }
+            
+            // Проверяем статус
+            if (orderData.status !== ORDER_STATUS.IN_PROGRESS) {
+                throw new Error('Заказ не в работе');
+            }
+
+            // Если мастер оставляет отзыв о клиенте
+            if (clientReview && clientReview.rating) {
+                await orderRef.update({
+                    status: ORDER_STATUS.AWAITING_CONFIRMATION,
+                    masterCompletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    masterReview: {
+                        rating: clientReview.rating,
+                        text: clientReview.text?.trim() || '',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+                });
+            } else {
+                await orderRef.update({
+                    status: ORDER_STATUS.AWAITING_CONFIRMATION,
+                    masterCompletedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            // Отправляем уведомление клиенту через чат
+            try {
+                const chatId = `chat_${orderId}_${orderData.selectedMasterId}`;
+                const chatRef = db.collection('chats').doc(chatId);
+                
+                await chatRef.collection('messages').add({
+                    senderId: 'system',
+                    senderName: 'Система',
+                    text: '🔔 Мастер отметил заказ как выполненный. Пожалуйста, подтвердите завершение.',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    type: 'system',
+                    read: false
+                });
+                
+                await chatRef.update({
+                    lastMessage: '🔔 Ожидает подтверждения завершения',
+                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    [`unreadCount.${orderData.clientId}`]: firebase.firestore.FieldValue.increment(1)
+                });
+            } catch (chatError) {
+                console.error('Ошибка уведомления в чате:', chatError);
+            }
+
+            clearCache();
+            
+            Utils.showSuccess('✅ Запрос на завершение отправлен клиенту');
+            return { success: true, requiresConfirmation: true };
+            
+        } catch (error) {
+            console.error('❌ Ошибка инициирования завершения:', error);
+            Utils.showError(error.message || 'Ошибка');
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ===== ПОДТВЕРЖДЕНИЕ ЗАВЕРШЕНИЯ ЗАКАЗА (КЛИЕНТ) =====
+    async function confirmCompletion(orderId, clientReview = null) {
+        try {
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
+            
+            const user = getUserSafe();
+            if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
+            
+            const orderRef = db.collection('orders').doc(orderId);
+            
+            const result = await db.runTransaction(async (transaction) => {
                 const orderDoc = await transaction.get(orderRef);
                 if (!orderDoc.exists) throw new Error('Заказ не найден');
                 
                 const orderData = orderDoc.data();
                 
-                if (orderData.selectedMasterId !== user.uid) {
-                    throw new Error('Только мастер может завершить заказ');
+                // Проверяем, что клиент владелец заказа
+                if (orderData.clientId !== user.uid) {
+                    throw new Error('Только клиент может подтвердить завершение');
+                }
+                
+                // Проверяем статус
+                if (orderData.status !== ORDER_STATUS.AWAITING_CONFIRMATION) {
+                    throw new Error('Заказ не ожидает подтверждения');
                 }
 
-                if (clientReview && clientReview.rating) {
-                    transaction.update(orderRef, {
-                        clientReviews: firebase.firestore.FieldValue.arrayUnion({
-                            masterId: user.uid,
-                            masterName: Auth.getUserData()?.name || 'Мастер',
-                            rating: clientReview.rating,
-                            text: clientReview.text?.trim() || '',
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        })
-                    });
+                const updates = {
+                    status: ORDER_STATUS.COMPLETED,
+                    completedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
-                    // Обновляем рейтинг клиента
-                    const clientRef = db.collection('users').doc(orderData.clientId);
-                    const clientDoc = await transaction.get(clientRef);
+                // Если клиент оставляет отзыв о мастере
+                if (clientReview && clientReview.rating) {
+                    updates.clientReview = {
+                        rating: clientReview.rating,
+                        text: clientReview.text?.trim() || '',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
                     
-                    if (clientDoc.exists) {
-                        const clientData = clientDoc.data();
-                        const currentRating = clientData.rating || 0;
-                        const currentReviews = clientData.reviews || 0;
+                    // Обновляем рейтинг мастера
+                    const masterRef = db.collection('users').doc(orderData.selectedMasterId);
+                    const masterDoc = await transaction.get(masterRef);
+                    
+                    if (masterDoc.exists) {
+                        const masterData = masterDoc.data();
+                        const currentRating = masterData.rating || 0;
+                        const currentReviews = masterData.reviews || 0;
                         const newRating = ((currentRating * currentReviews) + clientReview.rating) / (currentReviews + 1);
                         
-                        transaction.update(clientRef, {
+                        transaction.update(masterRef, {
                             rating: newRating,
                             reviews: currentReviews + 1
                         });
                     }
                 }
 
-                transaction.update(orderRef, {
-                    status: ORDER_STATUS.COMPLETED,
-                    completedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                transaction.update(orderRef, updates);
+                
+                return orderData;
             });
 
-            // Закрываем чат
+            // Блокируем чат
             try {
-                const orderData = await getOrderById(orderId);
+                const orderData = result;
                 if (orderData && orderData.selectedMasterId) {
                     const chatId = `chat_${orderId}_${orderData.selectedMasterId}`;
                     await db.collection('chats').doc(chatId).update({
@@ -672,12 +782,12 @@ const Orders = (function() {
 
             clearCache();
 
-            Utils.showSuccess('✅ Заказ выполнен!');
+            Utils.showSuccess('✅ Заказ выполнен! Спасибо за отзыв!');
             return { success: true };
             
         } catch (error) {
-            console.error('❌ Ошибка завершения заказа:', error);
-            Utils.showError(error.message || 'Ошибка завершения');
+            console.error('❌ Ошибка подтверждения завершения:', error);
+            Utils.showError(error.message || 'Ошибка');
             return { success: false, error: error.message };
         }
     }
@@ -694,10 +804,14 @@ const Orders = (function() {
             const total = responses.length;
             const accepted = responses.filter(r => 
                 r.status === ORDER_STATUS.IN_PROGRESS || 
-                r.status === ORDER_STATUS.COMPLETED
+                r.status === ORDER_STATUS.COMPLETED ||
+                r.status === ORDER_STATUS.AWAITING_CONFIRMATION
             ).length;
             const completed = responses.filter(r => 
                 r.status === ORDER_STATUS.COMPLETED
+            ).length;
+            const awaiting = responses.filter(r => 
+                r.status === ORDER_STATUS.AWAITING_CONFIRMATION
             ).length;
             
             const totalEarnings = responses
@@ -708,6 +822,7 @@ const Orders = (function() {
                 total,
                 accepted,
                 completed,
+                awaiting,
                 conversion: total > 0 ? Math.round((accepted / total) * 100) : 0,
                 earnings: totalEarnings
             };
@@ -717,7 +832,7 @@ const Orders = (function() {
             
         } catch (error) {
             console.error('Ошибка получения статистики:', error);
-            return { total: 0, accepted: 0, completed: 0, conversion: 0, earnings: 0 };
+            return { total: 0, accepted: 0, completed: 0, awaiting: 0, conversion: 0, earnings: 0 };
         }
     }
 
@@ -789,7 +904,7 @@ const Orders = (function() {
             let filtered = orders;
             
             if (filters.city && filters.city !== 'all') {
-                const cityName = CITIES.find(c => c.id === filters.city)?.name?.toLowerCase();
+                const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
                 if (cityName) {
                     filtered = filtered.filter(o => 
                         o.city === cityName || 
@@ -800,7 +915,6 @@ const Orders = (function() {
 
             callback(filtered);
             
-            // Очищаем кэш при обновлении
             clearCache('open_orders');
         }, (error) => {
             console.error('Ошибка подписки на заказы:', error);
@@ -836,7 +950,8 @@ const Orders = (function() {
         getMasterResponses,
         respondToOrder,
         selectMaster,
-        completeOrder,
+        initiateCompletion,
+        confirmCompletion,
         getMasterStats,
         getOrderById,
         incrementViews,
@@ -846,7 +961,7 @@ const Orders = (function() {
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (полностью оптимизирован)');
+    console.log('✅ Orders сервис загружен (с двухэтапным завершением)');
     
     return Object.freeze(api);
 })();

@@ -1,0 +1,29 @@
+/* ============================================
+   ОСНОВНОЙ ФАЙЛ СТИЛЕЙ
+   ИМПОРТИРУЕТ ВСЕ КОМПОНЕНТЫ
+   ============================================ */
+
+/* Переменные (обязательно первыми) */
+@import url('variables.css');
+
+/* Базовые стили и утилиты */
+@import url('base.css');
+@import url('utils.css');
+
+/* Компоненты */
+@import url('buttons.css');
+@import url('cards.css');
+@import url('chat.css');
+@import url('dropdown.css');
+@import url('filters.css');
+@import url('forms.css');
+@import url('loaders.css');
+@import url('masters.css');
+@import url('modals.css');
+@import url('notifications.css');
+
+/* Адаптация и темы */
+@import url('desktop-fixes.css');
+@import url('mobile-fixes.css');
+@import url('mobile-utilities.css');
+@import url('dark.css');

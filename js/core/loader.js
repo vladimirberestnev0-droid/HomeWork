@@ -11,13 +11,14 @@
 
     // Константы
     const LOADER_ID = 'global-loader';
-    const TRANSITION_TIME = 300; // мс
+    const MAX_LOADER_TIME = 10000; // 10 секунд - защита от вечных лоадеров
 
     // Переменные
     let loader = null;
     let timeoutId = null;
     let isTransitioning = false;
     let originalTitle = document.title;
+    let loaderCounter = 0; // СЧЁТЧИК ВЛОЖЕННЫХ ВЫЗОВОВ
 
     // ===== СОЗДАНИЕ ЛОУДЕРА =====
     function ensureLoader() {
@@ -125,6 +126,9 @@
 
     // ===== ПОКАЗАТЬ ЛОУДЕР =====
     function showLoader(text = 'Загрузка...') {
+        loaderCounter++;
+        console.log(`🔄 Loader показан (${loaderCounter}): ${text}`);
+        
         const loaderEl = ensureLoader();
         const textEl = document.getElementById('loader-text') || loaderEl.querySelector('.loader-text');
         
@@ -139,11 +143,54 @@
         originalTitle = document.title;
         document.title = `⏳ ${text} | ${originalTitle}`;
         
+        // Защита от вечных лоадеров
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        
+        timeoutId = setTimeout(() => {
+            if (loaderCounter > 0) {
+                console.warn(`⚠️ Аварийное скрытие лоадера (превышено время ${MAX_LOADER_TIME/1000}с)`);
+                // Принудительно сбрасываем счётчик
+                loaderCounter = 0;
+                hideLoader();
+            }
+        }, MAX_LOADER_TIME);
+        
         return loaderEl;
     }
 
     // ===== СКРЫТЬ ЛОУДЕР =====
     function hideLoader() {
+        if (loaderCounter > 0) {
+            loaderCounter = Math.max(0, loaderCounter - 1);
+            console.log(`🔄 Loader скрыт (осталось: ${loaderCounter})`);
+        }
+        
+        // Если есть ещё активные вызовы - не скрываем
+        if (loaderCounter > 0) {
+            return;
+        }
+        
+        const loaderEl = ensureLoader();
+        loaderEl.classList.remove('active');
+        document.body.classList.remove('loader-active');
+        
+        // Восстанавливаем заголовок
+        document.title = originalTitle;
+        
+        // Очищаем таймаут
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+    }
+
+    // ===== ПРИНУДИТЕЛЬНО СКРЫТЬ ЛОУДЕР (ИГНОРИРУЯ СЧЁТЧИК) =====
+    function forceHideLoader() {
+        console.log('⚠️ Принудительное скрытие лоадера');
+        loaderCounter = 0;
+        
         const loaderEl = ensureLoader();
         loaderEl.classList.remove('active');
         document.body.classList.remove('loader-active');
@@ -162,11 +209,7 @@
     function showTemporary(text = 'Загрузка...', duration = 1500) {
         showLoader(text);
         
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-        
-        timeoutId = setTimeout(() => {
+        setTimeout(() => {
             hideLoader();
         }, duration);
     }
@@ -232,10 +275,10 @@
     function setupAutoHide() {
         // Если страница уже загружена
         if (document.readyState === 'complete') {
-            setTimeout(hideLoader, 100);
+            setTimeout(forceHideLoader, 100);
         } else {
             window.addEventListener('load', () => {
-                setTimeout(hideLoader, 100);
+                setTimeout(forceHideLoader, 100);
             });
         }
         
@@ -252,6 +295,24 @@
         window.addEventListener('load', () => {
             clearTimeout(longLoadTimeout);
         });
+        
+        // Дополнительная защита - скрываем при любых ошибках
+        window.addEventListener('error', () => {
+            forceHideLoader();
+        });
+        
+        window.addEventListener('unhandledrejection', () => {
+            forceHideLoader();
+        });
+    }
+
+    // ===== ПОЛУЧИТЬ ТЕКУЩЕЕ СОСТОЯНИЕ =====
+    function getState() {
+        return {
+            visible: document.getElementById(LOADER_ID)?.classList.contains('active') || false,
+            counter: loaderCounter,
+            transitioning: isTransitioning
+        };
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -259,7 +320,12 @@
         ensureLoader();
         setupAutoHide();
         setupLinkIntercept();
-        console.log('✅ Loader инициализирован');
+        console.log('✅ Loader инициализирован (со счётчиком и защитой)');
+        
+        // Глобальная функция для отладки
+        window.debugLoader = function() {
+            console.log('🔍 Состояние лоадера:', getState());
+        };
     }
 
     // Запускаем после загрузки DOM
@@ -273,8 +339,10 @@
     window.Loader = {
         show: showLoader,
         hide: hideLoader,
+        forceHide: forceHideLoader,
         showTemporary: showTemporary,
         navigateTo: navigateTo,
-        navigateAfterAuth: navigateAfterAuth
+        navigateAfterAuth: navigateAfterAuth,
+        getState: getState
     };
 })();
