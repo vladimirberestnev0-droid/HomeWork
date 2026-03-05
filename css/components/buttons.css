@@ -1,0 +1,514 @@
+/* ============================================
+   БАЗОВЫЕ КНОПКИ
+   ============================================ */
+
+/* Базовый стиль кнопки */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-bounce);
+    background: var(--bg-soft);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    text-decoration: none;
+    line-height: 1;
+    user-select: none;
+}
+
+/* Эффект пульсации при наведении */
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+    z-index: 0;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn span, .btn i {
+    position: relative;
+    z-index: 1;
+}
+
+/* Первичная кнопка */
+.btn-primary {
+    background: var(--gradient-primary);
+    color: var(--deep-blue);
+    border: 2px solid #7FEEE3;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(44, 213, 196, 0.3);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 8px 25px rgba(44, 213, 196, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* Вторичная кнопка */
+.btn-secondary {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+}
+
+.btn-secondary:hover {
+    background: var(--accent-soft);
+    transform: translateY(-2px);
+}
+
+/* Кнопка опасного действия */
+.btn-danger {
+    background: var(--gradient-urgent);
+    color: var(--deep-blue);
+    border: 2px solid #ffb08c;
+    font-weight: 700;
+}
+
+.btn-danger:hover {
+    box-shadow: 0 8px 25px rgba(255, 138, 92, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Маленькая кнопка */
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    gap: 6px;
+}
+
+/* Большая кнопка */
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 1.2rem;
+    gap: 12px;
+}
+
+/* Кнопка на всю ширину */
+.btn-block {
+    width: 100%;
+}
+
+/* Кнопка только с иконкой */
+.btn-icon {
+    padding: 12px;
+    border-radius: 50%;
+    aspect-ratio: 1/1;
+}
+
+.btn-icon.btn-sm {
+    padding: 8px;
+}
+
+.btn-icon.btn-lg {
+    padding: 16px;
+}
+
+/* Отключенная кнопка */
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(0.5);
+}
+
+/* ============================================
+   ПЛАВАЮЩАЯ КНОПКА
+   ============================================ */
+
+.floating-action {
+    position: sticky;
+    bottom: var(--floating-btn-bottom);
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    z-index: 100;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.btn-floating {
+    background: var(--gradient-primary);
+    color: var(--deep-blue);
+    border: 2px solid #7FEEE3;
+    border-radius: var(--radius-full);
+    padding: 16px 30px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    box-shadow: 0 10px 25px rgba(44, 213, 196, 0.3);
+    width: 90%;
+    max-width: 350px;
+    cursor: pointer;
+    transition: all var(--transition-bounce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #7FEEE3;
+}
+
+.btn-floating::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 0;
+}
+
+.btn-floating:hover::after {
+    opacity: 1;
+    animation: rotate 4s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.btn-floating:active {
+    transform: scale(0.97);
+    box-shadow: 0 5px 15px rgba(44, 213, 196, 0.4);
+}
+
+.btn-floating span,
+.btn-floating i {
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   КНОПКА ОТКЛИКА
+   ============================================ */
+
+.respond-btn {
+    margin-left: auto;
+    background: var(--gradient-primary);
+    color: var(--deep-blue);
+    border: none;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-bounce);
+    min-height: 40px;
+    min-width: 90px;
+    box-shadow: 0 2px 8px rgba(44, 213, 196, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.respond-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.respond-btn:hover::before {
+    width: 150px;
+    height: 150px;
+}
+
+.urgent .respond-btn {
+    background: var(--gradient-urgent);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.respond-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(44, 213, 196, 0.4);
+}
+
+.respond-btn:active {
+    transform: scale(0.95);
+}
+
+/* ============================================
+   КНОПКА СОЗДАНИЯ ЗАКАЗА
+   ============================================ */
+
+.create-order-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 40px;
+    transition: all var(--transition-fast);
+    min-width: 60px;
+}
+
+.create-order-btn .plus-icon {
+    font-size: 2.2rem;
+    line-height: 1;
+    color: var(--accent);
+    filter: drop-shadow(0 0 10px var(--accent));
+    animation: floatPlus 3s ease-in-out infinite;
+    display: block;
+    margin-bottom: 2px;
+    transition: all var(--transition-fast);
+}
+
+.create-order-btn span:last-child {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent);
+    transition: all var(--transition-fast);
+}
+
+.create-order-btn:hover {
+    background: rgba(44, 213, 196, 0.15);
+}
+
+.create-order-btn:hover .plus-icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px var(--accent));
+}
+
+.create-order-btn:active .plus-icon {
+    transform: scale(0.95);
+}
+
+/* Активное состояние */
+.create-order-btn.active {
+    background: var(--accent);
+}
+
+.create-order-btn.active .plus-icon,
+.create-order-btn.active span:last-child {
+    color: var(--deep-blue);
+    filter: none;
+}
+
+/* Для мастеров (неактивная кнопка) */
+.create-order-btn.master-mode {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.create-order-btn.master-mode .plus-icon {
+    opacity: 0.5;
+    filter: none;
+    animation: none;
+    color: var(--text-muted);
+}
+
+.create-order-btn.master-mode span:last-child {
+    color: var(--text-muted);
+}
+
+@keyframes floatPlus {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* ============================================
+   ГЕО-МЕТКА
+   ============================================ */
+
+.geo-tag {
+    background-color: rgba(44, 213, 196, 0.15);
+    padding: 8px 14px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(44, 213, 196, 0.3);
+    backdrop-filter: blur(2px);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.geo-tag:hover {
+    background-color: rgba(44, 213, 196, 0.25);
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.geo-tag i {
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   КНОПКА В БЛОКЕ АВТОРИЗАЦИИ
+   ============================================ */
+
+.auth-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.auth-buttons .btn {
+    flex: 1;
+    white-space: nowrap;
+}
+
+/* ============================================
+   АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ
+   ============================================ */
+
+@media (max-width: 768px) {
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-lg {
+        padding: 14px 28px;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        gap: 4px;
+    }
+    
+    .btn-sm {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+    
+    .btn-icon {
+        padding: 10px;
+    }
+    
+    .btn-icon.btn-sm {
+        padding: 6px;
+    }
+    
+    .btn-icon.btn-lg {
+        padding: 14px;
+    }
+    
+    .auth-buttons {
+        gap: 8px;
+    }
+    
+    .auth-buttons .btn {
+        padding: 8px 8px;
+        font-size: 0.75rem;
+    }
+    
+    .create-order-btn .plus-icon {
+        font-size: 2rem;
+    }
+    
+    .create-order-btn {
+        margin-top: -5px;
+    }
+    
+    .geo-tag {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .btn i {
+        display: none;
+    }
+    
+    .auth-buttons .btn {
+        font-size: 0.7rem;
+        padding: 6px 4px;
+    }
+    
+    .auth-buttons .btn i {
+        display: none;
+    }
+    
+    .create-order-btn .plus-icon {
+        font-size: 1.8rem;
+    }
+    
+    .create-order-btn span:last-child {
+        font-size: 0.6rem;
+    }
+    
+    .geo-tag {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+    
+    .geo-tag i {
+        font-size: 0.75rem;
+    }
+}

@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 12px 0 12px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Контейнер для контента */
+.app-wrapper {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    position: relative;
+}
+
+/* Шапка */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0 16px 0;
+    height: var(--header-height);
+    position: relative;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+}
+
+.logo span {
+    color: var(--accent);
+    font-weight: 900;
+    -webkit-text-fill-color: var(--accent);
+}
+
+/* Добавить после стилей .logo */
+.logo {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.logo span {
+    color: var(--accent);
+    font-weight: 900;
+    -webkit-text-fill-color: var(--accent);
+}
+
+.logo-small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: var(--text-soft);
+    -webkit-text-fill-color: var(--text-soft);
+    background: none;
+    margin-left: 2px;
+}
+
+/* Для мобилок */
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.4rem;
+    }
+    .logo-small {
+        font-size: 0.75rem;
+    }
+}
+
+/* Заголовки секций */
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 10px 0 15px 0;
+}
+
+.section-title h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    position: relative;
+    display: inline-block;
+}
+
+.section-title h2::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+.section-title a {
+    color: var(--accent);
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all var(--transition-fast);
+}
+
+.section-title a:hover {
+    gap: 8px;
+    text-shadow: 0 0 8px var(--accent);
+}
+
+/* Отступ для контента, чтобы не перекрывало навигацией */
+body {
+    padding-bottom: calc(var(--mobile-nav-height) + 20px) !important;
+}
+
+/* Скрытые элементы */
+.d-none {
+    display: none !important;
+}
+
+/* Ссылки */
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--accent-dark);
+}
+
+/* Списки */
+ul, ol {
+    list-style: none;
+}
+
+/* Изображения */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Контейнер для загрузки */
+#loadingSkeleton {
+    width: 100%;
+}
+
+#mainContent {
+    width: 100%;
+    display: block;
+}
+
+body.loaded #loadingSkeleton {
+    display: none;
+}
+
+body.loaded #mainContent {
+    display: block !important;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-soft);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Выделение текста */
+::selection {
+    background: var(--accent);
+    color: var(--deep-blue);
+}
+
+/* Фокус для доступности */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

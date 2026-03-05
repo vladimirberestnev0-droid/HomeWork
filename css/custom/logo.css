@@ -1,0 +1,48 @@
+/* ============================================
+   КАСТОМНЫЕ СТИЛИ ДЛЯ ЛОГОТИПА
+   ============================================ */
+
+.logo {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.logo-small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: var(--text-soft);
+    -webkit-text-fill-color: var(--text-soft);
+    background: none;
+    margin-left: 2px;
+}
+
+/* Адаптация для мобилок */
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.4rem;
+        gap: 3px;
+    }
+    .logo-small {
+        font-size: 0.75rem;
+    }
+}
+
+/* Для совсем маленьких экранов */
+@media (max-width: 360px) {
+    .logo {
+        font-size: 1.2rem;
+    }
+    .logo-small {
+        font-size: 0.65rem;
+    }
+}
+
+/* Анимация при наведении (опционально) */
+.logo:hover .logo-small {
+    color: var(--accent);
+    -webkit-text-fill-color: var(--accent);
+    transition: color 0.3s ease;
+}
