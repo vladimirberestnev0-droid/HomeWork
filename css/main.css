@@ -1,29 +1,30 @@
 /* ============================================
    ОСНОВНОЙ ФАЙЛ СТИЛЕЙ
-   ИМПОРТИРУЕТ ВСЕ КОМПОНЕНТЫ
    ============================================ */
 
 /* Переменные (обязательно первыми) */
-@import url('variables.css');
+@import url('core/variables.css');
 
 /* Базовые стили и утилиты */
-@import url('base.css');
-@import url('utils.css');
+@import url('core/base.css');
+@import url('core/utils.css');
 
 /* Компоненты */
-@import url('buttons.css');
-@import url('cards.css');
-@import url('chat.css');
-@import url('dropdown.css');
-@import url('filters.css');
-@import url('forms.css');
-@import url('loaders.css');
-@import url('masters.css');
-@import url('modals.css');
-@import url('notifications.css');
+@import url('components/buttons.css');
+@import url('components/cards.css');
+@import url('components/chat.css');
+@import url('components/dropdown.css');
+@import url('components/filters.css');
+@import url('components/forms.css');
+@import url('components/loaders.css');
+@import url('components/masters.css');
+@import url('components/modals.css');
+@import url('components/notifications.css');
 
-/* Адаптация и темы */
-@import url('desktop-fixes.css');
-@import url('mobile-fixes.css');
-@import url('mobile-utilities.css');
-@import url('dark.css');
+/* Адаптация */
+@import url('responsive/desktop-fixes.css');
+@import url('responsive/mobile-fixes.css');
+@import url('responsive/mobile-utilities.css');
+
+/* Тёмная тема */
+@import url('themes/dark.css');
