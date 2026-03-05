@@ -7,35 +7,32 @@ const DataService = (function() {
     let db = null;
     let storage = null;
     let isInitialized = false;
-    const callQueue = []; // Очередь вызовов, ожидающих инициализации
+    let initPromise = null;
+    const callQueue = [];
 
     // Универсальная обертка для всех методов
     function createMethod(fn) {
         return function(...args) {
             if (isInitialized) {
-                // Если уже инициализированы - выполняем сразу
                 return fn.apply(this, args);
-            } else {
-                // Если нет - возвращаем промис, который выполнится после инициализации
-                return new Promise((resolve, reject) => {
-                    callQueue.push({
-                        fn: () => fn.apply(this, args).then(resolve).catch(reject)
-                    });
-                    
-                    // Запускаем проверку инициализации
-                    ensureInit();
-                });
             }
+            
+            // Если не инициализированы - ставим в очередь
+            return new Promise((resolve, reject) => {
+                callQueue.push({
+                    fn: () => fn.apply(this, args).then(resolve).catch(reject)
+                });
+                
+                // Запускаем инициализацию, если ещё не запущена
+                if (!initPromise) {
+                    initPromise = ensureInit();
+                }
+            });
         };
     }
 
     // Автоматическая инициализация
     async function ensureInit() {
-        if (isInitialized) return;
-        if (window._dataServiceInitializing) return;
-        
-        window._dataServiceInitializing = true;
-        
         console.log('📦 DataService: ожидание Firebase...');
         
         // Ждем Firebase
@@ -46,7 +43,7 @@ const DataService = (function() {
                 storage = window.storage;
                 isInitialized = true;
                 
-                console.log('✅ DataService готов (автоинициализация)');
+                console.log('✅ DataService готов');
                 
                 // Выполняем все накопившиеся вызовы
                 while (callQueue.length > 0) {
@@ -58,14 +55,13 @@ const DataService = (function() {
                     }
                 }
                 
-                window._dataServiceInitializing = false;
-                return;
+                return true;
             }
             await new Promise(r => setTimeout(r, 100));
         }
         
-        window._dataServiceInitializing = false;
         console.error('❌ DataService: Firebase не загрузился');
+        return false;
     }
 
     // ===== ОБЩИЕ МЕТОДЫ =====
@@ -88,6 +84,15 @@ const DataService = (function() {
         
         if (options.startAfter) {
             query = query.startAfter(options.startAfter);
+        }
+        if (options.startAt) {
+            query = query.startAt(options.startAt);
+        }
+        if (options.endAt) {
+            query = query.endAt(options.endAt);
+        }
+        if (options.endBefore) {
+            query = query.endBefore(options.endBefore);
         }
         
         const snapshot = await query.get();
@@ -138,7 +143,7 @@ const DataService = (function() {
         return db.batch();
     });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ =====
+    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
     const getUser = createMethod(async function(userId) {
         return getDocument('users', userId);
     });
@@ -181,6 +186,7 @@ const DataService = (function() {
         });
     });
 
+    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЗАКАЗОВ =====
     const getOrders = createMethod(async function(filters = {}, options = {}) {
         const constraints = [];
         
@@ -230,6 +236,7 @@ const DataService = (function() {
         return updateDocument('orders', orderId, data);
     });
 
+    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЧАТОВ =====
     const getChat = createMethod(async function(chatId) {
         return getDocument('chats', chatId);
     });
@@ -295,6 +302,7 @@ const DataService = (function() {
         return { id: docRef.id, ...messageData };
     });
 
+    // ===== РАБОТА С ФАЙЛАМИ =====
     const uploadFile = createMethod(async function(file, path, onProgress = null) {
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const storageRef = storage.ref(`${path}/${fileName}`);
@@ -329,6 +337,7 @@ const DataService = (function() {
         return true;
     });
 
+    // ===== ПОДПИСКИ (REALTIME) =====
     const subscribeToCollection = createMethod(function(collection, constraints, callback, errorCallback) {
         let query = db.collection(collection);
         
@@ -383,10 +392,11 @@ const DataService = (function() {
             );
     });
 
-    // Запускаем проверку инициализации сразу
-    ensureInit();
+    // Запускаем проверку инициализации
+    initPromise = ensureInit();
 
     const api = {
+        // Общие методы
         getCollection,
         getDocument,
         createDocument,
@@ -394,26 +404,39 @@ const DataService = (function() {
         deleteDocument,
         runTransaction,
         batch,
+        
+        // Пользователи
         getUser,
         createUser,
         updateUser,
         getMasters,
+        
+        // Заказы
         getOrders,
         getOrder,
         createOrder,
         updateOrder,
+        
+        // Чаты
         getChat,
         getUserChats,
         createChat,
         updateChat,
         getMessages,
         sendMessage,
+        
+        // Файлы
         uploadFile,
         deleteFile,
+        
+        // Подписки
         subscribeToCollection,
         subscribeToDocument,
         subscribeToMessages,
-        isReady: () => isInitialized
+        
+        // Вспомогательные
+        isReady: () => isInitialized,
+        ready: () => initPromise
     };
 
     window.__DATA_SERVICE_INITIALIZED__ = true;

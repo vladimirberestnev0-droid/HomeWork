@@ -1,5 +1,5 @@
 // ============================================
-// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (ИСПРАВЛЕНО)
+// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (УЛУЧШЕННЫЙ)
 // ============================================
 const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
@@ -11,32 +11,20 @@ const App = (function() {
 
         console.log('🚀 Запуск приложения...');
         
-        // Показываем стартовый лоадер
         document.body.classList.add('app-loading');
 
         try {
-            // 1. Инициализация ядра в правильном порядке
             await initCore();
-
-            // 2. Инициализация сервисов
             initServices();
-
-            // 3. Инициализация компонентов UI
             initComponents();
-
-            // 4. Инициализация текущей страницы
             await initPage();
-
-            // 5. Глобальные обработчики
             initGlobalHandlers();
 
             initialized = true;
             console.log('✅ Приложение готово');
 
-            // Убираем стартовый лоадер
             document.body.classList.remove('app-loading');
             
-            // Скрываем глобальный лоадер если он был показан
             if (window.Loader) {
                 setTimeout(() => Loader.forceHide(), 100);
             }
@@ -50,37 +38,26 @@ const App = (function() {
     async function initCore() {
         console.log('📦 Инициализация ядра...');
 
-        // CONFIG уже должен быть загружен
         if (!window.CONFIG) {
             throw new Error('CONFIG не загружен');
         }
 
-        // Ждем Firebase
         await waitForFirebase();
 
-        // ИНИЦИАЛИЗИРУЕМ DataService (ВАЖНО!)
-        if (window.DataService && window.db && window.storage) {
-            console.log('📦 Инициализация DataService...');
-            DataService.init(window.db, window.storage);
-        } else {
-            console.warn('⚠️ DataService не может быть инициализирован:', {
-                dataService: !!window.DataService,
-                db: !!window.db,
-                storage: !!window.storage
-            });
+        // Ждем готовности DataService (очередь всё равно подхватит, но так надёжнее)
+        if (window.DataService) {
+            console.log('📦 Ожидание DataService...');
+            await window.DataService.ready();
         }
 
-        // Инициализируем Cache (если есть)
         if (window.Cache) {
             console.log('📦 Cache готов');
         }
 
-        // Инициализируем AppStore
         if (window.AppStore) {
             console.log('📦 AppStore готов');
         }
 
-        // Инициализируем Loader
         if (window.Loader) {
             console.log('📦 Loader готов');
         }
@@ -103,31 +80,25 @@ const App = (function() {
             setTimeout(() => {
                 document.removeEventListener('firebase-initialized', onFirebaseReady);
                 console.warn('⚠️ Таймаут ожидания Firebase');
-                resolve(); // Продолжаем даже без Firebase
+                resolve();
             }, 5000);
         });
     }
 
     function initServices() {
         console.log('🔧 Инициализация сервисов...');
-
-        // Auth уже инициализируется сам
         if (window.Auth) {
             console.log('🔧 Auth готов');
         }
-
-        // Остальные сервисы инициализируются при первом импорте
     }
 
     function initComponents() {
         console.log('🎨 Инициализация компонентов...');
 
-        // Менеджер модалок
         if (window.ModalManager) {
             ModalManager.init();
         }
 
-        // Навигация
         if (window.BottomNav) {
             BottomNav.init();
         }
@@ -135,12 +106,10 @@ const App = (function() {
             DesktopNav.init();
         }
 
-        // Уведомления
         if (window.Notifications) {
             Notifications.init();
         }
 
-        // Auth UI
         if (window.AuthUI) {
             AuthUI.init();
         }
@@ -152,25 +121,21 @@ const App = (function() {
         const path = window.location.pathname;
         const page = getCurrentPage(path);
 
-        // Проверка доступа для защищенных страниц
         if (page.requiresAuth) {
             const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
             
             if (!state.isAuthenticated) {
-                // Сохраняем намерение и редиректим на главную
                 sessionStorage.setItem('redirectAfterLogin', window.location.href);
                 window.location.href = '/HomeWork/';
                 return;
             }
 
             if (page.allowedRoles && !page.allowedRoles.includes(state.role)) {
-                // Доступ запрещен
                 showAccessDenied();
                 return;
             }
         }
 
-        // Ждем загрузки данных страницы
         if (window.loadPageData) {
             await window.loadPageData();
         }
@@ -231,14 +196,12 @@ const App = (function() {
     }
 
     function initGlobalHandlers() {
-        // Перехват ссылок для SPA-подобной навигации
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[href]');
             if (!link) return;
 
             const href = link.getAttribute('href');
             
-            // Не перехватываем внешние ссылки, якоря и специальные ссылки
             if (href.startsWith('http') || 
                 href.startsWith('#') || 
                 href.startsWith('javascript:') ||
@@ -257,7 +220,6 @@ const App = (function() {
             }
         });
 
-        // Мониторинг онлайн статуса
         window.addEventListener('online', () => {
             if (window.AppStore) {
                 AppStore.setState({ isOnline: true });
@@ -282,7 +244,6 @@ const App = (function() {
     return Object.freeze(api);
 })();
 
-// Автозапуск приложения
 document.addEventListener('DOMContentLoaded', () => App.init());
 
 window.App = App;
