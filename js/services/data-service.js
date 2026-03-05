@@ -1,47 +1,75 @@
 // ============================================
-// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (ЭЛЕГАНТНОЕ РЕШЕНИЕ)
+// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (С ОЧЕРЕДЬЮ ВЫЗОВОВ)
 // ============================================
 const DataService = (function() {
     if (window.__DATA_SERVICE_INITIALIZED__) return window.DataService;
 
     let db = null;
     let storage = null;
-    let initPromise = null;
     let isInitialized = false;
+    const callQueue = []; // Очередь вызовов, ожидающих инициализации
 
-    // Автоматическая инициализация при первом использовании
-    async function ensureInit() {
-        if (isInitialized) return true;
-        
-        if (initPromise) return initPromise;
-        
-        initPromise = new Promise(async (resolve, reject) => {
-            console.log('📦 DataService: автоматическая инициализация...');
-            
-            // Ждем Firebase
-            const maxAttempts = 10;
-            for (let i = 0; i < maxAttempts; i++) {
-                if (window.db && window.storage) {
-                    db = window.db;
-                    storage = window.storage;
-                    isInitialized = true;
-                    console.log('✅ DataService готов (автоинициализация)');
-                    resolve(true);
-                    return;
-                }
-                await new Promise(r => setTimeout(r, 100));
+    // Универсальная обертка для всех методов
+    function createMethod(fn) {
+        return function(...args) {
+            if (isInitialized) {
+                // Если уже инициализированы - выполняем сразу
+                return fn.apply(this, args);
+            } else {
+                // Если нет - возвращаем промис, который выполнится после инициализации
+                return new Promise((resolve, reject) => {
+                    callQueue.push({
+                        fn: () => fn.apply(this, args).then(resolve).catch(reject)
+                    });
+                    
+                    // Запускаем проверку инициализации
+                    ensureInit();
+                });
             }
-            
-            reject(new Error('Firebase не загрузился'));
-        });
+        };
+    }
+
+    // Автоматическая инициализация
+    async function ensureInit() {
+        if (isInitialized) return;
+        if (window._dataServiceInitializing) return;
         
-        return initPromise;
+        window._dataServiceInitializing = true;
+        
+        console.log('📦 DataService: ожидание Firebase...');
+        
+        // Ждем Firebase
+        const maxAttempts = 20;
+        for (let i = 0; i < maxAttempts; i++) {
+            if (window.db && window.storage) {
+                db = window.db;
+                storage = window.storage;
+                isInitialized = true;
+                
+                console.log('✅ DataService готов (автоинициализация)');
+                
+                // Выполняем все накопившиеся вызовы
+                while (callQueue.length > 0) {
+                    const queued = callQueue.shift();
+                    try {
+                        await queued.fn();
+                    } catch (error) {
+                        console.error('❌ Ошибка в отложенном вызове:', error);
+                    }
+                }
+                
+                window._dataServiceInitializing = false;
+                return;
+            }
+            await new Promise(r => setTimeout(r, 100));
+        }
+        
+        window._dataServiceInitializing = false;
+        console.error('❌ DataService: Firebase не загрузился');
     }
 
     // ===== ОБЩИЕ МЕТОДЫ =====
-    async function getCollection(collection, constraints = [], options = {}) {
-        await ensureInit();
-        
+    const getCollection = createMethod(async function(collection, constraints = [], options = {}) {
         let query = db.collection(collection);
         
         constraints.forEach(constraint => {
@@ -61,15 +89,6 @@ const DataService = (function() {
         if (options.startAfter) {
             query = query.startAfter(options.startAfter);
         }
-        if (options.startAt) {
-            query = query.startAt(options.startAt);
-        }
-        if (options.endAt) {
-            query = query.endAt(options.endAt);
-        }
-        if (options.endBefore) {
-            query = query.endBefore(options.endBefore);
-        }
         
         const snapshot = await query.get();
         
@@ -82,63 +101,49 @@ const DataService = (function() {
             lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
             size: snapshot.size
         };
-    }
+    });
 
-    async function getDocument(collection, id) {
-        await ensureInit();
+    const getDocument = createMethod(async function(collection, id) {
         const doc = await db.collection(collection).doc(id).get();
         return doc.exists ? { id: doc.id, ...doc.data() } : null;
-    }
+    });
 
-    async function createDocument(collection, data) {
-        await ensureInit();
-        
+    const createDocument = createMethod(async function(collection, data) {
         const docRef = await db.collection(collection).add({
             ...data,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
         return { id: docRef.id, ...data };
-    }
+    });
 
-    async function updateDocument(collection, id, data) {
-        await ensureInit();
-        
+    const updateDocument = createMethod(async function(collection, id, data) {
         await db.collection(collection).doc(id).update({
             ...data,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
         return { id, ...data };
-    }
+    });
 
-    async function deleteDocument(collection, id) {
-        await ensureInit();
+    const deleteDocument = createMethod(async function(collection, id) {
         await db.collection(collection).doc(id).delete();
         return true;
-    }
+    });
 
-    async function runTransaction(callback) {
-        await ensureInit();
+    const runTransaction = createMethod(async function(callback) {
         return await db.runTransaction(callback);
-    }
+    });
 
-    function batch() {
-        if (!isInitialized) {
-            throw new Error('DataService не инициализирован');
-        }
+    const batch = createMethod(function() {
         return db.batch();
-    }
+    });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
-    async function getUser(userId) {
+    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ =====
+    const getUser = createMethod(async function(userId) {
         return getDocument('users', userId);
-    }
+    });
 
-    async function createUser(userId, userData) {
-        await ensureInit();
-        
+    const createUser = createMethod(async function(userId, userData) {
         await db.collection('users').doc(userId).set({
             ...userData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -148,13 +153,13 @@ const DataService = (function() {
             reviews: 0
         });
         return { id: userId, ...userData };
-    }
+    });
 
-    async function updateUser(userId, data) {
+    const updateUser = createMethod(async function(userId, data) {
         return updateDocument('users', userId, data);
-    }
+    });
 
-    async function getMasters(filters = {}, options = {}) {
+    const getMasters = createMethod(async function(filters = {}, options = {}) {
         const constraints = [
             { type: 'where', field: 'role', operator: '==', value: 'master' },
             { type: 'where', field: 'banned', operator: '==', value: false }
@@ -174,10 +179,9 @@ const DataService = (function() {
             limit: options.limit || 10,
             startAfter: options.lastDoc
         });
-    }
+    });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЗАКАЗОВ =====
-    async function getOrders(filters = {}, options = {}) {
+    const getOrders = createMethod(async function(filters = {}, options = {}) {
         const constraints = [];
         
         if (filters.status) {
@@ -212,26 +216,25 @@ const DataService = (function() {
             limit: options.limit || 20,
             startAfter: options.lastDoc
         });
-    }
+    });
 
-    async function getOrder(orderId) {
+    const getOrder = createMethod(async function(orderId) {
         return getDocument('orders', orderId);
-    }
+    });
 
-    async function createOrder(orderData) {
+    const createOrder = createMethod(async function(orderData) {
         return createDocument('orders', orderData);
-    }
+    });
 
-    async function updateOrder(orderId, data) {
+    const updateOrder = createMethod(async function(orderId, data) {
         return updateDocument('orders', orderId, data);
-    }
+    });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЧАТОВ =====
-    async function getChat(chatId) {
+    const getChat = createMethod(async function(chatId) {
         return getDocument('chats', chatId);
-    }
+    });
 
-    async function getUserChats(userId, options = {}) {
+    const getUserChats = createMethod(async function(userId, options = {}) {
         const constraints = [{
             type: 'where',
             field: 'participants',
@@ -244,26 +247,22 @@ const DataService = (function() {
             limit: options.limit || 50,
             startAfter: options.lastDoc
         });
-    }
+    });
 
-    async function createChat(chatId, chatData) {
-        await ensureInit();
-        
+    const createChat = createMethod(async function(chatId, chatData) {
         await db.collection('chats').doc(chatId).set({
             ...chatData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         return { id: chatId, ...chatData };
-    }
+    });
 
-    async function updateChat(chatId, data) {
+    const updateChat = createMethod(async function(chatId, data) {
         return updateDocument('chats', chatId, data);
-    }
+    });
 
-    async function getMessages(chatId, options = {}) {
-        await ensureInit();
-        
+    const getMessages = createMethod(async function(chatId, options = {}) {
         const messagesRef = db.collection('chats').doc(chatId).collection('messages');
         let query = messagesRef.orderBy('timestamp', options.order || 'asc');
         
@@ -285,24 +284,18 @@ const DataService = (function() {
             })),
             lastDoc: snapshot.docs[snapshot.docs.length - 1] || null
         };
-    }
+    });
 
-    async function sendMessage(chatId, messageData) {
-        await ensureInit();
-        
+    const sendMessage = createMethod(async function(chatId, messageData) {
         const messagesRef = db.collection('chats').doc(chatId).collection('messages');
         const docRef = await messagesRef.add({
             ...messageData,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
         return { id: docRef.id, ...messageData };
-    }
+    });
 
-    // ===== РАБОТА С ФАЙЛАМИ =====
-    async function uploadFile(file, path, onProgress = null) {
-        await ensureInit();
-        
+    const uploadFile = createMethod(async function(file, path, onProgress = null) {
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const storageRef = storage.ref(`${path}/${fileName}`);
         const uploadTask = storageRef.put(file);
@@ -329,20 +322,14 @@ const DataService = (function() {
                 }
             );
         });
-    }
+    });
 
-    async function deleteFile(path) {
-        await ensureInit();
+    const deleteFile = createMethod(async function(path) {
         await storage.ref(path).delete();
         return true;
-    }
+    });
 
-    // ===== ПОДПИСКИ (REALTIME) =====
-    function subscribeToCollection(collection, constraints, callback, errorCallback) {
-        if (!isInitialized) {
-            throw new Error('DataService не инициализирован');
-        }
-        
+    const subscribeToCollection = createMethod(function(collection, constraints, callback, errorCallback) {
         let query = db.collection(collection);
         
         constraints.forEach(constraint => {
@@ -368,26 +355,18 @@ const DataService = (function() {
             },
             errorCallback || console.error
         );
-    }
+    });
 
-    function subscribeToDocument(collection, id, callback, errorCallback) {
-        if (!isInitialized) {
-            throw new Error('DataService не инициализирован');
-        }
-        
+    const subscribeToDocument = createMethod(function(collection, id, callback, errorCallback) {
         return db.collection(collection).doc(id).onSnapshot(
             (doc) => {
                 callback(doc.exists ? { id: doc.id, ...doc.data() } : null);
             },
             errorCallback || console.error
         );
-    }
+    });
 
-    function subscribeToMessages(chatId, callback, errorCallback) {
-        if (!isInitialized) {
-            throw new Error('DataService не инициализирован');
-        }
-        
+    const subscribeToMessages = createMethod(function(chatId, callback, errorCallback) {
         return db.collection('chats').doc(chatId)
             .collection('messages')
             .orderBy('timestamp', 'asc')
@@ -402,10 +381,12 @@ const DataService = (function() {
                 },
                 errorCallback || console.error
             );
-    }
+    });
+
+    // Запускаем проверку инициализации сразу
+    ensureInit();
 
     const api = {
-        // Общие методы
         getCollection,
         getDocument,
         createDocument,
@@ -413,43 +394,30 @@ const DataService = (function() {
         deleteDocument,
         runTransaction,
         batch,
-        
-        // Пользователи
         getUser,
         createUser,
         updateUser,
         getMasters,
-        
-        // Заказы
         getOrders,
         getOrder,
         createOrder,
         updateOrder,
-        
-        // Чаты
         getChat,
         getUserChats,
         createChat,
         updateChat,
         getMessages,
         sendMessage,
-        
-        // Файлы
         uploadFile,
         deleteFile,
-        
-        // Подписки
         subscribeToCollection,
         subscribeToDocument,
         subscribeToMessages,
-        
-        // Вспомогательные
-        init: () => ensureInit(),
         isReady: () => isInitialized
     };
 
     window.__DATA_SERVICE_INITIALIZED__ = true;
-    console.log('✅ DataService загружен (элегантная версия)');
+    console.log('✅ DataService загружен (с очередью вызовов)');
     
     return Object.freeze(api);
 })();
