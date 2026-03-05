@@ -20,7 +20,7 @@
     <!-- PWA -->
     <link rel="manifest" href="/HomeWork/manifest.json">
     <link rel="apple-touch-icon" href="/HomeWork/icons/icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Библиотеки -->
@@ -212,6 +212,65 @@
                     <div class="list-group" id="cityList">
                         <!-- JS заполнит -->
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА ОТКЛИКА (ДОБАВЛЕНА) ===== -->
+    <div class="modal fade" id="respondModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-reply me-2" style="color: var(--accent);"></i>
+                        Откликнуться на заказ
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="respondOrderInfo" class="bg-soft p-3 rounded-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold" id="respondOrderTitle">Заказ</div>
+                                <small class="text-secondary" id="respondOrderCategory">Категория</small>
+                            </div>
+                            <span class="badge bg-accent" id="respondOrderPrice">0 ₽</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-1" style="color: var(--accent);"></i>
+                            Ваша цена <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control form-control-lg" id="responsePrice" 
+                               placeholder="Например: 1500" min="500" max="1000000" step="100">
+                        <small class="text-secondary">от 500 до 1 000 000 ₽</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-comment me-1" style="color: var(--accent);"></i>
+                            Комментарий
+                        </label>
+                        <textarea class="form-control" id="responseComment" rows="3" 
+                                  placeholder="Расскажите, как будете выполнять работу..." maxlength="500"></textarea>
+                        <small class="text-secondary">Максимум 500 символов</small>
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
+                        <i class="fas fa-info-circle" style="color: var(--accent);"></i>
+                        <small>Клиент увидит вашу цену и комментарий. Будьте вежливы!</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Отмена
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitResponse">
+                        Отправить отклик
+                    </button>
                 </div>
             </div>
         </div>
