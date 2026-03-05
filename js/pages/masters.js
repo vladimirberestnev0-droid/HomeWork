@@ -1,5 +1,5 @@
 /**
- * masters.js — логика кабинета мастера (ИСПРАВЛЕНО - завершение заказов)
+ * masters.js — логика кабинета мастера (ИСПРАВЛЕНО - проверка элементов)
  * Версия 3.1 с поддержкой инициации завершения
  */
 
@@ -107,24 +107,39 @@
         }
     }
 
-    // ===== ЗАГРУЗКА ПРОФИЛЯ =====
+    // ===== ЗАГРУЗКА ПРОФИЛЯ (ИСПРАВЛЕНО - с проверкой элементов) =====
     async function loadMasterProfile() {
         try {
             const userData = Auth.getUserData();
             if (!userData) return;
 
-            $('masterName').textContent = userData.name || 'Мастер';
-            $('masterCategories').textContent = userData.categories || 'Специалист';
-            $('masterRating').textContent = (userData.rating || 0).toFixed(1);
-            $('masterReviews').textContent = userData.reviews || 0;
+            // Проверяем существование каждого элемента перед установкой
+            const nameEl = $('masterName');
+            if (nameEl) nameEl.textContent = userData.name || 'Мастер';
+            
+            const categoriesEl = $('masterCategories');
+            if (categoriesEl) categoriesEl.textContent = userData.categories || 'Специалист';
+            
+            const ratingEl = $('masterRating');
+            if (ratingEl) ratingEl.textContent = (userData.rating || 0).toFixed(1);
+            
+            const reviewsEl = $('masterReviews');
+            if (reviewsEl) reviewsEl.textContent = userData.reviews || 0;
             
             const stats = await Orders.getMasterStats(Auth.getUser()?.uid);
-            $('masterCompleted').textContent = stats.completed || 0;
-            $('masterAwaiting').textContent = stats.awaiting || 0;
             
-            const stars = '★'.repeat(Math.floor(userData.rating || 0)) + 
-                         '☆'.repeat(5 - Math.floor(userData.rating || 0));
-            $('masterRatingDisplay').innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
+            const completedEl = $('masterCompleted');
+            if (completedEl) completedEl.textContent = stats.completed || 0;
+            
+            const awaitingEl = $('masterAwaiting');
+            if (awaitingEl) awaitingEl.textContent = stats.awaiting || 0;
+            
+            const ratingDisplayEl = $('masterRatingDisplay');
+            if (ratingDisplayEl) {
+                const stars = '★'.repeat(Math.floor(userData.rating || 0)) + 
+                             '☆'.repeat(5 - Math.floor(userData.rating || 0));
+                ratingDisplayEl.innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
+            }
             
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
@@ -279,13 +294,19 @@
         currentClientName = clientName;
         currentRating = 0;
 
-        $('reviewClientName').textContent = clientName || 'Клиент';
-        $('reviewClientText').value = '';
+        const nameEl = $('reviewClientName');
+        if (nameEl) nameEl.textContent = clientName || 'Клиент';
+        
+        const textEl = $('reviewClientText');
+        if (textEl) textEl.value = '';
 
         document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
 
-        const modal = new bootstrap.Modal($('reviewClientModal'));
-        modal.show();
+        const modalEl = $('reviewClientModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
     };
 
     // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ И ЗАВЕРШЕНИЕ =====
@@ -303,7 +324,11 @@
         });
         
         if (result && result.success) {
-            bootstrap.Modal.getInstance($('reviewClientModal'))?.hide();
+            const modalEl = $('reviewClientModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
             Utils.showNotification('✅ Запрос на завершение отправлен клиенту', 'success');
             await loadMasterResponses(currentFilter);
             await loadMasterProfile();
@@ -345,15 +370,26 @@
         const infoBlock = $('respondOrderInfo');
         if (infoBlock) infoBlock.classList.remove('d-none');
         
-        $('respondOrderTitle').textContent = orderTitle || 'Заказ';
-        $('respondOrderCategory').textContent = orderCategory || 'Категория';
-        $('respondOrderPrice').textContent = Utils.formatMoney(orderPrice);
+        const titleEl = $('respondOrderTitle');
+        if (titleEl) titleEl.textContent = orderTitle || 'Заказ';
+        
+        const categoryEl = $('respondOrderCategory');
+        if (categoryEl) categoryEl.textContent = orderCategory || 'Категория';
+        
+        const priceEl = $('respondOrderPrice');
+        if (priceEl) priceEl.textContent = Utils.formatMoney(orderPrice);
 
-        $('responsePrice').value = '';
-        $('responseComment').value = '';
+        const priceInput = $('responsePrice');
+        if (priceInput) priceInput.value = '';
+        
+        const commentInput = $('responseComment');
+        if (commentInput) commentInput.value = '';
 
-        const modal = new bootstrap.Modal($('respondModal'));
-        modal.show();
+        const modalEl = $('respondModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
     };
 
     // ===== ОТПРАВКА ОТКЛИКА =====
@@ -374,7 +410,11 @@
         const result = await Orders.respondToOrder(currentOrderId, price, comment);
         
         if (result && result.success) {
-            bootstrap.Modal.getInstance($('respondModal'))?.hide();
+            const modalEl = $('respondModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
             Utils.showNotification('✅ Отклик отправлен!', 'success');
             await loadMasterResponses(currentFilter);
         } else {
