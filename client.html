@@ -13,52 +13,55 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
+    <!-- ПРЕМИУМ-ТЕМА AURORA -->
+    <link rel="stylesheet" href="/HomeWork/css/themes/theme-aurora.css">
 </head>
 <body>
     <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
-<div class="desktop-nav">
-    <div class="desktop-nav-container">
-        <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
-            <i class="fas fa-home"></i>
-            <span>Главная</span>
-        </a>
-        <a href="/HomeWork/client.html" class="desktop-nav-item" id="desktopNavOrders">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Мои заказы</span>
-        </a>
-        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
-            <i class="fas fa-user-tie"></i>
-            <span>Мастера</span>
-        </a>
-        <a href="/HomeWork/client.html?tab=chats" class="desktop-nav-item requires-auth visible" id="desktopNavChats">
-            <i class="fas fa-comments"></i>
-            <span>Чаты</span>
-        </a>
-        <button class="desktop-nav-item create-btn" id="desktopCreateBtn">
-            <i class="fas fa-plus-circle"></i>
-            <span>Создать заказ</span>
-        </button>
-        <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
-            <i class="fas fa-user-circle"></i>
-            <span>Загрузка...</span>
-        </button>
+    <div class="desktop-nav">
+        <div class="desktop-nav-container">
+            <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="/HomeWork/client.html" class="desktop-nav-item active" id="desktopNavOrders">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Мои заказы</span>
+            </a>
+            <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+                <i class="fas fa-user-tie"></i>
+                <span>Мастера</span>
+            </a>
+            <a href="/HomeWork/client.html?tab=chats" class="desktop-nav-item requires-auth visible" id="desktopNavChats">
+                <i class="fas fa-comments"></i>
+                <span>Чаты</span>
+            </a>
+            <button class="desktop-nav-item create-btn" id="desktopCreateBtn">
+                <i class="fas fa-plus-circle"></i>
+                <span>Создать заказ</span>
+            </button>
+            <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
+                <i class="fas fa-user-circle"></i>
+                <span>Загрузка...</span>
+            </button>
+        </div>
     </div>
-</div>
+
     <div class="app-wrapper">
-        <!-- ШАПКА -->
-        <div class="header">
-            <div class="logo" onclick="window.location.href='/HomeWork/'">
-                СВОЙ<span>86</span>
+        <!-- ШАПКА PREMIUM -->
+        <div class="header-premium">
+            <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
+                <span class="logo-premium-text">СВОЙ86</span>
+                <span class="logo-premium-small">МОИ ЗАКАЗЫ</span>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button class="geo-tag" onclick="window.location.href='/HomeWork/'">
+                <button class="city-button-premium" onclick="window.location.href='/HomeWork/'">
                     <i class="fas fa-arrow-left"></i> На главную
                 </button>
-                <button class="btn btn-sm btn-outline-danger rounded-pill" id="logoutBtn" title="Выйти">
+                <button class="btn btn-sm" id="logoutBtn" style="background: rgba(220,53,69,0.2); border: 1px solid rgba(220,53,69,0.3); color: #dc3545;">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span class="d-none d-sm-inline ms-1">Выйти</span>
                 </button>
                 <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
                     <i class="fas fa-moon"></i>
@@ -84,59 +87,59 @@
         </div>
 
         <div id="clientCabinet" class="d-none">
-            <!-- ПРОФИЛЬ -->
-            <div class="card p-4 mb-4 profile-card">
+            <!-- ПРОФИЛЬ PREMIUM -->
+            <div class="order-card-premium p-4 mb-4">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="master-avatar" style="width: 80px; height: 80px;">
+                    <div class="master-avatar-premium" style="width: 80px; height: 80px;">
                         <i class="fas fa-user fa-2x"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h4 id="clientName" class="mb-1">Загрузка...</h4>
-                        <p class="text-secondary mb-1" id="clientEmail"></p>
-                        <div class="rating-display" id="clientRating">
+                        <h4 id="clientName" class="mb-1" style="color: white;">Загрузка...</h4>
+                        <p class="mb-1" id="clientEmail" style="color: var(--aurora-text-soft);"></p>
+                        <div class="master-rating-premium" id="clientRating" style="justify-content: flex-start;">
                             <span class="stars">★★★★★</span>
                             <span class="rating-value">0.0</span>
                         </div>
                     </div>
                 </div>
-                <hr class="my-3">
+                <hr style="border-color: rgba(44,213,196,0.2); margin: 15px 0;">
                 <div class="d-flex justify-content-around">
                     <div class="text-center">
-                        <div class="fw-bold fs-4" id="clientOrdersCount">0</div>
-                        <small class="text-muted">Заказов</small>
+                        <div class="fw-bold fs-4" style="color: var(--aurora-accent);" id="clientOrdersCount">0</div>
+                        <small style="color: var(--aurora-text-muted);">Заказов</small>
                     </div>
                     <div class="text-center">
-                        <div class="fw-bold fs-4" id="clientReviews">0</div>
-                        <small class="text-muted">Отзывов</small>
+                        <div class="fw-bold fs-4" style="color: var(--aurora-accent);" id="clientReviews">0</div>
+                        <small style="color: var(--aurora-text-muted);">Отзывов</small>
                     </div>
                     <div class="text-center">
-                        <div class="fw-bold fs-4" id="clientRating">0.0</div>
-                        <small class="text-muted">Рейтинг</small>
+                        <div class="fw-bold fs-4" style="color: var(--aurora-accent);" id="clientRating">0.0</div>
+                        <small style="color: var(--aurora-text-muted);">Рейтинг</small>
                     </div>
                 </div>
             </div>
 
-            <!-- ТАБЫ -->
-            <div class="filters-scroll mb-4">
-                <button class="filter-chip active" data-tab="orders">
+            <!-- ТАБЫ PREMIUM -->
+            <div class="filters-premium mb-4">
+                <button class="filter-chip-premium active" data-tab="orders">
                     <i class="fas fa-clipboard-list me-1"></i>Мои заказы
                 </button>
-                <button class="filter-chip" data-tab="chats">
+                <button class="filter-chip-premium" data-tab="chats">
                     <i class="fas fa-comments me-1"></i>Чаты
                     <span class="tab-badge d-none" id="chatsUnread">0</span>
                 </button>
-                <button class="filter-chip" data-tab="new">
+                <button class="filter-chip-premium" data-tab="new">
                     <i class="fas fa-plus-circle me-1"></i>Создать
                 </button>
             </div>
 
             <!-- ЗАКАЗЫ -->
             <div id="ordersTab" class="tab-content">
-                <div class="filters-scroll mb-3">
-                    <button class="filter-chip active" data-filter="all">Все</button>
-                    <button class="filter-chip" data-filter="open">Активные</button>
-                    <button class="filter-chip" data-filter="in_progress">В работе</button>
-                    <button class="filter-chip" data-filter="completed">Завершённые</button>
+                <div class="filters-premium mb-3">
+                    <button class="filter-chip-premium active" data-filter="all">Все</button>
+                    <button class="filter-chip-premium" data-filter="open">Активные</button>
+                    <button class="filter-chip-premium" data-filter="in_progress">В работе</button>
+                    <button class="filter-chip-premium" data-filter="completed">Завершённые</button>
                 </div>
                 <div id="ordersList" class="orders-list"></div>
             </div>
@@ -146,52 +149,57 @@
                 <div id="chatsList" class="orders-list"></div>
             </div>
 
-            <!-- СОЗДАНИЕ ЗАКАЗА -->
+            <!-- СОЗДАНИЕ ЗАКАЗА PREMIUM -->
             <div id="newTab" class="tab-content d-none">
-                <div class="card p-4">
-                    <h5 class="mb-4">Создать новый заказ</h5>
+                <div class="order-card-premium p-4">
+                    <h5 class="mb-4" style="color: white;">Создать новый заказ</h5>
                     
                     <div class="mb-3">
-                        <label class="form-label required">Категория</label>
-                        <select class="form-select" id="orderCategory">
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Категория</label>
+                        <select class="form-control" id="orderCategory" style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
                             <option value="">Выберите категорию</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label required">Название</label>
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Название</label>
                         <input type="text" class="form-control" id="orderTitle" 
-                               placeholder="Например: Замена смесителя" maxlength="100">
+                               placeholder="Например: Замена смесителя" maxlength="100"
+                               style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Описание</label>
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Описание</label>
                         <textarea class="form-control" id="orderDescription" 
-                                  rows="3" placeholder="Опишите задачу подробнее" maxlength="1000"></textarea>
+                                  rows="3" placeholder="Опишите задачу подробнее" maxlength="1000"
+                                  style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;"></textarea>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label required">Цена</label>
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Цена</label>
                         <div class="price-input-wrapper">
                             <input type="number" class="form-control" id="orderPrice" 
-                                   placeholder="1500" min="500" max="1000000" step="100">
-                            <span class="currency">₽</span>
+                                   placeholder="1500" min="500" max="1000000" step="100"
+                                   style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
+                            <span class="currency" style="color: var(--aurora-accent);">₽</span>
                         </div>
-                        <small class="text-secondary">от 500 до 1 000 000 ₽</small>
+                        <small style="color: var(--aurora-text-muted);">от 500 до 1 000 000 ₽</small>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label required">Адрес</label>
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Адрес</label>
                         <input type="text" class="form-control" id="orderAddress" 
-                               placeholder="ул. Ленина, д. 10, кв. 5" maxlength="200">
+                               placeholder="ул. Ленина, д. 10, кв. 5" maxlength="200"
+                               style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
                     </div>
                     
                     <div class="mb-4">
-                        <label class="form-label">Фотографии (до 5 шт)</label>
+                        <label class="form-label" style="color: var(--aurora-text-soft);">Фотографии (до 5 шт)</label>
                         <div class="file-input-wrapper">
                             <input type="file" class="file-input" id="orderPhotos" 
                                    multiple accept="image/*">
-                            <label for="orderPhotos" class="file-label" id="uploadPhotoBtn">
+                            <label for="orderPhotos" class="file-label" id="uploadPhotoBtn" 
+                                   style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: var(--aurora-text-soft);">
                                 <i class="fas fa-camera me-2"></i>Загрузить фото
                             </label>
                         </div>
@@ -200,13 +208,14 @@
                     
                     <div class="mb-4 form-check">
                         <input type="checkbox" class="form-check-input" id="orderUrgent">
-                        <label class="form-check-label" for="orderUrgent">
-                            <i class="fas fa-exclamation-circle me-1" style="color: var(--accent-urgent);"></i>
+                        <label class="form-check-label" for="orderUrgent" style="color: var(--aurora-text-soft);">
+                            <i class="fas fa-exclamation-circle me-1" style="color: #FF8A5C;"></i>
                             Срочный заказ
                         </label>
                     </div>
                     
-                    <button class="btn btn-primary btn-lg w-100" id="createOrderSubmit">
+                    <button class="btn w-100" id="createOrderSubmit" 
+                            style="background: var(--aurora-accent); color: var(--aurora-deep); font-weight: 700; padding: 15px;">
                         <i class="fas fa-paper-plane me-2"></i>Создать заказ
                     </button>
                 </div>
@@ -260,7 +269,8 @@
                         <span class="star" data-rating="5">☆</span>
                     </div>
                     <textarea id="reviewText" class="form-control" rows="3" 
-                              placeholder="Ваш отзыв (необязательно)"></textarea>
+                              placeholder="Ваш отзыв (необязательно)"
+                              style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;"></textarea>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -294,5 +304,33 @@
     <script src="/HomeWork/js/components/notifications.js"></script>
     
     <script src="/HomeWork/js/pages/client.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Переключение табов
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tab = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('d-none'));
+                document.getElementById(tab + 'Tab').classList.remove('d-none');
+            });
+        });
+        
+        document.querySelectorAll('[data-filter]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Здесь твой скрипт фильтрации заказов
+                if (window.Orders && typeof Orders.filterByStatus === 'function') {
+                    Orders.filterByStatus(this.dataset.filter);
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

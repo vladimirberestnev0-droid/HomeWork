@@ -3,51 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Свой Мастер 86 — Админ-панель</title>
+    <title>СВОЙ МАСТЕР 86 — Админ-панель</title>
     
     <link rel="manifest" href="/HomeWork/manifest.json">
-    <meta name="theme-color" content="#E67A4B">
+    <meta name="theme-color" content="#2CD5C4">
     
     <!-- Библиотеки -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
+    <!-- ПРЕМИУМ-ТЕМА AURORA -->
+    <link rel="stylesheet" href="/HomeWork/css/themes/theme-aurora.css">
 </head>
-<!-- ... остальной код ... -->
+<body>
     <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
-<div class="desktop-nav">
-    <div class="desktop-nav-container">
-        <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
-            <i class="fas fa-home"></i>
-            <span>Главная</span>
-        </a>
-        <a href="/HomeWork/admin.html" class="desktop-nav-item active" id="desktopNavOrders">
-            <i class="fas fa-shield-alt"></i>
-            <span>Админка</span>
-        </a>
-        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
-            <i class="fas fa-user-tie"></i>
-            <span>Мастера</span>
-        </a>
-        <button class="desktop-nav-item create-btn" id="desktopCreateBtn" style="display: none;">
-            <i class="fas fa-plus-circle"></i>
-            <span>Создать заказ</span>
-        </button>
-        <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
-            <i class="fas fa-user-circle"></i>
-            <span>Загрузка...</span>
-        </button>
+    <div class="desktop-nav">
+        <div class="desktop-nav-container">
+            <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="/HomeWork/admin.html" class="desktop-nav-item active" id="desktopNavOrders">
+                <i class="fas fa-shield-alt"></i>
+                <span>Админка</span>
+            </a>
+            <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+                <i class="fas fa-user-tie"></i>
+                <span>Мастера</span>
+            </a>
+            <button class="desktop-nav-item create-btn" id="desktopCreateBtn" style="display: none;">
+                <i class="fas fa-plus-circle"></i>
+                <span>Создать заказ</span>
+            </button>
+            <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
+                <i class="fas fa-user-circle"></i>
+                <span>Загрузка...</span>
+            </button>
+        </div>
     </div>
-</div>
+
     <!-- ===== ЗАЩИТА АДМИНКИ ===== -->
     <script>
     (function() {
-        // Проверяем авторизацию ДО загрузки страницы
         const checkAdmin = function() {
-            // Если Auth уже загружен
             if (window.Auth && typeof Auth.isAdmin === 'function') {
                 if (!Auth.isAdmin()) {
                     showAccessDenied();
@@ -55,7 +56,6 @@
                 return;
             }
             
-            // Ждём загрузки Auth максимум 3 секунды
             let attempts = 0;
             const maxAttempts = 30;
             
@@ -66,6 +66,8 @@
                     clearInterval(interval);
                     if (!Auth.isAdmin()) {
                         showAccessDenied();
+                    } else {
+                        document.getElementById('adminContent').style.display = 'block';
                     }
                 } else if (attempts >= maxAttempts) {
                     clearInterval(interval);
@@ -77,15 +79,15 @@
         function showAccessDenied() {
             document.body.innerHTML = '';
             document.body.style.margin = '0';
-            document.body.style.background = 'var(--deep-blue, #0B1E33)';
+            document.body.style.background = 'var(--aurora-deep, #0B1E33)';
             
             document.body.innerHTML = `
-                <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--deep-blue, #0B1E33); display:flex; align-items:center; justify-content:center; z-index:9999;">
+                <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--aurora-deep, #0B1E33); display:flex; align-items:center; justify-content:center; z-index:9999;">
                     <div style="text-align:center; padding:20px; max-width:400px;">
                         <i class="fas fa-exclamation-triangle" style="font-size:64px; color:var(--accent-urgent, #FF8A5C); margin-bottom:20px; display:block;"></i>
                         <h3 style="color:white; font-size:24px; margin-bottom:15px; font-family: 'Inter', sans-serif;">Доступ запрещён</h3>
-                        <p style="color:var(--text-soft, #B0C4D9); margin-bottom:25px; font-size:16px; line-height:1.5;">Только администратор может войти в этот раздел</p>
-                        <a href="/HomeWork/" style="background:var(--accent, #2CD5C4); color:var(--deep-blue, #0B1E33); padding:12px 30px; border-radius:60px; text-decoration:none; font-weight:700; display:inline-block; font-family: 'Inter', sans-serif;">
+                        <p style="color:var(--aurora-text-soft, #B0C4D9); margin-bottom:25px; font-size:16px; line-height:1.5;">Только администратор может войти в этот раздел</p>
+                        <a href="/HomeWork/" style="background:var(--aurora-accent, #2CD5C4); color:var(--aurora-deep, #0B1E33); padding:12px 30px; border-radius:60px; text-decoration:none; font-weight:700; display:inline-block; font-family: 'Inter', sans-serif;">
                             <i class="fas fa-home me-2"></i>На главную
                         </a>
                     </div>
@@ -99,70 +101,70 @@
     })();
     </script>
 
-    <div class="container py-4" id="adminContent" style="display: none;">
-        <header class="d-flex justify-content-between align-items-center mb-4">
-            <a href="/HomeWork/" class="logo-link d-flex align-items-center gap-2 text-decoration-none">
-                <i class="fas fa-shield-alt" style="color: var(--accent); font-size: 24px;"></i>
-                <span class="fw-bold" style="color: var(--text-primary); font-size: 20px;">Свой Мастер 86 Админ</span>
-            </a>
-            <nav class="d-flex gap-3">
-                <a href="/HomeWork/" class="text-decoration-none" style="color: var(--text-secondary);">Главная</a>
-                <a href="/HomeWork/admin.html" class="text-decoration-none" style="color: var(--accent); font-weight:600;">Админ-панель</a>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <a href="#" id="logoutLink" class="btn btn-sm btn-outline-danger rounded-pill">
+    <div class="app-wrapper" id="adminContent" style="display: none;">
+        <!-- ШАПКА PREMIUM -->
+        <div class="header-premium">
+            <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
+                <span class="logo-premium-text">АДМИН86</span>
+                <span class="logo-premium-small">ПАНЕЛЬ</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="#" id="logoutLink" class="city-button-premium" style="background: rgba(220,53,69,0.2); border-color: #dc3545;">
                     <i class="fas fa-sign-out-alt me-1"></i> Выйти
                 </a>
-            </nav>
-        </header>
+                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
 
         <!-- Статистика -->
         <div class="row g-4 mb-4">
             <div class="col-md-3">
-                <div class="card p-3 text-center">
-                    <i class="fas fa-users fa-2x mb-2" style="color: var(--accent);"></i>
-                    <h5 id="statUsers">0</h5>
+                <div class="order-card-premium text-center" style="padding: 20px;">
+                    <i class="fas fa-users fa-3x mb-3" style="color: var(--aurora-accent);"></i>
+                    <h3 class="fw-bold mb-1" id="statUsers">0</h3>
                     <p class="text-secondary">Пользователей</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card p-3 text-center">
-                    <i class="fas fa-user-tie fa-2x mb-2" style="color: var(--accent);"></i>
-                    <h5 id="statMasters">0</h5>
+                <div class="order-card-premium text-center" style="padding: 20px;">
+                    <i class="fas fa-user-tie fa-3x mb-3" style="color: var(--aurora-accent);"></i>
+                    <h3 class="fw-bold mb-1" id="statMasters">0</h3>
                     <p class="text-secondary">Мастеров</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card p-3 text-center">
-                    <i class="fas fa-clipboard-list fa-2x mb-2" style="color: var(--accent);"></i>
-                    <h5 id="statOrders">0</h5>
+                <div class="order-card-premium text-center" style="padding: 20px;">
+                    <i class="fas fa-clipboard-list fa-3x mb-3" style="color: var(--aurora-accent);"></i>
+                    <h3 class="fw-bold mb-1" id="statOrders">0</h3>
                     <p class="text-secondary">Заказов</p>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card p-3 text-center">
-                    <i class="fas fa-exclamation-triangle fa-2x mb-2" style="color: #dc3545;"></i>
-                    <h5 id="statComplaints">0</h5>
+                <div class="order-card-premium text-center" style="padding: 20px;">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #dc3545;"></i>
+                    <h3 class="fw-bold mb-1" id="statComplaints">0</h3>
                     <p class="text-secondary">Жалоб</p>
                 </div>
             </div>
         </div>
 
         <!-- Табы -->
-        <ul class="nav nav-tabs mb-4">
-            <li class="nav-item">
-                <button class="nav-link active" data-tab="users">Пользователи</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-tab="orders">Заказы</button>
-            </li>
-        </ul>
+        <div class="filters-premium mb-4">
+            <button class="filter-chip-premium active" data-tab="users">Пользователи</button>
+            <button class="filter-chip-premium" data-tab="orders">Заказы</button>
+        </div>
 
         <!-- Таб: Пользователи -->
         <div id="usersTab" class="tab-content">
-            <input type="text" class="form-control mb-3" id="userSearch" placeholder="🔍 Поиск по имени или email...">
-            <div id="usersList" class="users-list"></div>
+            <div class="search-premium mb-3">
+                <div class="search-glass">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="userSearch" placeholder="Поиск по имени или email...">
+                </div>
+            </div>
+            <div id="usersList" class="orders-list"></div>
         </div>
 
         <!-- Таб: Заказы -->
@@ -171,8 +173,8 @@
         </div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ (скрыта на десктопе) -->
-    <div class="bottom-nav d-md-none">
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
         <button class="nav-item" data-page="home">
             <span class="nav-icon"><i class="fas fa-home"></i></span>
             <span class="nav-label">Главная</span>
@@ -220,10 +222,23 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
-            if (window.Auth && Auth.isAdmin()) {
+            if (window.Auth && Auth.isAdmin && Auth.isAdmin()) {
                 document.getElementById('adminContent').style.display = 'block';
             }
         }, 500);
+
+        // Переключение табов
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tab = this.dataset.tab;
+                document.getElementById('usersTab').classList.add('d-none');
+                document.getElementById('ordersTab').classList.add('d-none');
+                document.getElementById(tab + 'Tab').classList.remove('d-none');
+            });
+        });
     });
     </script>
 </body>
