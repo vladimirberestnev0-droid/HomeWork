@@ -470,109 +470,110 @@ const Orders = (function() {
         }
     }
 
-    // ===== ОТКЛИК НА ЗАКАЗ =====
-    async function respondToOrder(orderId, price, comment) {
-        try {
-            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
-            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
+    // ===== ОТКЛИК НА ЗАКАЗ (ИСПРАВЛЕНО) =====
+async function respondToOrder(orderId, price, comment) {
+    try {
+        if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
+        if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            const user = getUserSafe();
-            const userData = getUserDataSafe();
+        const user = getUserSafe();
+        const userData = getUserDataSafe();
 
-            if (!user || !userData) {
-                return { success: false, error: 'Ошибка получения данных пользователя' };
+        if (!user || !userData) {
+            return { success: false, error: 'Ошибка получения данных пользователя' };
+        }
+
+        if (!Auth.isMaster()) {
+            return { success: false, error: 'Только мастера могут откликаться' };
+        }
+
+        // Антиспам
+        const limits = CONFIG?.app?.limits || { responseCooldown: 5000 };
+        const now = Date.now();
+        const lastResponse = spamPrevention.get(user.uid) || 0;
+        
+        if (now - lastResponse < limits.responseCooldown) {
+            const wait = Math.ceil((limits.responseCooldown - (now - lastResponse)) / 1000);
+            return { success: false, error: `Подождите ${wait} сек. перед следующим откликом` };
+        }
+        
+        spamPrevention.set(user.uid, now);
+        setTimeout(() => spamPrevention.delete(user.uid), limits.responseCooldown);
+
+        // Валидация
+        const minPrice = CONFIG?.app?.limits?.minOrderPrice || 500;
+        const maxPrice = CONFIG?.app?.limits?.maxOrderPrice || 1000000;
+        const maxCommentLength = CONFIG?.app?.limits?.maxCommentLength || 500;
+
+        if (!Utils.validatePrice(price)) {
+            return { success: false, error: `Цена должна быть от ${minPrice} до ${maxPrice} ₽` };
+        }
+
+        if (comment && comment.length > maxCommentLength) {
+            return { success: false, error: `Комментарий слишком длинный (макс ${maxCommentLength} символов)` };
+        }
+
+        if (comment) {
+            const modResult = await checkModeration(comment, 'master_comment');
+            if (!modResult.isValid) {
+                return { success: false, error: modResult.reason || 'Комментарий не прошел модерацию' };
             }
+        }
 
-            if (!Auth.isMaster()) {
-                return { success: false, error: 'Только мастера могут откликаться' };
-            }
-
-            // Антиспам
-            const limits = CONFIG?.app?.limits || { responseCooldown: 5000 };
-            const now = Date.now();
-            const lastResponse = spamPrevention.get(user.uid) || 0;
+        const orderRef = db.collection('orders').doc(orderId);
+        
+        const result = await db.runTransaction(async (transaction) => {
+            const orderDoc = await transaction.get(orderRef);
             
-            if (now - lastResponse < limits.responseCooldown) {
-                const wait = Math.ceil((limits.responseCooldown - (now - lastResponse)) / 1000);
-                return { success: false, error: `Подождите ${wait} сек. перед следующим откликом` };
+            if (!orderDoc.exists) {
+                throw new Error('Заказ не найден');
             }
             
-            spamPrevention.set(user.uid, now);
-            setTimeout(() => spamPrevention.delete(user.uid), limits.responseCooldown);
-
-            // Валидация
-            const minPrice = CONFIG?.app?.limits?.minOrderPrice || 500;
-            const maxPrice = CONFIG?.app?.limits?.maxOrderPrice || 1000000;
-            const maxCommentLength = CONFIG?.app?.limits?.maxCommentLength || 500;
-
-            if (!Utils.validatePrice(price)) {
-                return { success: false, error: `Цена должна быть от ${minPrice} до ${maxPrice} ₽` };
-            }
-
-            if (comment && comment.length > maxCommentLength) {
-                return { success: false, error: `Комментарий слишком длинный (макс ${maxCommentLength} символов)` };
-            }
-
-            if (comment) {
-                const modResult = await checkModeration(comment, 'master_comment');
-                if (!modResult.isValid) {
-                    return { success: false, error: modResult.reason || 'Комментарий не прошел модерацию' };
-                }
-            }
-
-            const orderRef = db.collection('orders').doc(orderId);
+            const orderData = orderDoc.data();
             
-            const result = await db.runTransaction(async (transaction) => {
-                const orderDoc = await transaction.get(orderRef);
-                
-                if (!orderDoc.exists) {
-                    throw new Error('Заказ не найден');
-                }
-                
-                const orderData = orderDoc.data();
-                
-                if (orderData.status !== ORDER_STATUS.OPEN) {
-                    throw new Error('Заказ уже неактивен');
-                }
-                
-                if (orderData.clientId === user.uid) {
-                    throw new Error('Нельзя откликаться на свой заказ');
-                }
-                
-                if (orderData.responses?.some(r => r.masterId === user.uid)) {
-                    throw new Error('Вы уже откликались на этот заказ');
-                }
+            if (orderData.status !== ORDER_STATUS.OPEN) {
+                throw new Error('Заказ уже неактивен');
+            }
+            
+            if (orderData.clientId === user.uid) {
+                throw new Error('Нельзя откликаться на свой заказ');
+            }
+            
+            if (orderData.responses?.some(r => r.masterId === user.uid)) {
+                throw new Error('Вы уже откликались на этот заказ');
+            }
 
-                const response = {
-                    masterId: user.uid,
-                    masterName: userData.name || 'Мастер',
-                    masterPhone: userData.phone || '',
-                    masterRating: userData.rating || 0,
-                    masterReviews: userData.reviews || 0,
-                    price: parseInt(price),
-                    comment: comment?.trim() || '',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+            // ИСПРАВЛЕНО: создаем объект без serverTimestamp()
+            const response = {
+                masterId: user.uid,
+                masterName: userData.name || 'Мастер',
+                masterPhone: userData.phone || '',
+                masterRating: userData.rating || 0,
+                masterReviews: userData.reviews || 0,
+                price: parseInt(price),
+                comment: comment?.trim() || '',
+                createdAt: new Date().toISOString() // Используем ISO строку вместо serverTimestamp()
+            };
 
-                transaction.update(orderRef, {
-                    responses: firebase.firestore.FieldValue.arrayUnion(response)
-                });
-
-                return response;
+            transaction.update(orderRef, {
+                responses: firebase.firestore.FieldValue.arrayUnion(response)
             });
 
-            clearCache();
-            clearCache(`master_responses_${user.uid}`);
+            return response;
+        });
 
-            Utils.showSuccess('✅ Отклик отправлен!');
-            return { success: true };
-            
-        } catch (error) {
-            console.error('❌ Ошибка отклика:', error);
-            Utils.showError(error.message || 'Ошибка отклика');
-            return { success: false, error: error.message };
-        }
+        clearCache();
+        clearCache(`master_responses_${user.uid}`);
+
+        Utils.showSuccess('✅ Отклик отправлен!');
+        return { success: true };
+        
+    } catch (error) {
+        console.error('❌ Ошибка отклика:', error);
+        Utils.showError(error.message || 'Ошибка отклика');
+        return { success: false, error: error.message };
     }
+}
 
     // ===== ВЫБОР МАСТЕРА =====
     async function selectMaster(orderId, masterId, price) {
