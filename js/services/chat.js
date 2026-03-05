@@ -9,7 +9,7 @@ const Chat = (function() {
     }
 
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
-    let activeListeners = new Map(); // Map<chatId, unsubscribe>
+    let activeListeners = new Map();
     let spamPrevention = new Map();
     let notificationPermission = false;
     let currentUserUnreadSub = null;
@@ -17,8 +17,8 @@ const Chat = (function() {
     // Кэш
     const chatsCache = new Map();
     const messagesCache = new Map();
-    const CHAT_CACHE_TTL = 5 * 60 * 1000; // 5 минут
-    const MESSAGES_CACHE_TTL = 2 * 60 * 1000; // 2 минуты
+    const CHAT_CACHE_TTL = 5 * 60 * 1000;
+    const MESSAGES_CACHE_TTL = 2 * 60 * 1000;
 
     // ===== ПРОВЕРКИ =====
     function checkFirebase() {
@@ -108,7 +108,6 @@ const Chat = (function() {
     function init() {
         requestNotificationPermission();
         
-        // Очищаем слушатели при разлогине
         if (window.Auth) {
             Auth.onAuthChange((state) => {
                 if (!state.isAuthenticated) {
@@ -172,7 +171,6 @@ const Chat = (function() {
         try {
             if (!checkFirebase()) return [];
             
-            // Проверяем кэш
             if (!options.forceRefresh) {
                 const cached = getChatsCache(userId);
                 if (cached) {
@@ -188,7 +186,7 @@ const Chat = (function() {
                 .get();
             
             const chats = [];
-            const batchSize = 10; // Загружаем пользователей пачками
+            const batchSize = 10;
             
             for (let i = 0; i < snapshot.docs.length; i += batchSize) {
                 const batch = snapshot.docs.slice(i, i + batchSize);
@@ -199,7 +197,6 @@ const Chat = (function() {
                     if (!otherId) return null;
                     
                     try {
-                        // Пробуем получить из кэша Auth
                         let user = null;
                         if (window.Auth) {
                             const cachedUser = Auth.getUserFromCache?.(otherId);
@@ -208,7 +205,6 @@ const Chat = (function() {
                             }
                         }
                         
-                        // Если нет в кэше - грузим из Firestore
                         if (!user) {
                             const userDoc = await db.collection('users').doc(otherId).get();
                             user = userDoc.exists ? userDoc.data() : { name: 'Пользователь' };
@@ -280,7 +276,6 @@ const Chat = (function() {
     function subscribeToMessages(chatId, callback) {
         if (!checkFirebase()) return null;
         
-        // Отписываемся от предыдущей подписки
         if (activeListeners.has(chatId)) {
             const oldUnsub = activeListeners.get(chatId);
             if (typeof oldUnsub === 'function') {
@@ -318,7 +313,6 @@ const Chat = (function() {
                     }
                 });
                 
-                // Если были изменения, вызываем callback со всеми сообщениями
                 if (snapshot.docChanges().length > 0) {
                     const allMessages = [];
                     snapshot.forEach(doc => {
@@ -332,11 +326,9 @@ const Chat = (function() {
                     
                     callback(allMessages);
                     
-                    // Сохраняем в кэш
                     setMessagesCache(chatId, allMessages);
                 }
                 
-                // Показываем уведомление о новых сообщениях
                 if (hasNewFromOthers && document.hidden) {
                     const lastMsg = messages[messages.length - 1];
                     if (lastMsg && lastMsg.senderId !== user.uid) {
@@ -347,7 +339,6 @@ const Chat = (function() {
                             renotify: true
                         });
                         
-                        // Триггерим событие для бейджей
                         document.dispatchEvent(new CustomEvent('new-message', {
                             detail: { chatId, message: lastMsg }
                         }));
@@ -386,7 +377,6 @@ const Chat = (function() {
                 return { success: false, error: 'Необходимо авторизоваться' };
             }
 
-            // Антиспам
             const now = Date.now();
             const lastMsg = spamPrevention.get(user.uid) || 0;
             if (now - lastMsg < CONFIG.app.limits.messageCooldown) {
@@ -395,12 +385,10 @@ const Chat = (function() {
             spamPrevention.set(user.uid, now);
             setTimeout(() => spamPrevention.delete(user.uid), CONFIG.app.limits.messageCooldown);
 
-            // Валидация текста
             if (text && text.length > CONFIG.app.limits.maxMessageLength) {
                 return { success: false, error: `Сообщение слишком длинное (макс ${CONFIG.app.limits.maxMessageLength} символов)` };
             }
 
-            // Модерация
             if (text && window.Moderation) {
                 const modResult = Moderation.check(text, 'chat_message');
                 if (!modResult.isValid) {
@@ -408,7 +396,6 @@ const Chat = (function() {
                 }
             }
 
-            // Загружаем файлы
             const fileUrls = [];
             if (files && files.length > 0) {
                 for (const file of files) {
@@ -438,12 +425,10 @@ const Chat = (function() {
                 }
             }
 
-            // Если нет ни текста, ни файлов
             if (!text && fileUrls.length === 0) {
                 return { success: false, error: 'Нет содержимого для отправки' };
             }
 
-            // Получаем информацию о чате
             const chatDoc = await db.collection('chats').doc(chatId).get();
             if (!chatDoc.exists) {
                 return { success: false, error: 'Чат не найден' };
@@ -452,7 +437,6 @@ const Chat = (function() {
             const chatData = chatDoc.data();
             const otherId = chatData.participants.find(id => id !== user.uid);
 
-            // Создаём сообщение
             const message = {
                 senderId: user.uid,
                 senderName: userData.name || 'Пользователь',
@@ -463,12 +447,10 @@ const Chat = (function() {
                 type: fileUrls.length > 0 ? (fileUrls[0].type?.startsWith('image/') ? 'image' : 'file') : 'text'
             };
 
-            // Добавляем в подколлекцию
             await db.collection('chats').doc(chatId)
                 .collection('messages')
                 .add(message);
 
-            // Обновляем информацию о чате
             const updateData = {
                 lastMessage: text || (fileUrls.length > 0 ? '📎 Файл' : ''),
                 lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -481,7 +463,6 @@ const Chat = (function() {
 
             await db.collection('chats').doc(chatId).update(updateData);
             
-            // Очищаем кэш
             clearChatsCache(user.uid);
             if (otherId) {
                 clearChatsCache(otherId);
@@ -505,27 +486,22 @@ const Chat = (function() {
             const user = getUserSafe();
             if (!user) return false;
             
-            // Используем транзакцию для атомарности
             await db.runTransaction(async (transaction) => {
-                // Получаем все непрочитанные сообщения
                 const messagesRef = db.collection('chats').doc(chatId).collection('messages');
                 const snapshot = await messagesRef
                     .where('read', '==', false)
                     .where('senderId', '!=', user.uid)
                     .get();
                 
-                // Обновляем каждое сообщение
                 snapshot.forEach(doc => {
                     transaction.update(doc.ref, { read: true });
                 });
                 
-                // Сбрасываем счётчик
                 transaction.update(db.collection('chats').doc(chatId), {
                     [`unreadCount.${user.uid}`]: 0
                 });
             });
             
-            // Очищаем кэш
             clearMessagesCache(chatId);
             clearChatsCache(user.uid);
             
@@ -541,7 +517,6 @@ const Chat = (function() {
         try {
             if (!checkFirebase()) return [];
             
-            // Проверяем кэш
             if (!forceRefresh && !before) {
                 const cached = getMessagesCache(chatId);
                 if (cached) {
@@ -620,12 +595,10 @@ const Chat = (function() {
             
             const message = messageDoc.data();
             
-            // Только автор может удалить
             if (message.senderId !== user.uid) {
                 return { success: false, error: 'Нельзя удалить чужое сообщение' };
             }
             
-            // Проверка времени
             const messageDate = message.timestamp?.toDate?.() || new Date();
             const hoursDiff = (Date.now() - messageDate) / (1000 * 60 * 60);
             
@@ -633,14 +606,12 @@ const Chat = (function() {
                 return { success: false, error: 'Нельзя удалить сообщение старше 24 часов' };
             }
             
-            // Помечаем как удалённое
             await messageRef.update({
                 deleted: true,
                 text: '[сообщение удалено]',
                 files: []
             });
             
-            // Очищаем кэш
             clearMessagesCache(chatId);
             
             return { success: true };
@@ -683,7 +654,7 @@ const Chat = (function() {
                 total += chat.unreadCount?.[userId] || 0;
             });
             
-            Utils?.setMemoryCache?.(cacheKey, total, 30000); // 30 секунд кэш
+            Utils?.setMemoryCache?.(cacheKey, total, 30000);
             
             return total;
             
@@ -697,7 +668,6 @@ const Chat = (function() {
     function subscribeToUnread(userId, callback) {
         if (!checkFirebase()) return null;
         
-        // Отписываемся от предыдущей подписки
         if (currentUserUnreadSub) {
             currentUserUnreadSub();
             currentUserUnreadSub = null;
@@ -713,7 +683,6 @@ const Chat = (function() {
                 });
                 callback(total);
                 
-                // Очищаем кэш
                 clearChatsCache(userId);
             }, (error) => {
                 console.error('Ошибка подписки на непрочитанные:', error);
@@ -726,7 +695,6 @@ const Chat = (function() {
 
     // ===== ОЧИСТКА =====
     function cleanup() {
-        // Отписываемся от всех чатов
         activeListeners.forEach((unsubscribe, chatId) => {
             try {
                 if (typeof unsubscribe === 'function') {
@@ -738,7 +706,6 @@ const Chat = (function() {
         });
         activeListeners.clear();
         
-        // Отписываемся от непрочитанных
         if (currentUserUnreadSub) {
             try {
                 currentUserUnreadSub();
@@ -748,7 +715,6 @@ const Chat = (function() {
             currentUserUnreadSub = null;
         }
         
-        // Очищаем кэш и спам-защиту
         spamPrevention.clear();
         chatsCache.clear();
         messagesCache.clear();
@@ -770,12 +736,8 @@ const Chat = (function() {
         getUnreadCount,
         subscribeToUnread,
         cleanup,
-        
-        // Методы для кэша
         clearChatsCache,
         clearMessagesCache,
-        
-        // Уведомления
         requestNotificationPermission,
         showBrowserNotification
     };

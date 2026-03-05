@@ -1,6 +1,6 @@
 /**
- * masters.js — логика кабинета мастера (ИСПРАВЛЕНО - проверка элементов)
- * Версия 3.1 с поддержкой инициации завершения
+ * masters.js — логика кабинета мастера (ИСПРАВЛЕНО - чат, завершение)
+ * Версия 3.2 с поддержкой чата и двухэтапного завершения
  */
 
 (function() {
@@ -107,13 +107,12 @@
         }
     }
 
-    // ===== ЗАГРУЗКА ПРОФИЛЯ (ИСПРАВЛЕНО - с проверкой элементов) =====
+    // ===== ЗАГРУЗКА ПРОФИЛЯ =====
     async function loadMasterProfile() {
         try {
             const userData = Auth.getUserData();
             if (!userData) return;
 
-            // Проверяем существование каждого элемента перед установкой
             const nameEl = $('masterName');
             if (nameEl) nameEl.textContent = userData.name || 'Мастер';
             
@@ -287,6 +286,48 @@
         `;
     }
 
+    // ===== ОТКРЫТЬ ЧАТ (ИСПРАВЛЕНО) =====
+    window.openChat = (orderId, clientId) => {
+        const user = Auth.getUser();
+        if (!user) {
+            Utils.showError('Необходимо авторизоваться');
+            return;
+        }
+        
+        // Формируем ID чата
+        const chatId = `chat_${orderId}_${user.uid}`;
+        console.log('📤 Открываем чат:', { orderId, clientId, chatId });
+        
+        // Сохраняем информацию о чате для быстрого доступа
+        sessionStorage.setItem('currentChat', JSON.stringify({
+            chatId,
+            orderId,
+            partnerId: clientId
+        }));
+        
+        // Переходим в чат
+        if (window.CONFIG) {
+            const chatUrl = CONFIG.getUrl('chat', { chatId });
+            console.log('📤 URL чата:', chatUrl);
+            
+            if (window.Loader) {
+                Loader.navigateTo(chatUrl, 'Открываем чат...');
+            } else {
+                window.location.href = chatUrl;
+            }
+        } else {
+            // Fallback если CONFIG не загружен
+            const chatUrl = `/HomeWork/chat.html?chatId=${chatId}`;
+            console.log('📤 URL чата (fallback):', chatUrl);
+            
+            if (window.Loader) {
+                Loader.navigateTo(chatUrl, 'Открываем чат...');
+            } else {
+                window.location.href = chatUrl;
+            }
+        }
+    };
+
     // ===== ПОКАЗ МОДАЛКИ ЗАВЕРШЕНИЯ =====
     window.showCompleteModal = (orderId, clientId, clientName) => {
         currentOrderId = orderId;
@@ -336,20 +377,6 @@
             Utils.showNotification(result?.error || '❌ Ошибка', 'error');
         }
     }
-
-    // ===== ОТКРЫТЬ ЧАТ =====
-    window.openChat = (orderId, clientId) => {
-        const user = Auth.getUser();
-        if (!user) return;
-        
-        const chatId = `chat_${orderId}_${user.uid}`;
-        
-        if (window.CONFIG) {
-            window.location.href = CONFIG.getUrl('chat', { chatId });
-        } else {
-            window.location.href = `/chat.html?chatId=${chatId}`;
-        }
-    };
 
     // ===== ЗАГРУЗКА ЗАКАЗА ДЛЯ ОТКЛИКА =====
     async function loadOrderForResponse(orderId) {
