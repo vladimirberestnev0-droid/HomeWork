@@ -1,5 +1,5 @@
 // ============================================
-// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР
+// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (ИСПРАВЛЕНО)
 // ============================================
 const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
@@ -58,9 +58,16 @@ const App = (function() {
         // Ждем Firebase
         await waitForFirebase();
 
-        // Инициализируем DataService
+        // ИНИЦИАЛИЗИРУЕМ DataService (ВАЖНО!)
         if (window.DataService && window.db && window.storage) {
+            console.log('📦 Инициализация DataService...');
             DataService.init(window.db, window.storage);
+        } else {
+            console.warn('⚠️ DataService не может быть инициализирован:', {
+                dataService: !!window.DataService,
+                db: !!window.db,
+                storage: !!window.storage
+            });
         }
 
         // Инициализируем Cache (если есть)

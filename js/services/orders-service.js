@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС ЗАКАЗОВ (ИСПРАВЛЕНО: статусы, offline-очередь)
+// СЕРВИС ЗАКАЗОВ (ИСПРАВЛЕНО: статусы, offline-очередь + защита Target ID)
 // ============================================
 const Orders = (function() {
     if (window.__ORDERS_INITIALIZED__) return window.Orders;
@@ -36,6 +36,10 @@ const Orders = (function() {
     // Офлайн-очередь
     const OFFLINE_QUEUE_KEY = 'offline_orders_queue';
     let processingOffline = false;
+
+    // Максимальное количество повторов при ошибке Target ID
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 500; // мс
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     function checkAuth() {
@@ -332,91 +336,116 @@ const Orders = (function() {
         }
     }
 
-    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ =====
+    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО: защита Target ID) =====
     async function getOpenOrders(filters = {}, options = {}) {
-        try {
-            const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
-            
-            // Проверяем кэш
-            if (!options.force && !options.lastDoc && window.Cache) {
-                const cached = Cache.get(cacheKey);
-                if (cached) return cached;
-            }
-
-            const constraints = [
-                { type: 'where', field: 'status', operator: '==', value: ORDER_STATUS.OPEN }
-            ];
-
-            if (filters.category && filters.category !== 'all') {
-                constraints.push({
-                    type: 'where',
-                    field: 'category',
-                    operator: '==',
-                    value: filters.category
-                });
-            }
-
-            const result = await DataService.getOrders(
-                { status: ORDER_STATUS.OPEN, category: filters.category },
-                {
-                    limit: options.limit || 20,
-                    lastDoc: options.lastDoc
+        let attempt = 0;
+        
+        while (attempt < MAX_RETRIES) {
+            try {
+                const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
+                
+                // Проверяем кэш (только для первого запроса, не для повторных)
+                if (attempt === 0 && !options.force && !options.lastDoc && window.Cache) {
+                    const cached = Cache.get(cacheKey);
+                    if (cached) return cached;
                 }
-            );
 
-            let orders = result.items.map(order => ({
-                ...order,
-                status: normalizeStatus(order.status)
-            }));
+                const constraints = [
+                    { type: 'where', field: 'status', operator: '==', value: ORDER_STATUS.OPEN }
+                ];
 
-            // Фильтр по городу (на клиенте)
-            if (filters.city && filters.city !== 'all') {
-                const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
-                if (cityName) {
-                    orders = orders.filter(o => 
-                        o.city === cityName || 
-                        (o.address && o.address.toLowerCase().includes(cityName))
-                    );
+                if (filters.category && filters.category !== 'all') {
+                    constraints.push({
+                        type: 'where',
+                        field: 'category',
+                        operator: '==',
+                        value: filters.category
+                    });
                 }
-            }
 
-            // Фильтр по цене
-            if (filters.minPrice) {
-                orders = orders.filter(o => o.price >= filters.minPrice);
-            }
-            if (filters.maxPrice) {
-                orders = orders.filter(o => o.price <= filters.maxPrice);
-            }
+                const result = await DataService.getOrders(
+                    { status: ORDER_STATUS.OPEN, category: filters.category },
+                    {
+                        limit: options.limit || 20,
+                        lastDoc: options.lastDoc
+                    }
+                );
 
-            // Сортировка
-            if (filters.sort === 'price_asc') {
-                orders.sort((a, b) => a.price - b.price);
-            } else if (filters.sort === 'price_desc') {
-                orders.sort((a, b) => b.price - a.price);
-            } else {
-                orders.sort((a, b) => {
-                    const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
-                    const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
-                    return dateB - dateA;
-                });
+                let orders = result.items.map(order => ({
+                    ...order,
+                    status: normalizeStatus(order.status)
+                }));
+
+                // Фильтр по городу (на клиенте)
+                if (filters.city && filters.city !== 'all') {
+                    const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
+                    if (cityName) {
+                        orders = orders.filter(o => 
+                            o.city === cityName || 
+                            (o.address && o.address.toLowerCase().includes(cityName))
+                        );
+                    }
+                }
+
+                // Фильтр по цене
+                if (filters.minPrice) {
+                    orders = orders.filter(o => o.price >= filters.minPrice);
+                }
+                if (filters.maxPrice) {
+                    orders = orders.filter(o => o.price <= filters.maxPrice);
+                }
+
+                // Сортировка
+                if (filters.sort === 'price_asc') {
+                    orders.sort((a, b) => a.price - b.price);
+                } else if (filters.sort === 'price_desc') {
+                    orders.sort((a, b) => b.price - a.price);
+                } else {
+                    orders.sort((a, b) => {
+                        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
+                        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
+                        return dateB - dateA;
+                    });
+                }
+
+                const finalResult = {
+                    orders,
+                    lastDoc: result.lastDoc,
+                    hasMore: result.size === (options.limit || 20)
+                };
+
+                // Кэшируем (только для первого запроса)
+                if (attempt === 0 && !options.lastDoc && window.Cache) {
+                    Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
+                }
+
+                return finalResult;
+                
+            } catch (error) {
+                attempt++;
+                
+                // Проверяем, является ли ошибка Target ID
+                const isTargetIdError = error.code === 'failed-precondition' && 
+                                        error.message?.includes('Target ID already exists');
+                
+                if (isTargetIdError && attempt < MAX_RETRIES) {
+                    console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${RETRY_DELAY * attempt}мс...`);
+                    
+                    // Ждём с увеличивающейся задержкой
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+                    continue;
+                }
+                
+                // Другие ошибки или исчерпаны попытки
+                console.error('❌ Ошибка загрузки заказов:', error);
+                
+                // Возвращаем пустой результат, но не кэшируем
+                return { orders: [], lastDoc: null, hasMore: false };
             }
-
-            const finalResult = {
-                orders,
-                lastDoc: result.lastDoc,
-                hasMore: result.size === (options.limit || 20)
-            };
-
-            // Кэшируем
-            if (!options.lastDoc && window.Cache) {
-                Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
-            }
-
-            return finalResult;
-        } catch (error) {
-            console.error('❌ Ошибка загрузки заказов:', error);
-            return { orders: [], lastDoc: null, hasMore: false };
         }
+        
+        // Если дошли сюда - все попытки исчерпаны
+        return { orders: [], lastDoc: null, hasMore: false };
     }
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====

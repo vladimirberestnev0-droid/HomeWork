@@ -1,51 +1,63 @@
 // ============================================
-// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (ПРОСЛОЙКА МЕЖДУ FIREBASE И СЕРВИСАМИ)
+// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (ЭЛЕГАНТНОЕ РЕШЕНИЕ)
 // ============================================
 const DataService = (function() {
     if (window.__DATA_SERVICE_INITIALIZED__) return window.DataService;
 
     let db = null;
     let storage = null;
+    let initPromise = null;
     let isInitialized = false;
 
-    function init(firebaseDB, firebaseStorage) {
-        db = firebaseDB;
-        storage = firebaseStorage;
-        isInitialized = true;
-        console.log('✅ DataService инициализирован');
-    }
-
-    function checkInit() {
-        if (!isInitialized) throw new Error('DataService не инициализирован');
-        return true;
+    // Автоматическая инициализация при первом использовании
+    async function ensureInit() {
+        if (isInitialized) return true;
+        
+        if (initPromise) return initPromise;
+        
+        initPromise = new Promise(async (resolve, reject) => {
+            console.log('📦 DataService: автоматическая инициализация...');
+            
+            // Ждем Firebase
+            const maxAttempts = 10;
+            for (let i = 0; i < maxAttempts; i++) {
+                if (window.db && window.storage) {
+                    db = window.db;
+                    storage = window.storage;
+                    isInitialized = true;
+                    console.log('✅ DataService готов (автоинициализация)');
+                    resolve(true);
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 100));
+            }
+            
+            reject(new Error('Firebase не загрузился'));
+        });
+        
+        return initPromise;
     }
 
     // ===== ОБЩИЕ МЕТОДЫ =====
-
-    // Получение коллекции с фильтрацией
     async function getCollection(collection, constraints = [], options = {}) {
-        checkInit();
+        await ensureInit();
         
         let query = db.collection(collection);
         
-        // Применяем where constraints
         constraints.forEach(constraint => {
             if (constraint.type === 'where') {
                 query = query.where(constraint.field, constraint.operator, constraint.value);
             }
         });
         
-        // Сортировка
         if (options.orderBy) {
             query = query.orderBy(options.orderBy.field, options.orderBy.direction || 'asc');
         }
         
-        // Лимит
         if (options.limit) {
             query = query.limit(options.limit);
         }
         
-        // Пагинация
         if (options.startAfter) {
             query = query.startAfter(options.startAfter);
         }
@@ -72,17 +84,14 @@ const DataService = (function() {
         };
     }
 
-    // Получение документа по ID
     async function getDocument(collection, id) {
-        checkInit();
-        
+        await ensureInit();
         const doc = await db.collection(collection).doc(id).get();
         return doc.exists ? { id: doc.id, ...doc.data() } : null;
     }
 
-    // Создание документа
     async function createDocument(collection, data) {
-        checkInit();
+        await ensureInit();
         
         const docRef = await db.collection(collection).add({
             ...data,
@@ -93,9 +102,8 @@ const DataService = (function() {
         return { id: docRef.id, ...data };
     }
 
-    // Обновление документа
     async function updateDocument(collection, id, data) {
-        checkInit();
+        await ensureInit();
         
         await db.collection(collection).doc(id).update({
             ...data,
@@ -105,32 +113,32 @@ const DataService = (function() {
         return { id, ...data };
     }
 
-    // Удаление документа
     async function deleteDocument(collection, id) {
-        checkInit();
+        await ensureInit();
         await db.collection(collection).doc(id).delete();
         return true;
     }
 
-    // Транзакция
     async function runTransaction(callback) {
-        checkInit();
+        await ensureInit();
         return await db.runTransaction(callback);
     }
 
-    // Пакетная запись
     function batch() {
-        checkInit();
+        if (!isInitialized) {
+            throw new Error('DataService не инициализирован');
+        }
         return db.batch();
     }
 
     // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
-
     async function getUser(userId) {
         return getDocument('users', userId);
     }
 
     async function createUser(userId, userData) {
+        await ensureInit();
+        
         await db.collection('users').doc(userId).set({
             ...userData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -169,7 +177,6 @@ const DataService = (function() {
     }
 
     // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЗАКАЗОВ =====
-
     async function getOrders(filters = {}, options = {}) {
         const constraints = [];
         
@@ -220,7 +227,6 @@ const DataService = (function() {
     }
 
     // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЧАТОВ =====
-
     async function getChat(chatId) {
         return getDocument('chats', chatId);
     }
@@ -241,6 +247,8 @@ const DataService = (function() {
     }
 
     async function createChat(chatId, chatData) {
+        await ensureInit();
+        
         await db.collection('chats').doc(chatId).set({
             ...chatData,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -254,6 +262,8 @@ const DataService = (function() {
     }
 
     async function getMessages(chatId, options = {}) {
+        await ensureInit();
+        
         const messagesRef = db.collection('chats').doc(chatId).collection('messages');
         let query = messagesRef.orderBy('timestamp', options.order || 'asc');
         
@@ -278,6 +288,8 @@ const DataService = (function() {
     }
 
     async function sendMessage(chatId, messageData) {
+        await ensureInit();
+        
         const messagesRef = db.collection('chats').doc(chatId).collection('messages');
         const docRef = await messagesRef.add({
             ...messageData,
@@ -288,9 +300,8 @@ const DataService = (function() {
     }
 
     // ===== РАБОТА С ФАЙЛАМИ =====
-
     async function uploadFile(file, path, onProgress = null) {
-        checkInit();
+        await ensureInit();
         
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const storageRef = storage.ref(`${path}/${fileName}`);
@@ -321,15 +332,16 @@ const DataService = (function() {
     }
 
     async function deleteFile(path) {
-        checkInit();
+        await ensureInit();
         await storage.ref(path).delete();
         return true;
     }
 
     // ===== ПОДПИСКИ (REALTIME) =====
-
     function subscribeToCollection(collection, constraints, callback, errorCallback) {
-        checkInit();
+        if (!isInitialized) {
+            throw new Error('DataService не инициализирован');
+        }
         
         let query = db.collection(collection);
         
@@ -359,7 +371,9 @@ const DataService = (function() {
     }
 
     function subscribeToDocument(collection, id, callback, errorCallback) {
-        checkInit();
+        if (!isInitialized) {
+            throw new Error('DataService не инициализирован');
+        }
         
         return db.collection(collection).doc(id).onSnapshot(
             (doc) => {
@@ -370,7 +384,9 @@ const DataService = (function() {
     }
 
     function subscribeToMessages(chatId, callback, errorCallback) {
-        checkInit();
+        if (!isInitialized) {
+            throw new Error('DataService не инициализирован');
+        }
         
         return db.collection('chats').doc(chatId)
             .collection('messages')
@@ -389,8 +405,6 @@ const DataService = (function() {
     }
 
     const api = {
-        init,
-        
         // Общие методы
         getCollection,
         getDocument,
@@ -427,11 +441,15 @@ const DataService = (function() {
         // Подписки
         subscribeToCollection,
         subscribeToDocument,
-        subscribeToMessages
+        subscribeToMessages,
+        
+        // Вспомогательные
+        init: () => ensureInit(),
+        isReady: () => isInitialized
     };
 
     window.__DATA_SERVICE_INITIALIZED__ = true;
-    console.log('✅ DataService готов');
+    console.log('✅ DataService загружен (элегантная версия)');
     
     return Object.freeze(api);
 })();
