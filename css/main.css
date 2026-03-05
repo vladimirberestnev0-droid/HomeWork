@@ -28,3 +28,6 @@
 
 /* Тёмная тема */
 @import url('theme/dark.css');
+
+/* ===== КАСТОМНЫЕ СТИЛИ ===== */
+@import url('custom/logo.css');

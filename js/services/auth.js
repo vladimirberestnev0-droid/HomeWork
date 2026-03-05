@@ -296,7 +296,19 @@ const Auth = (function() {
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
         
-        if (redirect) {
+        // Проверяем, есть ли сохранённый редирект из sessionStorage
+        const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
+        
+        if (savedRedirect) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            setTimeout(() => {
+                if (window.Loader) {
+                    Loader.navigateTo(savedRedirect, 'Перенаправляем...');
+                } else {
+                    window.location.href = savedRedirect;
+                }
+            }, 1000);
+        } else if (redirect) {
             setTimeout(() => {
                 try {
                     const decodedUrl = decodeURIComponent(redirect);

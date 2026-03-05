@@ -27,31 +27,6 @@
     <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
     
-    <!-- Дополнительные стили для логотипа -->
-    <style>
-        .logo {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-        .logo-small {
-            font-size: 0.9rem;
-            font-weight: 500;
-            opacity: 0.9;
-            color: var(--text-soft);
-            -webkit-text-fill-color: var(--text-soft);
-            background: none;
-            margin-left: 2px;
-        }
-        @media (max-width: 480px) {
-            .logo {
-                font-size: 1.4rem;
-            }
-            .logo-small {
-                font-size: 0.75rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР - ВРЕМЕННО ОТКЛЮЧЕН 
@@ -134,7 +109,7 @@
                     <i class="fas fa-crown" style="color: var(--accent);"></i> 
                     Мастера рядом
                 </h2>
-                <a href="/HomeWork/masters.html" class="nav-link" data-no-loader="false">Все →</a>
+                <a href="#" class="nav-link" id="allMastersLink" data-no-loader="false">Все →</a>
             </div>
 
             <div class="masters-scroll" id="mastersList"></div>
@@ -267,6 +242,15 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ (для десктопа) -->
+    <div class="category-dropdown d-none" id="categoryDropdown">
+        <div class="category-list" id="categoryList"></div>
+        <div class="category-actions">
+            <button class="btn btn-outline-secondary" id="cancelCategory">Отмена</button>
+            <button class="btn btn-primary" id="applyCategory">Применить</button>
         </div>
     </div>
 

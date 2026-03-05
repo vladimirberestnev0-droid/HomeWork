@@ -87,42 +87,41 @@ const CONSTANTS = (function() {
         }
     };
 
-    // ===== КАТЕГОРИИ ЗАКАЗОВ =====
-    const ORDER_CATEGORIES = [
-        { id: 'all', name: 'Все', icon: 'fa-list-ul', color: '#2CD5C4' },
-        { id: 'Сантехника', name: 'Сантехника', icon: 'fa-wrench', color: '#FF6B6B' },
-        { id: 'Электрика', name: 'Электрика', icon: 'fa-bolt', color: '#FFD93D' },
-        { id: 'Отделочные работы', name: 'Отделка', icon: 'fa-paint-roller', color: '#6BCB77' },
-        { id: 'Мебель', name: 'Мебель', icon: 'fa-couch', color: '#FF8A5C' },
-        { id: 'Окна и двери', name: 'Окна/Двери', icon: 'fa-window-maximize', color: '#4D96FF' },
-        { id: 'Бытовой ремонт', name: 'Бытовой ремонт', icon: 'fa-tools', color: '#9D65C9' },
-        { id: 'Клининг', name: 'Клининг', icon: 'fa-broom', color: '#FFB347' },
-        { id: 'Ремонт техники', name: 'Ремонт техники', icon: 'fa-gear', color: '#6C757D' },
-        { id: 'Дизайн интерьера', name: 'Дизайн', icon: 'fa-pencil-ruler', color: '#FF69B4' },
-        { id: 'Ландшафтный дизайн', name: 'Ландшафт', icon: 'fa-tree', color: '#2E8B57' },
-        { id: 'Архитектор', name: 'Архитектор', icon: 'fa-draw-polygon', color: '#9370DB' },
-        { id: '3D-визуализация', name: '3D', icon: 'fa-cubes', color: '#20B2AA' },
-        { id: 'Декорирование', name: 'Декор', icon: 'fa-palette', color: '#DB7093' },
-        { id: 'Ремонт под ключ', name: 'Под ключ', icon: 'fa-key', color: '#CD5C5C' },
-        { id: 'Сварочные работы', name: 'Сварка', icon: 'fa-welding', color: '#708090' },
-        { id: 'Кровельные работы', name: 'Кровля', icon: 'fa-home', color: '#8B4513' },
-        { id: 'Укладка плитки', name: 'Плитка', icon: 'fa-border-all', color: '#4682B4' },
-        { id: 'Паркетные работы', name: 'Паркет', icon: 'fa-wood', color: '#DEB887' },
-        { id: 'Потолки', name: 'Потолки', icon: 'fa-arrow-up', color: '#B0C4DE' },
-        { id: 'Гипсокартон', name: 'Гипсокартон', icon: 'fa-layer-group', color: '#D3D3D3' },
-        { id: 'Малярные работы', name: 'Покраска', icon: 'fa-paint-brush', color: '#FFA07A' },
-        { id: 'Штукатурка', name: 'Штукатурка', icon: 'fa-brush', color: '#BC8F8F' },
-        { id: 'Утепление', name: 'Утепление', icon: 'fa-temperature-low', color: '#87CEEB' },
-        { id: 'Вентиляция', name: 'Вентиляция', icon: 'fa-wind', color: '#98D8C8' },
-        { id: 'Отопление', name: 'Отопление', icon: 'fa-radiator', color: '#CD5C5C' },
-        { id: 'Водоснабжение', name: 'Вода', icon: 'fa-water', color: '#00CED1' },
-        { id: 'Мелкий ремонт', name: 'Мелкий ремонт', icon: 'fa-screwdriver', color: '#A9A9A9' },
-        { id: 'Сборка мебели', name: 'Сборка', icon: 'fa-chair', color: '#8B4513' },
-        { id: 'Компьютерная помощь', name: 'IT', icon: 'fa-laptop', color: '#2F4F4F' },
-        { id: 'Услуги грузчиков', name: 'Грузчики', icon: 'fa-people-carry', color: '#B8860B' },
-        { id: 'Вывоз мусора', name: 'Вывоз мусора', icon: 'fa-trash', color: '#696969' },
-        { id: 'Разнорабочий', name: 'Разнорабочий', icon: 'fa-hard-hat', color: '#8B7E66' }
-    ];
+    // ===== КАТЕГОРИИ ЗАКАЗОВ (ОТСОРТИРОВАНЫ ПО АЛФАВИТУ) =====
+const ORDER_CATEGORIES = [
+    { id: 'all', name: 'Все', icon: 'fa-list-ul', color: '#2CD5C4' },
+    { id: 'Архитектор', name: 'Архитектор', icon: 'fa-draw-polygon', color: '#9370DB' },
+    { id: 'Бытовой ремонт', name: 'Бытовой ремонт', icon: 'fa-tools', color: '#9D65C9' },
+    { id: 'Вентиляция', name: 'Вентиляция', icon: 'fa-wind', color: '#98D8C8' },
+    { id: 'Водоснабжение', name: 'Вода', icon: 'fa-water', color: '#00CED1' },
+    { id: 'Вывоз мусора', name: 'Вывоз мусора', icon: 'fa-trash', color: '#696969' },
+    { id: 'Гипсокартон', name: 'Гипсокартон', icon: 'fa-layer-group', color: '#D3D3D3' },
+    { id: 'Декорирование', name: 'Декор', icon: 'fa-palette', color: '#DB7093' },
+    { id: 'Дизайн интерьера', name: 'Дизайн', icon: 'fa-pencil-ruler', color: '#FF69B4' },
+    { id: '3D-визуализация', name: '3D', icon: 'fa-cubes', color: '#20B2AA' },
+    { id: 'Клининг', name: 'Клининг', icon: 'fa-broom', color: '#FFB347' },
+    { id: 'Компьютерная помощь', name: 'IT', icon: 'fa-laptop', color: '#2F4F4F' },
+    { id: 'Кровельные работы', name: 'Кровля', icon: 'fa-home', color: '#8B4513' },
+    { id: 'Ландшафтный дизайн', name: 'Ландшафт', icon: 'fa-tree', color: '#2E8B57' },
+    { id: 'Малярные работы', name: 'Покраска', icon: 'fa-paint-brush', color: '#FFA07A' },
+    { id: 'Мелкий ремонт', name: 'Мелкий ремонт', icon: 'fa-screwdriver', color: '#A9A9A9' },
+    { id: 'Мебель', name: 'Мебель', icon: 'fa-couch', color: '#FF8A5C' },
+    { id: 'Отделочные работы', name: 'Отделка', icon: 'fa-paint-roller', color: '#6BCB77' },
+    { id: 'Отопление', name: 'Отопление', icon: 'fa-radiator', color: '#CD5C5C' },
+    { id: 'Окна и двери', name: 'Окна/Двери', icon: 'fa-window-maximize', color: '#4D96FF' },
+    { id: 'Паркетные работы', name: 'Паркет', icon: 'fa-wood', color: '#DEB887' },
+    { id: 'Потолки', name: 'Потолки', icon: 'fa-arrow-up', color: '#B0C4DE' },
+    { id: 'Разнорабочий', name: 'Разнорабочий', icon: 'fa-hard-hat', color: '#8B7E66' },
+    { id: 'Ремонт техники', name: 'Ремонт техники', icon: 'fa-gear', color: '#6C757D' },
+    { id: 'Ремонт под ключ', name: 'Под ключ', icon: 'fa-key', color: '#CD5C5C' },
+    { id: 'Сантехника', name: 'Сантехника', icon: 'fa-wrench', color: '#FF6B6B' },
+    { id: 'Сборка мебели', name: 'Сборка', icon: 'fa-chair', color: '#8B4513' },
+    { id: 'Сварочные работы', name: 'Сварка', icon: 'fa-welding', color: '#708090' },
+    { id: 'Услуги грузчиков', name: 'Грузчики', icon: 'fa-people-carry', color: '#B8860B' },
+    { id: 'Утепление', name: 'Утепление', icon: 'fa-temperature-low', color: '#87CEEB' },
+    { id: 'Укладка плитки', name: 'Плитка', icon: 'fa-border-all', color: '#4682B4' },
+    { id: 'Электрика', name: 'Электрика', icon: 'fa-bolt', color: '#FFD93D' }
+];
 
     // ===== ИКОНКИ ДЛЯ БЫСТРОГО ДОСТУПА =====
     const CATEGORY_ICONS = ORDER_CATEGORIES.reduce((acc, cat) => {

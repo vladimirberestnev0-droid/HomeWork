@@ -289,3 +289,64 @@
         font-size: 1.1rem;
     }
 }
+
+/* ============================================
+   МОДАЛКИ - АВТОМАТИЧЕСКАЯ АДАПТАЦИЯ
+   ============================================ */
+
+/* По умолчанию для всех экранов */
+.modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 500px;
+}
+
+/* Автоматическая адаптация под размер экрана */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px auto;
+        max-width: calc(100% - 20px);
+    }
+    
+    /* Центрирование по вертикали */
+    .modal-dialog-centered {
+        min-height: calc(100% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-end;
+    }
+    
+    .modal-content {
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Фикс для маленьких экранов - модалка не скроллится */
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 360px) {
+    .modal-body {
+        max-height: 60vh;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+}

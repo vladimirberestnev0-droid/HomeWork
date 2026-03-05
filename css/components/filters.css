@@ -420,3 +420,127 @@
         padding: 3px 10px;
     }
 }
+
+/* ============================================
+   ВЫПАДАЮЩИЙ СПИСОК КАТЕГОРИЙ (ОБНОВЛЕННЫЙ)
+   ============================================ */
+
+.category-dropdown {
+    position: absolute;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    width: 350px;
+    max-width: 90vw;
+    animation: dropdownFade 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+/* Для мобилок dropdown не показываем */
+@media (max-width: 768px) {
+    .category-dropdown {
+        display: none !important;
+    }
+}
+
+.category-list {
+    max-height: 350px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.category-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.category-list::-webkit-scrollbar-track {
+    background: var(--bg-soft);
+}
+
+.category-list::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.category-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+
+.category-item:hover {
+    background-color: var(--bg-soft);
+}
+
+.category-item.active {
+    background-color: var(--accent);
+    color: var(--deep-blue);
+}
+
+.category-item i {
+    width: 20px;
+    color: var(--accent);
+}
+
+.category-item.active i {
+    color: var(--deep-blue);
+}
+
+/* ===== ДЕСКТОПНЫЙ ФИЛЬТР ===== */
+.desktop-category-filter {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .desktop-category-filter {
+        display: block;
+        position: relative;
+    }
+    
+    #categoryLabel {
+        user-select: none;
+        padding: 8px 16px;
+        background-color: var(--bg-soft);
+        border-radius: var(--radius-full);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    
+    #categoryLabel:hover {
+        border-color: var(--accent);
+        background-color: var(--accent-soft);
+    }
+    
+    /* На мобилках оставляем скролл */
+    .filters-scroll {
+        display: flex;
+    }
+    
+    .filters-scroll .filter-chip[data-category] {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 991px) {
+    .desktop-category-filter {
+        display: none;
+    }
+    
+    .filters-scroll {
+        display: flex;
+    }
+}

@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ С КЭШИРОВАНИЕМ (С МОДАЛКОЙ ОТКЛИКА)
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ С КЭШИРОВАНИЕМ И ВЫПАДАЮЩИМ СПИСКОМ
 // ============================================
 
 (function() {
@@ -14,6 +14,10 @@
     let lastDoc = null;
     let hasMore = true;
     let isLoading = false;
+    
+    // Для выпадающего списка
+    let selectedCategory = 'all';
+    let isDropdownOpen = false;
     
     // Константы для кэша
     const MASTERS_CACHE_KEY = 'home_masters';
@@ -41,9 +45,130 @@
         initEventListeners();
         checkUrlParams();
         restorePaginationState();
-        
         initRespondModal();
+        
+        // Добавляем обработчик изменения размера окна
+        window.addEventListener('resize', Utils.debounce(() => {
+            renderCategoryFilters();
+        }, 200));
     });
+
+    // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА =====
+    function initCategoryDropdown() {
+        const categoryLabel = document.getElementById('categoryLabel');
+        const dropdown = document.getElementById('categoryDropdown');
+        const categoryList = document.getElementById('categoryList');
+        const cancelBtn = document.getElementById('cancelCategory');
+        const applyBtn = document.getElementById('applyCategory');
+        
+        if (!categoryLabel || !dropdown) return;
+        
+        // Показываем/скрываем dropdown
+        categoryLabel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isDropdownOpen = !isDropdownOpen;
+            
+            if (isDropdownOpen) {
+                renderCategoryList();
+                dropdown.classList.remove('d-none');
+                
+                // Позиционируем относительно кнопки
+                const rect = categoryLabel.getBoundingClientRect();
+                dropdown.style.top = rect.bottom + window.scrollY + 5 + 'px';
+                dropdown.style.left = rect.left + 'px';
+            } else {
+                dropdown.classList.add('d-none');
+            }
+        });
+        
+        // Закрываем при клике вне
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && !categoryLabel.contains(e.target)) {
+                dropdown.classList.add('d-none');
+                isDropdownOpen = false;
+            }
+        });
+        
+        // Отмена
+        cancelBtn?.addEventListener('click', () => {
+            dropdown.classList.add('d-none');
+            isDropdownOpen = false;
+        });
+        
+        // Применить
+        applyBtn?.addEventListener('click', () => {
+            filters.category = selectedCategory;
+            dropdown.classList.add('d-none');
+            isDropdownOpen = false;
+            
+            // Обновляем текст кнопки
+            const categoryData = ORDER_CATEGORIES.find(c => c.id === selectedCategory) || ORDER_CATEGORIES[0];
+            categoryLabel.innerHTML = `
+                <i class="fas ${categoryData.icon}"></i>
+                ${categoryData.name}
+                <i class="fas fa-chevron-down ms-1"></i>
+            `;
+            
+            loadOrders(true);
+        });
+    }
+
+    // ===== РЕНДЕР СПИСКА КАТЕГОРИЙ =====
+    function renderCategoryList() {
+        const categoryList = document.getElementById('categoryList');
+        if (!categoryList) return;
+        
+        categoryList.innerHTML = ORDER_CATEGORIES.map(cat => `
+            <div class="category-item ${cat.id === selectedCategory ? 'active' : ''}" data-category-id="${cat.id}">
+                <i class="fas ${cat.icon}"></i>
+                <span>${cat.name}</span>
+            </div>
+        `).join('');
+        
+        // Добавляем обработчики
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const catId = this.dataset.categoryId;
+                selectedCategory = catId;
+                
+                document.querySelectorAll('.category-item').forEach(el => {
+                    el.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    }
+
+    // ===== РЕНДЕР ФИЛЬТРОВ КАТЕГОРИЙ =====
+    function renderCategoryFilters() {
+        const container = $('categoryFilters');
+        if (!container) return;
+        
+        const isDesktop = window.innerWidth >= 992;
+        
+        if (isDesktop) {
+            // На десктопе показываем только кнопку "Все категории"
+            const currentCategory = ORDER_CATEGORIES.find(c => c.id === filters.category) || ORDER_CATEGORIES[0];
+            container.innerHTML = `
+                <div class="desktop-category-filter">
+                    <span id="categoryLabel">
+                        <i class="fas ${currentCategory.icon}"></i>
+                        ${currentCategory.name}
+                        <i class="fas fa-chevron-down ms-1"></i>
+                    </span>
+                </div>
+            `;
+            initCategoryDropdown();
+        } else {
+            // На мобилках - скроллящиеся чипсы
+            container.innerHTML = ORDER_CATEGORIES.map(cat => `
+                <span class="filter-chip ${cat.id === filters.category ? 'active' : ''}" data-category="${cat.id}">
+                    <i class="fas ${cat.icon}"></i> ${cat.name}
+                </span>
+            `).join('');
+            attachFilterHandlers();
+        }
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТКЛИКА =====
     function initRespondModal() {
@@ -121,6 +246,7 @@
         if (savedFilters) {
             try {
                 filters = JSON.parse(savedFilters);
+                selectedCategory = filters.category;
             } catch (e) {
                 console.warn('Ошибка восстановления фильтров');
             }
@@ -166,20 +292,6 @@
         });
     }
 
-    // ===== РЕНДЕР ФИЛЬТРОВ КАТЕГОРИЙ =====
-    function renderCategoryFilters() {
-        const container = $('categoryFilters');
-        if (!container) return;
-
-        container.innerHTML = ORDER_CATEGORIES.map(cat => `
-            <span class="filter-chip ${cat.id === filters.category ? 'active' : ''}" data-category="${cat.id}">
-                <i class="fas ${cat.icon}"></i> ${cat.name}
-            </span>
-        `).join('');
-        
-        attachFilterHandlers();
-    }
-
     // ===== РЕНДЕР ФИЛЬТРА ГОРОДА =====
     function renderCityFilter() {
         const container = $('cityFilter');
@@ -194,7 +306,7 @@
         attachCityHandlers();
     }
 
-    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ =====
+    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ (ДЛЯ МОБИЛОК) =====
     function attachFilterHandlers() {
         document.querySelectorAll('[data-category]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -202,6 +314,7 @@
                 this.classList.add('active');
                 
                 filters.category = this.dataset.category;
+                selectedCategory = filters.category;
                 loadOrders(true);
             });
         });
@@ -219,7 +332,7 @@
         });
     }
 
-    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ (ОПТИМИЗИРОВАНО) =====
+    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ =====
     async function loadOrders(reset = true) {
         if (isLoading) {
             console.log('⏳ Уже загружается...');
@@ -232,7 +345,6 @@
         isLoading = true;
         console.log(`🔄 ${reset ? 'Сброс и загрузка' : 'Загрузка ещё'}`);
 
-        // Показываем скелетон ТОЛЬКО при сбросе и если нет заказов
         if (reset && displayedOrders.length === 0) {
             container.innerHTML = `
                 <div class="text-center p-5">
@@ -683,6 +795,28 @@
                     return;
                 }
                 window.location.href = '/HomeWork/client.html?tab=new';
+            });
+        }
+
+        // Обработчик для ссылки "Все мастера"
+        const allMastersLink = document.getElementById('allMastersLink');
+        if (allMastersLink) {
+            allMastersLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                if (!Auth.isAuthenticated()) {
+                    // Сохраняем намерение перейти к мастерам
+                    sessionStorage.setItem('redirectAfterLogin', '/HomeWork/masters.html');
+                    AuthUI.showLoginModal();
+                    Utils.showInfo('Войдите, чтобы просмотреть список мастеров');
+                } else {
+                    // Если авторизован - переходим
+                    if (window.Loader) {
+                        Loader.navigateTo('/HomeWork/masters.html', 'Загружаем мастеров...');
+                    } else {
+                        window.location.href = '/HomeWork/masters.html';
+                    }
+                }
             });
         }
 

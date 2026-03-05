@@ -67,18 +67,33 @@ const AuthUI = (function() {
     function showLoginModal() {
         currentMode = 'login';
         renderModal();
-        if (authModal) authModal.show();
+        if (authModal) {
+            // Очищаем старые бэкдропы
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            
+            authModal.show();
+        }
     }
 
     function showRegisterModal() {
         currentMode = 'register';
         renderModal();
-        if (authModal) authModal.show();
+        if (authModal) {
+            // Очищаем старые бэкдропы
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            
+            authModal.show();
+        }
     }
 
     function hideModals() {
-        if (authModal) authModal.hide();
+        if (authModal) {
+            authModal.hide();
+        }
         
+        // Принудительно удаляем бэкдропы
         document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
@@ -256,9 +271,8 @@ const AuthUI = (function() {
         
         const span = errorDiv.querySelector('span');
         if (span) {
-            span.textContent = safeMessage; // textContent безопасен
+            span.textContent = safeMessage;
         } else {
-            // Если нет span, создаём
             errorDiv.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i><span>${safeMessage}</span>`;
         }
         errorDiv.classList.remove('d-none');
@@ -308,7 +322,7 @@ const AuthUI = (function() {
         // Закрытие по Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && authModal) {
-                authModal.hide();
+                hideModals();
             }
         });
         
@@ -317,6 +331,9 @@ const AuthUI = (function() {
         if (modalEl) {
             modalEl.addEventListener('hidden.bs.modal', () => {
                 document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
             });
         }
     }
@@ -327,7 +344,6 @@ const AuthUI = (function() {
         const password = document.getElementById('loginPassword')?.value;
         const errorDiv = document.getElementById('loginError');
 
-        // Валидация
         if (!email || !password) {
             showError(errorDiv, 'Введите email и пароль');
             return;
@@ -343,7 +359,6 @@ const AuthUI = (function() {
             return;
         }
 
-        // Блокируем кнопку
         const loginBtn = document.getElementById('loginSubmitBtn');
         const originalText = loginBtn.innerHTML;
         loginBtn.disabled = true;
@@ -353,9 +368,25 @@ const AuthUI = (function() {
             const result = await Auth.login(email, password);
             
             if (result.success) {
-                if (authModal) authModal.hide();
+                // Скрываем модалку
+                hideModals();
+                
                 renderAuthBlock();
                 Utils.showSuccess('Вход выполнен успешно!');
+                
+                // Проверяем редирект
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirect = urlParams.get('redirect');
+                
+                if (redirect) {
+                    setTimeout(() => {
+                        if (window.Loader) {
+                            Loader.navigateTo(decodeURIComponent(redirect), 'Перенаправляем...');
+                        } else {
+                            window.location.href = decodeURIComponent(redirect);
+                        }
+                    }, 1000);
+                }
             } else {
                 showError(errorDiv, result.error || 'Ошибка входа');
             }
@@ -363,7 +394,6 @@ const AuthUI = (function() {
             showError(errorDiv, 'Произошла ошибка. Попробуйте позже.');
             console.error('Login error:', error);
         } finally {
-            // Разблокируем кнопку
             loginBtn.disabled = false;
             loginBtn.innerHTML = originalText;
         }
@@ -379,7 +409,6 @@ const AuthUI = (function() {
         const categories = document.getElementById('registerCategories')?.value.trim() || '';
         const errorDiv = document.getElementById('registerError');
 
-        // Валидация
         if (!email || !password || !name) {
             showError(errorDiv, 'Заполните все обязательные поля');
             return;
@@ -405,7 +434,6 @@ const AuthUI = (function() {
             return;
         }
 
-        // Блокируем кнопку
         const registerBtn = document.getElementById('registerSubmitBtn');
         const originalText = registerBtn.innerHTML;
         registerBtn.disabled = true;
@@ -420,7 +448,9 @@ const AuthUI = (function() {
             });
             
             if (result.success) {
-                if (authModal) authModal.hide();
+                // Скрываем модалку
+                hideModals();
+                
                 renderAuthBlock();
                 Utils.showSuccess('Регистрация прошла успешно!');
             } else {
@@ -430,7 +460,6 @@ const AuthUI = (function() {
             showError(errorDiv, 'Произошла ошибка. Попробуйте позже.');
             console.error('Register error:', error);
         } finally {
-            // Разблокируем кнопку
             registerBtn.disabled = false;
             registerBtn.innerHTML = originalText;
         }
