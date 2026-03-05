@@ -17,6 +17,35 @@
     <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
 <body>
+    <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
+<div class="desktop-nav">
+    <div class="desktop-nav-container">
+        <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+            <i class="fas fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavOrders">
+            <i class="fas fa-reply"></i>
+            <span>Отклики</span>
+        </a>
+        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+            <i class="fas fa-user-tie"></i>
+            <span>Мастера</span>
+        </a>
+        <a href="/HomeWork/masters.html?tab=chats" class="desktop-nav-item requires-auth visible" id="desktopNavChats">
+            <i class="fas fa-comments"></i>
+            <span>Чаты</span>
+        </a>
+        <button class="desktop-nav-item create-btn" id="desktopCreateBtn" style="display: none;">
+            <i class="fas fa-plus-circle"></i>
+            <span>Создать заказ</span>
+        </button>
+        <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
+            <i class="fas fa-user-circle"></i>
+            <span>Загрузка...</span>
+        </button>
+    </div>
+</div>
     <div class="app-wrapper">
         <!-- ШАПКА -->
         <div class="header">
@@ -227,7 +256,7 @@
                     <div class="mb-4">
                         <label class="form-label">Комментарий</label>
                         <textarea class="form-control" id="responseComment" rows="3" 
-                                  placeholder="Расскажите, как будете выполнять работа..." maxlength="500"></textarea>
+                                  placeholder="Расскажите, как будете выполнять работу..." maxlength="500"></textarea>
                         <small class="text-secondary">Максимум 500 символов</small>
                     </div>
 

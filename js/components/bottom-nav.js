@@ -1,21 +1,18 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (ИСПРАВЛЕНО - URL из конфига)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ЧАТАМИ И ЛОУДЕРОМ)
 // ============================================
 
 const BottomNav = (function() {
-    // Защита от повторных инициализаций
     if (window.__BOTTOM_NAV_INITIALIZED__) {
         return window.BottomNav;
     }
 
-    // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let initialized = false;
     let navElement = null;
     let navItems = [];
     let lastClickTime = 0;
-    const CLICK_COOLDOWN = 500; // ms
+    const CLICK_COOLDOWN = 500;
 
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
         if (initialized) return;
         
@@ -29,22 +26,18 @@ const BottomNav = (function() {
         
         console.log('📱 Нижняя навигация инициализирована');
         
-        // Показываем навигацию только на мобилках/планшетах
         checkScreenSize();
         window.addEventListener('resize', debounce(checkScreenSize, 150));
         
-        // Первоначальное обновление видимости
         updateNavVisibility();
         setupListeners();
         
-        // Подписываемся на изменения авторизации
         if (window.Auth) {
             Auth.onAuthChange(() => {
                 updateNavVisibility();
             });
         }
         
-        // Подписываемся на непрочитанные сообщения
         document.addEventListener('unread-changed', (e) => {
             updateChatBadge(e.detail.count);
         });
@@ -52,7 +45,6 @@ const BottomNav = (function() {
         initialized = true;
     }
     
-    // ===== ПРОВЕРКА РАЗМЕРА ЭКРАНА =====
     function checkScreenSize() {
         if (!navElement) return;
         
@@ -65,7 +57,6 @@ const BottomNav = (function() {
         }
     }
     
-    // ===== ОБНОВЛЕНИЕ ВИДИМОСТИ ПО РОЛЯМ =====
     function updateNavVisibility() {
         if (!window.Auth) return;
         
@@ -76,12 +67,9 @@ const BottomNav = (function() {
         
         navItems.forEach(item => {
             const page = item.dataset.page;
-            
-            // По умолчанию скрываем всё
             item.style.display = 'none';
             
             if (!isAuth) {
-                // ГОСТЬ - только главная, заявка, профиль (как вход)
                 switch(page) {
                     case 'home':
                     case 'create-order':
@@ -90,15 +78,12 @@ const BottomNav = (function() {
                         break;
                 }
                 
-                // Меняем текст профиля на "Войти"
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Войти';
                 }
                 
             } else if (isMaster) {
-                // МАСТЕР - главная, поиск, чаты, профиль
-                // Отклики показываем только если мы НЕ в кабинете мастера
                 switch(page) {
                     case 'home':
                     case 'search':
@@ -107,32 +92,27 @@ const BottomNav = (function() {
                         item.style.display = 'flex';
                         break;
                     case 'orders':
-                        // Показываем "Отклики" только если мы НЕ в кабинете мастера
                         if (!window.CONFIG || !CONFIG.isCurrentPage('master')) {
                             item.style.display = 'flex';
                         }
                         break;
                 }
                 
-                // Меняем текст "Заказы" на "Отклики"
                 if (page === 'orders') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Отклики';
                 }
                 
-                // Восстанавливаем текст профиля
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
                 }
                 
-                // Скрываем кнопку создания заказа для мастера
                 if (page === 'create-order') {
                     item.style.display = 'none';
                 }
                 
             } else if (isClient) {
-                // КЛИЕНТ - главная, чаты, заявка, заказы, профиль
                 switch(page) {
                     case 'home':
                     case 'chats':
@@ -143,37 +123,30 @@ const BottomNav = (function() {
                         break;
                 }
                 
-                // Меняем текст "Заказы" на "Мои заказы"
                 if (page === 'orders') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Мои заказы';
                 }
                 
-                // Восстанавливаем текст профиля
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
                 }
                 
-                // Скрываем поиск для клиента
                 if (page === 'search') {
                     item.style.display = 'none';
                 }
             }
         });
         
-        // Обновляем подсветку активного пункта
         highlightActive();
     }
     
-    // ===== ПОДСВЕТКА АКТИВНОГО ПУНКТА =====
     function highlightActive() {
         navItems.forEach(item => {
             item.classList.remove('active');
-            
             const page = item.dataset.page;
             
-            // Используем CONFIG для проверки текущей страницы
             if (window.CONFIG) {
                 if (page === 'home' && CONFIG.isCurrentPage('home')) {
                     item.classList.add('active');
@@ -187,7 +160,6 @@ const BottomNav = (function() {
                     item.classList.add('active');
                 }
             } else {
-                // Fallback если CONFIG не загружен
                 const currentPath = window.location.pathname;
                 
                 if (page === 'home' && (currentPath.includes('index.html') || currentPath === '/HomeWork/')) {
@@ -203,7 +175,6 @@ const BottomNav = (function() {
         });
     }
     
-    // ===== ОБНОВЛЕНИЕ БЕЙДЖА ЧАТОВ =====
     function updateChatBadge(count) {
         const chatItem = document.querySelector('.nav-item[data-page="chats"]');
         if (!chatItem) return;
@@ -222,10 +193,8 @@ const BottomNav = (function() {
         }
     }
     
-    // ===== НАСТРОЙКА ОБРАБОТЧИКОВ =====
     function setupListeners() {
         navItems.forEach(item => {
-            // Удаляем старые обработчики
             const newItem = item.cloneNode(true);
             item.parentNode.replaceChild(newItem, item);
             
@@ -243,11 +212,9 @@ const BottomNav = (function() {
             });
         });
         
-        // Обновляем ссылку на navItems
         navItems = document.querySelectorAll('.nav-item');
     }
     
-    // ===== АНИМАЦИЯ КЛИКА =====
     function animateClick(element) {
         element.style.transform = 'scale(0.9)';
         setTimeout(() => {
@@ -255,7 +222,6 @@ const BottomNav = (function() {
         }, 200);
     }
     
-    // ===== ФУНКЦИЯ ДЛЯ НАВИГАЦИИ С ЛОУДЕРОМ =====
     function navigateWithLoader(urlKey, params = {}, text = 'Загрузка...') {
         if (!window.CONFIG) {
             console.warn('⚠️ CONFIG не загружен, используем прямой URL');
@@ -276,7 +242,6 @@ const BottomNav = (function() {
         }
     }
     
-    // ===== ОБРАБОТКА НАВИГАЦИИ =====
     function handleNavigation(page) {
         if (!window.Auth || !window.AuthUI) {
             console.warn('Auth не загружен');
@@ -291,7 +256,6 @@ const BottomNav = (function() {
                 break;
                 
             case 'search':
-                // Только для мастера - поиск заказов
                 if (state.isMaster) {
                     navigateWithLoader('home', { focus: 'search' }, '🔍 Поиск...');
                 } else {
@@ -301,7 +265,6 @@ const BottomNav = (function() {
                 
             case 'chats':
                 if (state.isAuthenticated) {
-                    // Переходим в кабинет с открытыми чатами
                     if (state.isClient) {
                         navigateWithLoader('client', { tab: 'chats' }, '💬 Загружаем чаты...');
                     } else if (state.isMaster) {
@@ -344,7 +307,6 @@ const BottomNav = (function() {
         }
     }
     
-    // ===== ОБРАБОТКА КНОПКИ ЗАЯВКИ =====
     function handleCreateOrder() {
         const state = Auth.getAuthState();
         
@@ -354,24 +316,19 @@ const BottomNav = (function() {
         }
         
         if (state.isClient) {
-            // Клиент - создаём заказ
             if (window.CONFIG && CONFIG.isCurrentPage('client')) {
-                // Мы уже в кабинете клиента - переключаем на вкладку создания
                 document.dispatchEvent(new CustomEvent('switch-client-tab', { 
                     detail: { tab: 'new' } 
                 }));
             } else {
-                // Переходим в кабинет клиента с параметром
                 navigateWithLoader('client', { tab: 'new' }, '➕ Создание заказа...');
             }
         } else if (state.isMaster) {
-            // Мастер - поиск заказов
             Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
             navigateWithLoader('home', { focus: 'search' }, '🔍 Поиск...');
         }
     }
     
-    // ===== DEBOUNCE =====
     function debounce(func, wait) {
         let timeout;
         return function(...args) {
@@ -380,7 +337,6 @@ const BottomNav = (function() {
         };
     }
     
-    // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
         updateNavVisibility,
@@ -393,7 +349,6 @@ const BottomNav = (function() {
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         BottomNav.init();

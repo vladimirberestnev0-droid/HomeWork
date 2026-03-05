@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО - проверка бана, редиректы)
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО - защита от редиректов)
 // ============================================
 
 const Auth = (function() {
@@ -276,6 +276,7 @@ const Auth = (function() {
         }
     }
 
+    // ===== ОБРАБОТКА ПОСЛЕЛОГИННОГО РЕДИРЕКТА (ИСПРАВЛЕНО) =====
     function handlePostLogin() {
         if (currentUser && window.db && navigator.onLine) {
             db.collection('users').doc(currentUser.uid).update({
@@ -302,10 +303,13 @@ const Auth = (function() {
         if (savedRedirect) {
             sessionStorage.removeItem('redirectAfterLogin');
             setTimeout(() => {
-                if (window.Loader) {
-                    Loader.navigateTo(savedRedirect, 'Перенаправляем...');
-                } else {
-                    window.location.href = savedRedirect;
+                // ИСПРАВЛЕНО: проверяем только pathname, без параметров
+                if (!isSamePath(savedRedirect)) {
+                    if (window.Loader) {
+                        Loader.navigateTo(savedRedirect, 'Перенаправляем...');
+                    } else {
+                        window.location.href = savedRedirect;
+                    }
                 }
             }, 1000);
         } else if (redirect) {
@@ -313,8 +317,8 @@ const Auth = (function() {
                 try {
                     const decodedUrl = decodeURIComponent(redirect);
                     
-                    // Проверяем, не ведёт ли редирект на текущую страницу (защита от цикла)
-                    if (decodedUrl !== window.location.href && !decodedUrl.includes('auth=login')) {
+                    // ИСПРАВЛЕНО: проверяем только pathname, без параметров
+                    if (!isSamePath(decodedUrl) && !decodedUrl.includes('auth=login')) {
                         if (window.Loader) {
                             Loader.navigateTo(decodedUrl, 'Перенаправляем...');
                         } else {
@@ -325,6 +329,17 @@ const Auth = (function() {
                     console.error('Ошибка редиректа:', e);
                 }
             }, 500);
+        }
+    }
+
+    // ===== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СРАВНЕНИЯ ПУТЕЙ (ИСПРАВЛЕНО) =====
+    function isSamePath(url) {
+        try {
+            const currentPath = window.location.pathname;
+            const urlPath = new URL(url, window.location.origin).pathname;
+            return currentPath === urlPath;
+        } catch (e) {
+            return false;
         }
     }
 
@@ -785,7 +800,7 @@ const Auth = (function() {
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (с защитой от бана)');
+    console.log('✅ Auth сервис загружен (с защитой от бана и редиректов)');
     
     return Object.freeze(api);
 })();

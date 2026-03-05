@@ -24,11 +24,51 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
+    <!-- ГЛАВНЫЙ CSS ФАЙЛ -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
-    
 </head>
 <body>
+    <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
+    <div class="desktop-nav">
+        <div class="desktop-nav-container">
+            <!-- Главная -->
+            <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            
+            <!-- Заказы -->
+            <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavOrders">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Заказы</span>
+            </a>
+            
+            <!-- Мастера -->
+            <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+                <i class="fas fa-user-tie"></i>
+                <span>Мастера</span>
+            </a>
+            
+            <!-- Чаты (скрыты для гостя) -->
+            <a href="#" class="desktop-nav-item requires-auth" id="desktopNavChats" style="display: none;">
+                <i class="fas fa-comments"></i>
+                <span>Чаты</span>
+            </a>
+            
+            <!-- Создать заказ -->
+            <button class="desktop-nav-item create-btn" id="desktopCreateBtn">
+                <i class="fas fa-plus-circle"></i>
+                <span>Создать заказ</span>
+            </button>
+            
+            <!-- Вход/Профиль -->
+            <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Войти</span>
+            </button>
+        </div>
+    </div>
+
     <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР - ВРЕМЕННО ОТКЛЮЧЕН 
     <div id="global-loader" class="global-loader">
         <div class="loader-content">
@@ -109,7 +149,7 @@
                     <i class="fas fa-crown" style="color: var(--accent);"></i> 
                     Мастера рядом
                 </h2>
-                <a href="#" class="nav-link" id="allMastersLink" data-no-loader="false">Все →</a>
+                <a href="/HomeWork/masters.html" class="nav-link" id="allMastersLink">Все →</a>
             </div>
 
             <div class="masters-scroll" id="mastersList"></div>
@@ -123,7 +163,7 @@
         </div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <!-- МОБИЛЬНАЯ НАВИГАЦИЯ (только на телефонах) -->
     <div class="bottom-nav">
         <button class="nav-item" data-page="home">
             <span class="nav-icon"><i class="fas fa-home"></i></span>
@@ -276,6 +316,7 @@
     
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
+    <script src="/HomeWork/js/components/desktop-nav.js"></script>
     <script src="/HomeWork/js/components/notifications.js"></script>
     
     <script src="/HomeWork/js/pages/index.js"></script>

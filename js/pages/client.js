@@ -1,6 +1,6 @@
 /**
- * client.js — логика кабинета клиента (ИСПРАВЛЕНО - завершение заказов)
- * Версия 3.1 с поддержкой подтверждения завершения
+ * client.js — логика кабинета клиента (ИСПРАВЛЕНО - модалка отзыва)
+ * Версия 3.2 с исправленной очисткой звезд
  */
 
 (function() {
@@ -58,7 +58,7 @@
         initReviewModal();
     });
 
-    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
+    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА (ИСПРАВЛЕНО) =====
     function initReviewModal() {
         // Обработчики звезд
         document.querySelectorAll('#reviewModal .star').forEach(star => {
@@ -79,14 +79,31 @@
             submitBtn.addEventListener('click', submitReview);
         }
 
-        // Очистка при закрытии
+        // Очистка при закрытии (ИСПРАВЛЕНО)
         const modal = document.getElementById('reviewModal');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', function() {
-                document.getElementById('reviewText').value = '';
-                document.querySelectorAll('#reviewModal .star').forEach(s => s.classList.remove('active'));
+                // Очищаем текст
+                const reviewText = document.getElementById('reviewText');
+                if (reviewText) reviewText.value = '';
+                
+                // ИСПРАВЛЕНО: ищем звезды во всех возможных контейнерах
+                document.querySelectorAll('#reviewModal .star, #confirmRatingStars .star, #reviewRatingStars .star').forEach(s => {
+                    s.classList.remove('active');
+                    s.innerHTML = '☆'; // Возвращаем пустые звезды
+                });
+                
                 window.currentRating = 0;
-                window.currentOrderForReview = null;
+                currentOrderForReview = null;
+                
+                // Восстанавливаем оригинальный заголовок модалки
+                const modalTitle = document.getElementById('reviewModalTitle');
+                if (modalTitle) {
+                    modalTitle.innerHTML = `
+                        <i class="fas fa-star me-2" style="color: gold;"></i>
+                        Оцените мастера
+                    `;
+                }
             });
         }
     }
@@ -303,7 +320,7 @@
         `;
     }
 
-    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
+    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ (ИСПРАВЛЕНО) =====
     window.showConfirmCompletionModal = function(orderId) {
         currentOrderForReview = orderId;
         
@@ -311,10 +328,13 @@
         const modalEl = document.getElementById('reviewModal');
         if (!modalEl) return;
         
-        document.getElementById('reviewModalTitle').innerHTML = `
-            <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
-            Подтверждение выполнения
-        `;
+        const modalTitle = document.getElementById('reviewModalTitle');
+        if (modalTitle) {
+            modalTitle.innerHTML = `
+                <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
+                Подтверждение выполнения
+            `;
+        }
         
         document.querySelector('#reviewModal .modal-body').innerHTML = `
             <p class="mb-4">Заказ выполнен качественно?</p>
@@ -341,8 +361,13 @@
                 window.currentRating = rating;
                 
                 document.querySelectorAll('#confirmRatingStars .star').forEach((s, i) => {
-                    if (i < rating) s.innerHTML = '★';
-                    else s.innerHTML = '☆';
+                    if (i < rating) {
+                        s.innerHTML = '★';
+                        s.classList.add('active');
+                    } else {
+                        s.innerHTML = '☆';
+                        s.classList.remove('active');
+                    }
                 });
             });
         });
@@ -404,10 +429,13 @@
         const modalEl = document.getElementById('reviewModal');
         if (!modalEl) return;
         
-        document.getElementById('reviewModalTitle').innerHTML = `
-            <i class="fas fa-star me-2" style="color: var(--warning);"></i>
-            Оцените работу мастера
-        `;
+        const modalTitle = document.getElementById('reviewModalTitle');
+        if (modalTitle) {
+            modalTitle.innerHTML = `
+                <i class="fas fa-star me-2" style="color: var(--warning);"></i>
+                Оцените работу мастера
+            `;
+        }
         
         document.querySelector('#reviewModal .modal-body').innerHTML = `
             <p class="mb-4">Как прошло сотрудничество?</p>
@@ -433,8 +461,13 @@
                 window.currentRating = rating;
                 
                 document.querySelectorAll('#reviewRatingStars .star').forEach((s, i) => {
-                    if (i < rating) s.innerHTML = '★';
-                    else s.innerHTML = '☆';
+                    if (i < rating) {
+                        s.innerHTML = '★';
+                        s.classList.add('active');
+                    } else {
+                        s.innerHTML = '☆';
+                        s.classList.remove('active');
+                    }
                 });
             });
         });

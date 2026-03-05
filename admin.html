@@ -16,7 +16,32 @@
     <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
 </head>
-<body>
+<!-- ... остальной код ... -->
+    <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
+<div class="desktop-nav">
+    <div class="desktop-nav-container">
+        <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
+            <i class="fas fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="/HomeWork/admin.html" class="desktop-nav-item active" id="desktopNavOrders">
+            <i class="fas fa-shield-alt"></i>
+            <span>Админка</span>
+        </a>
+        <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
+            <i class="fas fa-user-tie"></i>
+            <span>Мастера</span>
+        </a>
+        <button class="desktop-nav-item create-btn" id="desktopCreateBtn" style="display: none;">
+            <i class="fas fa-plus-circle"></i>
+            <span>Создать заказ</span>
+        </button>
+        <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
+            <i class="fas fa-user-circle"></i>
+            <span>Загрузка...</span>
+        </button>
+    </div>
+</div>
     <!-- ===== ЗАЩИТА АДМИНКИ ===== -->
     <script>
     (function() {

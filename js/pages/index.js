@@ -798,7 +798,7 @@
             });
         }
 
-        // Обработчик для ссылки "Все мастера"
+        // Обработчик для ссылки "Все мастера" (ИСПРАВЛЕНО)
         const allMastersLink = document.getElementById('allMastersLink');
         if (allMastersLink) {
             allMastersLink.addEventListener('click', (e) => {

@@ -1,5 +1,5 @@
 // ============================================
-// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ (ИСПРАВЛЕНО)
+// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ (ИСПРАВЛЕНО - путь к masters)
 // ============================================
 
 const CONFIG = (function() {
@@ -169,7 +169,7 @@ const CONFIG = (function() {
         // Получение базового пути
         getBasePath: () => BASE_PATH,
         
-        // Проверка текущего URL
+        // Проверка текущего URL (ИСПРАВЛЕНО: сравниваем только pathname)
         isCurrentPage: (pageKey) => {
             const targetUrl = app.urls[pageKey];
             if (!targetUrl) return false;

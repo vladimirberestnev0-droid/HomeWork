@@ -21,6 +21,9 @@
 @import url('components/modals.css');
 @import url('components/notifications.css');
 
+/* ДЕСКТОПНАЯ НАВИГАЦИЯ (НОВЫЙ ФАЙЛ) */
+@import url('components/desktop-nav.css');
+
 /* Адаптация */
 @import url('responsive/desktop-fixes.css');
 @import url('responsive/mobile-fixes.css');
@@ -28,6 +31,3 @@
 
 /* Тёмная тема */
 @import url('theme/dark.css');
-
-/* ===== КАСТОМНЫЕ СТИЛИ ===== */
-@import url('custom/logo.css');
