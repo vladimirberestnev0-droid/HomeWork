@@ -33,16 +33,15 @@
         renderCategoryFilters();
         renderCityFilter();
         
-        await loadOrders(true); // Всегда true при первой загрузке
+        await loadOrders(true);
         await loadMasters();
         
         document.body.classList.add('loaded');
         
         initEventListeners();
         checkUrlParams();
-        restorePaginationState(); // Восстанавливаем состояние пагинации
+        restorePaginationState();
         
-        // Инициализируем обработчик модалки отклика
         initRespondModal();
     });
 
@@ -53,7 +52,6 @@
             submitBtn.addEventListener('click', handleSubmitResponse);
         }
         
-        // Очищаем форму при закрытии модалки
         const modal = document.getElementById('respondModal');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', function() {
@@ -87,19 +85,16 @@
         const result = await Orders.respondToOrder(orderData.orderId, price, comment);
         
         if (result && result.success) {
-            // Закрываем модалку
             const modalEl = document.getElementById('respondModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
             
             Utils.showNotification('✅ Отклик отправлен!', 'success');
             
-            // Очищаем форму и хранилище
             document.getElementById('responsePrice').value = '';
             document.getElementById('responseComment').value = '';
             sessionStorage.removeItem('respond_order');
             
-            // Обновляем список заказов (кнопка на этом заказе должна исчезнуть)
             loadOrders(true);
         } else {
             Utils.showNotification(result?.error || '❌ Ошибка при отправке', 'error');
@@ -224,7 +219,7 @@
         });
     }
 
-    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ =====
+    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ (ОПТИМИЗИРОВАНО) =====
     async function loadOrders(reset = true) {
         if (isLoading) {
             console.log('⏳ Уже загружается...');
@@ -237,13 +232,17 @@
         isLoading = true;
         console.log(`🔄 ${reset ? 'Сброс и загрузка' : 'Загрузка ещё'}`);
 
-        if (reset) {
+        // Показываем скелетон ТОЛЬКО при сбросе и если нет заказов
+        if (reset && displayedOrders.length === 0) {
             container.innerHTML = `
                 <div class="text-center p-5">
                     <div class="spinner-glow"></div>
                     <p class="mt-3 text-secondary">Загружаем заказы...</p>
                 </div>
             `;
+        }
+
+        if (reset) {
             lastDoc = null;
             allOrders = [];
             displayedOrders = [];
@@ -274,7 +273,6 @@
 
             const newOrders = result.orders;
             
-            // Важно! Сохраняем lastDoc как есть, без изменений
             lastDoc = result.lastDoc;
             hasMore = result.hasMore;
             
@@ -296,19 +294,17 @@
                 renderOrders(container, reset);
             }
             
-            // Сохраняем состояние
             savePaginationState();
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
             
-            // Сбрасываем состояние кнопки при ошибке
             const loadMoreContainer = document.getElementById('loadMoreContainer');
             if (loadMoreContainer) {
                 loadMoreContainer.remove();
             }
             
-            if (reset) {
+            if (reset && displayedOrders.length === 0) {
                 container.innerHTML = `
                     <div class="text-center p-5">
                         <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
@@ -338,7 +334,6 @@
             container.insertAdjacentHTML('beforeend', newOrdersHtml);
         }
 
-        // Анимация появления
         setTimeout(() => {
             const newCards = reset 
                 ? container.querySelectorAll('.order-card')
@@ -353,7 +348,6 @@
 
         updateOrdersCount();
 
-        // ВАЖНО: Всегда обновляем кнопку на основе hasMore
         if (hasMore) {
             showLoadMoreButton(container);
         } else {
@@ -380,7 +374,6 @@
             container.insertAdjacentElement('afterend', loadMoreContainer);
         }
         
-        // Проверяем, не идёт ли загрузка
         const isLoadingNow = loadMoreContainer.getAttribute('data-loading') === 'true';
         
         loadMoreContainer.innerHTML = `
@@ -394,7 +387,6 @@
         
         const loadMoreBtn = document.getElementById('loadMoreBtn');
         if (loadMoreBtn) {
-            // Убираем старые обработчики, создаём новый элемент
             const newBtn = loadMoreBtn.cloneNode(true);
             loadMoreBtn.parentNode.replaceChild(newBtn, loadMoreBtn);
             
@@ -409,15 +401,12 @@
                     return;
                 }
                 
-                // Блокируем кнопку
                 const container = document.getElementById('loadMoreContainer');
                 container.setAttribute('data-loading', 'true');
                 this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Загрузка...';
                 this.disabled = true;
                 
                 await loadOrders(false);
-                
-                // Кнопка разблокируется в renderOrders через showLoadMoreButton
             });
         }
     }
@@ -457,97 +446,87 @@
         });
     }
 
-    // ===== ИСПРАВЛЕННАЯ функция createOrderCard =====
-function createOrderCard(order) {
-    const category = ORDER_CATEGORIES.find(c => c.id === order.category) || 
-                    { icon: 'fa-tag', name: order.category || 'Услуга' };
-    const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
-    const isUrgent = order.urgent || (order.price && order.price < 1000);
-    const hasPhotos = order.photos && order.photos.length > 0;
-    
-    // Получаем текущего пользователя
-    const user = Auth.getUser();
-    const userData = Auth.getUserData();
-    
-    // Проверяем, откликался ли уже мастер на этот заказ
-    const hasResponded = order.responses?.some(r => r.masterId === user?.uid) || false;
-    const isMyOrder = order.clientId === user?.uid;
-    
-    
-    // Условие для показа кнопки:
-    // 1. Пользователь авторизован
-    // 2. Пользователь - мастер
-    // 3. Заказ открыт (status === 'open')
-    // 4. Это не мой заказ
-    // 5. Я ещё не откликался
-    const shouldShowButton = Auth.isAuthenticated() && 
-                            Auth.isMaster() && 
-                            order.status === 'open' && 
-                            !isMyOrder && 
-                            !hasResponded;
-    
-    return `
-        <div class="order-card ${isUrgent ? 'urgent' : ''}" onclick="viewOrder('${order.id}')" style="opacity: 0;">
-            ${isUrgent ? `
-                <div class="order-badge urgent-badge">
-                    <i class="fas fa-exclamation-circle"></i> Срочно
+    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
+    function createOrderCard(order) {
+        const category = ORDER_CATEGORIES.find(c => c.id === order.category) || 
+                        { icon: 'fa-tag', name: order.category || 'Услуга' };
+        const dateStr = order.createdAt ? Utils.formatDate(order.createdAt) : 'только что';
+        const isUrgent = order.urgent || (order.price && order.price < 1000);
+        const hasPhotos = order.photos && order.photos.length > 0;
+        
+        const user = Auth.getUser();
+        
+        const hasResponded = order.responses?.some(r => r.masterId === user?.uid) || false;
+        const isMyOrder = order.clientId === user?.uid;
+        
+        const shouldShowButton = Auth.isAuthenticated() && 
+                                Auth.isMaster() && 
+                                order.status === 'open' && 
+                                !isMyOrder && 
+                                !hasResponded;
+        
+        return `
+            <div class="order-card ${isUrgent ? 'urgent' : ''}" onclick="viewOrder('${order.id}')" style="opacity: 0;">
+                ${isUrgent ? `
+                    <div class="order-badge urgent-badge">
+                        <i class="fas fa-exclamation-circle"></i> Срочно
+                    </div>
+                ` : ''}
+                
+                <div class="order-header">
+                    <span class="order-category">
+                        <i class="fas ${category.icon}"></i> ${category.name}
+                    </span>
+                    <span class="order-price">${Utils.formatMoney(order.price)}</span>
                 </div>
-            ` : ''}
-            
-            <div class="order-header">
-                <span class="order-category">
-                    <i class="fas ${category.icon}"></i> ${category.name}
-                </span>
-                <span class="order-price">${Utils.formatMoney(order.price)}</span>
+                
+                <h3 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h3>
+                
+                <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
+                
+                ${hasPhotos ? `
+                    <div class="order-photos">
+                        <img src="${order.photos[0]}" alt="Фото заказа" class="order-photo-thumb" 
+                             onclick="event.stopPropagation(); window.open('${order.photos[0]}')" loading="lazy">
+                        ${order.photos.length > 1 ? `<span class="photo-count">+${order.photos.length-1}</span>` : ''}
+                    </div>
+                ` : ''}
+                
+                <div class="order-footer">
+                    <span class="order-time">
+                        <i class="far fa-clock"></i> ${dateStr}
+                    </span>
+                    <span class="order-location">
+                        <i class="fas fa-map-marker-alt"></i> ${order.city || 'Нягань'}
+                    </span>
+                </div>
+                
+                ${shouldShowButton ? `
+                    <button class="respond-btn" onclick="event.stopPropagation(); showRespondModal('${order.id}', '${Utils.escapeHtml(order.title)}', '${order.category}', ${order.price})">
+                        <i class="fas fa-reply me-2"></i>Откликнуться
+                    </button>
+                ` : ''}
+                
+                ${hasResponded && !isMyOrder ? `
+                    <div class="text-center mt-2">
+                        <small class="text-secondary">
+                            <i class="fas fa-check-circle me-1" style="color: var(--success);"></i>
+                            Вы уже откликнулись
+                        </small>
+                    </div>
+                ` : ''}
+                
+                ${isMyOrder ? `
+                    <div class="text-center mt-2">
+                        <small class="text-secondary">
+                            <i class="fas fa-user me-1"></i>
+                            Ваш заказ
+                        </small>
+                    </div>
+                ` : ''}
             </div>
-            
-            <h3 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h3>
-            
-            <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
-            
-            ${hasPhotos ? `
-                <div class="order-photos">
-                    <img src="${order.photos[0]}" alt="Фото заказа" class="order-photo-thumb" 
-                         onclick="event.stopPropagation(); window.open('${order.photos[0]}')" loading="lazy">
-                    ${order.photos.length > 1 ? `<span class="photo-count">+${order.photos.length-1}</span>` : ''}
-                </div>
-            ` : ''}
-            
-            <div class="order-footer">
-                <span class="order-time">
-                    <i class="far fa-clock"></i> ${dateStr}
-                </span>
-                <span class="order-location">
-                    <i class="fas fa-map-marker-alt"></i> ${order.city || 'Нягань'}
-                </span>
-            </div>
-            
-            ${shouldShowButton ? `
-                <button class="respond-btn" onclick="event.stopPropagation(); showRespondModal('${order.id}', '${Utils.escapeHtml(order.title)}', '${order.category}', ${order.price})">
-                    <i class="fas fa-reply me-2"></i>Откликнуться
-                </button>
-            ` : ''}
-            
-            ${hasResponded && !isMyOrder ? `
-                <div class="text-center mt-2">
-                    <small class="text-secondary">
-                        <i class="fas fa-check-circle me-1" style="color: var(--success);"></i>
-                        Вы уже откликнулись
-                    </small>
-                </div>
-            ` : ''}
-            
-            ${isMyOrder ? `
-                <div class="text-center mt-2">
-                    <small class="text-secondary">
-                        <i class="fas fa-user me-1"></i>
-                        Ваш заказ
-                    </small>
-                </div>
-            ` : ''}
-        </div>
-    `;
-}
+        `;
+    }
 
     // ===== ЗАГРУЗКА МАСТЕРОВ С КЭШИРОВАНИЕМ =====
     async function loadMasters(forceRefresh = false) {
@@ -741,7 +720,7 @@ function createOrderCard(order) {
         }
     }
 
-    // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКАЗА МОДАЛКИ ОТКЛИКА =====
+    // ===== ПОКАЗ МОДАЛКИ ОТКЛИКА =====
     window.showRespondModal = function(orderId, title, category, price) {
         console.log('🖱️ Клик по отклику:', {orderId, title, category, price});
         
@@ -755,7 +734,6 @@ function createOrderCard(order) {
             return;
         }
         
-        // Сохраняем данные заказа
         sessionStorage.setItem('respond_order', JSON.stringify({
             orderId, 
             title, 
@@ -763,22 +741,18 @@ function createOrderCard(order) {
             price
         }));
         
-        // ВАЖНО: Если мы уже на главной - показываем модалку прямо здесь!
         if (window.location.pathname.includes('index.html') || window.location.pathname === '/HomeWork/') {
             console.log('📋 Показываем модалку на главной');
             
-            // Заполняем данные в модалке
             const modal = document.getElementById('respondModal');
             if (modal) {
                 document.getElementById('respondOrderTitle').textContent = title || 'Заказ';
                 document.getElementById('respondOrderCategory').textContent = category || 'Категория';
                 document.getElementById('respondOrderPrice').textContent = Utils.formatMoney(price);
                 
-                // Показываем модалку Bootstrap
                 const bsModal = new bootstrap.Modal(modal);
                 bsModal.show();
             } else {
-                // Если модалки нет на главной - всё же переходим
                 Utils.showError('Ошибка: модалка не найдена');
                 if (window.Loader) {
                     Loader.navigateTo(`/HomeWork/master.html?respond=${orderId}`, 'Переходим к отклику...');
@@ -787,7 +761,6 @@ function createOrderCard(order) {
                 }
             }
         } else {
-            // Если не на главной - переходим
             if (window.Loader) {
                 Loader.navigateTo(`/HomeWork/master.html?respond=${orderId}`, 'Переходим к отклику...');
             } else {

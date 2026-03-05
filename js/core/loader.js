@@ -11,14 +11,14 @@
 
     // Константы
     const LOADER_ID = 'global-loader';
-    const MAX_LOADER_TIME = 10000; // 10 секунд - защита от вечных лоадеров
+    const MAX_LOADER_TIME = 20000; // 20 секунд (было 10)
 
     // Переменные
     let loader = null;
     let timeoutId = null;
     let isTransitioning = false;
     let originalTitle = document.title;
-    let loaderCounter = 0; // СЧЁТЧИК ВЛОЖЕННЫХ ВЫЗОВОВ
+    let loaderCounter = 0;
 
     // ===== СОЗДАНИЕ ЛОУДЕРА =====
     function ensureLoader() {
@@ -186,7 +186,7 @@
         }
     }
 
-    // ===== ПРИНУДИТЕЛЬНО СКРЫТЬ ЛОУДЕР (ИГНОРИРУЯ СЧЁТЧИК) =====
+    // ===== ПРИНУДИТЕЛЬНО СКРЫТЬ ЛОУДЕР =====
     function forceHideLoader() {
         console.log('⚠️ Принудительное скрытие лоадера');
         loaderCounter = 0;

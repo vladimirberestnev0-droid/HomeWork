@@ -26,21 +26,48 @@
     
     <!-- ГЛАВНЫЙ CSS ФАЙЛ (все стили в одном) -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
+    
+    <!-- Дополнительные стили для логотипа -->
+    <style>
+        .logo {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+        .logo-small {
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.9;
+            color: var(--text-soft);
+            -webkit-text-fill-color: var(--text-soft);
+            background: none;
+            margin-left: 2px;
+        }
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.4rem;
+            }
+            .logo-small {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР -->
+    <!-- ГЛОБАЛЬНЫЙ ЛОУДЕР - ВРЕМЕННО ОТКЛЮЧЕН 
     <div id="global-loader" class="global-loader">
         <div class="loader-content">
             <div class="spinner-glow"></div>
             <p class="loader-text" id="loader-text">Загрузка...</p>
         </div>
     </div>
+    -->
 
     <div class="app-wrapper">
         <!-- ШАПКА -->
         <div class="header">
             <div class="logo" onclick="window.location.href='/HomeWork/'">
-                СВОЙ<span>86</span>
+                СВОЙ<span>86</span> <span class="logo-small">МАСТЕР</span>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button class="geo-tag" id="citySelector">

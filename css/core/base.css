@@ -64,6 +64,47 @@ body {
     -webkit-text-fill-color: var(--accent);
 }
 
+/* Добавить после стилей .logo */
+.logo {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.logo span {
+    color: var(--accent);
+    font-weight: 900;
+    -webkit-text-fill-color: var(--accent);
+}
+
+.logo-small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: var(--text-soft);
+    -webkit-text-fill-color: var(--text-soft);
+    background: none;
+    margin-left: 2px;
+}
+
+/* Для мобилок */
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.4rem;
+    }
+    .logo-small {
+        font-size: 0.75rem;
+    }
+}
+
 /* Заголовки секций */
 .section-title {
     display: flex;
