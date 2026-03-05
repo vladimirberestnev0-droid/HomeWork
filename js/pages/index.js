@@ -473,6 +473,7 @@ function createOrderCard(order) {
     const hasResponded = order.responses?.some(r => r.masterId === user?.uid) || false;
     const isMyOrder = order.clientId === user?.uid;
     
+    
     // Условие для показа кнопки:
     // 1. Пользователь авторизован
     // 2. Пользователь - мастер
