@@ -16,7 +16,7 @@
     <!-- ГЛАВНЫЙ CSS ФАЙЛ -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
     <!-- ПРЕМИУМ-ТЕМА AURORA -->
-    <link rel="stylesheet" href="/HomeWork/css/themes/theme-aurora.css">
+    <link rel="stylesheet" href="/HomeWork/css/theme/theme-aurora.css">
 </head>
 <body>
     <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
@@ -215,10 +215,10 @@
     <script src="/HomeWork/js/core/error-handler.js"></script>
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
     
-    <!-- 2. SERVICES -->
+    <!-- 2. SERVICES (СТРОГО В ЭТОМ ПОРЯДКЕ) -->
     <script src="/HomeWork/js/services/data-service.js"></script>
-    <script src="/HomeWork/js/services/upload-service.js"></script>
     <script src="/HomeWork/js/services/auth.js"></script>
+    <script src="/HomeWork/js/services/upload-service.js"></script>
     <script src="/HomeWork/js/services/orders-service.js"></script>
     <script src="/HomeWork/js/services/moderation.js"></script>
     
@@ -236,28 +236,5 @@
     
     <!-- 5. PAGE (ВСЕГДА ПОСЛЕДНИМ) -->
     <script src="/HomeWork/js/pages/admin.js"></script>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            if (window.Auth && Auth.isAdmin && Auth.isAdmin()) {
-                document.getElementById('adminContent').style.display = 'block';
-            }
-        }, 500);
-
-        // Переключение табов
-        document.querySelectorAll('[data-tab]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                const tab = this.dataset.tab;
-                document.getElementById('usersTab').classList.add('d-none');
-                document.getElementById('ordersTab').classList.add('d-none');
-                document.getElementById(tab + 'Tab').classList.remove('d-none');
-            });
-        });
-    });
-    </script>
 </body>
 </html>

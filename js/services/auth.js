@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ДОБАВЛЕНА ОЧИСТКА SESSIONSTORAGE)
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО: порядок функций + проверка Cache)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -13,7 +13,7 @@ const Auth = (function() {
     let banCheckInterval = null;
     let isHandlingBan = false;
     let isInitialized = false;
-    let banCheckInProgress = false; // Флаг для предотвращения рекурсии
+    let banCheckInProgress = false;
     
     const MAX_ATTEMPTS = 5;
     
@@ -26,6 +26,57 @@ const Auth = (function() {
     // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     function getAdminUid() {
         return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
+    }
+
+    // ===== ПОСЛЕЛОГИННЫЙ РЕДИРЕКТ (ПОДНЯТО НАВЕРХ) =====
+    function handlePostLogin() {
+        if (currentUser && window.db && navigator.onLine && !isHandlingBan) {
+            const updateData = {
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (window.DataService) {
+                DataService.updateUser(currentUser.uid, updateData).catch(() => {});
+            } else {
+                db.collection('users').doc(currentUser.uid).update(updateData).catch(() => {});
+            }
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
+        
+        if (savedRedirect) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            setTimeout(() => {
+                if (!isSamePath(savedRedirect)) {
+                    if (window.Loader) Loader.navigateTo(savedRedirect, 'Перенаправляем...');
+                    else window.location.href = savedRedirect;
+                }
+            }, 1000);
+        } else if (redirect) {
+            setTimeout(() => {
+                try {
+                    const decodedUrl = decodeURIComponent(redirect);
+                    if (!isSamePath(decodedUrl) && !decodedUrl.includes('auth=login')) {
+                        if (window.Loader) Loader.navigateTo(decodedUrl, 'Перенаправляем...');
+                        else window.location.href = decodedUrl;
+                    }
+                } catch (e) {
+                    console.error('Ошибка редиректа:', e);
+                }
+            }, 500);
+        }
+    }
+
+    function isSamePath(url) {
+        try {
+            const currentPath = window.location.pathname;
+            const urlPath = new URL(url, window.location.origin).pathname;
+            return currentPath === urlPath;
+        } catch (e) {
+            return false;
+        }
     }
 
     // Очистка sessionStorage при выходе
@@ -51,9 +102,8 @@ const Auth = (function() {
         console.log('🧹 SessionStorage очищен');
     }
 
-    // ===== ПРОВЕРКА БАНА (ИСПРАВЛЕНО) =====
+    // ===== ПРОВЕРКА БАНА =====
     async function checkBanStatus(user) {
-        // Защита от рекурсии
         if (banCheckInProgress) {
             console.log('⏳ Проверка бана уже выполняется, пропускаем');
             return false;
@@ -73,21 +123,16 @@ const Auth = (function() {
                 
                 if (window.Utils) Utils.showError('Ваш аккаунт заблокирован');
                 
-                // Сбрасываем флаг banCheckInProgress перед выходом
                 banCheckInProgress = false;
                 
-                // Выходим
                 await auth.signOut();
                 
-                // Очищаем sessionStorage
                 clearSessionStorage();
                 
-                // Сбрасываем флаг обработки бана через таймаут
                 setTimeout(() => {
                     isHandlingBan = false;
                 }, 1000);
                 
-                // Редирект на главную
                 setTimeout(() => {
                     if (window.CONFIG) window.location.href = CONFIG.getUrl('home');
                     else window.location.href = '/';
@@ -105,11 +150,14 @@ const Auth = (function() {
         }
     }
 
-    // ===== ЗАГРУЗКА ДАННЫХ (С ОЧИСТКОЙ ТАЙМАУТОВ) =====
+    // ===== ЗАГРУЗКА ДАННЫХ =====
     async function loadUserData(uid) {
-        // Очищаем кэш перед загрузкой
-        if (window.Cache) {
-            Cache.remove(`user_${uid}`);
+        if (window.Cache && typeof Cache.remove === 'function') {
+            try {
+                Cache.remove(`user_${uid}`);
+            } catch (e) {
+                console.warn('⚠️ Ошибка очистки кэша:', e);
+            }
         }
         
         try {
@@ -145,9 +193,13 @@ const Auth = (function() {
                 }
             }
             
-            // Кэшируем
-            if (window.Cache) {
-                Cache.set(`user_${uid}`, currentUserData, Cache.TTL.LONG);
+            // Кэшируем (с проверкой)
+            if (window.Cache && typeof Cache.set === 'function') {
+                try {
+                    Cache.set(`user_${uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
+                } catch (e) {
+                    console.warn('⚠️ Ошибка кэширования:', e);
+                }
             }
             
             console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}`);
@@ -159,11 +211,10 @@ const Auth = (function() {
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ (С ОЧИСТКОЙ) =====
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
         if (isInitialized) return;
         
-        // Очищаем предыдущие подписки
         if (unsubscribe) {
             unsubscribe();
             unsubscribe = null;
@@ -192,20 +243,23 @@ const Auth = (function() {
             
             if (user) {
                 try {
-                    // Проверка бана (с защитой от рекурсии)
                     const isBanned = await checkBanStatus(user);
                     if (isBanned) return;
                     
-                    // Проверяем кэш
                     let cachedData = null;
-                    if (window.Cache) {
-                        cachedData = Cache.get(`user_${user.uid}`);
+                    
+                    // Безопасное чтение из кэша
+                    if (window.Cache && typeof Cache.get === 'function') {
+                        try {
+                            cachedData = Cache.get(`user_${user.uid}`);
+                        } catch (e) {
+                            console.warn('⚠️ Ошибка чтения кэша:', e);
+                        }
                     }
                     
                     if (cachedData) {
                         console.log(`📦 Данные из кэша: ${cachedData.name}`);
                         currentUserData = cachedData;
-                        // В фоне обновляем
                         setTimeout(() => loadUserData(user.uid), 1000);
                     } else {
                         await loadUserData(user.uid);
@@ -221,8 +275,12 @@ const Auth = (function() {
                 currentUserData = null;
                 stopBanCheck();
                 
-                if (previousUser && window.Cache) {
-                    Cache.remove(`user_${previousUser.uid}`);
+                if (previousUser && window.Cache && typeof Cache.remove === 'function') {
+                    try {
+                        Cache.remove(`user_${previousUser.uid}`);
+                    } catch (e) {
+                        console.warn('⚠️ Ошибка удаления из кэша:', e);
+                    }
                 }
             }
             
@@ -337,8 +395,12 @@ const Auth = (function() {
                 await db.collection('users').doc(user.uid).set(firestoreData);
             }
 
-            if (window.Cache) {
-                Cache.set(`user_${user.uid}`, firestoreData, Cache.TTL.LONG);
+            if (window.Cache && typeof Cache.set === 'function') {
+                try {
+                    Cache.set(`user_${user.uid}`, firestoreData, Cache.TTL?.LONG || 30 * 60 * 1000);
+                } catch (e) {
+                    console.warn('⚠️ Ошибка кэширования:', e);
+                }
             }
 
             Utils.showSuccess('Регистрация прошла успешно!');
@@ -395,7 +457,7 @@ const Auth = (function() {
         }
     }
 
-    // ===== ВЫХОД (ИСПРАВЛЕНО: добавлена очистка sessionStorage) =====
+    // ===== ВЫХОД =====
     async function logout(silent = false) {
         const taskId = !silent ? window.Loader?.show('Выход...') : null;
         
@@ -406,11 +468,14 @@ const Auth = (function() {
             isHandlingBan = false;
             banCheckInProgress = false;
             
-            if (currentUser && window.Cache) {
-                Cache.remove(`user_${currentUser.uid}`);
+            if (currentUser && window.Cache && typeof Cache.remove === 'function') {
+                try {
+                    Cache.remove(`user_${currentUser.uid}`);
+                } catch (e) {
+                    console.warn('⚠️ Ошибка удаления из кэша:', e);
+                }
             }
             
-            // Очищаем sessionStorage перед выходом
             clearSessionStorage();
             
             await auth.signOut();
@@ -515,8 +580,12 @@ const Auth = (function() {
 
             if (currentUserData) {
                 currentUserData = { ...currentUserData, ...data };
-                if (window.Cache) {
-                    Cache.set(`user_${currentUser.uid}`, currentUserData, Cache.TTL.LONG);
+                if (window.Cache && typeof Cache.set === 'function') {
+                    try {
+                        Cache.set(`user_${currentUser.uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
+                    } catch (e) {
+                        console.warn('⚠️ Ошибка кэширования:', e);
+                    }
                 }
             }
 
@@ -546,12 +615,14 @@ const Auth = (function() {
         authListeners = [];
         isInitialized = false;
         
-        // Очищаем кэш пользователя
-        if (currentUser && window.Cache) {
-            Cache.remove(`user_${currentUser.uid}`);
+        if (currentUser && window.Cache && typeof Cache.remove === 'function') {
+            try {
+                Cache.remove(`user_${currentUser.uid}`);
+            } catch (e) {
+                console.warn('⚠️ Ошибка удаления из кэша:', e);
+            }
         }
         
-        // Очищаем sessionStorage
         clearSessionStorage();
         
         currentUser = null;
