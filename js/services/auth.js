@@ -1,11 +1,9 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО - защита от редиректов)
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО - флаг бана)
 // ============================================
 
 const Auth = (function() {
-    if (window.__AUTH_INITIALIZED__) {
-        return window.Auth;
-    }
+    if (window.__AUTH_INITIALIZED__) return window.Auth;
 
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let currentUser = null;
@@ -14,14 +12,13 @@ const Auth = (function() {
     let unsubscribe = null;
     let initAttempts = 0;
     let banCheckInterval = null;
+    let isHandlingBan = false; // ИСПРАВЛЕНО: флаг обработки бана
     const MAX_ATTEMPTS = 5;
     let isInitialized = false;
     
-    // Кэш пользователей
     const userCache = new Map();
-    const USER_CACHE_TTL = 5 * 60 * 1000; // 5 минут
+    const USER_CACHE_TTL = 5 * 60 * 1000;
 
-    // ===== ПОЛУЧЕНИЕ КОНСТАНТ БЕЗОПАСНО =====
     function getAdminUid() {
         return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
@@ -34,11 +31,9 @@ const Auth = (function() {
         };
     }
 
-    // ===== РАБОТА С КЭШЕМ =====
     function getUserFromCache(uid) {
         const cached = userCache.get(uid);
         if (!cached) return null;
-        
         if (Date.now() - cached.timestamp > USER_CACHE_TTL) {
             userCache.delete(uid);
             return null;
@@ -47,23 +42,17 @@ const Auth = (function() {
     }
 
     function setUserToCache(uid, userData) {
-        userCache.set(uid, {
-            data: userData,
-            timestamp: Date.now()
-        });
+        userCache.set(uid, { data: userData, timestamp: Date.now() });
     }
 
     function clearUserCache(uid) {
-        if (uid) {
-            userCache.delete(uid);
-        } else {
-            userCache.clear();
-        }
+        if (uid) userCache.delete(uid);
+        else userCache.clear();
     }
 
-    // ===== ПРОВЕРКА БАНА =====
+    // ===== ИСПРАВЛЕННАЯ ПРОВЕРКА БАНА =====
     async function checkBanStatus(user) {
-        if (!user || !window.db) return false;
+        if (!user || !window.db || isHandlingBan) return false; // ИСПРАВЛЕНО: проверяем флаг
         
         try {
             const userDoc = await db.collection('users').doc(user.uid).get();
@@ -71,49 +60,44 @@ const Auth = (function() {
             if (userDoc.exists && userDoc.data().banned === true) {
                 console.warn('🚫 Пользователь забанен, принудительный выход');
                 
-                // Показываем уведомление
-                if (window.Utils) {
-                    Utils.showError('Ваш аккаунт заблокирован');
-                }
+                // Устанавливаем флаг, чтобы избежать рекурсии
+                isHandlingBan = true;
                 
-                // Выходим из системы
+                if (window.Utils) Utils.showError('Ваш аккаунт заблокирован');
+                
                 await auth.signOut();
                 
-                // Очищаем данные
                 currentUser = null;
                 currentUserData = null;
                 
-                // Уведомляем слушателей
                 notifyListeners();
                 
-                // Редирект на главную
                 setTimeout(() => {
-                    if (window.CONFIG) {
-                        window.location.href = CONFIG.getUrl('home');
-                    } else {
-                        window.location.href = '/';
-                    }
+                    if (window.CONFIG) window.location.href = CONFIG.getUrl('home');
+                    else window.location.href = '/';
+                    // Сбрасываем флаг после редиректа
+                    setTimeout(() => { isHandlingBan = false; }, 1000);
                 }, 1500);
                 
-                return true; // Был забанен
+                return true;
             }
             
-            return false; // Не забанен
+            return false;
         } catch (error) {
             console.error('Ошибка проверки бана:', error);
             return false;
+        } finally {
+            // Сбрасываем флаг в любом случае, кроме случая когда был бан
+            // (там он сбросится после редиректа)
+            if (!isHandlingBan) isHandlingBan = false;
         }
     }
 
-    // ===== ПЕРИОДИЧЕСКАЯ ПРОВЕРКА БАНА =====
     function startBanCheck(user) {
-        if (banCheckInterval) {
-            clearInterval(banCheckInterval);
-        }
+        if (banCheckInterval) clearInterval(banCheckInterval);
         
-        // Проверяем бан каждые 30 секунд
         banCheckInterval = setInterval(async () => {
-            if (currentUser && window.navigator.onLine) {
+            if (currentUser && window.navigator.onLine && !isHandlingBan) {
                 await checkBanStatus(currentUser);
             }
         }, 30000);
@@ -126,7 +110,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
         if (isInitialized) return;
         
@@ -138,9 +121,7 @@ const Auth = (function() {
                 return;
             } else {
                 console.error('❌ Firebase Auth не загрузился');
-                if (window.Utils) {
-                    Utils.showError('Ошибка авторизации. Обновите страницу.');
-                }
+                if (window.Utils) Utils.showError('Ошибка авторизации. Обновите страницу.');
                 return;
             }
         }
@@ -161,26 +142,18 @@ const Auth = (function() {
             
             if (user) {
                 try {
-                    // Сначала проверяем бан
                     const isBanned = await checkBanStatus(user);
-                    if (isBanned) {
-                        // Если забанен, данные не загружаем
-                        return;
-                    }
+                    if (isBanned) return;
                     
-                    // Загружаем данные пользователя
                     const cachedData = getUserFromCache(user.uid);
                     if (cachedData) {
                         console.log(`📦 Данные из кэша: ${cachedData?.name || 'Без имени'}`);
                         currentUserData = cachedData;
-                        
-                        // В фоне обновляем данные
                         setTimeout(() => refreshUserData(user.uid), 1000);
                     } else {
                         await loadUserData(user.uid);
                     }
                     
-                    // Запускаем периодическую проверку бана
                     startBanCheck(user);
                     
                 } catch (error) {
@@ -191,34 +164,28 @@ const Auth = (function() {
                 currentUserData = null;
                 stopBanCheck();
                 
-                if (previousUser) {
-                    clearUserCache(previousUser.uid);
-                }
+                if (previousUser) clearUserCache(previousUser.uid);
             }
             
             notifyListeners();
             updateUI();
             
-            if (!wasLoggedIn && isLoggedIn) {
-                handlePostLogin();
-            }
+            if (!wasLoggedIn && isLoggedIn) handlePostLogin();
         });
 
         initTheme();
         isInitialized = true;
-        console.log('✅ Auth инициализирован (с защитой от бана)');
+        console.log('✅ Auth инициализирован (с защитой от рекурсии)');
     }
 
-    // ===== ОБНОВЛЕНИЕ ДАННЫХ В ФОНЕ =====
     async function refreshUserData(uid) {
         try {
-            if (!window.db || !window.navigator.onLine) return;
+            if (!window.db || !window.navigator.onLine || isHandlingBan) return;
             
             const userDoc = await db.collection('users').doc(uid).get();
             if (userDoc.exists) {
                 const freshData = userDoc.data();
                 
-                // Проверяем бан при фоновом обновлении
                 if (freshData.banned) {
                     await checkBanStatus({ uid });
                     return;
@@ -238,16 +205,13 @@ const Auth = (function() {
 
     async function loadUserData(uid) {
         try {
-            if (!window.db) {
-                throw new Error('Firestore не инициализирован');
-            }
+            if (!window.db) throw new Error('Firestore не инициализирован');
             
             const userDoc = await db.collection('users').doc(uid).get();
             
             if (userDoc.exists) {
                 currentUserData = userDoc.data();
                 console.log(`📦 Данные загружены из Firestore: ${currentUserData?.name || 'Без имени'}`);
-                
                 setUserToCache(uid, currentUserData);
             } else {
                 console.log('📦 Документ не найден, создаём...');
@@ -276,14 +240,11 @@ const Auth = (function() {
         }
     }
 
-    // ===== ОБРАБОТКА ПОСЛЕЛОГИННОГО РЕДИРЕКТА (ИСПРАВЛЕНО) =====
     function handlePostLogin() {
-        if (currentUser && window.db && navigator.onLine) {
+        if (currentUser && window.db && navigator.onLine && !isHandlingBan) {
             db.collection('users').doc(currentUser.uid).update({
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(err => {
-                console.log('ℹ️ Не удалось обновить lastLogin');
-            });
+            }).catch(err => console.log('ℹ️ Не удалось обновить lastLogin'));
             
             if (currentUserData) {
                 setUserToCache(currentUser.uid, {
@@ -293,37 +254,25 @@ const Auth = (function() {
             }
         }
         
-        // Обработка редиректа после логина
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
-        
-        // Проверяем, есть ли сохранённый редирект из sessionStorage
         const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
         
         if (savedRedirect) {
             sessionStorage.removeItem('redirectAfterLogin');
             setTimeout(() => {
-                // ИСПРАВЛЕНО: проверяем только pathname, без параметров
                 if (!isSamePath(savedRedirect)) {
-                    if (window.Loader) {
-                        Loader.navigateTo(savedRedirect, 'Перенаправляем...');
-                    } else {
-                        window.location.href = savedRedirect;
-                    }
+                    if (window.Loader) Loader.navigateTo(savedRedirect, 'Перенаправляем...');
+                    else window.location.href = savedRedirect;
                 }
             }, 1000);
         } else if (redirect) {
             setTimeout(() => {
                 try {
                     const decodedUrl = decodeURIComponent(redirect);
-                    
-                    // ИСПРАВЛЕНО: проверяем только pathname, без параметров
                     if (!isSamePath(decodedUrl) && !decodedUrl.includes('auth=login')) {
-                        if (window.Loader) {
-                            Loader.navigateTo(decodedUrl, 'Перенаправляем...');
-                        } else {
-                            window.location.href = decodedUrl;
-                        }
+                        if (window.Loader) Loader.navigateTo(decodedUrl, 'Перенаправляем...');
+                        else window.location.href = decodedUrl;
                     }
                 } catch (e) {
                     console.error('Ошибка редиректа:', e);
@@ -332,7 +281,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СРАВНЕНИЯ ПУТЕЙ (ИСПРАВЛЕНО) =====
     function isSamePath(url) {
         try {
             const currentPath = window.location.pathname;
@@ -343,7 +291,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ГЕТТЕРЫ =====
     function getUser() { return currentUser; }
     function getUserData() { return currentUserData; }
     function isAuthenticated() { return !!currentUser; }
@@ -363,10 +310,7 @@ const Auth = (function() {
         return adminUid ? currentUser?.uid === adminUid : false; 
     }
 
-    function getRole() {
-        if (!currentUserData) return null;
-        return currentUserData.role;
-    }
+    function getRole() { return currentUserData?.role || null; }
 
     function getRoleDisplay() {
         const role = getRole();
@@ -374,32 +318,16 @@ const Auth = (function() {
         return roleConst?.getDisplayName ? roleConst.getDisplayName(role) : role;
     }
 
-    // ===== РЕГИСТРАЦИЯ =====
     async function register(email, password, userData = {}) {
-        if (window.Loader) {
-            Loader.show('Регистрация...');
-        }
+        if (window.Loader) Loader.show('Регистрация...');
         
         try {
-            if (!window.auth || !window.db) {
-                throw new Error('Firebase не инициализирован');
-            }
+            if (!window.auth || !window.db) throw new Error('Firebase не инициализирован');
 
-            if (!Utils.validateEmail(email)) {
-                throw new Error('Некорректный email');
-            }
-            
-            if (!Utils.validatePassword(password)) {
-                throw new Error('Пароль должен быть не менее 6 символов');
-            }
-
-            if (userData.name && !Utils.validateName(userData.name)) {
-                throw new Error('Имя должно быть от 2 до 50 символов');
-            }
-
-            if (userData.phone && !Utils.validatePhone(userData.phone)) {
-                throw new Error('Некорректный формат телефона');
-            }
+            if (!Utils.validateEmail(email)) throw new Error('Некорректный email');
+            if (!Utils.validatePassword(password)) throw new Error('Пароль должен быть не менее 6 символов');
+            if (userData.name && !Utils.validateName(userData.name)) throw new Error('Имя должно быть от 2 до 50 символов');
+            if (userData.phone && !Utils.validatePhone(userData.phone)) throw new Error('Некорректный формат телефона');
 
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
@@ -425,109 +353,68 @@ const Auth = (function() {
             setUserToCache(user.uid, firestoreData);
 
             Utils.showSuccess('Регистрация прошла успешно!');
-            
-            if (window.Loader) {
-                Loader.showTemporary('✅ Регистрация успешна!', 1500);
-            }
+            if (window.Loader) Loader.showTemporary('✅ Регистрация успешна!', 1500);
             
             return { success: true, user };
             
         } catch (error) {
             console.error('❌ Ошибка регистрации:', error);
-            
-            if (window.Loader) {
-                Loader.hide();
-            }
+            if (window.Loader) Loader.hide();
             
             let errorMessage = 'Ошибка регистрации';
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'Этот email уже используется';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Некорректный email';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'Слишком простой пароль';
-            } else {
-                errorMessage = error.message;
-            }
+            if (error.code === 'auth/email-already-in-use') errorMessage = 'Этот email уже используется';
+            else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
+            else if (error.code === 'auth/weak-password') errorMessage = 'Слишком простой пароль';
+            else errorMessage = error.message;
             
             Utils.showError(errorMessage);
             return { success: false, error: errorMessage };
         }
     }
 
-    // ===== ВХОД =====
     async function login(email, password) {
-        if (window.Loader) {
-            Loader.show('Вход в систему...');
-        }
+        if (window.Loader) Loader.show('Вход в систему...');
         
         try {
-            if (!window.auth || !window.db) {
-                throw new Error('Firebase не инициализирован');
-            }
-
-            if (!email || !password) {
-                throw new Error('Введите email и пароль');
-            }
+            if (!window.auth || !window.db) throw new Error('Firebase не инициализирован');
+            if (!email || !password) throw new Error('Введите email и пароль');
             
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             
-            // Проверяем бан сразу после входа
             const isBanned = await checkBanStatus(userCredential.user);
-            if (isBanned) {
-                return { success: false, error: 'Аккаунт заблокирован' };
-            }
+            if (isBanned) return { success: false, error: 'Аккаунт заблокирован' };
             
             Utils.showSuccess('Вход выполнен успешно!');
-            
-            if (window.Loader) {
-                Loader.showTemporary('✅ Вход выполнен! Перенаправляем...', 1500);
-            }
+            if (window.Loader) Loader.showTemporary('✅ Вход выполнен! Перенаправляем...', 1500);
             
             return { success: true };
             
         } catch (error) {
             console.error('❌ Ошибка входа:', error);
-            
-            if (window.Loader) {
-                Loader.hide();
-            }
+            if (window.Loader) Loader.hide();
             
             let errorMessage = 'Ошибка входа';
-            if (error.code === 'auth/user-not-found') {
-                errorMessage = 'Пользователь не найден';
-            } else if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Неверный пароль';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Некорректный email';
-            } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Слишком много попыток. Попробуйте позже';
-            } else {
-                errorMessage = error.message;
-            }
+            if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
+            else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
+            else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
+            else if (error.code === 'auth/too-many-requests') errorMessage = 'Слишком много попыток. Попробуйте позже';
+            else errorMessage = error.message;
             
             Utils.showError(errorMessage);
             return { success: false, error: errorMessage };
         }
     }
 
-    // ===== ВЫХОД =====
     async function logout(silent = false) {
-        if (!silent && window.Loader) {
-            Loader.show('Выход...');
-        }
+        if (!silent && window.Loader) Loader.show('Выход...');
         
         try {
-            if (!window.auth) {
-                throw new Error('Firebase не инициализирован');
-            }
+            if (!window.auth) throw new Error('Firebase не инициализирован');
             
-            // Останавливаем проверку бана
             stopBanCheck();
+            isHandlingBan = false; // ИСПРАВЛЕНО: сбрасываем флаг
             
-            if (currentUser) {
-                clearUserCache(currentUser.uid);
-            }
+            if (currentUser) clearUserCache(currentUser.uid);
             
             await auth.signOut();
             
@@ -535,43 +422,29 @@ const Auth = (function() {
             currentUserData = null;
             
             if (!silent) {
-                if (window.Loader) {
-                    Loader.showTemporary('👋 До свидания!', 1000);
-                }
-                
+                if (window.Loader) Loader.showTemporary('👋 До свидания!', 1000);
                 setTimeout(() => {
-                    // Всегда на главную после выхода
-                    if (window.CONFIG) {
-                        window.location.href = CONFIG.getUrl('home');
-                    } else {
-                        window.location.href = '/';
-                    }
+                    if (window.CONFIG) window.location.href = CONFIG.getUrl('home');
+                    else window.location.href = '/';
                 }, 1000);
             }
             
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка выхода:', error);
-            if (window.Loader) {
-                Loader.hide();
-            }
-            if (!silent) {
-                Utils.showError('Ошибка при выходе');
-            }
+            if (window.Loader) Loader.hide();
+            if (!silent) Utils.showError('Ошибка при выходе');
             return { success: false };
         }
     }
 
-    // ===== СЛУШАТЕЛИ =====
     function onAuthChange(callback) {
         if (typeof callback === 'function') {
             authListeners.push(callback);
             callback(getAuthState());
             return function unsubscribe() {
                 const index = authListeners.indexOf(callback);
-                if (index > -1) {
-                    authListeners.splice(index, 1);
-                }
+                if (index > -1) authListeners.splice(index, 1);
             };
         }
         return null;
@@ -593,60 +466,35 @@ const Auth = (function() {
     function notifyListeners() {
         const state = getAuthState();
         authListeners.forEach(listener => {
-            try {
-                listener(state);
-            } catch (error) {
-                console.error('❌ Ошибка в listener:', error);
-            }
+            try { listener(state); } 
+            catch (error) { console.error('❌ Ошибка в listener:', error); }
         });
     }
 
-    // ===== ОБНОВЛЕНИЕ UI =====
     function updateUI() {
         const isAuth = !!currentUser;
         const isMasterRole = isMaster();
         const isClientRole = isClient();
         const isAdminRole = isAdmin();
 
-        document.querySelectorAll('.auth-required').forEach(el => {
-            el.classList.toggle('d-none', !isAuth);
-        });
-        
-        document.querySelectorAll('.no-auth-required').forEach(el => {
-            el.classList.toggle('d-none', isAuth);
-        });
-        
-        document.querySelectorAll('.client-only').forEach(el => {
-            el.classList.toggle('d-none', !isClientRole);
-        });
-        
-        document.querySelectorAll('.master-only').forEach(el => {
-            el.classList.toggle('d-none', !isMasterRole);
-        });
-        
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.classList.toggle('d-none', !isAdminRole);
-        });
+        document.querySelectorAll('.auth-required').forEach(el => el.classList.toggle('d-none', !isAuth));
+        document.querySelectorAll('.no-auth-required').forEach(el => el.classList.toggle('d-none', isAuth));
+        document.querySelectorAll('.client-only').forEach(el => el.classList.toggle('d-none', !isClientRole));
+        document.querySelectorAll('.master-only').forEach(el => el.classList.toggle('d-none', !isMasterRole));
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('d-none', !isAdminRole));
 
         const userEmailEl = document.getElementById('userEmail');
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
         
-        if (userEmailEl && currentUser) {
-            userEmailEl.textContent = currentUser.email || '';
-        }
-        if (userNameEl && currentUserData) {
-            userNameEl.textContent = currentUserData.name || 'Пользователь';
-        }
+        if (userEmailEl && currentUser) userEmailEl.textContent = currentUser.email || '';
+        if (userNameEl && currentUserData) userNameEl.textContent = currentUserData.name || 'Пользователь';
         if (userAvatarEl && currentUserData) {
             const icon = userAvatarEl.querySelector('i');
-            if (icon) {
-                icon.className = `fas ${isMasterRole ? 'fa-user-tie' : 'fa-user'}`;
-            }
+            if (icon) icon.className = `fas ${isMasterRole ? 'fa-user-tie' : 'fa-user'}`;
         }
     }
 
-    // ===== ТЕМА =====
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -662,7 +510,6 @@ const Auth = (function() {
         const isDark = document.body.classList.toggle('dark-theme');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         updateThemeIcon(isDark);
-        
         document.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark } }));
     }
 
@@ -670,23 +517,16 @@ const Auth = (function() {
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             const icon = themeToggle.querySelector('i');
-            if (icon) {
-                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-            }
+            if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
             themeToggle.setAttribute('title', isDark ? 'Светлая тема' : 'Тёмная тема');
         }
     }
 
-    // ===== ОБНОВЛЕНИЕ ПРОФИЛЯ =====
     async function updateProfile(data) {
-        if (window.Loader) {
-            Loader.show('Обновляем профиль...');
-        }
+        if (window.Loader) Loader.show('Обновляем профиль...');
         
         try {
-            if (!currentUser || !window.db) {
-                throw new Error('Не авторизован');
-            }
+            if (!currentUser || !window.db) throw new Error('Не авторизован');
 
             await db.collection('users').doc(currentUser.uid).update({
                 ...data,
@@ -698,81 +538,56 @@ const Auth = (function() {
                 setUserToCache(currentUser.uid, currentUserData);
             }
 
-            if (window.Loader) {
-                Loader.showTemporary('✅ Профиль обновлён', 1500);
-            }
-            
+            if (window.Loader) Loader.showTemporary('✅ Профиль обновлён', 1500);
             Utils.showSuccess('Профиль обновлён');
             notifyListeners();
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка обновления профиля:', error);
-            if (window.Loader) {
-                Loader.hide();
-            }
+            if (window.Loader) Loader.hide();
             Utils.showError('Ошибка обновления');
             return { success: false, error: error.message };
         }
     }
 
-    // ===== СМЕНА ПАРОЛЯ =====
     async function changePassword(oldPassword, newPassword) {
-        if (window.Loader) {
-            Loader.show('Меняем пароль...');
-        }
+        if (window.Loader) Loader.show('Меняем пароль...');
         
         try {
-            if (!currentUser || !window.auth) {
-                throw new Error('Не авторизован');
-            }
+            if (!currentUser || !window.auth) throw new Error('Не авторизован');
 
-            const credential = firebase.auth.EmailAuthProvider.credential(
-                currentUser.email,
-                oldPassword
-            );
+            const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, oldPassword);
             await currentUser.reauthenticateWithCredential(credential);
             await currentUser.updatePassword(newPassword);
 
-            if (window.Loader) {
-                Loader.showTemporary('✅ Пароль изменён', 1500);
-            }
-            
+            if (window.Loader) Loader.showTemporary('✅ Пароль изменён', 1500);
             Utils.showSuccess('Пароль изменён');
             return { success: true };
         } catch (error) {
             console.error('❌ Ошибка смены пароля:', error);
-            
-            if (window.Loader) {
-                Loader.hide();
-            }
+            if (window.Loader) Loader.hide();
             
             let errorMessage = 'Ошибка';
-            if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Неверный текущий пароль';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'Новый пароль слишком простой';
-            }
+            if (error.code === 'auth/wrong-password') errorMessage = 'Неверный текущий пароль';
+            else if (error.code === 'auth/weak-password') errorMessage = 'Новый пароль слишком простой';
             
             Utils.showError(errorMessage);
             return { success: false, error: errorMessage };
         }
     }
 
-    // ===== ОЧИСТКА =====
     function cleanup() {
         if (unsubscribe) {
             unsubscribe();
             unsubscribe = null;
         }
-        
         stopBanCheck();
-        
+        isHandlingBan = false;
         authListeners = [];
         isInitialized = false;
         userCache.clear();
     }
 
-    // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
         getUser,
@@ -793,22 +608,18 @@ const Auth = (function() {
         changePassword,
         cleanup,
         clearUserCache,
-        
-        // Экспортируем для внутреннего использования
         getUserFromCache,
         setUserToCache
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (с защитой от бана и редиректов)');
+    console.log('✅ Auth сервис загружен (с защитой от рекурсии)');
     
     return Object.freeze(api);
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        Auth.init();
-    }, 500);
+    setTimeout(() => Auth.init(), 500);
 });
 
 window.Auth = Auth;

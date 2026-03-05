@@ -1,12 +1,9 @@
 // ============================================
-// СЕРВИС ЧАТА С ОПТИМИЗАЦИЕЙ
+// СЕРВИС ЧАТА (ИСПРАВЛЕНО - проверка статуса)
 // ============================================
 
 const Chat = (function() {
-    // Защита от повторных инициализаций
-    if (window.__CHAT_INITIALIZED__) {
-        return window.Chat;
-    }
+    if (window.__CHAT_INITIALIZED__) return window.Chat;
 
     // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let activeListeners = new Map();
@@ -30,19 +27,13 @@ const Chat = (function() {
     }
 
     function getUserSafe() {
-        try {
-            return Auth?.getUser();
-        } catch (e) {
-            return null;
-        }
+        try { return Auth?.getUser(); } 
+        catch (e) { return null; }
     }
 
     function getUserDataSafe() {
-        try {
-            return Auth?.getUserData();
-        } catch (e) {
-            return null;
-        }
+        try { return Auth?.getUserData(); } 
+        catch (e) { return null; }
     }
 
     // ===== РАБОТА С КЭШЕМ =====
@@ -116,15 +107,12 @@ const Chat = (function() {
             });
         }
         
-        console.log('✅ Chat сервис загружен (оптимизированный)');
+        console.log('✅ Chat сервис загружен');
     }
 
     // ===== УВЕДОМЛЕНИЯ =====
     async function requestNotificationPermission() {
-        if (!('Notification' in window)) {
-            console.log('Браузер не поддерживает уведомления');
-            return false;
-        }
+        if (!('Notification' in window)) return false;
         
         if (Notification.permission === 'granted') {
             notificationPermission = true;
@@ -141,14 +129,11 @@ const Chat = (function() {
                 return false;
             }
         }
-        
         return false;
     }
 
     function showBrowserNotification(title, options = {}) {
-        if (!notificationPermission && Notification.permission !== 'granted') {
-            return null;
-        }
+        if (!notificationPermission && Notification.permission !== 'granted') return null;
         
         try {
             const defaultOptions = {
@@ -158,7 +143,6 @@ const Chat = (function() {
                 silent: false,
                 ...options
             };
-            
             return new Notification(title, defaultOptions);
         } catch (error) {
             console.error('Ошибка показа уведомления:', error);
@@ -200,9 +184,7 @@ const Chat = (function() {
                         let user = null;
                         if (window.Auth) {
                             const cachedUser = Auth.getUserFromCache?.(otherId);
-                            if (cachedUser) {
-                                user = cachedUser;
-                            }
+                            if (cachedUser) user = cachedUser;
                         }
                         
                         if (!user) {
@@ -262,7 +244,6 @@ const Chat = (function() {
             if (!doc.exists) return null;
             
             const chatData = { id: doc.id, ...doc.data() };
-            
             Utils?.setMemoryCache?.(`chat_${chatId}`, chatData, 300000);
             
             return chatData;
@@ -278,9 +259,7 @@ const Chat = (function() {
         
         if (activeListeners.has(chatId)) {
             const oldUnsub = activeListeners.get(chatId);
-            if (typeof oldUnsub === 'function') {
-                oldUnsub();
-            }
+            if (typeof oldUnsub === 'function') oldUnsub();
             activeListeners.delete(chatId);
         }
         
@@ -325,7 +304,6 @@ const Chat = (function() {
                     });
                     
                     callback(allMessages);
-                    
                     setMessagesCache(chatId, allMessages);
                 }
                 
@@ -358,14 +336,12 @@ const Chat = (function() {
     function unsubscribeFromChat(chatId) {
         if (activeListeners.has(chatId)) {
             const unsubscribe = activeListeners.get(chatId);
-            if (typeof unsubscribe === 'function') {
-                unsubscribe();
-            }
+            if (typeof unsubscribe === 'function') unsubscribe();
             activeListeners.delete(chatId);
         }
     }
 
-    // ===== ОТПРАВКА СООБЩЕНИЯ =====
+    // ===== ИСПРАВЛЕННАЯ ОТПРАВКА СООБЩЕНИЯ =====
     async function sendMessage(chatId, text, files = []) {
         try {
             if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
@@ -376,6 +352,18 @@ const Chat = (function() {
             if (!user || !userData) {
                 return { success: false, error: 'Необходимо авторизоваться' };
             }
+
+            // ===== ДОБАВЛЕНО: проверка статуса чата =====
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            if (!chatDoc.exists) {
+                return { success: false, error: 'Чат не найден' };
+            }
+            
+            const chatData = chatDoc.data();
+            if (chatData.status === 'completed') {
+                return { success: false, error: 'Чат закрыт после завершения заказа' };
+            }
+            // ===== КОНЕЦ ДОБАВЛЕНИЯ =====
 
             const now = Date.now();
             const lastMsg = spamPrevention.get(user.uid) || 0;
@@ -429,12 +417,6 @@ const Chat = (function() {
                 return { success: false, error: 'Нет содержимого для отправки' };
             }
 
-            const chatDoc = await db.collection('chats').doc(chatId).get();
-            if (!chatDoc.exists) {
-                return { success: false, error: 'Чат не найден' };
-            }
-            
-            const chatData = chatDoc.data();
             const otherId = chatData.participants.find(id => id !== user.uid);
 
             const message = {
@@ -464,9 +446,7 @@ const Chat = (function() {
             await db.collection('chats').doc(chatId).update(updateData);
             
             clearChatsCache(user.uid);
-            if (otherId) {
-                clearChatsCache(otherId);
-            }
+            if (otherId) clearChatsCache(otherId);
             clearMessagesCache(chatId);
 
             return { success: true, files: fileUrls };
@@ -519,9 +499,7 @@ const Chat = (function() {
             
             if (!forceRefresh && !before) {
                 const cached = getMessagesCache(chatId);
-                if (cached) {
-                    return cached;
-                }
+                if (cached) return cached;
             }
             
             let query = db.collection('chats').doc(chatId)
@@ -554,9 +532,7 @@ const Chat = (function() {
             
             const reversedMessages = messages.reverse();
             
-            if (!before) {
-                setMessagesCache(chatId, reversedMessages);
-            }
+            if (!before) setMessagesCache(chatId, reversedMessages);
             
             return reversedMessages;
             
@@ -574,14 +550,10 @@ const Chat = (function() {
     // ===== УДАЛЕНИЕ СООБЩЕНИЯ =====
     async function deleteMessage(chatId, messageId) {
         try {
-            if (!checkFirebase()) {
-                return { success: false, error: 'Firestore недоступен' };
-            }
+            if (!checkFirebase()) return { success: false, error: 'Firestore недоступен' };
             
             const user = getUserSafe();
-            if (!user) {
-                return { success: false, error: 'Не авторизован' };
-            }
+            if (!user) return { success: false, error: 'Не авторизован' };
             
             const messageRef = db.collection('chats').doc(chatId)
                 .collection('messages')
@@ -589,9 +561,7 @@ const Chat = (function() {
             
             const messageDoc = await messageRef.get();
             
-            if (!messageDoc.exists) {
-                return { success: false, error: 'Сообщение не найдено' };
-            }
+            if (!messageDoc.exists) return { success: false, error: 'Сообщение не найдено' };
             
             const message = messageDoc.data();
             
@@ -613,7 +583,6 @@ const Chat = (function() {
             });
             
             clearMessagesCache(chatId);
-            
             return { success: true };
             
         } catch (error) {
@@ -627,7 +596,6 @@ const Chat = (function() {
         try {
             const chat = await getChat(chatId);
             if (!chat) return false;
-            
             return chat.participants && chat.participants.includes(userId);
         } catch (error) {
             console.error('Ошибка проверки доступа:', error);
@@ -655,7 +623,6 @@ const Chat = (function() {
             });
             
             Utils?.setMemoryCache?.(cacheKey, total, 30000);
-            
             return total;
             
         } catch (error) {
@@ -682,7 +649,6 @@ const Chat = (function() {
                     total += chat.unreadCount?.[userId] || 0;
                 });
                 callback(total);
-                
                 clearChatsCache(userId);
             }, (error) => {
                 console.error('Ошибка подписки на непрочитанные:', error);
@@ -693,13 +659,11 @@ const Chat = (function() {
         return unsubscribe;
     }
 
-    // ===== ОЧИСТКА =====
+    // ===== ИСПРАВЛЕННАЯ ОЧИСТКА =====
     function cleanup() {
         activeListeners.forEach((unsubscribe, chatId) => {
             try {
-                if (typeof unsubscribe === 'function') {
-                    unsubscribe();
-                }
+                if (typeof unsubscribe === 'function') unsubscribe();
             } catch (error) {
                 console.error(`Ошибка отписки от чата ${chatId}:`, error);
             }
@@ -743,16 +707,13 @@ const Chat = (function() {
     };
 
     window.__CHAT_INITIALIZED__ = true;
-    console.log('✅ Chat сервис загружен (оптимизированный)');
+    console.log('✅ Chat сервис загружен (с проверкой статуса чата)');
     
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        Chat.init();
-    }, 1000);
+    setTimeout(() => Chat.init(), 1000);
 });
 
 window.Chat = Chat;

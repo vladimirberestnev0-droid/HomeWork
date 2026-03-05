@@ -1,6 +1,6 @@
 /**
  * client.js — логика кабинета клиента (ИСПРАВЛЕНО - модалка отзыва)
- * Версия 3.2 с исправленной очисткой звезд
+ * Версия 3.3 с универсальным закрытием модалки
  */
 
 (function() {
@@ -60,43 +60,42 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА (ИСПРАВЛЕНО) =====
     function initReviewModal() {
-        // Обработчики звезд
         document.querySelectorAll('#reviewModal .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
                 window.currentRating = rating;
                 
                 document.querySelectorAll('#reviewModal .star').forEach((s, i) => {
-                    if (i < rating) s.classList.add('active');
-                    else s.classList.remove('active');
+                    if (i < rating) {
+                        s.innerHTML = '★';
+                        s.classList.add('active');
+                    } else {
+                        s.innerHTML = '☆';
+                        s.classList.remove('active');
+                    }
                 });
             });
         });
 
-        // Кнопка отправки
         const submitBtn = document.getElementById('submitReview');
         if (submitBtn) {
             submitBtn.addEventListener('click', submitReview);
         }
 
-        // Очистка при закрытии (ИСПРАВЛЕНО)
         const modal = document.getElementById('reviewModal');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', function() {
-                // Очищаем текст
                 const reviewText = document.getElementById('reviewText');
                 if (reviewText) reviewText.value = '';
                 
-                // ИСПРАВЛЕНО: ищем звезды во всех возможных контейнерах
-                document.querySelectorAll('#reviewModal .star, #confirmRatingStars .star, #reviewRatingStars .star').forEach(s => {
+                document.querySelectorAll('#reviewModal .star').forEach(s => {
+                    s.innerHTML = '☆';
                     s.classList.remove('active');
-                    s.innerHTML = '☆'; // Возвращаем пустые звезды
                 });
                 
                 window.currentRating = 0;
                 currentOrderForReview = null;
                 
-                // Восстанавливаем оригинальный заголовок модалки
                 const modalTitle = document.getElementById('reviewModalTitle');
                 if (modalTitle) {
                     modalTitle.innerHTML = `
@@ -320,11 +319,10 @@
         `;
     }
 
-    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ (ИСПРАВЛЕНО) =====
+    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
     window.showConfirmCompletionModal = function(orderId) {
         currentOrderForReview = orderId;
         
-        // Показываем модалку с отзывом
         const modalEl = document.getElementById('reviewModal');
         if (!modalEl) return;
         
@@ -354,7 +352,6 @@
             </div>
         `;
         
-        // Переназначаем обработчики звезд
         document.querySelectorAll('#confirmRatingStars .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
@@ -372,7 +369,6 @@
             });
         });
         
-        // Меняем текст кнопки
         const submitBtn = document.getElementById('submitReview');
         submitBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Подтвердить выполнение';
         
@@ -380,7 +376,7 @@
         modal.show();
     };
 
-    // ===== ОТПРАВКА ОТЗЫВА И ПОДТВЕРЖДЕНИЕ =====
+    // ===== ИСПРАВЛЕННАЯ ОТПРАВКА ОТЗЫВА И ПОДТВЕРЖДЕНИЕ =====
     async function submitReview() {
         if (!window.currentRating && !currentOrderForReview) {
             Utils.showNotification('Поставьте оценку!', 'warning');
@@ -393,7 +389,6 @@
             let result;
             
             if (currentOrderForReview) {
-                // Это подтверждение завершения
                 result = await Orders.confirmCompletion(currentOrderForReview, {
                     rating: window.currentRating,
                     text: reviewText
@@ -404,10 +399,14 @@
                 }
             }
 
+            // ИСПРАВЛЕНО: универсальное закрытие модалки
             const modalEl = document.getElementById('reviewModal');
-            if (modalEl && window.bootstrap) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
+            if (modalEl) {
+                // Пробуем получить существующий экземпляр
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                // Если нет - создаем новый
+                if (!modal) modal = new bootstrap.Modal(modalEl);
+                modal.hide();
             }
             
             await loadClientOrders(currentFilter);
@@ -490,7 +489,6 @@
                 Utils.showSuccess('✅ Мастер выбран! Чат открыт.');
                 await loadClientOrders(currentFilter);
                 
-                // Переход в чат
                 setTimeout(() => {
                     if (result.chatId) {
                         if (window.CONFIG) {
@@ -555,21 +553,26 @@
                 return;
             }
 
-            chatsList.innerHTML = chats.map(chat => `
+            chatsList.innerHTML = chats.map(chat => {
+                const partnerName = chat.partnerName || 'Пользователь';
+                const lastMessage = chat.lastMessage || 'Нет сообщений';
+                const lastMessageAt = chat.lastMessageAt ? Utils.formatDate(chat.lastMessageAt) : '';
+                
+                return `
                 <div class="chat-card" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/chat.html?chatId=' + chat.id}'">
                     <div class="chat-avatar">
                         <i class="fas ${chat.partnerRole === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
                     </div>
                     <div class="chat-info">
-                        <div class="chat-name">${Utils.escapeHtml(chat.partnerName)}</div>
-                        <div class="chat-last-message">${Utils.truncate(chat.lastMessage || 'Нет сообщений', 40)}</div>
+                        <div class="chat-name">${Utils.escapeHtml(partnerName)}</div>
+                        <div class="chat-last-message">${Utils.truncate(Utils.escapeHtml(lastMessage), 40)}</div>
                     </div>
                     <div class="chat-meta text-end">
-                        <div class="chat-time small text-secondary">${Utils.formatDate(chat.lastMessageAt)}</div>
+                        <div class="chat-time small text-secondary">${lastMessageAt}</div>
                         ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
@@ -602,7 +605,6 @@
             loadChats();
         }
         
-        // Обновляем URL
         if (window.CONFIG) {
             const url = new URL(window.location);
             url.searchParams.set('tab', tabName);
@@ -626,7 +628,6 @@
             });
         });
 
-        // ===== КНОПКА ВЫХОДА =====
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
@@ -641,14 +642,12 @@
         }
     }
 
-    // ===== СЛУШАТЕЛЬ СОБЫТИЙ ОТ НАВИГАЦИИ =====
     document.addEventListener('switch-client-tab', (e) => {
         if (e.detail && e.detail.tab) {
             switchTab(e.detail.tab);
         }
     });
 
-    // ===== ЭКСПОРТ =====
     window.switchClientTab = switchTab;
     window.ClientCabinet = {
         switchTab: switchTab
