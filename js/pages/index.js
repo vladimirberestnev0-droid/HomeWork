@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ФИНАЛЬНАЯ ВЕРСИЯ)
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ЭЛЕГАНТНАЯ ВЕРСИЯ)
 // ============================================
 
 (function() {
@@ -26,49 +26,65 @@
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // ===== ОЧИСТКА КЭША FIRESTORE ПРИ ЗАГРУЗКЕ =====
-    async function clearFirestoreCache() {
-        try {
-            if (window.db && firebase.firestore) {
-                await firebase.firestore().disableNetwork();
-                await new Promise(resolve => setTimeout(resolve, 100));
-                await firebase.firestore().enableNetwork();
-                console.log('🧹 Кэш Firestore сброшен');
-            }
-        } catch (e) {
-            console.warn('⚠️ Ошибка сброса кэша:', e);
-        }
-    }
-
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    // ===== ЭЛЕГАНТНАЯ ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Главная загружается...');
         
         document.body.classList.remove('loaded');
         
-        await waitForFirebase();
+        // Ждём Firebase (но не ломаемся, если он тормозит)
+        await waitForFirebaseGracefully();
         
-        await clearFirestoreCache();
-        
+        // Рендерим интерфейс
         renderCategoryFilters();
         renderCityFilter();
         
-        await loadOrders(true);
-        await loadMasters();
+        // Загружаем данные параллельно
+        await Promise.allSettled([
+            loadOrders(true),
+            loadMasters()
+        ]);
         
         document.body.classList.add('loaded');
         
+        // Инициализируем всё остальное
         initEventListeners();
         checkUrlParams();
         restorePaginationState();
         initRespondModal();
         
+        // Адаптивность
         window.addEventListener('resize', Utils.debounce(() => {
             renderCategoryFilters();
         }, 200));
     });
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА (ИСПРАВЛЕНО) =====
+    // ===== БЕЗОПАСНОЕ ОЖИДАНИЕ FIREBASE =====
+    function waitForFirebaseGracefully() {
+        return new Promise((resolve) => {
+            if (window.db && window.auth) {
+                resolve();
+                return;
+            }
+            
+            let attempts = 0;
+            const maxAttempts = 20;
+            
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (window.db && window.auth) {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.warn('⚠️ Firebase не загрузился, но продолжаем...');
+                    resolve(); // Всё равно продолжаем
+                }
+            }, 100);
+        });
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА =====
     function initCategoryDropdown() {
         const categoryLabel = document.getElementById('categoryLabel');
         const dropdown = document.getElementById('categoryDropdown');
@@ -106,32 +122,30 @@
             isDropdownOpen = false;
         });
         
-        // ===== ИСПРАВЛЕНО: ПРИМЕНЕНИЕ ФИЛЬТРА =====
         applyBtn?.addEventListener('click', () => {
             console.log('📦 Применяем фильтр категории:', selectedCategory);
             
-            // Обновляем фильтр
             filters.category = selectedCategory;
             
-            // Закрываем дропдаун
             dropdown.classList.add('d-none');
             isDropdownOpen = false;
             
             // Обновляем текст кнопки
             const categoryData = ORDER_CATEGORIES.find(c => c.id === selectedCategory) || ORDER_CATEGORIES[0];
-            categoryLabel.innerHTML = `
-                <i class="fas ${categoryData.icon}"></i>
-                ${categoryData.name}
-                <i class="fas fa-chevron-down ms-1"></i>
-            `;
+            if (categoryLabel) {
+                categoryLabel.innerHTML = `
+                    <i class="fas ${categoryData.icon}"></i>
+                    ${categoryData.name}
+                    <i class="fas fa-chevron-down ms-1"></i>
+                `;
+            }
             
-            // Принудительно сбрасываем пагинацию и загружаем заказы
+            // Сбрасываем пагинацию и загружаем
             lastDoc = null;
             allOrders = [];
             displayedOrders = [];
             hasMore = true;
             
-            // Загружаем заказы с новым фильтром
             loadOrders(true);
         });
     }
@@ -289,29 +303,6 @@
         }
     }
 
-    // ===== ОЖИДАНИЕ FIREBASE =====
-    function waitForFirebase() {
-        return new Promise((resolve) => {
-            if (window.db && window.auth) {
-                resolve();
-                return;
-            }
-            
-            const onFirebaseReady = () => {
-                resolve();
-                document.removeEventListener('firebase-initialized', onFirebaseReady);
-            };
-            
-            document.addEventListener('firebase-initialized', onFirebaseReady);
-            
-            setTimeout(() => {
-                document.removeEventListener('firebase-initialized', onFirebaseReady);
-                console.warn('⚠️ Таймаут ожидания Firebase');
-                resolve();
-            }, 3000);
-        });
-    }
-
     // ===== РЕНДЕР ФИЛЬТРА ГОРОДА =====
     function renderCityFilter() {
         const container = $('cityFilter');
@@ -326,7 +317,7 @@
         attachCityHandlers();
     }
 
-    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ (ДЛЯ МОБИЛОК) =====
+    // ===== ОБРАБОТЧИКИ ФИЛЬТРОВ =====
     function attachFilterHandlers() {
         document.querySelectorAll('[data-category]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -354,7 +345,7 @@
         });
     }
 
-    // ===== ЗАГРУЗКА ЗАКАЗОВ С ПАГИНАЦИЕЙ =====
+    // ===== ЗАГРУЗКА ЗАКАЗОВ =====
     async function loadOrders(reset = true) {
         if (isLoading) {
             console.log('⏳ Уже загружается...');
@@ -396,11 +387,9 @@
             };
             
             console.log('📦 Параметры запроса:', params);
-            console.log('📦 Текущий фильтр:', filters); // Для отладки
+            console.log('📦 Текущий фильтр:', filters);
             
             const result = await Orders.getOpenOrders(filters, params);
-
-            console.log('📦 Результат:', result);
 
             if (!result || !result.orders) {
                 throw new Error('Не удалось загрузить заказы');
@@ -469,6 +458,7 @@
             container.insertAdjacentHTML('beforeend', newOrdersHtml);
         }
 
+        // Анимация появления
         setTimeout(() => {
             const newCards = reset 
                 ? container.querySelectorAll('.order-card')
@@ -663,41 +653,37 @@
         `;
     }
 
-    // ===== ЗАГРУЗКА МАСТЕРОВ С КЭШИРОВАНИЕМ =====
+    // ===== ЗАГРУЗКА МАСТЕРОВ =====
     async function loadMasters(forceRefresh = false) {
         const container = $('mastersList');
         if (!container) return;
 
-        const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
-        if (cachedMasters && cachedMasters.length > 0) {
-            console.log('📦 Мастера из кэша');
-            container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
-            
-            if (!navigator.onLine) {
-                console.log('📴 Офлайн режим, используем только кэш');
-                return;
-            }
-        }
-        
-        const memoryCached = Utils.getMemoryCache(MASTERS_CACHE_KEY);
-        if (memoryCached && memoryCached.length > 0) {
-            console.log('📦 Мастера из memory cache');
-            container.innerHTML = memoryCached.map(master => createMasterCard(master)).join('');
-            Utils.setPersistentCache(MASTERS_CACHE_KEY, memoryCached, MASTERS_CACHE_TTL);
-            
-            if (!navigator.onLine) {
-                return;
-            }
-        }
-
-        if (!navigator.onLine) {
-            console.log('📴 Офлайн, нет кэша - демо данные');
-            const masters = getDemoMasters();
-            container.innerHTML = masters.map(master => createMasterCard(master)).join('');
-            return;
-        }
+        // Показываем скелетон
+        container.innerHTML = Array(4).fill(0).map(() => `
+            <div class="master-card skeleton">
+                <div class="master-avatar skeleton-circle"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-text small"></div>
+            </div>
+        `).join('');
 
         try {
+            // Сначала пробуем из кэша
+            const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
+            if (cachedMasters && cachedMasters.length > 0 && !forceRefresh) {
+                console.log('📦 Мастера из кэша');
+                renderMasters(cachedMasters);
+                return;
+            }
+
+            // Если нет в кэше или нужно обновить - грузим из Firebase
+            if (!navigator.onLine) {
+                // Если офлайн и нет кэша - показываем демо
+                const masters = getDemoMasters();
+                renderMasters(masters);
+                return;
+            }
+
             let masters = [];
             
             if (window.db) {
@@ -734,22 +720,33 @@
                 masters = getDemoMasters();
             }
             
-            Utils.setMemoryCache(MASTERS_CACHE_KEY, masters, MASTERS_CACHE_TTL);
+            // Сохраняем в кэш
             Utils.setPersistentCache(MASTERS_CACHE_KEY, masters, MASTERS_CACHE_TTL);
             
-            container.innerHTML = masters.map(master => createMasterCard(master)).join('');
+            renderMasters(masters);
             
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
             
-            const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
-            if (cachedMasters && cachedMasters.length > 0) {
-                container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
-            } else {
-                const masters = getDemoMasters();
-                container.innerHTML = masters.map(master => createMasterCard(master)).join('');
-            }
+            // При ошибке показываем демо
+            const masters = getDemoMasters();
+            renderMasters(masters);
         }
+    }
+
+    function renderMasters(masters) {
+        const container = $('mastersList');
+        if (!container) return;
+        
+        container.innerHTML = masters.map(master => createMasterCard(master)).join('');
+        
+        // Анимация появления
+        setTimeout(() => {
+            container.querySelectorAll('.master-card').forEach((card, i) => {
+                card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
+                card.style.opacity = '0';
+            });
+        }, 100);
     }
 
     // ===== СОЗДАНИЕ КАРТОЧКИ МАСТЕРА =====
@@ -772,7 +769,7 @@
         const spec = master.categories ? master.categories.split(',')[0].trim() : 'Специалист';
         
         return `
-            <div class="master-card" onclick="handleMasterClick('${master.id}')">
+            <div class="master-card" onclick="handleMasterClick('${master.id}')" style="opacity: 0;">
                 <div class="master-avatar">
                     <i class="fas fa-user-tie"></i>
                 </div>

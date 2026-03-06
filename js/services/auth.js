@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// СЕРВИС АВТОРИЗАЦИИ (СТАБИЛЬНАЯ ВЕРСИЯ ДЛЯ GITHUB PAGES)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -32,22 +32,20 @@ const Auth = (function() {
 
     // ===== НОВЫЙ МЕТОД: Ожидание загрузки данных =====
     function waitForData(timeout = 5000) {
-        // Если данные уже загружены - возвращаем сразу
         if (currentUserData) {
             return Promise.resolve(currentUserData);
         }
         
-        // Если нет промиса - создаём новый
         if (!dataLoadPromise) {
             dataLoadPromise = new Promise((resolve, reject) => {
                 dataLoadResolve = resolve;
                 
-                // Таймаут на случай проблем
                 setTimeout(() => {
                     if (!currentUserData) {
                         dataLoadPromise = null;
                         dataLoadResolve = null;
-                        reject(new Error('Timeout waiting for user data'));
+                        // Не reject, а resolve с null - мягкая обработка
+                        resolve(null);
                     }
                 }, timeout);
             });
@@ -56,7 +54,7 @@ const Auth = (function() {
         return dataLoadPromise;
     }
 
-    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА =====
+    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА (ИСПРАВЛЕНО) =====
     async function handlePostLogin(retryCount = 0) {
         if (retryCount >= 3) {
             console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
@@ -70,9 +68,10 @@ const Auth = (function() {
         try {
             await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
             
-            if (firebase.firestore) {
-                await firebase.firestore().enableNetwork().catch(() => {});
-            }
+            // НЕ включаем сеть принудительно - это вызывает ошибки
+            // if (firebase.firestore) {
+            //     await firebase.firestore().enableNetwork().catch(() => {});
+            // }
             
             const updateData = {
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
@@ -83,8 +82,9 @@ const Auth = (function() {
             console.log('✅ lastLogin обновлён (merge)');
             
         } catch (error) {
+            // Игнорируем специфичную внутреннюю ошибку Firebase
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем):`, error.message);
+                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем) - это НЕ проблема приложения`);
                 return;
             }
             
@@ -133,7 +133,7 @@ const Auth = (function() {
         console.log('🧹 SessionStorage очищен');
     }
 
-    // ===== ПРОВЕРКА БАНА =====
+    // ===== ПРОВЕРКА БАНА (С ЗАЩИТОЙ ОТ ОШИБОК) =====
     async function checkBanStatus(user) {
         if (banCheckInProgress) {
             console.log('⏳ Проверка бана уже выполняется, пропускаем');
@@ -175,13 +175,20 @@ const Auth = (function() {
             banCheckInProgress = false;
             return false;
         } catch (error) {
+            // Игнорируем внутренние ошибки Firebase при проверке бана
+            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn('⚠️ Внутренняя ошибка Firebase при проверке бана (игнорируем)');
+                banCheckInProgress = false;
+                return false;
+            }
+            
             console.error('Ошибка проверки бана:', error);
             banCheckInProgress = false;
             return false;
         }
     }
 
-    // ===== ЗАГРУЗКА ДАННЫХ =====
+    // ===== ЗАГРУЗКА ДАННЫХ (С ЗАЩИТОЙ) =====
     async function loadUserData(uid) {
         if (window.Cache && typeof Cache.remove === 'function') {
             try {
@@ -224,7 +231,6 @@ const Auth = (function() {
                 }
             }
             
-            // Кэшируем
             if (window.Cache && typeof Cache.set === 'function') {
                 try {
                     Cache.set(`user_${uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
@@ -235,7 +241,6 @@ const Auth = (function() {
             
             console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}`);
             
-            // РЕШАЕМ ПРОМИС для waitForData
             if (dataLoadResolve) {
                 dataLoadResolve(currentUserData);
                 dataLoadPromise = null;
@@ -243,12 +248,22 @@ const Auth = (function() {
             }
             
         } catch (error) {
+            // Игнорируем внутренние ошибки Firebase
+            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn('⚠️ Внутренняя ошибка Firebase при загрузке (игнорируем)');
+                if (dataLoadResolve) {
+                    dataLoadResolve(currentUserData || { role: 'unknown' });
+                    dataLoadPromise = null;
+                    dataLoadResolve = null;
+                }
+                return;
+            }
+            
             console.error('❌ Ошибка загрузки данных:', error);
             currentUserData = null;
             
-            // РЕШАЕМ ПРОМИС с ошибкой
             if (dataLoadResolve) {
-                dataLoadResolve(null); // Решаем с null, не reject
+                dataLoadResolve(null);
                 dataLoadPromise = null;
                 dataLoadResolve = null;
             }
@@ -306,7 +321,6 @@ const Auth = (function() {
                         console.log(`📦 Данные из кэша: ${cachedData.name}`);
                         currentUserData = cachedData;
                         
-                        // РЕШАЕМ ПРОМИС для waitForData (из кэша)
                         if (dataLoadResolve) {
                             dataLoadResolve(currentUserData);
                             dataLoadPromise = null;
@@ -321,14 +335,23 @@ const Auth = (function() {
                     startBanCheck(user);
                     
                 } catch (error) {
-                    console.error('❌ Ошибка загрузки данных:', error);
-                    currentUserData = null;
-                    
-                    // РЕШАЕМ ПРОМИС с ошибкой
-                    if (dataLoadResolve) {
-                        dataLoadResolve(null);
-                        dataLoadPromise = null;
-                        dataLoadResolve = null;
+                    // Даже при ошибке пытаемся продолжить
+                    if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                        console.warn('⚠️ Внутренняя ошибка Firebase (игнорируем), продолжаем работу');
+                        if (dataLoadResolve) {
+                            dataLoadResolve(currentUserData || { role: 'unknown' });
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
+                    } else {
+                        console.error('❌ Ошибка загрузки данных:', error);
+                        currentUserData = null;
+                        
+                        if (dataLoadResolve) {
+                            dataLoadResolve(null);
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
                     }
                 }
             } else {
@@ -343,7 +366,6 @@ const Auth = (function() {
                     }
                 }
                 
-                // Сбрасываем промис при выходе
                 dataLoadPromise = null;
                 dataLoadResolve = null;
             }
@@ -587,7 +609,7 @@ const Auth = (function() {
             isAdmin: isAdmin(),
             role: getRole(),
             roleDisplay: getRoleDisplay(),
-            dataLoaded: !!currentUserData  // НОВОЕ ПОЛЕ!
+            dataLoaded: !!currentUserData
         };
     }
 
@@ -716,12 +738,12 @@ const Auth = (function() {
         toggleTheme,
         updateProfile,
         cleanup,
-        waitForData,  // НОВЫЙ МЕТОД!
+        waitForData,
         ROLES
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (исправленная версия)');
+    console.log('✅ Auth сервис загружен (стабильная версия для GitHub Pages)');
     
     return Object.freeze(api);
 })();
