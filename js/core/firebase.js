@@ -1,10 +1,8 @@
 /**
- * firebase.js - Инициализация Firebase (ИСПРАВЛЕНО: persistence для iOS)
- * Версия 3.2 с обработкой private mode
+ * firebase.js - Инициализация Firebase (ИСПРАВЛЕНО: добавлен retry для internal error)
  */
 
 (function() {
-    // Флаг инициализации
     if (window._firebaseInitialized) {
         console.log('✅ Firebase уже инициализирован');
         return;
@@ -12,16 +10,13 @@
 
     console.log('🚀 Запуск инициализации Firebase...');
 
-    // Максимальное время ожидания CONFIG
     const CONFIG_TIMEOUT = 5000;
     const PERSISTENCE_RETRIES = 2;
     let persistenceEnabled = false;
 
-    // Проверяем наличие CONFIG
     if (typeof CONFIG === 'undefined') {
         console.warn('⚠️ CONFIG не загружен, ожидаем...');
         
-        // Ждём CONFIG
         waitForConfig().then(() => {
             console.log('✅ CONFIG загружен, продолжаем инициализацию');
             initFirebase();
@@ -33,7 +28,6 @@
         return;
     }
 
-    // Непосредственно инициализация
     initFirebase();
 
     function waitForConfig() {
@@ -58,30 +52,27 @@
         });
     }
 
-    // Проверка на private mode в iOS
     function isPrivateMode() {
         return new Promise((resolve) => {
             const testKey = 'test_private_mode';
             try {
                 localStorage.setItem(testKey, '1');
                 localStorage.removeItem(testKey);
-                resolve(false); // Не private mode
+                resolve(false);
             } catch (e) {
-                resolve(true); // Private mode
+                resolve(true);
             }
         });
     }
 
     async function initFirebase() {
         try {
-            // Проверяем наличие Firebase SDK
             if (typeof firebase === 'undefined') {
                 throw new Error('Firebase SDK не загружен! Проверьте подключение скриптов');
             }
 
             console.log('🔥 Firebase SDK загружен, версия:', firebase.SDK_VERSION);
 
-            // Инициализация Firebase приложения
             if (!firebase.apps.length) {
                 console.log('📦 Инициализация Firebase с конфигом:', {
                     projectId: CONFIG.firebase.projectId,
@@ -94,26 +85,22 @@
                 console.log('✅ Firebase приложение уже существует');
             }
 
-            // Глобальные ссылки
             window.db = firebase.firestore();
             window.auth = firebase.auth();
             window.storage = firebase.storage();
 
-            // Настройки Firestore
             window.db.settings({
                 ignoreUndefinedProperties: true,
                 merge: true,
                 cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
             });
 
-            // Проверяем private mode
             const privateMode = await isPrivateMode();
             
             if (privateMode) {
                 console.log('🔒 Private mode detected, persistence disabled');
                 persistenceEnabled = false;
             } else {
-                // Включаем persistence с обработкой ошибок
                 try {
                     await window.db.enablePersistence({ 
                         synchronizeTabs: true
@@ -125,9 +112,6 @@
                 }
             }
 
-            // Настройки Auth
-            window.auth.useDeviceLanguage();
-            
             try {
                 await window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 console.log('✅ Auth persistence включен');
@@ -135,13 +119,10 @@
                 console.warn('⚠️ Ошибка настройки persistence auth:', err);
             }
 
-            // Обработчик сетевых ошибок
             setupNetworkHandlers();
 
-            // Отмечаем инициализацию
             window._firebaseInitialized = true;
             
-            // Событие для других скриптов
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
                 detail: { persistenceEnabled } 
             }));
@@ -162,24 +143,37 @@
 
     function handlePersistenceError(err) {
         if (err.code === 'failed-precondition') {
-            console.warn('⚠️ Множественные вкладки открыты, persistence работает в ограниченном режиме');
+            console.warn('⚠️ Множественные вкладки открыты, persistence в ограниченном режиме');
             persistenceEnabled = false;
         } else if (err.code === 'unimplemented') {
             console.warn('⚠️ Браузер не поддерживает persistence (возможно private mode)');
             persistenceEnabled = false;
-        } else {
+        } 
+        // 🔥 НОВЫЙ БЛОК ОБРАБОТКИ 🔥
+        else if (err.message && err.message.includes('INTERNAL ASSERTION FAILED')) {
+            console.warn('⚠️ Внутренняя ошибка Firebase SDK, пробуем без synchronizeTabs...');
+            try {
+                // Пробуем ещё раз без синхронизации вкладок
+                window.db.enablePersistence({ synchronizeTabs: false });
+                console.log('✅ Persistence включен (без синхронизации вкладок)');
+                persistenceEnabled = true;
+            } catch (retryErr) {
+                console.warn('⚠️ Не удалось включить persistence даже без синхронизации:', retryErr.message);
+                persistenceEnabled = false;
+            }
+        }
+        // 🔥 КОНЕЦ НОВОГО БЛОКА 🔥
+        else {
             console.warn('⚠️ Ошибка включения persistence:', err.message);
             persistenceEnabled = false;
         }
     }
 
     function setupNetworkHandlers() {
-        // Отслеживаем соединение
         firebase.firestore().enableNetwork()
             .then(() => console.log('🌐 Firestore сеть включена'))
             .catch(err => console.warn('⚠️ Ошибка включения сети:', err));
 
-        // Обработчики онлайн/офлайн
         window.addEventListener('online', () => {
             console.log('🌐 Соединение восстановлено');
             firebase.firestore().enableNetwork()
@@ -204,11 +198,9 @@
     }
 
     function showFatalError(message) {
-        // Пробуем показать через Utils
         if (typeof Utils !== 'undefined' && Utils.showError) {
             Utils.showError(message);
         } else {
-            // Создаём своё уведомление
             const style = document.createElement('style');
             style.textContent = `
                 .fatal-error {
@@ -257,7 +249,6 @@
         }
     }
 
-    // Экспортируем хелперы
     window.FirebaseHelpers = {
         isOnline: () => navigator.onLine,
         enableNetwork: () => firebase.firestore().enableNetwork(),
