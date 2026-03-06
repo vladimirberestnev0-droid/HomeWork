@@ -326,8 +326,8 @@ const Orders = (function() {
         }
     }
 
-    /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
-    async function getOpenOrders(filters = {}, options = {}) {
+/// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
+async function getOpenOrders(filters = {}, options = {}) {
     let attempt = 0;
     let lastError = null;
     
@@ -375,7 +375,7 @@ const Orders = (function() {
                 createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
             }));
 
-            // Фильтр по городу
+            // Фильтр по городу (на клиенте временно, пока индекс не заработает)
             if (filters.city && filters.city !== 'all') {
                 const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
                 if (cityName) {
@@ -429,19 +429,19 @@ const Orders = (function() {
                 const delay = RETRY_DELAY * attempt;
                 console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${delay}мс...`);
                 
-                // Ждём и ПРОДОЛЖАЕМ ЦИКЛ!
                 await new Promise(resolve => setTimeout(resolve, delay));
-                continue; // ← ВАЖНО: продолжаем цикл!
+                continue;
             }
             
-            // Если это не Target ID ошибка или кончились попытки - выходим
+            // Выходим из цикла, но не возвращаем результат здесь
             break;
         }
     }
     
-    console.error('❌ Ошибка загрузки заказов:', lastError);
+    // ЕСЛИ МЫ ЗДЕСЬ - ЗНАЧИТ ВСЕ ПОПЫТКИ ИСЧЕРПАНЫ
+    console.error('❌ Ошибка загрузки заказов после всех попыток:', lastError);
     
-    // Возвращаем пустой результат
+    // ВОЗВРАЩАЕМ ОШИБКУ, А НЕ ПРОСТО ПУСТОЙ МАССИВ
     return { 
         orders: [], 
         lastDoc: null, 
