@@ -326,121 +326,111 @@ const Orders = (function() {
         }
     }
 
-    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
-    async function getOpenOrders(filters = {}, options = {}) {
-        let attempt = 0;
-        let lastError = null;
+ /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (С ПРИНУДИТЕЛЬНЫМ СБРОСОМ) =====
+async function getOpenOrders(filters = {}, options = {}) {
+    const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
+    
+    try {
+        console.log(`📦 Запрос #${requestId}...`);
         
-        while (attempt < MAX_RETRIES) {
+        // ПРИНУДИТЕЛЬНО СБРАСЫВАЕМ КЭШ ЭТОГО ЗАПРОСА
+        if (window.Cache) {
+            Cache.remove('open_orders');
+        }
+        
+        // ИСПОЛЬЗУЕМ УНИКАЛЬНЫЙ ID ДЛЯ КАЖДОГО ЗАПРОСА
+        const result = await DataService.getOrders(
+            { status: ORDER_STATUS.OPEN },
+            {
+                limit: options.limit || 20,
+                lastDoc: options.lastDoc,
+                requestId: requestId // Добавляем уникальный ID запроса
+            }
+        );
+
+        // Добавляем небольшую задержку между запросами
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        let orders = result.items.map(order => ({
+            ...order,
+            status: normalizeStatus(order.status),
+            createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+        }));
+
+        // Фильтрация на клиенте
+        if (filters.minPrice) {
+            orders = orders.filter(o => o.price >= filters.minPrice);
+        }
+        if (filters.maxPrice) {
+            orders = orders.filter(o => o.price <= filters.maxPrice);
+        }
+
+        // Сортировка
+        if (filters.sort === 'price_asc') {
+            orders.sort((a, b) => a.price - b.price);
+        } else if (filters.sort === 'price_desc') {
+            orders.sort((a, b) => b.price - a.price);
+        } else {
+            orders.sort((a, b) => b.createdAt - a.createdAt);
+        }
+
+        const finalResult = {
+            orders,
+            lastDoc: result.lastDoc,
+            hasMore: result.size === (options.limit || 20)
+        };
+
+        console.log(`📦 Запрос #${requestId} завершён: ${orders.length} заказов`);
+        return finalResult;
+        
+    } catch (error) {
+        console.error(`❌ Ошибка запроса #${requestId}:`, error);
+        
+        // Если ошибка именно Target ID - пробуем сбросить persistence
+        if (error.message?.includes('Target ID already exists')) {
+            console.log('🔄 Обнаружен конфликт кэша, пробуем сброс...');
+            
+            // Пробуем ещё раз после паузы
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             try {
-                console.log(`📦 Запрос к Firestore (попытка ${attempt + 1}/${MAX_RETRIES})...`);
-                
-                // Пытаемся получить из кэша только при первой попытке
-                if (attempt === 0) {
-                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
-                    
-                    if (!options.force && !options.lastDoc && window.Cache) {
-                        const cached = Cache.get(cacheKey);
-                        if (cached) {
-                            console.log('📦 Заказы из кэша');
-                            return cached;
-                        }
-                    }
-                }
-
-                // СОЗДАЁМ ПРАВИЛЬНЫЙ ОБЪЕКТ ЗАПРОСА
-                const queryFilters = { status: ORDER_STATUS.OPEN };
-                
-                // Добавляем category ТОЛЬКО если она не 'all'
-                if (filters.category && filters.category !== 'all') {
-                    queryFilters.category = filters.category;
-                }
-                
-                // Добавляем город в запрос к Firestore
-                if (filters.city && filters.city !== 'all') {
-                    const cityObj = window.CITIES?.find(c => c.id === filters.city);
-                    if (cityObj) {
-                        queryFilters.city = cityObj.name.toLowerCase();
-                    }
-                }
-
-                const result = await DataService.getOrders(
-                    queryFilters,
+                // Пытаемся получить заказы снова
+                const retryResult = await DataService.getOrders(
+                    { status: ORDER_STATUS.OPEN },
                     {
                         limit: options.limit || 20,
-                        lastDoc: options.lastDoc
+                        lastDoc: options.lastDoc,
+                        requestId: `${requestId}_retry`
                     }
                 );
-
-                let orders = result.items.map(order => ({
-                    ...order,
-                    status: normalizeStatus(order.status),
-                    createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-                }));
-
-                // Фильтр по цене (на клиенте, т.к. это диапазон)
-                if (filters.minPrice) {
-                    orders = orders.filter(o => o.price >= filters.minPrice);
-                }
-                if (filters.maxPrice) {
-                    orders = orders.filter(o => o.price <= filters.maxPrice);
-                }
-
-                // Сортировка
-                if (filters.sort === 'price_asc') {
-                    orders.sort((a, b) => a.price - b.price);
-                } else if (filters.sort === 'price_desc') {
-                    orders.sort((a, b) => b.price - a.price);
-                } else {
-                    orders.sort((a, b) => b.createdAt - a.createdAt);
-                }
-
-                const finalResult = {
-                    orders,
-                    lastDoc: result.lastDoc,
-                    hasMore: result.size === (options.limit || 20)
-                };
-
-                // Кэшируем только успешный результат
-                if (attempt === 0 && !options.lastDoc && window.Cache && finalResult.orders.length > 0) {
-                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
-                    Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
-                }
-
-                console.log(`📦 Загружено заказов: ${orders.length}`);
-                return finalResult;
                 
-            } catch (error) {
-                attempt++;
-                lastError = error;
-                
-                const isTargetIdError = error.code === 'failed-precondition' && 
-                                        error.message?.includes('Target ID already exists');
-                
-                if (isTargetIdError && attempt < MAX_RETRIES) {
-                    const delay = RETRY_DELAY * attempt;
-                    console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${delay}мс...`);
+                // Если получилось - возвращаем результат
+                if (retryResult.items) {
+                    const orders = retryResult.items.map(order => ({
+                        ...order,
+                        status: normalizeStatus(order.status),
+                        createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+                    }));
                     
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
+                    return {
+                        orders,
+                        lastDoc: retryResult.lastDoc,
+                        hasMore: retryResult.size === (options.limit || 20)
+                    };
                 }
-                
-                // Выходим из цикла, но не возвращаем результат здесь
-                break;
+            } catch (retryError) {
+                console.error('❌ Повторная попытка тоже не удалась:', retryError);
             }
         }
         
-        // ЕСЛИ МЫ ЗДЕСЬ - ЗНАЧИТ ВСЕ ПОПЫТКИ ИСЧЕРПАНЫ
-        console.error('❌ Ошибка загрузки заказов после всех попыток:', lastError);
-        
-        // ВОЗВРАЩАЕМ ОШИБКУ, А НЕ ПРОСТО ПУСТОЙ МАССИВ
         return { 
             orders: [], 
             lastDoc: null, 
             hasMore: false,
-            error: lastError?.message || 'Не удалось загрузить заказы'
+            error: error.message
         };
     }
+}
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all', options = {}) {
