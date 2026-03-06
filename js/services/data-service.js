@@ -1,5 +1,5 @@
 // ============================================
-// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (С ОЧЕРЕДЬЮ ВЫЗОВОВ)
+// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const DataService = (function() {
     if (window.__DATA_SERVICE_INITIALIZED__) return window.DataService;
@@ -9,6 +9,10 @@ const DataService = (function() {
     let isInitialized = false;
     let initPromise = null;
     const callQueue = [];
+    
+    // ===== НОВОЕ: Отслеживание активных запросов =====
+    const activeQueries = new Map();
+    const queryCounter = new Map(); // Для подсчёта одинаковых запросов
 
     // Универсальная обертка для всех методов
     function createMethod(fn) {
@@ -64,48 +68,96 @@ const DataService = (function() {
         return false;
     }
 
-    // ===== ОБЩИЕ МЕТОДЫ =====
-    const getCollection = createMethod(async function(collection, constraints = [], options = {}) {
-        let query = db.collection(collection);
+    // ===== НОВОЕ: Управление активными запросами =====
+    function trackQuery(queryKey, queryPromise) {
+        // Если такой запрос уже есть - увеличиваем счётчик
+        if (activeQueries.has(queryKey)) {
+            const count = queryCounter.get(queryKey) || 1;
+            queryCounter.set(queryKey, count + 1);
+            console.log(`🔄 Запрос ${queryKey} выполняется (${count + 1} раз)`);
+        } else {
+            activeQueries.set(queryKey, queryPromise);
+            queryCounter.set(queryKey, 1);
+        }
         
-        constraints.forEach(constraint => {
-            if (constraint.type === 'where') {
-                query = query.where(constraint.field, constraint.operator, constraint.value);
-            }
+        // Очищаем после завершения
+        queryPromise.finally(() => {
+            setTimeout(() => {
+                const count = queryCounter.get(queryKey) || 1;
+                if (count <= 1) {
+                    activeQueries.delete(queryKey);
+                    queryCounter.delete(queryKey);
+                } else {
+                    queryCounter.set(queryKey, count - 1);
+                }
+            }, 1000);
         });
         
-        if (options.orderBy) {
-            query = query.orderBy(options.orderBy.field, options.orderBy.direction || 'asc');
+        return queryPromise;
+    }
+
+    // ===== ОБЩИЕ МЕТОДЫ =====
+    const getCollection = createMethod(async function(collection, constraints = [], options = {}) {
+        // Генерируем уникальный ключ для этого запроса
+        const queryKey = JSON.stringify({ 
+            collection, 
+            constraints, 
+            limit: options.limit,
+            lastDoc: options.lastDoc?.id || null 
+        });
+        
+        // Если запрос уже выполняется - возвращаем его
+        if (activeQueries.has(queryKey)) {
+            console.log(`📦 Используем уже выполняющийся запрос для ${collection}`);
+            return activeQueries.get(queryKey);
         }
         
-        if (options.limit) {
-            query = query.limit(options.limit);
-        }
+        // Создаём новый запрос
+        const queryPromise = (async () => {
+            let query = db.collection(collection);
+            
+            constraints.forEach(constraint => {
+                if (constraint.type === 'where') {
+                    query = query.where(constraint.field, constraint.operator, constraint.value);
+                }
+            });
+            
+            if (options.orderBy) {
+                query = query.orderBy(options.orderBy.field, options.orderBy.direction || 'asc');
+            }
+            
+            if (options.limit) {
+                query = query.limit(options.limit);
+            }
+            
+            if (options.startAfter) {
+                query = query.startAfter(options.startAfter);
+            }
+            if (options.startAt) {
+                query = query.startAt(options.startAt);
+            }
+            if (options.endAt) {
+                query = query.endAt(options.endAt);
+            }
+            if (options.endBefore) {
+                query = query.endBefore(options.endBefore);
+            }
+            
+            const snapshot = await query.get();
+            
+            return {
+                items: snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    _exists: true
+                })),
+                lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+                size: snapshot.size
+            };
+        })();
         
-        if (options.startAfter) {
-            query = query.startAfter(options.startAfter);
-        }
-        if (options.startAt) {
-            query = query.startAt(options.startAt);
-        }
-        if (options.endAt) {
-            query = query.endAt(options.endAt);
-        }
-        if (options.endBefore) {
-            query = query.endBefore(options.endBefore);
-        }
-        
-        const snapshot = await query.get();
-        
-        return {
-            items: snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                _exists: true
-            })),
-            lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
-            size: snapshot.size
-        };
+        // Отслеживаем запрос
+        return trackQuery(queryKey, queryPromise);
     });
 
     const getDocument = createMethod(async function(collection, id) {
@@ -119,6 +171,10 @@ const DataService = (function() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        // Инвалидируем кэши запросов для этой коллекции
+        invalidateCollectionQueries(collection);
+        
         return { id: docRef.id, ...data };
     });
 
@@ -127,13 +183,41 @@ const DataService = (function() {
             ...data,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        // Инвалидируем кэши запросов для этой коллекции
+        invalidateCollectionQueries(collection);
+        
         return { id, ...data };
     });
 
     const deleteDocument = createMethod(async function(collection, id) {
         await db.collection(collection).doc(id).delete();
+        
+        // Инвалидируем кэши запросов для этой коллекции
+        invalidateCollectionQueries(collection);
+        
         return true;
     });
+
+    // ===== НОВОЕ: Очистка кэша запросов =====
+    function invalidateCollectionQueries(collection) {
+        const keysToDelete = [];
+        
+        activeQueries.forEach((_, key) => {
+            if (key.includes(collection)) {
+                keysToDelete.push(key);
+            }
+        });
+        
+        keysToDelete.forEach(key => {
+            activeQueries.delete(key);
+            queryCounter.delete(key);
+        });
+        
+        if (keysToDelete.length > 0) {
+            console.log(`🧹 Очищено ${keysToDelete.length} запросов для ${collection}`);
+        }
+    }
 
     const runTransaction = createMethod(async function(callback) {
         return await db.runTransaction(callback);
@@ -157,11 +241,16 @@ const DataService = (function() {
             rating: 0,
             reviews: 0
         });
+        
+        invalidateCollectionQueries('users');
+        
         return { id: userId, ...userData };
     });
 
     const updateUser = createMethod(async function(userId, data) {
-        return updateDocument('users', userId, data);
+        const result = await updateDocument('users', userId, data);
+        invalidateCollectionQueries('users');
+        return result;
     });
 
     const getMasters = createMethod(async function(filters = {}, options = {}) {
@@ -170,7 +259,7 @@ const DataService = (function() {
             { type: 'where', field: 'banned', operator: '==', value: false }
         ];
         
-        if (filters.category) {
+        if (filters.category && filters.category !== 'all') {
             constraints.push({
                 type: 'where',
                 field: 'categories',
@@ -229,11 +318,15 @@ const DataService = (function() {
     });
 
     const createOrder = createMethod(async function(orderData) {
-        return createDocument('orders', orderData);
+        const result = await createDocument('orders', orderData);
+        invalidateCollectionQueries('orders');
+        return result;
     });
 
     const updateOrder = createMethod(async function(orderId, data) {
-        return updateDocument('orders', orderId, data);
+        const result = await updateDocument('orders', orderId, data);
+        invalidateCollectionQueries('orders');
+        return result;
     });
 
     // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЧАТОВ =====
@@ -262,11 +355,16 @@ const DataService = (function() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        invalidateCollectionQueries('chats');
+        
         return { id: chatId, ...chatData };
     });
 
     const updateChat = createMethod(async function(chatId, data) {
-        return updateDocument('chats', chatId, data);
+        const result = await updateDocument('chats', chatId, data);
+        invalidateCollectionQueries('chats');
+        return result;
     });
 
     const getMessages = createMethod(async function(chatId, options = {}) {
@@ -299,6 +397,14 @@ const DataService = (function() {
             ...messageData,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        // Обновляем lastMessageAt в чате
+        await db.collection('chats').doc(chatId).update({
+            lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        invalidateCollectionQueries('chats');
+        
         return { id: docRef.id, ...messageData };
     });
 
@@ -362,7 +468,10 @@ const DataService = (function() {
                 }));
                 callback(items, snapshot);
             },
-            errorCallback || console.error
+            (error) => {
+                console.error(`❌ Ошибка подписки ${collection}:`, error);
+                if (errorCallback) errorCallback(error);
+            }
         );
     });
 
@@ -371,7 +480,10 @@ const DataService = (function() {
             (doc) => {
                 callback(doc.exists ? { id: doc.id, ...doc.data() } : null);
             },
-            errorCallback || console.error
+            (error) => {
+                console.error(`❌ Ошибка подписки ${collection}/${id}:`, error);
+                if (errorCallback) errorCallback(error);
+            }
         );
     });
 
@@ -388,7 +500,10 @@ const DataService = (function() {
                     }));
                     callback(messages);
                 },
-                errorCallback || console.error
+                (error) => {
+                    console.error(`❌ Ошибка подписки на сообщения ${chatId}:`, error);
+                    if (errorCallback) errorCallback(error);
+                }
             );
     });
 
@@ -436,11 +551,18 @@ const DataService = (function() {
         
         // Вспомогательные
         isReady: () => isInitialized,
-        ready: () => initPromise
+        ready: () => initPromise,
+        
+        // НОВОЕ: Очистка активных запросов
+        clearActiveQueries: () => {
+            activeQueries.clear();
+            queryCounter.clear();
+            console.log('🧹 Активные запросы очищены');
+        }
     };
 
     window.__DATA_SERVICE_INITIALIZED__ = true;
-    console.log('✅ DataService загружен (с очередью вызовов)');
+    console.log('✅ DataService загружен (исправленная версия)');
     
     return Object.freeze(api);
 })();
