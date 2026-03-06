@@ -436,7 +436,7 @@ const Auth = (function() {
             const isBanned = await checkBanStatus(userCredential.user);
             if (isBanned) return { success: false, error: 'Аккаунт заблокирован' };
             
-            Utils.showSuccess('Вход выполнен успешно!');
+            Utils.showSuccess('Добро пожаловать! С уважением, Берестневы🌳🌳');
             
             return { success: true };
             
