@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ ИНТЕРФЕЙСА АВТОРИЗАЦИИ
+// КОМПОНЕНТ ИНТЕРФЕЙСА АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const AuthUI = (function() {
     if (window.__AUTH_UI_INITIALIZED__) return window.AuthUI;
@@ -15,6 +15,11 @@ const AuthUI = (function() {
         Auth.onAuthChange(() => {
             renderAuthBlock();
         });
+
+        // Слушаем изменение размера экрана
+        window.addEventListener('resize', Utils.debounce(() => {
+            renderAuthBlock();
+        }, 200));
 
         isInitialized = true;
         console.log('✅ AuthUI инициализирован');
@@ -45,7 +50,6 @@ const AuthUI = (function() {
         if (window.ModalManager) {
             ModalManager.show('auth', 'login');
         } else {
-            // Fallback
             if (window.AuthUI && AuthUI.showLoginModal) {
                 AuthUI.showLoginModal();
             }
@@ -56,7 +60,6 @@ const AuthUI = (function() {
         if (window.ModalManager) {
             ModalManager.show('auth', 'register');
         } else {
-            // Fallback
             if (window.AuthUI && AuthUI.showRegisterModal) {
                 AuthUI.showRegisterModal();
             }
@@ -68,6 +71,13 @@ const AuthUI = (function() {
         if (!container) return;
 
         const state = Auth.getAuthState();
+        const isDesktop = window.innerWidth >= 992;
+
+        // НА ДЕСКТОПЕ ДЛЯ ГОСТЯ НЕ ПОКАЗЫВАЕМ БЛОК (ТАМ ЕСТЬ КНОПКА ВХОДА)
+        if (isDesktop && !state.isAuthenticated) {
+            container.innerHTML = ''; // Пусто!
+            return;
+        }
 
         if (state.isAuthenticated && state.userData) {
             const isMaster = state.isMaster;
@@ -96,6 +106,7 @@ const AuthUI = (function() {
                 </div>
             `;
         } else {
+            // НА МОБИЛКАХ ПОКАЗЫВАЕМ ГОСТЮ
             container.innerHTML = `
                 <div class="card p-3 auth-block">
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
@@ -133,7 +144,6 @@ const AuthUI = (function() {
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => AuthUI.init(), 500);
 });

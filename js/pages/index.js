@@ -48,7 +48,6 @@
         
         await waitForFirebase();
         
-        // ОЧИЩАЕМ КЭШ ПРИ КАЖДОЙ ЗАГРУЗКЕ
         await clearFirestoreCache();
         
         renderCategoryFilters();
@@ -69,7 +68,7 @@
         }, 200));
     });
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА =====
+    // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА (ИСПРАВЛЕНО) =====
     function initCategoryDropdown() {
         const categoryLabel = document.getElementById('categoryLabel');
         const dropdown = document.getElementById('categoryDropdown');
@@ -107,11 +106,18 @@
             isDropdownOpen = false;
         });
         
+        // ===== ИСПРАВЛЕНО: ПРИМЕНЕНИЕ ФИЛЬТРА =====
         applyBtn?.addEventListener('click', () => {
+            console.log('📦 Применяем фильтр категории:', selectedCategory);
+            
+            // Обновляем фильтр
             filters.category = selectedCategory;
+            
+            // Закрываем дропдаун
             dropdown.classList.add('d-none');
             isDropdownOpen = false;
             
+            // Обновляем текст кнопки
             const categoryData = ORDER_CATEGORIES.find(c => c.id === selectedCategory) || ORDER_CATEGORIES[0];
             categoryLabel.innerHTML = `
                 <i class="fas ${categoryData.icon}"></i>
@@ -119,6 +125,13 @@
                 <i class="fas fa-chevron-down ms-1"></i>
             `;
             
+            // Принудительно сбрасываем пагинацию и загружаем заказы
+            lastDoc = null;
+            allOrders = [];
+            displayedOrders = [];
+            hasMore = true;
+            
+            // Загружаем заказы с новым фильтром
             loadOrders(true);
         });
     }
@@ -322,6 +335,8 @@
                 
                 filters.category = this.dataset.category;
                 selectedCategory = filters.category;
+                
+                console.log('📦 Мобильный фильтр:', filters.category);
                 loadOrders(true);
             });
         });
@@ -381,6 +396,7 @@
             };
             
             console.log('📦 Параметры запроса:', params);
+            console.log('📦 Текущий фильтр:', filters); // Для отладки
             
             const result = await Orders.getOpenOrders(filters, params);
 

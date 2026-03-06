@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ ДЕСКТОПНОЙ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
+// КОМПОНЕНТ ДЕСКТОПНОЙ НАВИГАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const DesktopNav = (function() {
     if (window.__DESKTOP_NAV_INITIALIZED__) return window.DesktopNav;
@@ -151,7 +151,6 @@ const DesktopNav = (function() {
         });
     }
 
-    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     function getAuthState() {
         return window.AppStore ? AppStore.getState() : Auth.getAuthState();
     }
@@ -242,7 +241,6 @@ const DesktopNav = (function() {
                     e.preventDefault();
                     showAuthModal('Войдите, чтобы просмотреть мастеров');
                 }
-                // Если авторизован - переход по href
             });
         }
 
@@ -254,7 +252,6 @@ const DesktopNav = (function() {
                     e.preventDefault();
                     showAuthModal('Войдите, чтобы просмотреть заказы');
                 }
-                // Если авторизован - переход по href
             });
         }
     }
@@ -277,7 +274,6 @@ const DesktopNav = (function() {
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => DesktopNav.init(), 900);
 });

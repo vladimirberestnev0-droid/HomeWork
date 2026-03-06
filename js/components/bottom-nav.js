@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const BottomNav = (function() {
     if (window.__BOTTOM_NAV_INITIALIZED__) return window.BottomNav;
@@ -27,7 +27,6 @@ const BottomNav = (function() {
         checkScreenSize();
         window.addEventListener('resize', Utils.debounce(checkScreenSize, 150));
 
-        // Подписка на изменения в Store
         if (window.AppStore) {
             unsubscribe = AppStore.subscribe(
                 'bottom-nav',
@@ -76,7 +75,7 @@ const BottomNav = (function() {
             item.style.display = 'none';
 
             if (!isAuth) {
-                // Неавторизованный пользователь
+                // ГОСТЬ - показываем основные пункты
                 switch (page) {
                     case 'home':
                     case 'create-order':
@@ -91,7 +90,7 @@ const BottomNav = (function() {
                 }
 
             } else if (isMaster) {
-                // Мастер
+                // МАСТЕР
                 switch (page) {
                     case 'home':
                     case 'search':
@@ -108,18 +107,16 @@ const BottomNav = (function() {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Отклики';
                 }
-
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
                 }
-
                 if (page === 'create-order') {
                     item.style.display = 'none';
                 }
 
             } else if (isClient) {
-                // Клиент
+                // КЛИЕНТ
                 switch (page) {
                     case 'home':
                     case 'chats':
@@ -134,12 +131,10 @@ const BottomNav = (function() {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Мои заказы';
                 }
-
                 if (page === 'profile') {
                     const span = item.querySelector('span:last-child');
                     if (span) span.textContent = 'Профиль';
                 }
-
                 if (page === 'search') {
                     item.style.display = 'none';
                 }
@@ -190,7 +185,6 @@ const BottomNav = (function() {
     }
 
     function setupListeners() {
-        // Удаляем старые обработчики и добавляем новые
         navItems.forEach(item => {
             const newItem = item.cloneNode(true);
             item.parentNode.replaceChild(newItem, item);
@@ -219,25 +213,29 @@ const BottomNav = (function() {
         }, 200);
     }
 
-    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     function getAuthState() {
         return window.AppStore ? AppStore.getState() : Auth.getAuthState();
     }
 
     function showAuthModal(message = 'Необходимо авторизоваться') {
-        // Сохраняем текущий URL для редиректа после входа
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         
-        // Показываем модалку
         if (window.ModalManager) {
             ModalManager.show('auth', 'login');
         }
         
-        // Показываем уведомление
         Utils.showInfo(message);
     }
 
-    // ОСНОВНАЯ ФУНКЦИЯ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
+    function navigateTo(url, text) {
+        if (window.Loader) {
+            Loader.navigateTo(url, text);
+        } else {
+            window.location.href = url;
+        }
+    }
+
+    // ===== ОСНОВНАЯ ФУНКЦИЯ НАВИГАЦИИ (ИСПРАВЛЕНО) =====
     function handleNavigation(page) {
         const state = getAuthState();
         const isAuth = state.isAuthenticated;
@@ -248,6 +246,10 @@ const BottomNav = (function() {
                 break;
 
             case 'search':
+                if (!isAuth) {
+                    showAuthModal('Войдите, чтобы искать заказы');
+                    return;
+                }
                 navigateTo('/HomeWork/?focus=search', '🔍 Поиск...');
                 break;
 
@@ -304,14 +306,6 @@ const BottomNav = (function() {
         }
     }
 
-    function navigateTo(url, text) {
-        if (window.Loader) {
-            Loader.navigateTo(url, text);
-        } else {
-            window.location.href = url;
-        }
-    }
-
     function destroy() {
         if (unsubscribe) {
             unsubscribe();
@@ -330,7 +324,6 @@ const BottomNav = (function() {
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => BottomNav.init(), 800);
 });
