@@ -322,57 +322,66 @@ const Orders = (function() {
         }
     }
 
-    /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ПРОСТАЯ ВЕРСИЯ) =====
-    async function getOpenOrders(filters = {}, options = {}) {
-        const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
+   /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
+async function getOpenOrders(filters = {}, options = {}) {
+    const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
+    
+    try {
+        console.log(`📦 Запрос #${requestId}...`);
         
-        try {
-            console.log(`📦 Запрос #${requestId}...`);
-            
-            const result = await DataService.getOrders(
-                { status: ORDER_STATUS.OPEN },
-                {
-                    limit: options.limit || 20,
-                    lastDoc: options.lastDoc
-                }
-            );
-
-            let orders = result.items.map(order => ({
-                ...order,
-                status: normalizeStatus(order.status),
-                createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-            }));
-
-            // Клиентская фильтрация
-            if (filters.minPrice) {
-                orders = orders.filter(o => o.price >= filters.minPrice);
-            }
-            if (filters.maxPrice) {
-                orders = orders.filter(o => o.price <= filters.maxPrice);
-            }
-
-            // Клиентская сортировка
-            if (filters.sort === 'price_asc') {
-                orders.sort((a, b) => a.price - b.price);
-            } else if (filters.sort === 'price_desc') {
-                orders.sort((a, b) => b.price - a.price);
-            } else {
-                orders.sort((a, b) => b.createdAt - a.createdAt);
-            }
-
-            console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
-            
-            return {
-                orders,
-                lastDoc: result.lastDoc,
-                hasMore: result.size === (options.limit || 20)
-            };
-            
-        } catch (error) {
-            console.error(`❌ Ошибка:`, error.message);
-            throw error; // Пробрасываем для обработки в index.js
+        // Базовый фильтр - только открытые заказы
+        const dbFilters = { status: ORDER_STATUS.OPEN };
+        
+        // Добавляем категорию ТОЛЬКО если она не 'all'
+        if (filters.category && filters.category !== 'all') {
+            dbFilters.category = filters.category;
+            console.log(`📦 Фильтр по категории: ${filters.category}`);
         }
+        
+        const result = await DataService.getOrders(
+            dbFilters,
+            {
+                limit: options.limit || 20,
+                lastDoc: options.lastDoc
+            }
+        );
+
+        let orders = result.items.map(order => ({
+            ...order,
+            status: normalizeStatus(order.status),
+            createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+        }));
+
+        // Клиентская фильтрация по цене
+        if (filters.minPrice) {
+            orders = orders.filter(o => o.price >= filters.minPrice);
+        }
+        if (filters.maxPrice) {
+            orders = orders.filter(o => o.price <= filters.maxPrice);
+        }
+
+        // Клиентская сортировка
+        if (filters.sort === 'price_asc') {
+            orders.sort((a, b) => a.price - b.price);
+        } else if (filters.sort === 'price_desc') {
+            orders.sort((a, b) => b.price - a.price);
+        } else {
+            orders.sort((a, b) => b.createdAt - a.createdAt);
+        }
+
+        console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
+        
+        return {
+            orders,
+            lastDoc: result.lastDoc,
+            hasMore: result.size === (options.limit || 20)
+        };
+        
+    } catch (error) {
+        console.error(`❌ Ошибка:`, error.message);
+        throw error;
     }
+}
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all', options = {}) {
