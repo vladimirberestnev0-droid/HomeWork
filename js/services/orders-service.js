@@ -4,21 +4,6 @@
 const Orders = (function() {
     if (window.__ORDERS_INITIALIZED__) return window.Orders;
 
-    // ===== ЭЛЕГАНТНОЕ ОЖИДАНИЕ FIREBASE =====
-    async function waitForFirebase(timeout = 3000) {
-        const start = Date.now();
-        const check = () => window._firebaseInitialized && window.db && window.auth;
-        
-        while (!check()) {
-            if (Date.now() - start > timeout) {
-                console.warn('⚠️ Таймаут ожидания Firebase');
-                return false;
-            }
-            await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        return true;
-    }
-
     // Константы статусов (нормализованные)
     const ORDER_STATUS = {
         OPEN: 'open',
@@ -337,17 +322,13 @@ const Orders = (function() {
         }
     }
 
-    /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ЭЛЕГАНТНАЯ ВЕРСИЯ) =====
+    /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ПРОСТАЯ ВЕРСИЯ) =====
     async function getOpenOrders(filters = {}, options = {}) {
-        // Элегантное ожидание готовности Firebase
-        await waitForFirebase();
-        
         const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
         
         try {
             console.log(`📦 Запрос #${requestId}...`);
             
-            // Простой запрос - всю магию делает DataService
             const result = await DataService.getOrders(
                 { status: ORDER_STATUS.OPEN },
                 {
@@ -362,7 +343,7 @@ const Orders = (function() {
                 createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
             }));
 
-            // Клиентская фильтрация (оставляем как есть)
+            // Клиентская фильтрация
             if (filters.minPrice) {
                 orders = orders.filter(o => o.price >= filters.minPrice);
             }
@@ -379,43 +360,17 @@ const Orders = (function() {
                 orders.sort((a, b) => b.createdAt - a.createdAt);
             }
 
-            const finalResult = {
+            console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
+            
+            return {
                 orders,
                 lastDoc: result.lastDoc,
                 hasMore: result.size === (options.limit || 20)
             };
-
-            console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
-            return finalResult;
             
         } catch (error) {
             console.error(`❌ Ошибка:`, error.message);
-            
-            // Элегантная обработка ошибки Target ID
-            if (error.message?.includes('Target ID already exists')) {
-                console.log('🔄 Повтор через 500ms...');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Пробуем снова (рекурсивно, но не бесконечно)
-                if (options._retryCount) {
-                    if (options._retryCount >= 3) {
-                        console.error('❌ Превышено количество повторов');
-                        return { orders: [], lastDoc: null, hasMore: false };
-                    }
-                    options._retryCount++;
-                } else {
-                    options._retryCount = 1;
-                }
-                
-                return getOpenOrders(filters, options);
-            }
-            
-            return { 
-                orders: [], 
-                lastDoc: null, 
-                hasMore: false,
-                error: error.message
-            };
+            throw error; // Пробрасываем для обработки в index.js
         }
     }
 
@@ -1013,7 +968,7 @@ const Orders = (function() {
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (элегантная версия)');
+    console.log('✅ Orders сервис загружен (финальная версия)');
     
     return Object.freeze(api);
 })();

@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ИСПРАВЛЕНО: офлайн в loadMasters)
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ФИНАЛЬНАЯ ВЕРСИЯ)
 // ============================================
 
 (function() {
@@ -37,7 +37,7 @@
         renderCategoryFilters();
         renderCityFilter();
         
-        await loadOrders(true);
+        await loadOrdersWithRetry(true);
         await loadMasters();
         
         document.body.classList.add('loaded');
@@ -47,11 +47,46 @@
         restorePaginationState();
         initRespondModal();
         
-        // Добавляем обработчик изменения размера окна
         window.addEventListener('resize', Utils.debounce(() => {
             renderCategoryFilters();
         }, 200));
     });
+
+    // ===== НОВАЯ ФУНКЦИЯ: загрузка с повторами =====
+    async function loadOrdersWithRetry(reset = true, retryCount = 0) {
+        // Ждём готовность Firebase
+        if (!window._firebaseInitialized || !window.db) {
+            console.log('⏳ Ожидание Firebase...');
+            setTimeout(() => loadOrdersWithRetry(reset, retryCount), 300);
+            return;
+        }
+        
+        try {
+            await loadOrders(reset);
+        } catch (error) {
+            console.error('❌ Ошибка загрузки:', error);
+            
+            if (error.message?.includes('Target ID') && retryCount < 3) {
+                console.log(`🔄 Повтор ${retryCount + 1}/3 через 1 сек...`);
+                setTimeout(() => loadOrdersWithRetry(reset, retryCount + 1), 1000);
+                return;
+            }
+            
+            const container = $('ordersList');
+            if (container && reset && displayedOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
+                        <h5>Не удалось загрузить заказы</h5>
+                        <p class="text-muted">Попробуйте обновить страницу</p>
+                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Обновить
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА =====
     function initCategoryDropdown() {
@@ -63,7 +98,6 @@
         
         if (!categoryLabel || !dropdown) return;
         
-        // Показываем/скрываем dropdown
         categoryLabel.addEventListener('click', (e) => {
             e.stopPropagation();
             isDropdownOpen = !isDropdownOpen;
@@ -72,7 +106,6 @@
                 renderCategoryList();
                 dropdown.classList.remove('d-none');
                 
-                // Позиционируем относительно кнопки
                 const rect = categoryLabel.getBoundingClientRect();
                 dropdown.style.top = rect.bottom + window.scrollY + 5 + 'px';
                 dropdown.style.left = rect.left + 'px';
@@ -81,7 +114,6 @@
             }
         });
         
-        // Закрываем при клике вне
         document.addEventListener('click', (e) => {
             if (!dropdown.contains(e.target) && !categoryLabel.contains(e.target)) {
                 dropdown.classList.add('d-none');
@@ -89,19 +121,16 @@
             }
         });
         
-        // Отмена
         cancelBtn?.addEventListener('click', () => {
             dropdown.classList.add('d-none');
             isDropdownOpen = false;
         });
         
-        // Применить
         applyBtn?.addEventListener('click', () => {
             filters.category = selectedCategory;
             dropdown.classList.add('d-none');
             isDropdownOpen = false;
             
-            // Обновляем текст кнопки
             const categoryData = ORDER_CATEGORIES.find(c => c.id === selectedCategory) || ORDER_CATEGORIES[0];
             categoryLabel.innerHTML = `
                 <i class="fas ${categoryData.icon}"></i>
@@ -109,7 +138,7 @@
                 <i class="fas fa-chevron-down ms-1"></i>
             `;
             
-            loadOrders(true);
+            loadOrdersWithRetry(true);
         });
     }
 
@@ -125,7 +154,6 @@
             </div>
         `).join('');
         
-        // Добавляем обработчики
         document.querySelectorAll('.category-item').forEach(item => {
             item.addEventListener('click', function() {
                 const catId = this.dataset.categoryId;
@@ -147,7 +175,6 @@
         const isDesktop = window.innerWidth >= 992;
         
         if (isDesktop) {
-            // На десктопе показываем только кнопку "Все категории"
             const currentCategory = ORDER_CATEGORIES.find(c => c.id === filters.category) || ORDER_CATEGORIES[0];
             container.innerHTML = `
                 <div class="desktop-category-filter">
@@ -160,7 +187,6 @@
             `;
             initCategoryDropdown();
         } else {
-            // На мобилках - скроллящиеся чипсы
             container.innerHTML = ORDER_CATEGORIES.map(cat => `
                 <span class="filter-chip ${cat.id === filters.category ? 'active' : ''}" data-category="${cat.id}">
                     <i class="fas ${cat.icon}"></i> ${cat.name}
@@ -220,7 +246,7 @@
             document.getElementById('responseComment').value = '';
             sessionStorage.removeItem('respond_order');
             
-            loadOrders(true);
+            loadOrdersWithRetry(true);
         } else {
             Utils.showNotification(result?.error || '❌ Ошибка при отправке', 'error');
         }
@@ -315,7 +341,7 @@
                 
                 filters.category = this.dataset.category;
                 selectedCategory = filters.category;
-                loadOrders(true);
+                loadOrdersWithRetry(true);
             });
         });
     }
@@ -327,7 +353,7 @@
                 this.classList.add('active');
                 
                 filters.city = this.dataset.city;
-                loadOrders(true);
+                loadOrdersWithRetry(true);
             });
         });
     }
@@ -410,24 +436,7 @@
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
-            
-            const loadMoreContainer = document.getElementById('loadMoreContainer');
-            if (loadMoreContainer) {
-                loadMoreContainer.remove();
-            }
-            
-            if (reset && displayedOrders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center p-5">
-                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
-                        <h5>Не удалось загрузить заказы</h5>
-                        <p class="text-muted">Попробуйте обновить страницу</p>
-                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
-                            <i class="fas fa-sync-alt me-2"></i>Обновить
-                        </button>
-                    </div>
-                `;
-            }
+            throw error; // Пробрасываем для обработки в loadOrdersWithRetry
         } finally {
             isLoading = false;
             console.log('🔄 Загрузка завершена');
@@ -640,18 +649,16 @@
         `;
     }
 
-    // ===== ЗАГРУЗКА МАСТЕРОВ С КЭШИРОВАНИЕМ (ИСПРАВЛЕНО: офлайн) =====
+    // ===== ЗАГРУЗКА МАСТЕРОВ С КЭШИРОВАНИЕМ =====
     async function loadMasters(forceRefresh = false) {
         const container = $('mastersList');
         if (!container) return;
 
-        // Всегда сначала пробуем кэш
         const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
         if (cachedMasters && cachedMasters.length > 0) {
             console.log('📦 Мастера из кэша');
             container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
             
-            // Если мы офлайн, то на этом всё
             if (!navigator.onLine) {
                 console.log('📴 Офлайн режим, используем только кэш');
                 return;
@@ -669,7 +676,6 @@
             }
         }
 
-        // Если офлайн и нет кэша - показываем демо
         if (!navigator.onLine) {
             console.log('📴 Офлайн, нет кэша - демо данные');
             const masters = getDemoMasters();
@@ -722,7 +728,6 @@
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
             
-            // При ошибке всегда показываем кэш или демо
             const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
             if (cachedMasters && cachedMasters.length > 0) {
                 container.innerHTML = cachedMasters.map(master => createMasterCard(master)).join('');
@@ -796,7 +801,7 @@
     function initEventListeners() {
         document.getElementById('sortSelect')?.addEventListener('change', (e) => {
             filters.sort = e.target.value;
-            loadOrders(true);
+            loadOrdersWithRetry(true);
         });
 
         const createBtn = document.getElementById('createOrderBtn');
@@ -814,19 +819,16 @@
             });
         }
 
-        // Обработчик для ссылки "Все мастера"
         const allMastersLink = document.getElementById('allMastersLink');
         if (allMastersLink) {
             allMastersLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 
                 if (!Auth.isAuthenticated()) {
-                    // Сохраняем намерение перейти к мастерам
                     sessionStorage.setItem('redirectAfterLogin', '/HomeWork/masters.html');
                     AuthUI.showLoginModal();
                     Utils.showInfo('Войдите, чтобы просмотреть список мастеров');
                 } else {
-                    // Если авторизован - переходим
                     if (window.Loader) {
                         Loader.navigateTo('/HomeWork/masters.html', 'Загружаем мастеров...');
                     } else {
@@ -842,7 +844,7 @@
                 const query = e.target.value.trim().toLowerCase();
                 
                 if (query.length < 3) {
-                    loadOrders(true);
+                    loadOrdersWithRetry(true);
                     return;
                 }
                 
@@ -926,7 +928,7 @@
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) {
             console.log('📦 Страница из кэша браузера, обновляем данные');
-            loadOrders(true);
+            loadOrdersWithRetry(true);
             loadMasters(true);
         }
     });
