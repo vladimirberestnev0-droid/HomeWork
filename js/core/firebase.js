@@ -69,7 +69,7 @@
             try {
                 await window.db.settings({
                     ignoreUndefinedProperties: true,
-                    cacheSizeBytes: 1, // Минимальное значение - фактически отключает кэш
+                    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED, // Минимальное значение - фактически отключает кэш
                     experimentalForceLongPolling: true, // Важно для GitHub Pages
                     experimentalAutoDetectLongPolling: false
                 });
