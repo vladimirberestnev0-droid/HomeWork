@@ -4,6 +4,21 @@
 const Orders = (function() {
     if (window.__ORDERS_INITIALIZED__) return window.Orders;
 
+    // ===== ЭЛЕГАНТНОЕ ОЖИДАНИЕ FIREBASE =====
+    async function waitForFirebase(timeout = 3000) {
+        const start = Date.now();
+        const check = () => window._firebaseInitialized && window.db && window.auth;
+        
+        while (!check()) {
+            if (Date.now() - start > timeout) {
+                console.warn('⚠️ Таймаут ожидания Firebase');
+                return false;
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return true;
+    }
+
     // Константы статусов (нормализованные)
     const ORDER_STATUS = {
         OPEN: 'open',
@@ -36,10 +51,6 @@ const Orders = (function() {
     // Офлайн-очередь
     const OFFLINE_QUEUE_KEY = 'offline_orders_queue';
     let processingOffline = false;
-
-    // Максимальное количество повторов при ошибке Target ID
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 500; // мс
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     function checkAuth() {
@@ -326,111 +337,87 @@ const Orders = (function() {
         }
     }
 
- /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (С ПРИНУДИТЕЛЬНЫМ СБРОСОМ) =====
-async function getOpenOrders(filters = {}, options = {}) {
-    const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
-    
-    try {
-        console.log(`📦 Запрос #${requestId}...`);
+    /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ЭЛЕГАНТНАЯ ВЕРСИЯ) =====
+    async function getOpenOrders(filters = {}, options = {}) {
+        // Элегантное ожидание готовности Firebase
+        await waitForFirebase();
         
-        // ПРИНУДИТЕЛЬНО СБРАСЫВАЕМ КЭШ ЭТОГО ЗАПРОСА
-        if (window.Cache) {
-            Cache.remove('open_orders');
-        }
+        const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
         
-        // ИСПОЛЬЗУЕМ УНИКАЛЬНЫЙ ID ДЛЯ КАЖДОГО ЗАПРОСА
-        const result = await DataService.getOrders(
-            { status: ORDER_STATUS.OPEN },
-            {
-                limit: options.limit || 20,
-                lastDoc: options.lastDoc,
-                requestId: requestId // Добавляем уникальный ID запроса
-            }
-        );
-
-        // Добавляем небольшую задержку между запросами
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        let orders = result.items.map(order => ({
-            ...order,
-            status: normalizeStatus(order.status),
-            createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-        }));
-
-        // Фильтрация на клиенте
-        if (filters.minPrice) {
-            orders = orders.filter(o => o.price >= filters.minPrice);
-        }
-        if (filters.maxPrice) {
-            orders = orders.filter(o => o.price <= filters.maxPrice);
-        }
-
-        // Сортировка
-        if (filters.sort === 'price_asc') {
-            orders.sort((a, b) => a.price - b.price);
-        } else if (filters.sort === 'price_desc') {
-            orders.sort((a, b) => b.price - a.price);
-        } else {
-            orders.sort((a, b) => b.createdAt - a.createdAt);
-        }
-
-        const finalResult = {
-            orders,
-            lastDoc: result.lastDoc,
-            hasMore: result.size === (options.limit || 20)
-        };
-
-        console.log(`📦 Запрос #${requestId} завершён: ${orders.length} заказов`);
-        return finalResult;
-        
-    } catch (error) {
-        console.error(`❌ Ошибка запроса #${requestId}:`, error);
-        
-        // Если ошибка именно Target ID - пробуем сбросить persistence
-        if (error.message?.includes('Target ID already exists')) {
-            console.log('🔄 Обнаружен конфликт кэша, пробуем сброс...');
+        try {
+            console.log(`📦 Запрос #${requestId}...`);
             
-            // Пробуем ещё раз после паузы
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            try {
-                // Пытаемся получить заказы снова
-                const retryResult = await DataService.getOrders(
-                    { status: ORDER_STATUS.OPEN },
-                    {
-                        limit: options.limit || 20,
-                        lastDoc: options.lastDoc,
-                        requestId: `${requestId}_retry`
-                    }
-                );
-                
-                // Если получилось - возвращаем результат
-                if (retryResult.items) {
-                    const orders = retryResult.items.map(order => ({
-                        ...order,
-                        status: normalizeStatus(order.status),
-                        createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-                    }));
-                    
-                    return {
-                        orders,
-                        lastDoc: retryResult.lastDoc,
-                        hasMore: retryResult.size === (options.limit || 20)
-                    };
+            // Простой запрос - всю магию делает DataService
+            const result = await DataService.getOrders(
+                { status: ORDER_STATUS.OPEN },
+                {
+                    limit: options.limit || 20,
+                    lastDoc: options.lastDoc
                 }
-            } catch (retryError) {
-                console.error('❌ Повторная попытка тоже не удалась:', retryError);
+            );
+
+            let orders = result.items.map(order => ({
+                ...order,
+                status: normalizeStatus(order.status),
+                createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+            }));
+
+            // Клиентская фильтрация (оставляем как есть)
+            if (filters.minPrice) {
+                orders = orders.filter(o => o.price >= filters.minPrice);
             }
+            if (filters.maxPrice) {
+                orders = orders.filter(o => o.price <= filters.maxPrice);
+            }
+
+            // Клиентская сортировка
+            if (filters.sort === 'price_asc') {
+                orders.sort((a, b) => a.price - b.price);
+            } else if (filters.sort === 'price_desc') {
+                orders.sort((a, b) => b.price - a.price);
+            } else {
+                orders.sort((a, b) => b.createdAt - a.createdAt);
+            }
+
+            const finalResult = {
+                orders,
+                lastDoc: result.lastDoc,
+                hasMore: result.size === (options.limit || 20)
+            };
+
+            console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
+            return finalResult;
+            
+        } catch (error) {
+            console.error(`❌ Ошибка:`, error.message);
+            
+            // Элегантная обработка ошибки Target ID
+            if (error.message?.includes('Target ID already exists')) {
+                console.log('🔄 Повтор через 500ms...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Пробуем снова (рекурсивно, но не бесконечно)
+                if (options._retryCount) {
+                    if (options._retryCount >= 3) {
+                        console.error('❌ Превышено количество повторов');
+                        return { orders: [], lastDoc: null, hasMore: false };
+                    }
+                    options._retryCount++;
+                } else {
+                    options._retryCount = 1;
+                }
+                
+                return getOpenOrders(filters, options);
+            }
+            
+            return { 
+                orders: [], 
+                lastDoc: null, 
+                hasMore: false,
+                error: error.message
+            };
         }
-        
-        return { 
-            orders: [], 
-            lastDoc: null, 
-            hasMore: false,
-            error: error.message
-        };
     }
-}
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all', options = {}) {
@@ -1026,7 +1013,7 @@ async function getOpenOrders(filters = {}, options = {}) {
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (финальная версия)');
+    console.log('✅ Orders сервис загружен (элегантная версия)');
     
     return Object.freeze(api);
 })();
