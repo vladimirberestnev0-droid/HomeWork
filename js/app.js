@@ -44,7 +44,6 @@ const App = (function() {
 
         await waitForFirebase();
 
-        // Ждем готовности DataService (очередь всё равно подхватит, но так надёжнее)
         if (window.DataService) {
             console.log('📦 Ожидание DataService...');
             await window.DataService.ready();
@@ -195,7 +194,9 @@ const App = (function() {
         document.body.prepend(errorDiv);
     }
 
+    // ===== ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ =====
     function initGlobalHandlers() {
+        // Перехват ссылок для SPA-подобной навигации
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[href]');
             if (!link) return;
@@ -220,19 +221,64 @@ const App = (function() {
             }
         });
 
+        // ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ ТЕМЫ (РАБОТАЕТ НА ВСЕХ СТРАНИЦАХ)
+        document.addEventListener('click', (e) => {
+            const themeToggle = e.target.closest('#themeToggle');
+            if (!themeToggle) return;
+            
+            e.preventDefault();
+            
+            if (window.Auth && typeof Auth.toggleTheme === 'function') {
+                Auth.toggleTheme();
+            } else {
+                // Элегантный fallback
+                const isDark = document.body.classList.toggle('dark-theme');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                
+                // Обновляем иконку на всех кнопках темы
+                document.querySelectorAll('#themeToggle i').forEach(icon => {
+                    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                });
+                
+                // Уведомляем другие компоненты
+                document.dispatchEvent(new CustomEvent('theme-changed', { 
+                    detail: { isDark } 
+                }));
+            }
+        });
+
+        // Мониторинг онлайн статуса
         window.addEventListener('online', () => {
             if (window.AppStore) {
                 AppStore.setState({ isOnline: true });
             }
-            Utils.showSuccess('🟢 Соединение восстановлено');
+            if (window.Utils) {
+                Utils.showSuccess('🟢 Соединение восстановлено');
+            }
         });
 
         window.addEventListener('offline', () => {
             if (window.AppStore) {
                 AppStore.setState({ isOnline: false });
             }
-            Utils.showWarning('🔴 Нет соединения');
+            if (window.Utils) {
+                Utils.showWarning('🔴 Нет соединения');
+            }
         });
+
+        // Сохраняем тему при загрузке (если есть в localStorage)
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.remove('dark-theme');
+            document.querySelectorAll('#themeToggle i').forEach(icon => {
+                icon.className = 'fas fa-moon';
+            });
+        } else if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            document.querySelectorAll('#themeToggle i').forEach(icon => {
+                icon.className = 'fas fa-sun';
+            });
+        }
     }
 
     const api = {
