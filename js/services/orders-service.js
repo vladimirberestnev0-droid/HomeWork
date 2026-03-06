@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС ЗАКАЗОВ (ИСПРАВЛЕНО: статусы, offline-очередь + защита Target ID)
+// СЕРВИС ЗАКАЗОВ (ФИНАЛЬНАЯ ВЕРСИЯ)
 // ============================================
 const Orders = (function() {
     if (window.__ORDERS_INITIALIZED__) return window.Orders;
@@ -95,7 +95,6 @@ const Orders = (function() {
         });
         saveOfflineQueue(queue);
         
-        // Запускаем обработку если есть интернет
         if (navigator.onLine) {
             processOfflineQueue();
         }
@@ -121,7 +120,7 @@ const Orders = (function() {
                 let result;
                 switch (action.type) {
                     case 'createOrder':
-                        result = await create(action.data, true); // true = skip offline
+                        result = await create(action.data, true);
                         break;
                     case 'respondToOrder':
                         result = await respondToOrder(action.orderId, action.price, action.comment, true);
@@ -163,11 +162,9 @@ const Orders = (function() {
         try {
             const chatId = `chat_${orderId}_${masterId}`;
             
-            // Проверяем, существует ли уже чат
             const existingChat = await DataService.getChat(chatId);
             if (existingChat) return { success: true, chatId };
 
-            // Создаем чат
             await DataService.createChat(chatId, {
                 participants: [clientId, masterId],
                 orderId: orderId,
@@ -181,7 +178,6 @@ const Orders = (function() {
                 }
             });
 
-            // Отправляем системное сообщение
             await DataService.sendMessage(chatId, {
                 senderId: 'system',
                 senderName: 'Система',
@@ -192,7 +188,6 @@ const Orders = (function() {
 
             console.log('✅ Чат создан:', chatId);
             
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.remove(`chats_${clientId}`);
                 Cache.remove(`chats_${masterId}`);
@@ -205,14 +200,13 @@ const Orders = (function() {
         }
     }
 
-    // ===== СОЗДАНИЕ ЗАКАЗА (с офлайн-поддержкой) =====
+    // ===== СОЗДАНИЕ ЗАКАЗА =====
     async function create(orderData, skipOffline = false) {
         const taskId = window.Loader?.show('Создание заказа...');
 
         try {
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            // Офлайн-режим
             if (!skipOffline && !navigator.onLine) {
                 addToOfflineQueue({
                     type: 'createOrder',
@@ -243,7 +237,6 @@ const Orders = (function() {
                 maxPhotoSize: 10 * 1024 * 1024
             };
 
-            // Валидация
             if (!orderData.title || orderData.title.length < 5) {
                 return { success: false, error: 'Название должно быть не менее 5 символов' };
             }
@@ -263,13 +256,11 @@ const Orders = (function() {
                 return { success: false, error: 'Укажите адрес' };
             }
 
-            // Модерация
             const titleMod = await checkModeration(orderData.title, 'order_title');
             if (!titleMod.isValid) {
                 return { success: false, error: titleMod.reason || 'Название не прошло модерацию' };
             }
 
-            // Загрузка фото через UploadService
             const photoUrls = [];
             if (orderData.photos && orderData.photos.length > 0) {
                 if (orderData.photos.length > limits.maxPhotosPerOrder) {
@@ -319,7 +310,6 @@ const Orders = (function() {
 
             const result = await DataService.createOrder(order);
             
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.clear('open_orders');
                 Cache.remove(`client_orders_${user.uid}`);
@@ -336,21 +326,23 @@ const Orders = (function() {
         }
     }
 
-    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО: защита Target ID) =====
+    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
     async function getOpenOrders(filters = {}, options = {}) {
         let attempt = 0;
         let lastError = null;
         
         while (attempt < MAX_RETRIES) {
             try {
-                const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
-                
-                // Проверяем кэш (только для первого запроса, не для повторных)
-                if (attempt === 0 && !options.force && !options.lastDoc && window.Cache) {
-                    const cached = Cache.get(cacheKey);
-                    if (cached) {
-                        console.log('📦 Заказы из кэша');
-                        return cached;
+                // Пытаемся получить из кэша только при первой попытке
+                if (attempt === 0) {
+                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
+                    
+                    if (!options.force && !options.lastDoc && window.Cache) {
+                        const cached = Cache.get(cacheKey);
+                        if (cached) {
+                            console.log('📦 Заказы из кэша');
+                            return cached;
+                        }
                     }
                 }
 
@@ -367,6 +359,8 @@ const Orders = (function() {
                     });
                 }
 
+                console.log(`📦 Запрос к Firestore (попытка ${attempt + 1}/${MAX_RETRIES})...`);
+                
                 const result = await DataService.getOrders(
                     { status: ORDER_STATUS.OPEN, category: filters.category },
                     {
@@ -377,10 +371,11 @@ const Orders = (function() {
 
                 let orders = result.items.map(order => ({
                     ...order,
-                    status: normalizeStatus(order.status)
+                    status: normalizeStatus(order.status),
+                    createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
                 }));
 
-                // Фильтр по городу (на клиенте)
+                // Фильтр по городу
                 if (filters.city && filters.city !== 'all') {
                     const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
                     if (cityName) {
@@ -405,11 +400,7 @@ const Orders = (function() {
                 } else if (filters.sort === 'price_desc') {
                     orders.sort((a, b) => b.price - a.price);
                 } else {
-                    orders.sort((a, b) => {
-                        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
-                        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
-                        return dateB - dateA;
-                    });
+                    orders.sort((a, b) => b.createdAt - a.createdAt);
                 }
 
                 const finalResult = {
@@ -418,41 +409,44 @@ const Orders = (function() {
                     hasMore: result.size === (options.limit || 20)
                 };
 
-                // Кэшируем (только для первого запроса)
-                if (attempt === 0 && !options.lastDoc && window.Cache) {
+                // Кэшируем только успешный результат
+                if (attempt === 0 && !options.lastDoc && window.Cache && finalResult.orders.length > 0) {
+                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
                     Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
                 }
 
+                console.log(`📦 Загружено заказов: ${orders.length}`);
                 return finalResult;
                 
             } catch (error) {
                 attempt++;
                 lastError = error;
                 
-                // Проверяем, является ли ошибка Target ID
                 const isTargetIdError = error.code === 'failed-precondition' && 
                                         error.message?.includes('Target ID already exists');
                 
                 if (isTargetIdError && attempt < MAX_RETRIES) {
-                    console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${RETRY_DELAY * attempt}мс...`);
+                    const delay = RETRY_DELAY * attempt;
+                    console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${delay}мс...`);
                     
-                    // Ждём с увеличивающейся задержкой
-                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
-                    
-                    // Продолжаем цикл (делаем ещё попытку)
+                    await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
                 
-                // Если это не Target ID ошибка или исчерпаны попытки - выходим из цикла
+                // Если это не Target ID ошибка или кончились попытки - выходим
                 break;
             }
         }
         
-        // Если дошли сюда - все попытки исчерпаны или другая ошибка
         console.error('❌ Ошибка загрузки заказов:', lastError);
         
-        // Возвращаем пустой результат, но не кэшируем
-        return { orders: [], lastDoc: null, hasMore: false };
+        // Возвращаем пустой результат, но с флагом, что это ошибка
+        return { 
+            orders: [], 
+            lastDoc: null, 
+            hasMore: false,
+            error: lastError?.message || 'Не удалось загрузить заказы'
+        };
     }
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
@@ -502,7 +496,6 @@ const Orders = (function() {
                 if (cached) return cached;
             }
 
-            // Получаем все заказы (лимитированно)
             const result = await DataService.getOrders(
                 {},
                 {
@@ -535,7 +528,6 @@ const Orders = (function() {
                 }
             }
 
-            // Сортируем по дате
             responses.sort((a, b) => b.createdAt - a.createdAt);
 
             if (window.Cache) {
@@ -549,14 +541,13 @@ const Orders = (function() {
         }
     }
 
-    // ===== ОТКЛИК НА ЗАКАЗ (с офлайн) =====
+    // ===== ОТКЛИК НА ЗАКАЗ =====
     async function respondToOrder(orderId, price, comment, skipOffline = false) {
         const taskId = window.Loader?.show('Отправка отклика...');
 
         try {
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            // Офлайн-режим
             if (!skipOffline && !navigator.onLine) {
                 addToOfflineQueue({
                     type: 'respondToOrder',
@@ -579,7 +570,6 @@ const Orders = (function() {
                 return { success: false, error: 'Только мастера могут откликаться' };
             }
 
-            // Антиспам
             const limits = CONFIG?.app?.limits || { responseCooldown: 5000 };
             const now = Date.now();
             const lastResponse = spamPrevention.get(user.uid) || 0;
@@ -592,7 +582,6 @@ const Orders = (function() {
             spamPrevention.set(user.uid, now);
             setTimeout(() => spamPrevention.delete(user.uid), limits.responseCooldown);
 
-            // Валидация
             const minPrice = CONFIG?.app?.limits?.minOrderPrice || 500;
             const maxPrice = CONFIG?.app?.limits?.maxOrderPrice || 1000000;
 
@@ -600,7 +589,6 @@ const Orders = (function() {
                 return { success: false, error: `Цена должна быть от ${minPrice} до ${maxPrice} ₽` };
             }
 
-            // Модерация комментария
             if (comment) {
                 const modResult = await checkModeration(comment, 'master_comment');
                 if (!modResult.isValid) {
@@ -608,7 +596,6 @@ const Orders = (function() {
                 }
             }
 
-            // Получаем заказ
             const order = await DataService.getOrder(orderId);
             if (!order) throw new Error('Заказ не найден');
             
@@ -635,12 +622,10 @@ const Orders = (function() {
                 createdAt: new Date().toISOString()
             };
 
-            // Обновляем заказ
             await DataService.updateOrder(orderId, {
                 responses: firebase.firestore.FieldValue.arrayUnion(response)
             });
 
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.clear('open_orders');
                 Cache.remove(`master_responses_${user.uid}`);
@@ -665,7 +650,6 @@ const Orders = (function() {
         try {
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            // Офлайн-режим
             if (!skipOffline && !navigator.onLine) {
                 addToOfflineQueue({
                     type: 'selectMaster',
@@ -680,7 +664,6 @@ const Orders = (function() {
             const user = getUserSafe();
             if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
 
-            // Получаем заказ
             const order = await DataService.getOrder(orderId);
             if (!order) throw new Error('Заказ не найден');
 
@@ -695,7 +678,6 @@ const Orders = (function() {
             const hasResponse = order.responses?.some(r => r.masterId === masterId);
             if (!hasResponse) throw new Error('Этот мастер не откликался на заказ');
 
-            // Обновляем заказ
             await DataService.updateOrder(orderId, {
                 status: ORDER_STATUS.IN_PROGRESS,
                 selectedMasterId: masterId,
@@ -703,10 +685,8 @@ const Orders = (function() {
                 selectedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Создаем чат
             const chatResult = await createChat(orderId, masterId, user.uid, order);
 
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.clear('open_orders');
                 Cache.remove(`client_orders_${user.uid}`);
@@ -731,7 +711,6 @@ const Orders = (function() {
         try {
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            // Офлайн-режим
             if (!skipOffline && !navigator.onLine) {
                 addToOfflineQueue({
                     type: 'initiateCompletion',
@@ -771,7 +750,6 @@ const Orders = (function() {
 
             await DataService.updateOrder(orderId, updateData);
 
-            // Отправляем уведомление в чат
             try {
                 const chatId = `chat_${orderId}_${order.selectedMasterId}`;
                 await DataService.sendMessage(chatId, {
@@ -790,7 +768,6 @@ const Orders = (function() {
                 console.error('Ошибка уведомления в чате:', chatError);
             }
 
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.remove(`master_responses_${user.uid}`);
                 Cache.remove(`order_${orderId}`);
@@ -814,7 +791,6 @@ const Orders = (function() {
         try {
             if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-            // Офлайн-режим
             if (!skipOffline && !navigator.onLine) {
                 addToOfflineQueue({
                     type: 'confirmCompletion',
@@ -844,7 +820,6 @@ const Orders = (function() {
                 completedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Если клиент оставляет отзыв
             if (clientReview && clientReview.rating) {
                 updateData.clientReview = {
                     rating: clientReview.rating,
@@ -852,7 +827,6 @@ const Orders = (function() {
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // Обновляем рейтинг мастера
                 const master = await DataService.getUser(order.selectedMasterId);
                 if (master) {
                     const currentRating = master.rating || 0;
@@ -868,7 +842,6 @@ const Orders = (function() {
 
             await DataService.updateOrder(orderId, updateData);
 
-            // Закрываем чат
             try {
                 const chatId = `chat_${orderId}_${order.selectedMasterId}`;
                 await DataService.updateChat(chatId, {
@@ -879,7 +852,6 @@ const Orders = (function() {
                 console.error('Ошибка блокировки чата:', chatError);
             }
 
-            // Инвалидируем кэш
             if (window.Cache) {
                 Cache.remove(`client_orders_${user.uid}`);
                 Cache.remove(`order_${orderId}`);
@@ -1010,7 +982,6 @@ const Orders = (function() {
 
                 callback(filtered);
                 
-                // Инвалидируем кэш
                 if (window.Cache) {
                     Cache.clear('open_orders');
                 }
@@ -1046,13 +1017,11 @@ const Orders = (function() {
             processOfflineQueue();
         });
         
-        // При запуске, если есть интернет, обрабатываем очередь
         if (navigator.onLine) {
             setTimeout(processOfflineQueue, 2000);
         }
     }
 
-    // Запускаем при загрузке
     setTimeout(init, 1000);
 
     const api = {
@@ -1074,7 +1043,7 @@ const Orders = (function() {
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (исправленная версия с офлайн-очередью)');
+    console.log('✅ Orders сервис загружен (финальная версия)');
     
     return Object.freeze(api);
 })();
