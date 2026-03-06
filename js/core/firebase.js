@@ -1,8 +1,9 @@
 /**
- * firebase.js - Инициализация Firebase (ФИНАЛЬНАЯ РАБОЧАЯ ВЕРСИЯ)
- * - Полностью отключаем persistence для GitHub Pages
- * - Заказы грузятся с сервера всегда
- * - Никаких ошибок Target ID
+ * firebase.js - Инициализация Firebase (УНИВЕРСАЛЬНАЯ ВЕРСИЯ)
+ * - Автоматически определяет окружение (GitHub Pages / телефон / localhost)
+ * - На телефоне - полный кэш (CACHE_SIZE_UNLIMITED) для офлайн-режима
+ * - На GitHub Pages - минимальный кэш (1MB) для избежания ошибок Target ID
+ * - На localhost - тоже минимальный кэш для разработки
  */
 
 (function() {
@@ -15,6 +16,25 @@
 
     const CONFIG_TIMEOUT = 5000;
     let firebaseInitialized = false;
+
+    // ===== ОПРЕДЕЛЕНИЕ ОКРУЖЕНИЯ =====
+    function getEnvironment() {
+        const hostname = window.location.hostname;
+        const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+        const isGitHubPages = hostname.includes('github.io');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        return {
+            isLocal,
+            isGitHubPages,
+            isMobile,
+            // На телефоне и НЕ на GitHub Pages - включаем полный кэш
+            useFullCache: isMobile && !isGitHubPages
+        };
+    }
+
+    const env = getEnvironment();
+    console.log('📱 Окружение:', env);
 
     // ===== ОЖИДАНИЕ CONFIG =====
     if (typeof CONFIG === 'undefined') {
@@ -64,22 +84,34 @@
             window.auth = firebase.auth();
             window.storage = firebase.storage();
 
-            // ===== КРИТИЧЕСКИ ВАЖНО: НАСТРОЙКИ FIRESTORE =====
-            // Полностью отключаем persistence для GitHub Pages
+            // ===== НАСТРОЙКИ FIRESTORE В ЗАВИСИМОСТИ ОТ ОКРУЖЕНИЯ =====
             try {
-                await window.db.settings({
+                const settings = {
                     ignoreUndefinedProperties: true,
-                    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED, // Минимальное значение - фактически отключает кэш
-                    experimentalForceLongPolling: true, // Важно для GitHub Pages
+                    experimentalForceLongPolling: env.isGitHubPages || env.isLocal, // Важно для GitHub Pages
                     experimentalAutoDetectLongPolling: false
-                });
+                };
+
+                // Выбираем размер кэша в зависимости от окружения
+                if (env.useFullCache) {
+                    // Телефон: полный кэш для офлайн-режима
+                    settings.cacheSizeBytes = firebase.firestore.CACHE_SIZE_UNLIMITED;
+                    console.log('📱 Режим: телефон (полный кэш)');
+                } else {
+                    // GitHub Pages или localhost: минимальный кэш
+                    settings.cacheSizeBytes = 1048576; // 1MB - минимум
+                    console.log('💻 Режим: GitHub Pages/localhost (минимальный кэш)');
+                }
+
+                await window.db.settings(settings);
                 
-                console.log('✅ Firestore настроен (persistence отключён)');
+                console.log(`✅ Firestore настроен (кэш: ${settings.cacheSizeBytes === firebase.firestore.CACHE_SIZE_UNLIMITED ? 'безлимитный' : '1MB'})`);
+                
             } catch (settingsError) {
                 console.warn('⚠️ Ошибка настроек Firestore:', settingsError.message);
             }
 
-            // Auth persistence - нужно для входа (это другое, не влияет на Target ID)
+            // Auth persistence - всегда LOCAL для входа
             try {
                 await window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 console.log('✅ Auth persistence включён');
@@ -87,7 +119,7 @@
                 console.warn('⚠️ Ошибка auth persistence:', err.message);
             }
 
-            // Принудительно включаем сеть
+            // Включаем сеть
             try {
                 await firebase.firestore().enableNetwork();
                 console.log('🌐 Сеть включена');
@@ -100,10 +132,10 @@
             firebaseInitialized = true;
             
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
-                detail: { success: true }
+                detail: { success: true, env: env }
             }));
             
-            console.log('✅ Firebase готов (заказы грузятся с сервера)');
+            console.log('✅ Firebase готов');
 
         } catch (error) {
             console.error('❌ Ошибка Firebase:', error.message);
@@ -145,7 +177,8 @@
     // ===== ХЕЛПЕРЫ =====
     window.FirebaseHelpers = {
         isOnline: () => navigator.onLine,
-        isInitialized: () => firebaseInitialized
+        isInitialized: () => firebaseInitialized,
+        getEnvironment: () => env
     };
 
 })();
