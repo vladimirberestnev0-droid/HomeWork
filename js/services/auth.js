@@ -28,59 +28,54 @@ const Auth = (function() {
         return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
 
-    // ===== ИСПРАВЛЕНО: ПОСЛЕЛОГИННЫЙ РЕДИРЕКТ =====
-    async function handlePostLogin() {
-        // Обновляем lastLogin только если сеть есть и Firebase готов
-        if (currentUser && window.db && navigator.onLine && !isHandlingBan && firebase?.firestore) {
-            try {
-                // Проверяем, что сеть включена
-                await firebase.firestore().enableNetwork().catch(() => {});
-                
-                const updateData = {
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                // Используем DataService с обработкой ошибок
-                if (window.DataService) {
-                    await DataService.updateUser(currentUser.uid, updateData)
-                        .catch(err => console.warn('⚠️ Не удалось обновить lastLogin:', err.message));
-                } else {
-                    await db.collection('users').doc(currentUser.uid)
-                        .update(updateData)
-                        .catch(err => console.warn('⚠️ Не удалось обновить lastLogin:', err.message));
-                }
-            } catch (error) {
-                console.warn('⚠️ Ошибка при обновлении lastLogin:', error.message);
-                // Не фатально, продолжаем работу
-            }
+    
+    // =====  ОБРАБОТКА ПОСТ-ЛОГИНА =====
+    async function handlePostLogin(retryCount = 0) {
+    // Максимум 3 попытки
+    if (retryCount >= 3) {
+        console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
+        return;
+    }
+    
+    // Проверяем необходимые условия
+    if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
+        return;
+    }
+
+    try {
+        // Проверяем состояние сети Firebase
+        if (firebase.firestore) {
+            await firebase.firestore().enableNetwork().catch(() => {});
         }
         
-        // Редиректы
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirect = urlParams.get('redirect');
-        const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
+        // Небольшая задержка перед запросом (увеличивается с каждой попыткой)
+        await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
         
-        if (savedRedirect) {
-            sessionStorage.removeItem('redirectAfterLogin');
-            setTimeout(() => {
-                if (!isSamePath(savedRedirect)) {
-                    if (window.Loader) Loader.navigateTo(savedRedirect, 'Перенаправляем...');
-                    else window.location.href = savedRedirect;
-                }
-            }, 1000);
-        } else if (redirect) {
-            setTimeout(() => {
-                try {
-                    const decodedUrl = decodeURIComponent(redirect);
-                    if (!isSamePath(decodedUrl) && !decodedUrl.includes('auth=login')) {
-                        if (window.Loader) Loader.navigateTo(decodedUrl, 'Перенаправляем...');
-                        else window.location.href = decodedUrl;
-                    }
-                } catch (e) {
-                    console.error('Ошибка редиректа:', e);
-                }
-            }, 500);
+        const updateData = {
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Пробуем обновить lastLogin
+        if (window.DataService) {
+            await DataService.updateUser(currentUser.uid, updateData);
+        } else {
+            await db.collection('users').doc(currentUser.uid).update(updateData);
         }
+        
+        console.log('✅ lastLogin обновлён');
+        
+    } catch (error) {
+        console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
+        
+        // Если ошибка связана с сетью или internal assertion - пробуем снова
+        if (error.message?.includes('offline') || 
+            error.message?.includes('INTERNAL ASSERTION') ||
+            error.code === 'unavailable') {
+            
+            console.log(`🔄 Повторная попытка через ${200 * (retryCount + 1)}ms...`);
+            setTimeout(() => handlePostLogin(retryCount + 1), 200 * (retryCount + 1));
+        }
+     }
     }
 
     function isSamePath(url) {
