@@ -14,6 +14,8 @@ const Auth = (function() {
     let isHandlingBan = false;
     let isInitialized = false;
     let banCheckInProgress = false;
+    let dataLoadPromise = null;
+    let dataLoadResolve = null;
     
     const MAX_ATTEMPTS = 5;
     
@@ -28,42 +30,59 @@ const Auth = (function() {
         return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
 
-    
-    // =====  ОБРАБОТКА ПОСТ-ЛОГИНА (ИСПРАВЛЕНО) =====
+    // ===== НОВЫЙ МЕТОД: Ожидание загрузки данных =====
+    function waitForData(timeout = 5000) {
+        // Если данные уже загружены - возвращаем сразу
+        if (currentUserData) {
+            return Promise.resolve(currentUserData);
+        }
+        
+        // Если нет промиса - создаём новый
+        if (!dataLoadPromise) {
+            dataLoadPromise = new Promise((resolve, reject) => {
+                dataLoadResolve = resolve;
+                
+                // Таймаут на случай проблем
+                setTimeout(() => {
+                    if (!currentUserData) {
+                        dataLoadPromise = null;
+                        dataLoadResolve = null;
+                        reject(new Error('Timeout waiting for user data'));
+                    }
+                }, timeout);
+            });
+        }
+        
+        return dataLoadPromise;
+    }
+
+    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА =====
     async function handlePostLogin(retryCount = 0) {
-        // Максимум 3 попытки
         if (retryCount >= 3) {
             console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
             return;
         }
         
-        // Проверяем необходимые условия
         if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
             return;
         }
 
         try {
-            // УВЕЛИЧЕННАЯ ЗАДЕРЖКА - даем Firebase стабилизироваться после входа
             await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
             
-            // Проверяем состояние сети Firebase (без ошибок)
             if (firebase.firestore) {
                 await firebase.firestore().enableNetwork().catch(() => {});
             }
             
-            // ИСПРАВЛЕНИЕ: используем set с merge вместо update
-            // Это более идемпотентная операция, которая не вызывает внутренних конфликтов Firebase
             const updateData = {
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            // Используем set с merge: true для надежности
             await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
             
             console.log('✅ lastLogin обновлён (merge)');
             
         } catch (error) {
-            // Игнорируем специфичную внутреннюю ошибку Firebase
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
                 console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем):`, error.message);
                 return;
@@ -71,7 +90,6 @@ const Auth = (function() {
             
             console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
             
-            // Повторяем только при сетевых ошибках
             if (error.message?.includes('offline') || 
                 error.code === 'unavailable' || 
                 error.code === 'deadline-exceeded') {
@@ -206,7 +224,7 @@ const Auth = (function() {
                 }
             }
             
-            // Кэшируем (с проверкой)
+            // Кэшируем
             if (window.Cache && typeof Cache.set === 'function') {
                 try {
                     Cache.set(`user_${uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
@@ -217,9 +235,24 @@ const Auth = (function() {
             
             console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}`);
             
+            // РЕШАЕМ ПРОМИС для waitForData
+            if (dataLoadResolve) {
+                dataLoadResolve(currentUserData);
+                dataLoadPromise = null;
+                dataLoadResolve = null;
+            }
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);
             currentUserData = null;
+            
+            // РЕШАЕМ ПРОМИС с ошибкой
+            if (dataLoadResolve) {
+                dataLoadResolve(null); // Решаем с null, не reject
+                dataLoadPromise = null;
+                dataLoadResolve = null;
+            }
+            
             throw error;
         }
     }
@@ -261,7 +294,6 @@ const Auth = (function() {
                     
                     let cachedData = null;
                     
-                    // Безопасное чтение из кэша
                     if (window.Cache && typeof Cache.get === 'function') {
                         try {
                             cachedData = Cache.get(`user_${user.uid}`);
@@ -273,6 +305,14 @@ const Auth = (function() {
                     if (cachedData) {
                         console.log(`📦 Данные из кэша: ${cachedData.name}`);
                         currentUserData = cachedData;
+                        
+                        // РЕШАЕМ ПРОМИС для waitForData (из кэша)
+                        if (dataLoadResolve) {
+                            dataLoadResolve(currentUserData);
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
+                        
                         setTimeout(() => loadUserData(user.uid), 1000);
                     } else {
                         await loadUserData(user.uid);
@@ -283,6 +323,13 @@ const Auth = (function() {
                 } catch (error) {
                     console.error('❌ Ошибка загрузки данных:', error);
                     currentUserData = null;
+                    
+                    // РЕШАЕМ ПРОМИС с ошибкой
+                    if (dataLoadResolve) {
+                        dataLoadResolve(null);
+                        dataLoadPromise = null;
+                        dataLoadResolve = null;
+                    }
                 }
             } else {
                 currentUserData = null;
@@ -295,14 +342,16 @@ const Auth = (function() {
                         console.warn('⚠️ Ошибка удаления из кэша:', e);
                     }
                 }
+                
+                // Сбрасываем промис при выходе
+                dataLoadPromise = null;
+                dataLoadResolve = null;
             }
             
             notifyListeners();
             updateStore();
             
-            // ВАЖНО: теперь handlePostLogin использует безопасный set с merge
             if (!wasLoggedIn && user && currentUserData) {
-                // Даем время на полную стабилизацию Firebase
                 setTimeout(() => handlePostLogin(), 800);
             }
         });
@@ -537,7 +586,8 @@ const Auth = (function() {
             isClient: isClient(),
             isAdmin: isAdmin(),
             role: getRole(),
-            roleDisplay: getRoleDisplay()
+            roleDisplay: getRoleDisplay(),
+            dataLoaded: !!currentUserData  // НОВОЕ ПОЛЕ!
         };
     }
 
@@ -644,6 +694,8 @@ const Auth = (function() {
         
         currentUser = null;
         currentUserData = null;
+        dataLoadPromise = null;
+        dataLoadResolve = null;
     }
 
     const api = {
@@ -664,6 +716,7 @@ const Auth = (function() {
         toggleTheme,
         updateProfile,
         cleanup,
+        waitForData,  // НОВЫЙ МЕТОД!
         ROLES
     };
 

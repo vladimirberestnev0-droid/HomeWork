@@ -1,6 +1,6 @@
 /**
- * masters.js — логика кабинета мастера (ИСПРАВЛЕННАЯ ВЕРСИЯ)
- * Версия 3.4 с проверкой чата и плавной загрузкой
+ * masters.js — логика кабинета мастера (ЭЛЕГАНТНАЯ ВЕРСИЯ)
+ * Версия 3.5 с ожиданием загрузки данных
  */
 
 (function() {
@@ -32,53 +32,86 @@
             masterCabinet.classList.add('d-none');
         }
 
-        Auth.onAuthChange(async (state) => {
-            console.log('🔄 Auth state changed:', state);
+        // Используем async функцию для элегантной обработки
+        (async () => {
+            try {
+                // Ждём первичное состояние
+                const initialState = await new Promise(resolve => {
+                    Auth.onAuthChange(resolve);
+                });
 
-            // Если пользователь авторизован и данные загружены
-            if (state.isAuthenticated && state.userData) {
-                if (state.isMaster) {
-                    // Правильная роль - загружаем кабинет
-                    if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
+                console.log('🔄 Начальное состояние:', initialState);
 
-                    await loadMasterProfile();
-                    await loadMasterResponses('all');
-                    await loadChats();
-
-                    if (window.BottomNav) {
-                        BottomNav.highlightActive();
-                    }
-
-                    checkUrlParams();
-
-                    // Плавно показываем контент
-                    setTimeout(() => {
-                        if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
-                        if (masterCabinet) masterCabinet.classList.remove('d-none');
-                    }, 300);
-
-                } else {
-                    // Неправильная роль - редирект на главную
-                    Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
-                    setTimeout(() => {
-                        window.location.href = '/HomeWork/';
-                    }, 1500);
+                // ШАГ 1: Проверка авторизации
+                if (!initialState.isAuthenticated) {
+                    console.log('🚫 Не авторизован, редирект');
+                    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+                    window.location.href = '/HomeWork/';
+                    return;
                 }
-                return;
-            }
 
-            // Если пользователь авторизован, но данные ещё не загрузились
-            if (state.isAuthenticated && !state.userData) {
-                console.log('⏳ Ожидание данных...');
-                if (loadingText) loadingText.textContent = 'Загружаем данные...';
-                return;
-            }
+                // ШАГ 2: Ожидание загрузки данных (элегантно!)
+                if (loadingText) loadingText.textContent = 'Загружаем данные пользователя...';
+                
+                const userData = await Auth.waitForData(5000);
+                
+                if (!userData) {
+                    throw new Error('Не удалось загрузить данные пользователя');
+                }
 
-            // Если не авторизован - редирект на главную с модалкой
-            console.log('🚫 Не авторизован, редирект на главную');
-            sessionStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = '/HomeWork/';
-        });
+                console.log('📦 Данные пользователя загружены:', userData);
+
+                // ШАГ 3: Проверка роли
+                if (userData.role !== 'master') {
+                    console.log('❌ Неправильная роль:', userData.role);
+                    Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
+                    setTimeout(() => window.location.href = '/HomeWork/', 1500);
+                    return;
+                }
+
+                // ШАГ 4: Загрузка кабинета
+                console.log('✅ Мастер подтверждён, загружаем кабинет');
+                
+                if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
+
+                // Загружаем все данные параллельно
+                await Promise.all([
+                    loadMasterProfile(),
+                    loadMasterResponses('all'),
+                    loadChats()
+                ]);
+
+                if (window.BottomNav) {
+                    BottomNav.highlightActive();
+                }
+
+                checkUrlParams();
+
+                // Плавно показываем контент
+                setTimeout(() => {
+                    if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
+                    if (masterCabinet) masterCabinet.classList.remove('d-none');
+                }, 300);
+
+            } catch (error) {
+                console.error('❌ Критическая ошибка:', error);
+                Utils.showError('Не удалось загрузить кабинет. Обновите страницу.');
+                
+                // Показываем кнопку обновления
+                if (loadingSkeleton) {
+                    loadingSkeleton.innerHTML = `
+                        <div class="text-center p-5">
+                            <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
+                            <h5>Ошибка загрузки</h5>
+                            <p class="text-muted">${error.message || 'Попробуйте обновить страницу'}</p>
+                            <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
+                                <i class="fas fa-sync-alt me-2"></i>Обновить
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        })();
 
         initEventListeners();
         initReviewModal();
@@ -162,6 +195,17 @@
                     '☆'.repeat(5 - Math.floor(userData.rating || 0));
                 ratingDisplayEl.innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
             }
+
+            // Обновляем статистику в табе статистики
+            const statTotal = $('statTotal');
+            const statAccepted = $('statAccepted');
+            const statAwaiting = $('statAwaiting');
+            const statEarnings = $('statEarnings');
+            
+            if (statTotal) statTotal.textContent = stats.total || 0;
+            if (statAccepted) statAccepted.textContent = stats.accepted || 0;
+            if (statAwaiting) statAwaiting.textContent = stats.awaiting || 0;
+            if (statEarnings) statEarnings.textContent = Utils.formatMoney(stats.earnings || 0);
 
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
@@ -309,7 +353,7 @@
         `;
     }
 
-    // ===== ОТКРЫТЬ ЧАТ (ИСПРАВЛЕНО: проверка существования) =====
+    // ===== ОТКРЫТЬ ЧАТ =====
     window.openChat = async (orderId, clientId) => {
         const user = Auth.getUser();
         if (!user) {
@@ -597,6 +641,7 @@
     // ===== ЭКСПОРТ =====
     window.switchMasterTab = switchTab;
     window.MasterCabinet = {
-        switchTab: switchTab
+        switchTab: switchTab,
+        filterResponses: loadMasterResponses
     };
 })();
