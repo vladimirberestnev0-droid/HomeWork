@@ -1,8 +1,7 @@
 /**
- * firebase.js - Инициализация Firebase (ЭЛЕГАНТНАЯ ВЕРСИЯ)
- * - Минимум попыток, максимум эффективности
- * - Чистая обработка ошибок
- * - Без лишних костылей
+ * firebase.js - Инициализация Firebase (СТАБИЛЬНАЯ ВЕРСИЯ)
+ * - persistence отключён для GitHub Pages
+ * - без внутренних ошибок Firebase
  */
 
 (function() {
@@ -14,10 +13,9 @@
     console.log('🚀 Запуск инициализации Firebase...');
 
     const CONFIG_TIMEOUT = 5000;
-    let persistenceEnabled = false;
     let firebaseInitialized = false;
 
-    // ===== ЕДИНСТВЕННАЯ ТОЧКА ВХОДА =====
+    // ===== ОЖИДАНИЕ CONFIG =====
     if (typeof CONFIG === 'undefined') {
         waitForConfig().then(initFirebase).catch(handleConfigError);
         return;
@@ -25,7 +23,6 @@
 
     initFirebase();
 
-    // ===== ПРОСТЫЕ ВСПОМОГАТЕЛЬНЫЕ =====
     function waitForConfig() {
         return new Promise((resolve, reject) => {
             const startTime = Date.now();
@@ -48,22 +45,9 @@
         }));
     }
 
-    function isPrivateMode() {
-        return new Promise((resolve) => {
-            try {
-                localStorage.setItem('test', '1');
-                localStorage.removeItem('test');
-                resolve(false);
-            } catch {
-                resolve(true);
-            }
-        });
-    }
-
-    // ===== ЭЛЕГАНТНАЯ ИНИЦИАЛИЗАЦИЯ =====
+    // ===== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ =====
     async function initFirebase() {
         try {
-            // Проверка SDK
             if (typeof firebase === 'undefined') {
                 throw new Error('Firebase SDK не загружен');
             }
@@ -81,37 +65,35 @@
             window.auth = firebase.auth();
             window.storage = firebase.storage();
 
-            // Настройки Firestore
+            // Настройки Firestore - БЕЗ persistence
             window.db.settings({
                 ignoreUndefinedProperties: true,
-                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+                // cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED // НЕ ИСПОЛЬЗУЕМ
             });
 
-            // Persistence - ОДНА попытка, без ретраев
-            if (!await isPrivateMode()) {
-                await enablePersistence();
-            }
+            console.log('ℹ️ Persistence отключён (режим GitHub Pages)');
 
-            // Auth persistence
+            // Auth persistence - нужно для входа
             try {
                 await window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-                console.log('✅ Auth persistence');
+                console.log('✅ Auth persistence включён');
             } catch (err) {
-                console.warn('⚠️ Auth persistence error:', err.message);
+                console.warn('⚠️ Ошибка auth persistence:', err.message);
             }
 
-            // Сеть
-            setupNetworkHandlers();
+            // Включаем сеть
+            await firebase.firestore().enableNetwork();
+            console.log('🌐 Сеть включена');
 
             // Успех
             window._firebaseInitialized = true;
             firebaseInitialized = true;
             
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
-                detail: { success: true, persistenceEnabled }
+                detail: { success: true }
             }));
             
-            console.log('✅ Firebase готов', { persistence: persistenceEnabled });
+            console.log('✅ Firebase готов');
 
         } catch (error) {
             console.error('❌ Ошибка Firebase:', error.message);
@@ -125,53 +107,25 @@
         }
     }
 
-    // ===== PERSISTENCE - МАКСИМАЛЬНО ПРОСТО =====
-    async function enablePersistence() {
-        try {
-            // Только один вариант - без synchronizeTabs
-            await window.db.enablePersistence({ synchronizeTabs: false });
-            console.log('✅ Firestore persistence включен');
-            persistenceEnabled = true;
-        } catch (err) {
-            // Просто логируем и продолжаем работу
-            const reasons = {
-                'failed-precondition': 'множественные вкладки',
-                'unimplemented': 'браузер не поддерживает'
-            };
-            console.log(`ℹ️ Persistence не включен: ${reasons[err.code] || err.message}`);
-            persistenceEnabled = false;
-        }
-    }
-
-    // ===== СЕТЬ - ПРОСТЫЕ ОБРАБОТЧИКИ =====
-    function setupNetworkHandlers() {
-        // Включаем сеть
-        firebase.firestore().enableNetwork()
-            .then(() => console.log('🌐 Сеть включена'))
-            .catch(() => {});
-
-        // Обработчики онлайн/офлайн
-        window.addEventListener('online', () => {
-            if (!firebaseInitialized) return;
+    // Простые обработчики онлайн/офлайн
+    window.addEventListener('online', () => {
+        if (firebaseInitialized) {
             firebase.firestore().enableNetwork()
                 .then(() => Utils?.showSuccess?.('🟢 Соединение восстановлено'))
                 .catch(() => {});
-        });
+        }
+    });
 
-        window.addEventListener('offline', () => {
-            if (!firebaseInitialized) return;
+    window.addEventListener('offline', () => {
+        if (firebaseInitialized) {
             firebase.firestore().disableNetwork()
                 .then(() => Utils?.showWarning?.('🔴 Нет соединения'))
                 .catch(() => {});
-        });
-    }
+        }
+    });
 
-    // ===== ХЕЛПЕРЫ =====
     window.FirebaseHelpers = {
         isOnline: () => navigator.onLine,
-        enableNetwork: () => firebaseInitialized ? firebase.firestore().enableNetwork() : Promise.reject(),
-        disableNetwork: () => firebaseInitialized ? firebase.firestore().disableNetwork() : Promise.reject(),
-        isPersistenceEnabled: () => persistenceEnabled,
         isInitialized: () => firebaseInitialized
     };
 
