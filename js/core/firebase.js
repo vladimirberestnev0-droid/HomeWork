@@ -1,21 +1,33 @@
 /**
- * firebase.js - Инициализация Firebase (УНИВЕРСАЛЬНАЯ ВЕРСИЯ)
- * - Автоматически определяет окружение (GitHub Pages / телефон / localhost)
- * - На телефоне - полный кэш (CACHE_SIZE_UNLIMITED) для офлайн-режима
- * - На GitHub Pages - минимальный кэш (1MB) для избежания ошибок Target ID
- * - На localhost - тоже минимальный кэш для разработки
+ * firebase.js - Инициализация Firebase (ФИНАЛЬНАЯ ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
+ * - Инициализируется только один раз за сессию
+ * - Не сбрасывает кэш при переходах между страницами
+ * - Адаптируется под окружение (телефон / GitHub Pages)
  */
 
 (function() {
+    // ===== ГЛОБАЛЬНЫЙ ФЛАГ (ЗАЩИТА ОТ ПОВТОРНОЙ ИНИЦИАЛИЗАЦИИ) =====
     if (window._firebaseInitialized) {
-        console.log('✅ Firebase уже инициализирован');
+        console.log('✅ Firebase уже был инициализирован ранее');
+        
+        // Убеждаемся, что глобальные ссылки существуют (на случай, если скрипт загрузился раньше)
+        if (!window.db && firebase && firebase.apps.length) {
+            window.db = firebase.firestore();
+            window.auth = firebase.auth();
+            window.storage = firebase.storage();
+        }
+        
+        // Всё равно диспатчим событие для тех, кто его ждёт
+        document.dispatchEvent(new CustomEvent('firebase-initialized', { 
+            detail: { success: true, cached: true }
+        }));
         return;
     }
 
-    console.log('🚀 Запуск инициализации Firebase...');
+    console.log('🚀 Инициализация Firebase (первый запуск)...');
 
     const CONFIG_TIMEOUT = 5000;
-    let firebaseInitialized = false;
+    let firebaseReady = false;
 
     // ===== ОПРЕДЕЛЕНИЕ ОКРУЖЕНИЯ =====
     function getEnvironment() {
@@ -73,10 +85,12 @@
 
             console.log('🔥 Firebase SDK', firebase.SDK_VERSION);
 
-            // Инициализация приложения
+            // Инициализация приложения (только если ещё не инициализировано)
             if (!firebase.apps.length) {
                 firebase.initializeApp(CONFIG.firebase);
                 console.log('✅ Приложение инициализировано');
+            } else {
+                console.log('ℹ️ Приложение уже было инициализировано');
             }
 
             // Глобальные ссылки
@@ -84,34 +98,37 @@
             window.auth = firebase.auth();
             window.storage = firebase.storage();
 
-            // ===== НАСТРОЙКИ FIRESTORE В ЗАВИСИМОСТИ ОТ ОКРУЖЕНИЯ =====
+            // ===== НАСТРОЙКИ FIRESTORE (ТОЛЬКО ОДИН РАЗ) =====
             try {
-                const settings = {
-                    ignoreUndefinedProperties: true,
-                    experimentalForceLongPolling: env.isGitHubPages || env.isLocal, // Важно для GitHub Pages
-                    experimentalAutoDetectLongPolling: false
-                };
+                // Проверяем, были ли уже применены настройки
+                if (!window._firestoreSettingsApplied) {
+                    const settings = {
+                        ignoreUndefinedProperties: true,
+                        experimentalForceLongPolling: env.isGitHubPages || env.isLocal,
+                        experimentalAutoDetectLongPolling: false
+                    };
 
-                // Выбираем размер кэша в зависимости от окружения
-                if (env.useFullCache) {
-                    // Телефон: полный кэш для офлайн-режима
-                    settings.cacheSizeBytes = firebase.firestore.CACHE_SIZE_UNLIMITED;
-                    console.log('📱 Режим: телефон (полный кэш)');
+                    // Выбираем размер кэша в зависимости от окружения
+                    if (env.useFullCache) {
+                        settings.cacheSizeBytes = firebase.firestore.CACHE_SIZE_UNLIMITED;
+                        console.log('📱 Режим: телефон (полный кэш)');
+                    } else {
+                        settings.cacheSizeBytes = 1048576; // 1MB - минимум
+                        console.log('💻 Режим: GitHub Pages/localhost (минимальный кэш)');
+                    }
+
+                    await window.db.settings(settings);
+                    window._firestoreSettingsApplied = true;
+                    
+                    console.log(`✅ Firestore настроен (кэш: ${settings.cacheSizeBytes === firebase.firestore.CACHE_SIZE_UNLIMITED ? 'безлимитный' : '1MB'})`);
                 } else {
-                    // GitHub Pages или localhost: минимальный кэш
-                    settings.cacheSizeBytes = 1048576; // 1MB - минимум
-                    console.log('💻 Режим: GitHub Pages/localhost (минимальный кэш)');
+                    console.log('ℹ️ Настройки Firestore уже были применены ранее');
                 }
-
-                await window.db.settings(settings);
-                
-                console.log(`✅ Firestore настроен (кэш: ${settings.cacheSizeBytes === firebase.firestore.CACHE_SIZE_UNLIMITED ? 'безлимитный' : '1MB'})`);
-                
             } catch (settingsError) {
                 console.warn('⚠️ Ошибка настроек Firestore:', settingsError.message);
             }
 
-            // Auth persistence - всегда LOCAL для входа
+            // Auth persistence - всегда LOCAL
             try {
                 await window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 console.log('✅ Auth persistence включён');
@@ -129,19 +146,19 @@
 
             // Успех
             window._firebaseInitialized = true;
-            firebaseInitialized = true;
+            firebaseReady = true;
             
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
                 detail: { success: true, env: env }
             }));
             
-            console.log('✅ Firebase готов');
+            console.log('✅ Firebase полностью готов');
 
         } catch (error) {
-            console.error('❌ Ошибка Firebase:', error.message);
+            console.error('❌ Критическая ошибка Firebase:', error.message);
             
             window._firebaseInitialized = true;
-            firebaseInitialized = false;
+            firebaseReady = false;
             
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
                 detail: { success: false, error: error.message }
@@ -151,25 +168,17 @@
 
     // ===== ОБРАБОТЧИКИ СЕТИ =====
     window.addEventListener('online', () => {
-        if (firebaseInitialized) {
+        if (firebaseReady && firebase.firestore) {
             firebase.firestore().enableNetwork()
-                .then(() => {
-                    if (window.Utils) {
-                        Utils.showSuccess('🟢 Соединение восстановлено');
-                    }
-                })
+                .then(() => Utils?.showSuccess?.('🟢 Соединение восстановлено'))
                 .catch(() => {});
         }
     });
 
     window.addEventListener('offline', () => {
-        if (firebaseInitialized) {
+        if (firebaseReady && firebase.firestore) {
             firebase.firestore().disableNetwork()
-                .then(() => {
-                    if (window.Utils) {
-                        Utils.showWarning('🔴 Нет соединения');
-                    }
-                })
+                .then(() => Utils?.showWarning?.('🔴 Нет соединения'))
                 .catch(() => {});
         }
     });
@@ -177,8 +186,8 @@
     // ===== ХЕЛПЕРЫ =====
     window.FirebaseHelpers = {
         isOnline: () => navigator.onLine,
-        isInitialized: () => firebaseInitialized,
+        isInitialized: () => firebaseReady,
         getEnvironment: () => env
     };
 
-})();
+})(); 
