@@ -228,30 +228,40 @@ const DesktopNav = (function() {
                 
                 if (!state.isAuthenticated) {
                     e.preventDefault();
+                    e.stopPropagation();
                     showAuthModal('Войдите, чтобы открыть чаты');
+                    return;
                 }
             });
         }
 
+        // ===== ИСПРАВЛЕНО: для ссылки "Мастера" =====
         if (mastersLink) {
             mastersLink.addEventListener('click', (e) => {
                 const state = getAuthState();
                 
                 if (!state.isAuthenticated) {
                     e.preventDefault();
+                    e.stopPropagation();
                     showAuthModal('Войдите, чтобы просмотреть мастеров');
+                    return; // ВАЖНО!
                 }
+                // Если авторизован - переход по href
             });
         }
 
+        // ===== ИСПРАВЛЕНО: для ссылки "Заказы" =====
         if (ordersLink) {
             ordersLink.addEventListener('click', (e) => {
                 const state = getAuthState();
                 
                 if (!state.isAuthenticated) {
                     e.preventDefault();
+                    e.stopPropagation();
                     showAuthModal('Войдите, чтобы просмотреть заказы');
+                    return; // ВАЖНО!
                 }
+                // Если авторизован - переход по href
             });
         }
     }

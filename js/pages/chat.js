@@ -1,5 +1,8 @@
 /**
- * chat.js — логика страницы чата (ИСПРАВЛЕНО: XSS, Composition Events)
+ * chat.js — логика страницы чата (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+ * - XSS защита
+ * - Composition Events
+ * - Плавная загрузка
  */
 
 (function() {
@@ -9,15 +12,31 @@
     let currentChatId = null;
     let filesToSend = [];
     let unsubscribeMessages = null;
-    let isComposing = false; // Флаг для Composition Events
-    let isSending = false; // Флаг для предотвращения двойной отправки
+    let isComposing = false;
+    let isSending = false;
     
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
     
+    // ===== ЭЛЕМЕНТЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
+    const loadingSkeleton = document.getElementById('loadingSkeleton');
+    const chatContainer = document.getElementById('chatContainer');
+    const loadingText = document.getElementById('loadingText');
+    
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Chat page initializing');
+        
+        // Сразу показываем скелетон
+        if (loadingSkeleton) {
+            loadingSkeleton.style.display = 'flex';
+        }
+        if (chatContainer) {
+            chatContainer.style.display = 'none';
+        }
+        if (loadingText) {
+            loadingText.textContent = 'Загружаем чат...';
+        }
         
         // Получаем ID чата из URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -34,8 +53,9 @@
             if (state.isAuthenticated) {
                 await loadChat();
             } else {
-                Utils.showError('Необходимо авторизоваться');
-                setTimeout(() => window.location.href = '/HomeWork/', 2000);
+                // Не авторизован - редирект на главную с модалкой
+                sessionStorage.setItem('redirectAfterLogin', window.location.href);
+                window.location.href = '/HomeWork/';
             }
         });
         
@@ -49,6 +69,8 @@
             const user = Auth.getUser();
             if (!user) return;
             
+            if (loadingText) loadingText.textContent = 'Проверяем доступ...';
+            
             // Проверяем доступ
             const hasAccess = await Chat.checkAccess(currentChatId, user.uid);
             if (!hasAccess) {
@@ -56,6 +78,8 @@
                 setTimeout(() => window.history.back(), 2000);
                 return;
             }
+            
+            if (loadingText) loadingText.textContent = 'Загружаем данные чата...';
             
             // Загружаем данные чата
             const chatData = await Chat.getChat(currentChatId);
@@ -96,6 +120,8 @@
                 }
             }
             
+            if (loadingText) loadingText.textContent = 'Загружаем сообщения...';
+            
             // Подписываемся на сообщения
             if (unsubscribeMessages) {
                 unsubscribeMessages();
@@ -106,9 +132,28 @@
                 Chat.markAsRead(currentChatId);
             });
             
+            // Плавно показываем контент
+            setTimeout(() => {
+                if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+                if (chatContainer) chatContainer.style.display = 'flex';
+            }, 300);
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки чата:', error);
             Utils.showError('Не удалось загрузить чат');
+            
+            if (loadingSkeleton) {
+                loadingSkeleton.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
+                        <h5>Не удалось загрузить чат</h5>
+                        <p class="text-muted">Попробуйте обновить страницу</p>
+                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Обновить
+                        </button>
+                    </div>
+                `;
+            }
         }
     }
     
@@ -149,7 +194,6 @@
             if (msg.files && msg.files.length > 0) {
                 msg.files.forEach(file => {
                     if (file.type?.startsWith('image/')) {
-                        // ИСПРАВЛЕНО: экранируем URL
                         const safeUrl = Utils.escapeAttr(file.url);
                         content += `<img src="${safeUrl}" class="message-image" onclick="window.open('${safeUrl}')" loading="lazy">`;
                     } else {

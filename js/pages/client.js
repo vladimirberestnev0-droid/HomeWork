@@ -1,6 +1,6 @@
 /**
- * client.js — логика кабинета клиента (ИСПРАВЛЕНО: проверка чата)
- * Версия 3.4 с проверкой существования чата
+ * client.js — логика кабинета клиента (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+ * Версия 3.5 с плавной загрузкой и проверкой чата
  */
 
 (function() {
@@ -11,21 +11,31 @@
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
+    
+    // ===== ЭЛЕМЕНТЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
+    const loadingSkeleton = document.getElementById('loadingSkeleton');
+    const clientCabinet = document.getElementById('clientCabinet');
+    const loadingText = document.getElementById('loadingText');
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
         console.log('🚀 Client.js загружен');
         
+        // Сразу показываем скелетон
+        if (loadingSkeleton) {
+            loadingSkeleton.classList.remove('d-none');
+        }
+        if (clientCabinet) {
+            clientCabinet.classList.add('d-none');
+        }
+        
         Auth.onAuthChange(async (state) => {
             console.log('🔄 Auth state changed:', state);
-            
-            const authRequired = $('authRequired');
-            const clientCabinet = $('clientCabinet');
 
             if (state.isAuthenticated && state.userData) {
                 if (state.isClient) {
-                    authRequired?.classList.add('d-none');
-                    clientCabinet?.classList.remove('d-none');
+                    // Правильная роль - загружаем кабинет
+                    if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
                     
                     await loadClientProfile();
                     await loadClientOrders('all');
@@ -36,21 +46,28 @@
                     }
                     
                     checkUrlParams();
+                    
+                    // Плавно показываем контент
+                    setTimeout(() => {
+                        if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
+                        if (clientCabinet) clientCabinet.classList.remove('d-none');
+                    }, 300);
+                    
                 } else {
+                    // Неправильная роль - редирект на главную
                     Utils.showNotification('❌ Эта страница только для клиентов', 'warning');
                     setTimeout(() => {
-                        if (window.CONFIG) {
-                            window.location.href = CONFIG.getUrl('home');
-                        } else {
-                            window.location.href = '/';
-                        }
-                    }, 2000);
+                        window.location.href = '/HomeWork/';
+                    }, 1500);
                 }
             } else if (state.isAuthenticated && !state.userData) {
                 console.log('⏳ Ожидание данных...');
+                if (loadingText) loadingText.textContent = 'Загружаем данные...';
             } else {
-                authRequired?.classList.remove('d-none');
-                clientCabinet?.classList.add('d-none');
+                // Не авторизован - редирект на главную с модалкой
+                sessionStorage.setItem('redirectAfterLogin', window.location.href);
+                window.location.href = '/HomeWork/';
+                // AuthUI.showLoginModal() сработает после редиректа
             }
         });
 
@@ -399,12 +416,9 @@
                 }
             }
 
-            // ИСПРАВЛЕНО: универсальное закрытие модалки
             const modalEl = document.getElementById('reviewModal');
             if (modalEl) {
-                // Пробуем получить существующий экземпляр
                 let modal = bootstrap.Modal.getInstance(modalEl);
-                // Если нет - создаем новый
                 if (!modal) modal = new bootstrap.Modal(modalEl);
                 modal.hide();
             }
@@ -515,11 +529,9 @@
         
         const chatId = `chat_${orderId}_${partnerId}`;
         
-        // Показываем лоадер
         const loaderId = Loader?.show('Проверка чата...');
         
         try {
-            // Проверяем существование чата
             const chat = await Chat.getChat(chatId);
             
             if (!chat) {
@@ -527,14 +539,12 @@
                 return;
             }
             
-            // Сохраняем информацию о чате для быстрого доступа
             sessionStorage.setItem('currentChat', JSON.stringify({
                 chatId,
                 orderId,
                 partnerId
             }));
             
-            // Переходим в чат
             if (window.CONFIG) {
                 const chatUrl = CONFIG.getUrl('chat', { chatId });
                 if (window.Loader) {
@@ -543,7 +553,6 @@
                     window.location.href = chatUrl;
                 }
             } else {
-                // Fallback если CONFIG не загружен
                 const chatUrl = `/HomeWork/chat.html?chatId=${chatId}`;
                 if (window.Loader) {
                     Loader.navigateTo(chatUrl, 'Открываем чат...');

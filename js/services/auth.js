@@ -29,53 +29,57 @@ const Auth = (function() {
     }
 
     
-    // =====  ОБРАБОТКА ПОСТ-ЛОГИНА =====
+    // =====  ОБРАБОТКА ПОСТ-ЛОГИНА (ИСПРАВЛЕНО) =====
     async function handlePostLogin(retryCount = 0) {
-    // Максимум 3 попытки
-    if (retryCount >= 3) {
-        console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
-        return;
-    }
-    
-    // Проверяем необходимые условия
-    if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
-        return;
-    }
+        // Максимум 3 попытки
+        if (retryCount >= 3) {
+            console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
+            return;
+        }
+        
+        // Проверяем необходимые условия
+        if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
+            return;
+        }
 
-    try {
-        // Проверяем состояние сети Firebase
-        if (firebase.firestore) {
-            await firebase.firestore().enableNetwork().catch(() => {});
-        }
-        
-        // Небольшая задержка перед запросом (увеличивается с каждой попыткой)
-        await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
-        
-        const updateData = {
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        // Пробуем обновить lastLogin
-        if (window.DataService) {
-            await DataService.updateUser(currentUser.uid, updateData);
-        } else {
-            await db.collection('users').doc(currentUser.uid).update(updateData);
-        }
-        
-        console.log('✅ lastLogin обновлён');
-        
-    } catch (error) {
-        console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
-        
-        // Если ошибка связана с сетью или internal assertion - пробуем снова
-        if (error.message?.includes('offline') || 
-            error.message?.includes('INTERNAL ASSERTION') ||
-            error.code === 'unavailable') {
+        try {
+            // УВЕЛИЧЕННАЯ ЗАДЕРЖКА - даем Firebase стабилизироваться после входа
+            await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
             
-            console.log(`🔄 Повторная попытка через ${200 * (retryCount + 1)}ms...`);
-            setTimeout(() => handlePostLogin(retryCount + 1), 200 * (retryCount + 1));
+            // Проверяем состояние сети Firebase (без ошибок)
+            if (firebase.firestore) {
+                await firebase.firestore().enableNetwork().catch(() => {});
+            }
+            
+            // ИСПРАВЛЕНИЕ: используем set с merge вместо update
+            // Это более идемпотентная операция, которая не вызывает внутренних конфликтов Firebase
+            const updateData = {
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Используем set с merge: true для надежности
+            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+            
+            console.log('✅ lastLogin обновлён (merge)');
+            
+        } catch (error) {
+            // Игнорируем специфичную внутреннюю ошибку Firebase
+            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем):`, error.message);
+                return;
+            }
+            
+            console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
+            
+            // Повторяем только при сетевых ошибках
+            if (error.message?.includes('offline') || 
+                error.code === 'unavailable' || 
+                error.code === 'deadline-exceeded') {
+                
+                console.log(`🔄 Повторная попытка через ${500 * (retryCount + 1)}ms...`);
+                setTimeout(() => handlePostLogin(retryCount + 1), 500 * (retryCount + 1));
+            }
         }
-     }
     }
 
     function isSamePath(url) {
@@ -296,10 +300,10 @@ const Auth = (function() {
             notifyListeners();
             updateStore();
             
-            // ВАЖНО: вызываем handlePostLogin только после полной загрузки данных
+            // ВАЖНО: теперь handlePostLogin использует безопасный set с merge
             if (!wasLoggedIn && user && currentUserData) {
-                // Небольшая задержка, чтобы Firebase успел стабилизироваться
-                setTimeout(() => handlePostLogin(), 500);
+                // Даем время на полную стабилизацию Firebase
+                setTimeout(() => handlePostLogin(), 800);
             }
         });
 
