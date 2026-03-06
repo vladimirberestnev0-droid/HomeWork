@@ -14,7 +14,7 @@
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
-    
+
     // ===== ЭЛЕМЕНТЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
     const loadingSkeleton = document.getElementById('loadingSkeleton');
     const masterCabinet = document.getElementById('masterCabinet');
@@ -23,7 +23,7 @@
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
         console.log('🚀 Masters.js загружен');
-        
+
         // Сразу показываем скелетон
         if (loadingSkeleton) {
             loadingSkeleton.classList.remove('d-none');
@@ -31,31 +31,32 @@
         if (masterCabinet) {
             masterCabinet.classList.add('d-none');
         }
-        
+
         Auth.onAuthChange(async (state) => {
             console.log('🔄 Auth state changed:', state);
 
+            // Если пользователь авторизован и данные загружены
             if (state.isAuthenticated && state.userData) {
                 if (state.isMaster) {
                     // Правильная роль - загружаем кабинет
                     if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
-                    
+
                     await loadMasterProfile();
                     await loadMasterResponses('all');
                     await loadChats();
-                    
+
                     if (window.BottomNav) {
                         BottomNav.highlightActive();
                     }
-                    
+
                     checkUrlParams();
-                    
+
                     // Плавно показываем контент
                     setTimeout(() => {
                         if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
                         if (masterCabinet) masterCabinet.classList.remove('d-none');
                     }, 300);
-                    
+
                 } else {
                     // Неправильная роль - редирект на главную
                     Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
@@ -63,20 +64,25 @@
                         window.location.href = '/HomeWork/';
                     }, 1500);
                 }
-            } else if (state.isAuthenticated && !state.userData) {
+                return;
+            }
+
+            // Если пользователь авторизован, но данные ещё не загрузились
+            if (state.isAuthenticated && !state.userData) {
                 console.log('⏳ Ожидание данных...');
                 if (loadingText) loadingText.textContent = 'Загружаем данные...';
-            } else {
-                // Не авторизован - редирект на главную с модалкой
-                sessionStorage.setItem('redirectAfterLogin', window.location.href);
-                window.location.href = '/HomeWork/';
-                // AuthUI.showLoginModal() сработает после редиректа
+                return;
             }
+
+            // Если не авторизован - редирект на главную с модалкой
+            console.log('🚫 Не авторизован, редирект на главную');
+            sessionStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = '/HomeWork/';
         });
 
         initEventListeners();
         initReviewModal();
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const respondOrderId = urlParams.get('respond');
         if (respondOrderId) {
@@ -90,7 +96,7 @@
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
                 currentRating = rating;
-                
+
                 document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
                     if (i < rating) s.classList.add('active');
                     else s.classList.remove('active');
@@ -116,7 +122,7 @@
     function checkUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab');
-        
+
         if (tabParam === 'chats') {
             setTimeout(() => {
                 switchTab('chats');
@@ -132,31 +138,31 @@
 
             const nameEl = $('masterName');
             if (nameEl) nameEl.textContent = userData.name || 'Мастер';
-            
+
             const categoriesEl = $('masterCategories');
             if (categoriesEl) categoriesEl.textContent = userData.categories || 'Специалист';
-            
+
             const ratingEl = $('masterRating');
             if (ratingEl) ratingEl.textContent = (userData.rating || 0).toFixed(1);
-            
+
             const reviewsEl = $('masterReviews');
             if (reviewsEl) reviewsEl.textContent = userData.reviews || 0;
-            
+
             const stats = await Orders.getMasterStats(Auth.getUser()?.uid);
-            
+
             const completedEl = $('masterCompleted');
             if (completedEl) completedEl.textContent = stats.completed || 0;
-            
+
             const awaitingEl = $('masterAwaiting');
             if (awaitingEl) awaitingEl.textContent = stats.awaiting || 0;
-            
+
             const ratingDisplayEl = $('masterRatingDisplay');
             if (ratingDisplayEl) {
-                const stars = '★'.repeat(Math.floor(userData.rating || 0)) + 
-                             '☆'.repeat(5 - Math.floor(userData.rating || 0));
+                const stars = '★'.repeat(Math.floor(userData.rating || 0)) +
+                    '☆'.repeat(5 - Math.floor(userData.rating || 0));
                 ratingDisplayEl.innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
             }
-            
+
         } catch (error) {
             console.error('❌ Ошибка загрузки профиля:', error);
         }
@@ -165,7 +171,7 @@
     // ===== ЗАГРУЗКА ОТКЛИКОВ =====
     async function loadMasterResponses(filter = 'all') {
         currentFilter = filter;
-        
+
         const responsesList = $('responsesList');
         if (!responsesList) return;
 
@@ -177,7 +183,7 @@
 
             const responses = await Orders.getMasterResponses(user.uid);
             allResponses = responses;
-            
+
             let filtered = responses;
             if (filter === 'pending') {
                 filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.OPEN);
@@ -211,14 +217,14 @@
     function createResponseCard(item) {
         const order = item.order || {};
         const response = item.response || {};
-        
+
         const statusConfig = {
             'open': { class: 'bg-warning text-dark', text: '⏳ Ожидает', icon: 'fa-clock' },
             'in_progress': { class: 'bg-primary', text: '🔨 В работе', icon: 'fa-spinner fa-spin' },
             'awaiting_confirmation': { class: 'bg-info text-dark', text: '🟡 Ждёт подтверждения', icon: 'fa-hourglass-half' },
             'completed': { class: 'bg-success', text: '✅ Выполнен', icon: 'fa-check-circle' }
         };
-        
+
         const status = statusConfig[item.status] || statusConfig.open;
         const canComplete = item.status === Orders.ORDER_STATUS.IN_PROGRESS;
 
@@ -228,40 +234,40 @@
                     <h5 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
                     <span class="order-price">${Utils.formatMoney(response.price || order.price)}</span>
                 </div>
-                
+
                 <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
-                
+
                 ${order.photos?.length ? `
                     <div class="d-flex gap-2 mb-3">
-                        ${order.photos.slice(0, 3).map(url => 
+                        ${order.photos.slice(0, 3).map(url =>
                             `<img src="${url}" class="order-photo-thumb" onclick="window.open('${url}')">`
                         ).join('')}
                     </div>
                 ` : ''}
-                
+
                 <div class="order-meta">
                     <span><i class="fas fa-tag me-1"></i>${order.category || 'Без категории'}</span>
                     <span><i class="fas fa-map-marker-alt me-1"></i>${Utils.escapeHtml(order.address || '')}</span>
                     <span><i class="fas fa-user me-1"></i>${Utils.escapeHtml(order.clientName || 'Клиент')}</span>
                 </div>
-                
+
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <span class="badge ${status.class}">
                         <i class="fas ${status.icon} me-1"></i>${status.text}
                     </span>
-                    
-                    ${response.comment ? 
-                        `<small class="text-secondary"><i class="fas fa-comment me-1"></i>${Utils.escapeHtml(response.comment)}</small>` : 
+
+                    ${response.comment ?
+                        `<small class="text-secondary"><i class="fas fa-comment me-1"></i>${Utils.escapeHtml(response.comment)}</small>` :
                         ''}
                 </div>
-                
+
                 <div class="d-flex gap-2 mt-3 flex-wrap">
                     ${item.status === Orders.ORDER_STATUS.OPEN ? `
                         <button class="btn btn-sm btn-outline-secondary" disabled>
                             <i class="fas fa-hourglass-half me-1"></i>Ожидает ответа
                         </button>
                     ` : ''}
-                    
+
                     ${canComplete ? `
                         <button class="btn btn-sm btn-success" onclick="showCompleteModal('${item.orderId}', '${order.clientId}', '${Utils.escapeHtml(order.clientName || 'Клиент')}')">
                             <i class="fas fa-check-double me-1"></i>Завершить
@@ -270,7 +276,7 @@
                             <i class="fas fa-comment me-1"></i>Чат
                         </button>
                     ` : ''}
-                    
+
                     ${item.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION ? `
                         <button class="btn btn-sm btn-outline-warning" disabled>
                             <i class="fas fa-hourglass-half me-1"></i>Ожидает подтверждения клиента
@@ -279,7 +285,7 @@
                             <i class="fas fa-comment me-1"></i>Чат
                         </button>
                     ` : ''}
-                    
+
                     ${item.status === Orders.ORDER_STATUS.COMPLETED ? `
                         <button class="btn btn-sm btn-outline-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
                             <i class="fas fa-comment me-1"></i>Чат
@@ -289,7 +295,7 @@
                         </span>
                     ` : ''}
                 </div>
-                
+
                 ${item.status === Orders.ORDER_STATUS.COMPLETED && order.clientReview ? `
                     <div class="mt-3 p-3 bg-dark rounded">
                         <small class="text-secondary">Отзыв клиента:</small>
@@ -310,30 +316,30 @@
             Utils.showError('Необходимо авторизоваться');
             return;
         }
-        
+
         const chatId = `chat_${orderId}_${user.uid}`;
         console.log('📤 Открываем чат:', { orderId, clientId, chatId });
-        
+
         const loaderId = Loader?.show('Проверка чата...');
-        
+
         try {
             const chat = await Chat.getChat(chatId);
-            
+
             if (!chat) {
                 Utils.showError('Чат ещё не создан. Попробуйте позже.');
                 return;
             }
-            
+
             sessionStorage.setItem('currentChat', JSON.stringify({
                 chatId,
                 orderId,
                 partnerId: clientId
             }));
-            
+
             if (window.CONFIG) {
                 const chatUrl = CONFIG.getUrl('chat', { chatId });
                 console.log('📤 URL чата:', chatUrl);
-                
+
                 if (window.Loader) {
                     Loader.navigateTo(chatUrl, 'Открываем чат...');
                 } else {
@@ -342,7 +348,7 @@
             } else {
                 const chatUrl = `/HomeWork/chat.html?chatId=${chatId}`;
                 console.log('📤 URL чата (fallback):', chatUrl);
-                
+
                 if (window.Loader) {
                     Loader.navigateTo(chatUrl, 'Открываем чат...');
                 } else {
@@ -366,7 +372,7 @@
 
         const nameEl = $('reviewClientName');
         if (nameEl) nameEl.textContent = clientName || 'Клиент';
-        
+
         const textEl = $('reviewClientText');
         if (textEl) textEl.value = '';
 
@@ -392,7 +398,7 @@
             rating: currentRating,
             text: comment
         });
-        
+
         if (result && result.success) {
             const modalEl = $('reviewClientModal');
             if (modalEl) {
@@ -425,19 +431,19 @@
 
         const infoBlock = $('respondOrderInfo');
         if (infoBlock) infoBlock.classList.remove('d-none');
-        
+
         const titleEl = $('respondOrderTitle');
         if (titleEl) titleEl.textContent = orderTitle || 'Заказ';
-        
+
         const categoryEl = $('respondOrderCategory');
         if (categoryEl) categoryEl.textContent = orderCategory || 'Категория';
-        
+
         const priceEl = $('respondOrderPrice');
         if (priceEl) priceEl.textContent = Utils.formatMoney(orderPrice);
 
         const priceInput = $('responsePrice');
         if (priceInput) priceInput.value = '';
-        
+
         const commentInput = $('responseComment');
         if (commentInput) commentInput.value = '';
 
@@ -464,7 +470,7 @@
         }
 
         const result = await Orders.respondToOrder(currentOrderId, price, comment);
-        
+
         if (result && result.success) {
             const modalEl = $('respondModal');
             if (modalEl) {
@@ -488,7 +494,7 @@
             if (!user) return;
 
             const chats = await Chat.getUserChats(user.uid);
-            
+
             if (chats.length === 0) {
                 chatsList.innerHTML = `
                     <div class="text-center p-5">
@@ -515,7 +521,7 @@
                     </div>
                 </div>
             `).join('');
-            
+
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
             chatsList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
@@ -531,7 +537,7 @@
                 btn.classList.remove('active');
             }
         });
-        
+
         document.querySelectorAll('.tab-content').forEach(content => {
             if (content.id === tabName + 'Tab') {
                 content.classList.remove('d-none');
@@ -539,11 +545,11 @@
                 content.classList.add('d-none');
             }
         });
-        
+
         if (tabName === 'chats') {
             loadChats();
         }
-        
+
         if (window.CONFIG) {
             const url = new URL(window.location);
             url.searchParams.set('tab', tabName);
