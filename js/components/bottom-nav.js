@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (ПОДПИСАН НА STORE)
+// КОМПОНЕНТ НИЖНЕЙ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
 // ============================================
 const BottomNav = (function() {
     if (window.__BOTTOM_NAV_INITIALIZED__) return window.BottomNav;
@@ -38,7 +38,6 @@ const BottomNav = (function() {
                 }
             );
         } else {
-            // Fallback
             if (window.Auth) {
                 Auth.onAuthChange((state) => {
                     updateNavVisibility(state);
@@ -48,7 +47,6 @@ const BottomNav = (function() {
 
         setupListeners();
         
-        // Подписка на события непрочитанных
         document.addEventListener('unread-changed', (e) => {
             updateChatBadge(e.detail.count);
         });
@@ -221,8 +219,28 @@ const BottomNav = (function() {
         }, 200);
     }
 
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    function getAuthState() {
+        return window.AppStore ? AppStore.getState() : Auth.getAuthState();
+    }
+
+    function showAuthModal(message = 'Необходимо авторизоваться') {
+        // Сохраняем текущий URL для редиректа после входа
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        
+        // Показываем модалку
+        if (window.ModalManager) {
+            ModalManager.show('auth', 'login');
+        }
+        
+        // Показываем уведомление
+        Utils.showInfo(message);
+    }
+
+    // ОСНОВНАЯ ФУНКЦИЯ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
     function handleNavigation(page) {
-        const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
+        const state = getAuthState();
+        const isAuth = state.isAuthenticated;
 
         switch (page) {
             case 'home':
@@ -234,62 +252,55 @@ const BottomNav = (function() {
                 break;
 
             case 'chats':
-                if (state.isAuthenticated) {
-                    if (state.isClient) {
-                        navigateTo('/HomeWork/client.html?tab=chats', '💬 Загружаем чаты...');
-                    } else if (state.isMaster) {
-                        navigateTo('/HomeWork/masters.html?tab=chats', '💬 Загружаем чаты...');
-                    }
-                } else {
-                    ModalManager.show('auth', 'login');
+                if (!isAuth) {
+                    showAuthModal('Войдите, чтобы открыть чаты');
+                    return;
+                }
+                if (state.isClient) {
+                    navigateTo('/HomeWork/client.html?tab=chats', '💬 Загружаем чаты...');
+                } else if (state.isMaster) {
+                    navigateTo('/HomeWork/masters.html?tab=chats', '💬 Загружаем чаты...');
                 }
                 break;
 
             case 'create-order':
-                handleCreateOrder();
+                if (!isAuth) {
+                    showAuthModal('Войдите, чтобы создать заказ');
+                    return;
+                }
+                if (state.isClient) {
+                    navigateTo('/HomeWork/client.html?tab=new', '➕ Создание заказа...');
+                } else if (state.isMaster) {
+                    Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
+                    navigateTo('/HomeWork/?focus=search', '🔍 Поиск...');
+                }
                 break;
 
             case 'orders':
-                if (state.isAuthenticated) {
-                    if (state.isClient) {
-                        navigateTo('/HomeWork/client.html', '📋 Мои заказы...');
-                    } else if (state.isMaster) {
-                        navigateTo('/HomeWork/masters.html', '📋 Отклики...');
-                    }
-                } else {
-                    ModalManager.show('auth', 'login');
+                if (!isAuth) {
+                    showAuthModal('Войдите, чтобы просмотреть заказы');
+                    return;
+                }
+                if (state.isClient) {
+                    navigateTo('/HomeWork/client.html', '📋 Мои заказы...');
+                } else if (state.isMaster) {
+                    navigateTo('/HomeWork/masters.html', '📋 Отклики...');
                 }
                 break;
 
             case 'profile':
-                if (state.isAuthenticated) {
-                    if (state.isClient) {
-                        navigateTo('/HomeWork/client.html', '👤 Профиль...');
-                    } else if (state.isMaster) {
-                        navigateTo('/HomeWork/masters.html', '👤 Профиль...');
-                    } else if (state.isAdmin) {
-                        navigateTo('/HomeWork/admin.html', '👤 Админка...');
-                    }
-                } else {
-                    ModalManager.show('auth', 'login');
+                if (!isAuth) {
+                    showAuthModal('Войдите в профиль');
+                    return;
+                }
+                if (state.isClient) {
+                    navigateTo('/HomeWork/client.html', '👤 Профиль...');
+                } else if (state.isMaster) {
+                    navigateTo('/HomeWork/masters.html', '👤 Профиль...');
+                } else if (state.isAdmin) {
+                    navigateTo('/HomeWork/admin.html', '👤 Админка...');
                 }
                 break;
-        }
-    }
-
-    function handleCreateOrder() {
-        const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-
-        if (!state.isAuthenticated) {
-            ModalManager.show('auth', 'login');
-            return;
-        }
-
-        if (state.isClient) {
-            navigateTo('/HomeWork/client.html?tab=new', '➕ Создание заказа...');
-        } else if (state.isMaster) {
-            Utils.showInfo('🔍 Найдите заказ в поиске и откликнитесь');
-            navigateTo('/HomeWork/?focus=search', '🔍 Поиск...');
         }
     }
 
@@ -301,7 +312,6 @@ const BottomNav = (function() {
         }
     }
 
-    // Очистка при выгрузке
     function destroy() {
         if (unsubscribe) {
             unsubscribe();

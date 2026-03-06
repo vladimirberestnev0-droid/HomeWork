@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ ДЕСКТОПНОЙ НАВИГАЦИИ
+// КОМПОНЕНТ ДЕСКТОПНОЙ НАВИГАЦИИ (С ПРОВЕРКОЙ АВТОРИЗАЦИИ)
 // ============================================
 const DesktopNav = (function() {
     if (window.__DESKTOP_NAV_INITIALIZED__) return window.DesktopNav;
@@ -20,7 +20,6 @@ const DesktopNav = (function() {
 
         console.log('💻 Десктопная навигация инициализируется');
 
-        // Подписка на изменения в Store
         if (window.AppStore) {
             unsubscribe = AppStore.subscribe(
                 'desktop-nav',
@@ -30,7 +29,6 @@ const DesktopNav = (function() {
                 }
             );
         } else {
-            // Fallback
             if (window.Auth) {
                 Auth.onAuthChange((state) => {
                     updateNavVisibility(state);
@@ -48,7 +46,6 @@ const DesktopNav = (function() {
         const isClient = state.isClient || false;
         const userData = state.userData || {};
 
-        // Элементы навигации
         const authBtn = document.getElementById('desktopAuthBtn');
         const createBtn = document.getElementById('desktopCreateBtn');
         const chatsLink = document.getElementById('desktopNavChats');
@@ -73,10 +70,12 @@ const DesktopNav = (function() {
 
             if (mastersLink) {
                 mastersLink.style.display = 'flex';
+                mastersLink.href = '/HomeWork/masters.html';
             }
 
             if (ordersLink) {
                 ordersLink.innerHTML = '<i class="fas fa-clipboard-list"></i><span>Заказы</span>';
+                ordersLink.href = '/HomeWork/client.html';
             }
 
         } else if (isMaster) {
@@ -152,10 +151,53 @@ const DesktopNav = (function() {
         });
     }
 
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    function getAuthState() {
+        return window.AppStore ? AppStore.getState() : Auth.getAuthState();
+    }
+
+    function showAuthModal(message = 'Необходимо авторизоваться') {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        
+        if (window.ModalManager) {
+            ModalManager.show('auth', 'login');
+        }
+        
+        Utils.showInfo(message);
+    }
+
+    function handleAuthClick() {
+        const state = getAuthState();
+        
+        if (!state.isAuthenticated) {
+            showAuthModal();
+        } else {
+            if (state.isClient) {
+                window.location.href = '/HomeWork/client.html';
+            } else if (state.isMaster) {
+                window.location.href = '/HomeWork/masters.html';
+            }
+        }
+    }
+
+    function handleCreateClick() {
+        const state = getAuthState();
+        
+        if (!state.isAuthenticated) {
+            showAuthModal('Войдите, чтобы создать заказ');
+        } else if (state.isClient) {
+            window.location.href = '/HomeWork/client.html?tab=new';
+        } else {
+            Utils.showWarning('Мастера не могут создавать заказы');
+        }
+    }
+
     function setupListeners() {
         const authBtn = document.getElementById('desktopAuthBtn');
         const createBtn = document.getElementById('desktopCreateBtn');
         const chatsLink = document.getElementById('desktopNavChats');
+        const mastersLink = document.getElementById('desktopNavMasters');
+        const ordersLink = document.getElementById('desktopNavOrders');
 
         if (authBtn) {
             authBtn.addEventListener('click', (e) => {
@@ -165,17 +207,7 @@ const DesktopNav = (function() {
                 if (now - lastClickTime < CLICK_COOLDOWN) return;
                 lastClickTime = now;
 
-                const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-
-                if (!state.isAuthenticated) {
-                    ModalManager.show('auth', 'login');
-                } else {
-                    if (state.isClient) {
-                        window.location.href = '/HomeWork/client.html';
-                    } else if (state.isMaster) {
-                        window.location.href = '/HomeWork/masters.html';
-                    }
-                }
+                handleAuthClick();
             });
         }
 
@@ -187,28 +219,42 @@ const DesktopNav = (function() {
                 if (now - lastClickTime < CLICK_COOLDOWN) return;
                 lastClickTime = now;
 
-                const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-
-                if (!state.isAuthenticated) {
-                    ModalManager.show('auth', 'login');
-                    Utils.showInfo('Войдите, чтобы создать заказ');
-                } else if (state.isClient) {
-                    window.location.href = '/HomeWork/client.html?tab=new';
-                } else {
-                    Utils.showWarning('Мастера не могут создавать заказы');
-                }
+                handleCreateClick();
             });
         }
 
         if (chatsLink) {
             chatsLink.addEventListener('click', (e) => {
-                const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
+                const state = getAuthState();
                 
                 if (!state.isAuthenticated) {
                     e.preventDefault();
-                    ModalManager.show('auth', 'login');
-                    Utils.showInfo('Войдите, чтобы открыть чаты');
+                    showAuthModal('Войдите, чтобы открыть чаты');
                 }
+            });
+        }
+
+        if (mastersLink) {
+            mastersLink.addEventListener('click', (e) => {
+                const state = getAuthState();
+                
+                if (!state.isAuthenticated) {
+                    e.preventDefault();
+                    showAuthModal('Войдите, чтобы просмотреть мастеров');
+                }
+                // Если авторизован - переход по href
+            });
+        }
+
+        if (ordersLink) {
+            ordersLink.addEventListener('click', (e) => {
+                const state = getAuthState();
+                
+                if (!state.isAuthenticated) {
+                    e.preventDefault();
+                    showAuthModal('Войдите, чтобы просмотреть заказы');
+                }
+                // Если авторизован - переход по href
             });
         }
     }
