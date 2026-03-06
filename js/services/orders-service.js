@@ -326,129 +326,121 @@ const Orders = (function() {
         }
     }
 
-/// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
-async function getOpenOrders(filters = {}, options = {}) {
-    let attempt = 0;
-    let lastError = null;
-    
-    while (attempt < MAX_RETRIES) {
-        try {
-            console.log(`📦 Запрос к Firestore (попытка ${attempt + 1}/${MAX_RETRIES})...`);
-            
-            // Пытаемся получить из кэша только при первой попытке
-            if (attempt === 0) {
-                const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
+    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕНО) =====
+    async function getOpenOrders(filters = {}, options = {}) {
+        let attempt = 0;
+        let lastError = null;
+        
+        while (attempt < MAX_RETRIES) {
+            try {
+                console.log(`📦 Запрос к Firestore (попытка ${attempt + 1}/${MAX_RETRIES})...`);
                 
-                if (!options.force && !options.lastDoc && window.Cache) {
-                    const cached = Cache.get(cacheKey);
-                    if (cached) {
-                        console.log('📦 Заказы из кэша');
-                        return cached;
+                // Пытаемся получить из кэша только при первой попытке
+                if (attempt === 0) {
+                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
+                    
+                    if (!options.force && !options.lastDoc && window.Cache) {
+                        const cached = Cache.get(cacheKey);
+                        if (cached) {
+                            console.log('📦 Заказы из кэша');
+                            return cached;
+                        }
                     }
                 }
-            }
 
-            const constraints = [
-                { type: 'where', field: 'status', operator: '==', value: ORDER_STATUS.OPEN }
-            ];
-
-            if (filters.category && filters.category !== 'all') {
-                constraints.push({
-                    type: 'where',
-                    field: 'category',
-                    operator: '==',
-                    value: filters.category
-                });
-            }
-
-            const result = await DataService.getOrders(
-                { status: ORDER_STATUS.OPEN, category: filters.category },
-                {
-                    limit: options.limit || 20,
-                    lastDoc: options.lastDoc
-                }
-            );
-
-            let orders = result.items.map(order => ({
-                ...order,
-                status: normalizeStatus(order.status),
-                createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-            }));
-
-            // Фильтр по городу (на клиенте временно, пока индекс не заработает)
-            if (filters.city && filters.city !== 'all') {
-                const cityName = window.CITIES?.find(c => c.id === filters.city)?.name?.toLowerCase();
-                if (cityName) {
-                    orders = orders.filter(o => 
-                        o.city === cityName || 
-                        (o.address && o.address.toLowerCase().includes(cityName))
-                    );
-                }
-            }
-
-            // Фильтр по цене
-            if (filters.minPrice) {
-                orders = orders.filter(o => o.price >= filters.minPrice);
-            }
-            if (filters.maxPrice) {
-                orders = orders.filter(o => o.price <= filters.maxPrice);
-            }
-
-            // Сортировка
-            if (filters.sort === 'price_asc') {
-                orders.sort((a, b) => a.price - b.price);
-            } else if (filters.sort === 'price_desc') {
-                orders.sort((a, b) => b.price - a.price);
-            } else {
-                orders.sort((a, b) => b.createdAt - a.createdAt);
-            }
-
-            const finalResult = {
-                orders,
-                lastDoc: result.lastDoc,
-                hasMore: result.size === (options.limit || 20)
-            };
-
-            // Кэшируем только успешный результат
-            if (attempt === 0 && !options.lastDoc && window.Cache && finalResult.orders.length > 0) {
-                const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
-                Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
-            }
-
-            console.log(`📦 Загружено заказов: ${orders.length}`);
-            return finalResult;
-            
-        } catch (error) {
-            attempt++;
-            lastError = error;
-            
-            const isTargetIdError = error.code === 'failed-precondition' && 
-                                    error.message?.includes('Target ID already exists');
-            
-            if (isTargetIdError && attempt < MAX_RETRIES) {
-                const delay = RETRY_DELAY * attempt;
-                console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${delay}мс...`);
+                // СОЗДАЁМ ПРАВИЛЬНЫЙ ОБЪЕКТ ЗАПРОСА
+                const queryFilters = { status: ORDER_STATUS.OPEN };
                 
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
+                // Добавляем category ТОЛЬКО если она не 'all'
+                if (filters.category && filters.category !== 'all') {
+                    queryFilters.category = filters.category;
+                }
+                
+                // Добавляем город в запрос к Firestore
+                if (filters.city && filters.city !== 'all') {
+                    const cityObj = window.CITIES?.find(c => c.id === filters.city);
+                    if (cityObj) {
+                        queryFilters.city = cityObj.name.toLowerCase();
+                    }
+                }
+
+                const result = await DataService.getOrders(
+                    queryFilters,
+                    {
+                        limit: options.limit || 20,
+                        lastDoc: options.lastDoc
+                    }
+                );
+
+                let orders = result.items.map(order => ({
+                    ...order,
+                    status: normalizeStatus(order.status),
+                    createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+                }));
+
+                // Фильтр по цене (на клиенте, т.к. это диапазон)
+                if (filters.minPrice) {
+                    orders = orders.filter(o => o.price >= filters.minPrice);
+                }
+                if (filters.maxPrice) {
+                    orders = orders.filter(o => o.price <= filters.maxPrice);
+                }
+
+                // Сортировка
+                if (filters.sort === 'price_asc') {
+                    orders.sort((a, b) => a.price - b.price);
+                } else if (filters.sort === 'price_desc') {
+                    orders.sort((a, b) => b.price - a.price);
+                } else {
+                    orders.sort((a, b) => b.createdAt - a.createdAt);
+                }
+
+                const finalResult = {
+                    orders,
+                    lastDoc: result.lastDoc,
+                    hasMore: result.size === (options.limit || 20)
+                };
+
+                // Кэшируем только успешный результат
+                if (attempt === 0 && !options.lastDoc && window.Cache && finalResult.orders.length > 0) {
+                    const cacheKey = `open_orders_${JSON.stringify(filters)}_${options.limit || 20}_${options.lastDoc?.id || ''}`;
+                    Cache.set(cacheKey, finalResult, Cache.TTL.MEDIUM);
+                }
+
+                console.log(`📦 Загружено заказов: ${orders.length}`);
+                return finalResult;
+                
+            } catch (error) {
+                attempt++;
+                lastError = error;
+                
+                const isTargetIdError = error.code === 'failed-precondition' && 
+                                        error.message?.includes('Target ID already exists');
+                
+                if (isTargetIdError && attempt < MAX_RETRIES) {
+                    const delay = RETRY_DELAY * attempt;
+                    console.warn(`⚠️ Ошибка Target ID (попытка ${attempt}/${MAX_RETRIES}), повтор через ${delay}мс...`);
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                
+                // Выходим из цикла, но не возвращаем результат здесь
+                break;
             }
-            
-            // Выходим из цикла, но не возвращаем результат здесь
-            break;
         }
+        
+        // ЕСЛИ МЫ ЗДЕСЬ - ЗНАЧИТ ВСЕ ПОПЫТКИ ИСЧЕРПАНЫ
+        console.error('❌ Ошибка загрузки заказов после всех попыток:', lastError);
+        
+        // ВОЗВРАЩАЕМ ОШИБКУ, А НЕ ПРОСТО ПУСТОЙ МАССИВ
+        return { 
+            orders: [], 
+            lastDoc: null, 
+            hasMore: false,
+            error: lastError?.message || 'Не удалось загрузить заказы'
+        };
     }
-    
-    // ЕСЛИ МЫ ЗДЕСЬ - ЗНАЧИТ ВСЕ ПОПЫТКИ ИСЧЕРПАНЫ
-    console.error('❌ Ошибка загрузки заказов после всех попыток:', lastError);
-    
-    // ВОЗВРАЩАЕМ ОШИБКУ, А НЕ ПРОСТО ПУСТОЙ МАССИВ
-    return { 
-        orders: [], 
-        lastDoc: null, 
-        hasMore: false,
-        error: lastError?.message || 'Не удалось загрузить заказы'
-    };
-}
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all', options = {}) {
