@@ -1,11 +1,12 @@
 {
-  "name": "Свой Мастер 86 — ремонт и строительство",
-  "short_name": "Свой Мастер",
-  "description": "Маркетплейс строительных заказов. Найдите мастера в Нягани и ХМАО",
+  "name": "СВОЙ МАСТЕР 86",
+  "short_name": "СВОЙ86",
+  "description": "Мастера рядом в ХМАО",
   "start_url": "/HomeWork/",
   "display": "standalone",
-  "background_color": "#F9F7F5",
-  "theme_color": "#E67A4B",
+  "background_color": "#0B1E33",
+  "theme_color": "#2CD5C4",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/HomeWork/icons/icon-72x72.png",
