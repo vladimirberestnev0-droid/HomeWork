@@ -26,6 +26,20 @@
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
+    // ===== ОЧИСТКА КЭША FIRESTORE ПРИ ЗАГРУЗКЕ =====
+    async function clearFirestoreCache() {
+        try {
+            if (window.db && firebase.firestore) {
+                await firebase.firestore().disableNetwork();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await firebase.firestore().enableNetwork();
+                console.log('🧹 Кэш Firestore сброшен');
+            }
+        } catch (e) {
+            console.warn('⚠️ Ошибка сброса кэша:', e);
+        }
+    }
+
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Главная загружается...');
@@ -34,10 +48,13 @@
         
         await waitForFirebase();
         
+        // ОЧИЩАЕМ КЭШ ПРИ КАЖДОЙ ЗАГРУЗКЕ
+        await clearFirestoreCache();
+        
         renderCategoryFilters();
         renderCityFilter();
         
-        await loadOrdersWithRetry(true);
+        await loadOrders(true);
         await loadMasters();
         
         document.body.classList.add('loaded');
@@ -51,42 +68,6 @@
             renderCategoryFilters();
         }, 200));
     });
-
-    // ===== НОВАЯ ФУНКЦИЯ: загрузка с повторами =====
-    async function loadOrdersWithRetry(reset = true, retryCount = 0) {
-        // Ждём готовность Firebase
-        if (!window._firebaseInitialized || !window.db) {
-            console.log('⏳ Ожидание Firebase...');
-            setTimeout(() => loadOrdersWithRetry(reset, retryCount), 300);
-            return;
-        }
-        
-        try {
-            await loadOrders(reset);
-        } catch (error) {
-            console.error('❌ Ошибка загрузки:', error);
-            
-            if (error.message?.includes('Target ID') && retryCount < 3) {
-                console.log(`🔄 Повтор ${retryCount + 1}/3 через 1 сек...`);
-                setTimeout(() => loadOrdersWithRetry(reset, retryCount + 1), 1000);
-                return;
-            }
-            
-            const container = $('ordersList');
-            if (container && reset && displayedOrders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center p-5">
-                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
-                        <h5>Не удалось загрузить заказы</h5>
-                        <p class="text-muted">Попробуйте обновить страницу</p>
-                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
-                            <i class="fas fa-sync-alt me-2"></i>Обновить
-                        </button>
-                    </div>
-                `;
-            }
-        }
-    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ВЫПАДАЮЩЕГО СПИСКА =====
     function initCategoryDropdown() {
@@ -138,7 +119,7 @@
                 <i class="fas fa-chevron-down ms-1"></i>
             `;
             
-            loadOrdersWithRetry(true);
+            loadOrders(true);
         });
     }
 
@@ -246,7 +227,7 @@
             document.getElementById('responseComment').value = '';
             sessionStorage.removeItem('respond_order');
             
-            loadOrdersWithRetry(true);
+            loadOrders(true);
         } else {
             Utils.showNotification(result?.error || '❌ Ошибка при отправке', 'error');
         }
@@ -341,7 +322,7 @@
                 
                 filters.category = this.dataset.category;
                 selectedCategory = filters.category;
-                loadOrdersWithRetry(true);
+                loadOrders(true);
             });
         });
     }
@@ -353,7 +334,7 @@
                 this.classList.add('active');
                 
                 filters.city = this.dataset.city;
-                loadOrdersWithRetry(true);
+                loadOrders(true);
             });
         });
     }
@@ -436,7 +417,24 @@
             
         } catch (error) {
             console.error('❌ Ошибка загрузки заказов:', error);
-            throw error; // Пробрасываем для обработки в loadOrdersWithRetry
+            
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            if (loadMoreContainer) {
+                loadMoreContainer.remove();
+            }
+            
+            if (reset && displayedOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: var(--accent-urgent);"></i>
+                        <h5>Не удалось загрузить заказы</h5>
+                        <p class="text-muted">Попробуйте обновить страницу</p>
+                        <button class="btn btn-outline-secondary btn-lg mt-3" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Обновить
+                        </button>
+                    </div>
+                `;
+            }
         } finally {
             isLoading = false;
             console.log('🔄 Загрузка завершена');
@@ -801,7 +799,7 @@
     function initEventListeners() {
         document.getElementById('sortSelect')?.addEventListener('change', (e) => {
             filters.sort = e.target.value;
-            loadOrdersWithRetry(true);
+            loadOrders(true);
         });
 
         const createBtn = document.getElementById('createOrderBtn');
@@ -844,7 +842,7 @@
                 const query = e.target.value.trim().toLowerCase();
                 
                 if (query.length < 3) {
-                    loadOrdersWithRetry(true);
+                    loadOrders(true);
                     return;
                 }
                 
@@ -928,7 +926,7 @@
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) {
             console.log('📦 Страница из кэша браузера, обновляем данные');
-            loadOrdersWithRetry(true);
+            loadOrders(true);
             loadMasters(true);
         }
     });
