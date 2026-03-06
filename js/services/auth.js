@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕНО: порядок функций + проверка Cache)
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -28,20 +28,34 @@ const Auth = (function() {
         return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
 
-    // ===== ПОСЛЕЛОГИННЫЙ РЕДИРЕКТ (ПОДНЯТО НАВЕРХ) =====
-    function handlePostLogin() {
-        if (currentUser && window.db && navigator.onLine && !isHandlingBan) {
-            const updateData = {
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            if (window.DataService) {
-                DataService.updateUser(currentUser.uid, updateData).catch(() => {});
-            } else {
-                db.collection('users').doc(currentUser.uid).update(updateData).catch(() => {});
+    // ===== ИСПРАВЛЕНО: ПОСЛЕЛОГИННЫЙ РЕДИРЕКТ =====
+    async function handlePostLogin() {
+        // Обновляем lastLogin только если сеть есть и Firebase готов
+        if (currentUser && window.db && navigator.onLine && !isHandlingBan && firebase?.firestore) {
+            try {
+                // Проверяем, что сеть включена
+                await firebase.firestore().enableNetwork().catch(() => {});
+                
+                const updateData = {
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Используем DataService с обработкой ошибок
+                if (window.DataService) {
+                    await DataService.updateUser(currentUser.uid, updateData)
+                        .catch(err => console.warn('⚠️ Не удалось обновить lastLogin:', err.message));
+                } else {
+                    await db.collection('users').doc(currentUser.uid)
+                        .update(updateData)
+                        .catch(err => console.warn('⚠️ Не удалось обновить lastLogin:', err.message));
+                }
+            } catch (error) {
+                console.warn('⚠️ Ошибка при обновлении lastLogin:', error.message);
+                // Не фатально, продолжаем работу
             }
         }
         
+        // Редиректы
         const urlParams = new URLSearchParams(window.location.search);
         const redirect = urlParams.get('redirect');
         const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
@@ -287,7 +301,11 @@ const Auth = (function() {
             notifyListeners();
             updateStore();
             
-            if (!wasLoggedIn && user) handlePostLogin();
+            // ВАЖНО: вызываем handlePostLogin только после полной загрузки данных
+            if (!wasLoggedIn && user && currentUserData) {
+                // Небольшая задержка, чтобы Firebase успел стабилизироваться
+                setTimeout(() => handlePostLogin(), 500);
+            }
         });
 
         initTheme();
