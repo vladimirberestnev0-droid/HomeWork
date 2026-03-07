@@ -123,9 +123,8 @@ const Auth = (function() {
         console.log('🧹 SessionStorage очищен');
     }
 
-    // ===== ПРОВЕРКА БАНА (С ЗАЩИТОЙ ОТ ОШИБОК) =====
+    // ===== ПРОВЕРКА БАНА =====
     async function checkBanStatus(user) {
-        // Добавляем проверку онлайн
         if (!navigator.onLine) {
             console.log('📴 Офлайн, пропускаем проверку бана');
             return false;
@@ -171,7 +170,6 @@ const Auth = (function() {
             banCheckInProgress = false;
             return false;
         } catch (error) {
-            // Игнорируем внутренние ошибки Firebase при проверке бана
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
                 console.warn('⚠️ Внутренняя ошибка Firebase при проверке бана (игнорируем)');
                 banCheckInProgress = false;
@@ -184,7 +182,7 @@ const Auth = (function() {
         }
     }
 
-    // ===== ЗАГРУЗКА ДАННЫХ (С ЗАЩИТОЙ) =====
+    // ===== ЗАГРУЗКА ДАННЫХ =====
     async function loadUserData(uid) {
         if (window.Cache && typeof Cache.remove === 'function') {
             try {
@@ -364,7 +362,7 @@ const Auth = (function() {
                 dataLoadResolve = null;
             }
             
-            notifyListeners();
+            // ОБНОВЛЯЕМ СТОР И УСТАНАВЛИВАЕМ ФЛАГ ИНИЦИАЛИЗАЦИИ
             updateStore();
             
             if (!wasLoggedIn && user && currentUserData) {
@@ -395,6 +393,7 @@ const Auth = (function() {
         banCheckInProgress = false;
     }
 
+    // ===== ОБНОВЛЕНИЕ СТОРА (ИСПРАВЛЕНО) =====
     function updateStore() {
         if (window.AppStore) {
             AppStore.setState({
@@ -404,7 +403,8 @@ const Auth = (function() {
                 isMaster: isMaster(),
                 isClient: isClient(),
                 isAdmin: isAdmin(),
-                role: getRole()
+                role: getRole(),
+                isInitialized: true // ВАЖНО: стор готов к использованию!
             });
         }
     }

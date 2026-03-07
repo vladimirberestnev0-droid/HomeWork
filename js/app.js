@@ -17,7 +17,7 @@ const App = (function() {
             await initCore();
             initServices();
             initComponents();
-            await initPage();  // ← здесь теперь ждём данные
+            await initPage();  // теперь ждём инициализацию стора
             initGlobalHandlers();
 
             initialized = true;
@@ -114,25 +114,65 @@ const App = (function() {
         }
     }
 
+    // ===== НОВАЯ ФУНКЦИЯ: Ожидание инициализации стора =====
+    function waitForStoreInitialization(timeout = 3000) {
+        return new Promise((resolve) => {
+            // Если стора нет, сразу резолвим
+            if (!window.AppStore) {
+                resolve();
+                return;
+            }
+
+            // Если уже инициализирован
+            if (AppStore.getState().isInitialized) {
+                resolve();
+                return;
+            }
+
+            console.log('⏳ Ожидание инициализации стора...');
+            
+            // Подписываемся на изменение isInitialized
+            const unsubscribe = AppStore.subscribe('app-init-waiter', ['isInitialized'], (state) => {
+                if (state.isInitialized) {
+                    unsubscribe();
+                    console.log('✅ Стор инициализирован');
+                    resolve();
+                }
+            });
+
+            // Таймаут на случай ошибки
+            setTimeout(() => {
+                unsubscribe();
+                console.warn('⚠️ Таймаут ожидания стора');
+                resolve(); // Всё равно продолжаем
+            }, timeout);
+        });
+    }
+
     async function initPage() {
         console.log('📄 Инициализация страницы...');
+
+        // Ждём инициализацию стора (ЭЛЕГАНТНОЕ РЕШЕНИЕ)
+        await waitForStoreInitialization();
 
         const path = window.location.pathname;
         const page = getCurrentPage(path);
 
         if (page.requiresAuth) {
-            // 1. Проверяем, авторизован ли пользователь
+            // 1. Получаем состояние из стора (теперь оно точное!)
             const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
+            
             if (!state.isAuthenticated) {
+                console.log('🚫 Не авторизован, редирект на главную');
                 sessionStorage.setItem('redirectAfterLogin', window.location.href);
                 window.location.href = '/HomeWork/';
                 return;
             }
 
-            // 2. Ждём загрузки данных пользователя (роль, имя и т.д.)
+            // 2. Ждём загрузки данных пользователя (если нужно)
             if (window.Auth && typeof Auth.waitForData === 'function') {
                 try {
-                    await Auth.waitForData(5000); // максимум 5 секунд
+                    await Auth.waitForData(5000);
                 } catch (error) {
                     console.warn('⚠️ Ошибка ожидания данных:', error);
                 }
@@ -143,9 +183,12 @@ const App = (function() {
 
             // 4. Проверяем допустимую роль
             if (page.allowedRoles && !page.allowedRoles.includes(updatedState.role)) {
+                console.log('🚫 Доступ запрещён для роли:', updatedState.role);
                 showAccessDenied();
                 return;
             }
+            
+            console.log('✅ Доступ разрешён для роли:', updatedState.role);
         }
 
         // 5. Вызываем специфичную для страницы функцию загрузки данных (если есть)
@@ -235,7 +278,7 @@ const App = (function() {
             }
         });
 
-        // ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ ТЕМЫ (РАБОТАЕТ НА ВСЕХ СТРАНИЦАХ)
+        // ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ ТЕМЫ
         document.addEventListener('click', (e) => {
             const themeToggle = e.target.closest('#themeToggle');
             if (!themeToggle) return;
@@ -245,16 +288,13 @@ const App = (function() {
             if (window.Auth && typeof Auth.toggleTheme === 'function') {
                 Auth.toggleTheme();
             } else {
-                // Элегантный fallback
                 const isDark = document.body.classList.toggle('dark-theme');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 
-                // Обновляем иконку на всех кнопках темы
                 document.querySelectorAll('#themeToggle i').forEach(icon => {
                     icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
                 });
                 
-                // Уведомляем другие компоненты
                 document.dispatchEvent(new CustomEvent('theme-changed', { 
                     detail: { isDark } 
                 }));
@@ -280,7 +320,7 @@ const App = (function() {
             }
         });
 
-        // Сохраняем тему при загрузке (если есть в localStorage)
+        // Сохраняем тему при загрузке
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'light') {
             document.body.classList.remove('dark-theme');

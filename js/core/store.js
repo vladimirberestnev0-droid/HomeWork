@@ -15,6 +15,9 @@ const AppStore = (function() {
         isAdmin: false,
         role: null,
         
+        // Флаг готовности стора (НОВЫЙ)
+        isInitialized: false,
+        
         // Настройки
         city: localStorage.getItem('selectedCity') || 'nyagan',
         theme: localStorage.getItem('theme') || 'dark',
@@ -57,7 +60,7 @@ const AppStore = (function() {
         return path.split('.').reduce((current, key) => current?.[key], obj);
     }
 
-    // Обновление состояния (ИСПРАВЛЕНО: гонка состояний)
+    // Обновление состояния
     function setState(newState) {
         // Создаём глубокую копию старого состояния для сравнения
         const oldState = JSON.parse(JSON.stringify(state));
@@ -197,6 +200,7 @@ const AppStore = (function() {
             isClient: false,
             isAdmin: false,
             role: null,
+            isInitialized: false,
             city: localStorage.getItem('selectedCity') || 'nyagan',
             theme: localStorage.getItem('theme') || 'dark',
             filters: { category: 'all', sort: 'newest' },
