@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (СТАБИЛЬНАЯ ВЕРСИЯ)
+// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -15,7 +15,9 @@ const Auth = (function() {
     let isInitialized = false;
     let banCheckInProgress = false;
     
-    // ===== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ОЖИДАНИЯ ДАННЫХ =====
+    // ===== ПЕРЕМЕННЫЕ ДЛЯ ОЖИДАНИЯ =====
+    let initPromise = null;
+    let initResolve = null;
     let dataLoadPromise = null;
     let dataLoadResolve = null;
     
@@ -27,31 +29,46 @@ const Auth = (function() {
         ADMIN: 'admin'
     };
 
-    // ===== ВСПОМОГАТЕЛЬНЫЕ =====
-    function getAdminUid() {
-        return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
+    // ===== НОВЫЙ МЕТОД: Ожидание полной инициализации =====
+    function waitForInit(timeout = 5000) {
+        if (isInitialized) {
+            return Promise.resolve(getAuthState());
+        }
+        
+        if (!initPromise) {
+            initPromise = new Promise((resolve) => {
+                initResolve = resolve;
+                
+                setTimeout(() => {
+                    if (initResolve) {
+                        console.warn('⚠️ Таймаут инициализации Auth');
+                        initResolve(getAuthState());
+                        initPromise = null;
+                        initResolve = null;
+                    }
+                }, timeout);
+            });
+        }
+        
+        return initPromise;
     }
 
-    // ===== НОВЫЙ МЕТОД: Ожидание загрузки данных =====
+    // ===== МЕТОД: Ожидание загрузки данных =====
     function waitForData(timeout = 5000) {
-        // Если данные уже есть - возвращаем
         if (currentUserData) {
             return Promise.resolve(currentUserData);
         }
         
-        // Если нет пользователя - возвращаем null
         if (!currentUser) {
             return Promise.resolve(null);
         }
         
-        // Создаём промис если его нет
         if (!dataLoadPromise) {
             console.log('⏳ Ожидание загрузки данных пользователя...');
             
             dataLoadPromise = new Promise((resolve) => {
                 dataLoadResolve = resolve;
                 
-                // Таймаут на случай ошибки
                 setTimeout(() => {
                     if (dataLoadResolve) {
                         console.warn('⚠️ Таймаут ожидания данных');
@@ -66,42 +83,9 @@ const Auth = (function() {
         return dataLoadPromise;
     }
 
-    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА =====
-    async function handlePostLogin(retryCount = 0) {
-        if (retryCount >= 3) {
-            console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
-            return;
-        }
-        
-        if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
-            return;
-        }
-
-        try {
-            await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
-            
-            const updateData = {
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
-            console.log('✅ lastLogin обновлён (merge)');
-            
-        } catch (error) {
-            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn('⚠️ Внутренняя ошибка Firebase SDK (игнорируем)');
-                return;
-            }
-            console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
-            
-            if (error.message?.includes('offline') || 
-                error.code === 'unavailable' || 
-                error.code === 'deadline-exceeded') {
-                
-                console.log(`🔄 Повторная попытка через ${500 * (retryCount + 1)}ms...`);
-                setTimeout(() => handlePostLogin(retryCount + 1), 500 * (retryCount + 1));
-            }
-        }
+    // ===== ВСПОМОГАТЕЛЬНЫЕ =====
+    function getAdminUid() {
+        return window.ADMIN_UID || CONFIG?.app?.adminUid || "dUUNkDJbXmN3efOr3JPKOyBrc8M2";
     }
 
     function clearSessionStorage() {
@@ -124,6 +108,213 @@ const Auth = (function() {
         });
         
         console.log('🧹 SessionStorage очищен');
+    }
+
+    // ===== ЗАГРУЗКА ДАННЫХ =====
+    async function loadUserData(uid) {
+        console.log(`📦 Загрузка данных пользователя ${uid}...`);
+        
+        if (window.Cache && typeof Cache.remove === 'function') {
+            try {
+                Cache.remove(`user_${uid}`);
+            } catch (e) {
+                console.warn('⚠️ Ошибка очистки кэша:', e);
+            }
+        }
+        
+        try {
+            if (!window.db) throw new Error('Firestore не инициализирован');
+            
+            if (window.DataService) {
+                currentUserData = await DataService.getUser(uid);
+            } else {
+                const userDoc = await db.collection('users').doc(uid).get();
+                currentUserData = userDoc.exists ? userDoc.data() : null;
+            }
+            
+            if (!currentUserData) {
+                console.log('📦 Документ не найден, создаём...');
+                currentUserData = {
+                    name: 'Пользователь',
+                    email: currentUser?.email || '',
+                    role: ROLES.CLIENT,
+                    rating: 0,
+                    reviews: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    banned: false,
+                    settings: {
+                        notifications: true,
+                        theme: localStorage.getItem('theme') || 'dark'
+                    }
+                };
+                
+                if (window.DataService) {
+                    await DataService.createUser(uid, currentUserData);
+                } else {
+                    await db.collection('users').doc(uid).set(currentUserData);
+                }
+            }
+            
+            if (window.Cache && typeof Cache.set === 'function') {
+                try {
+                    Cache.set(`user_${uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
+                } catch (e) {
+                    console.warn('⚠️ Ошибка кэширования:', e);
+                }
+            }
+            
+            console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}, роль: ${currentUserData?.role}`);
+            
+            // Резолвим ожидание данных
+            if (dataLoadResolve) {
+                dataLoadResolve(currentUserData);
+                dataLoadPromise = null;
+                dataLoadResolve = null;
+            }
+            
+        } catch (error) {
+            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn('⚠️ Внутренняя ошибка Firebase при загрузке (игнорируем)');
+                if (dataLoadResolve) {
+                    dataLoadResolve(currentUserData || { role: 'unknown' });
+                    dataLoadPromise = null;
+                    dataLoadResolve = null;
+                }
+                return;
+            }
+            
+            console.error('❌ Ошибка загрузки данных:', error);
+            currentUserData = null;
+            
+            if (dataLoadResolve) {
+                dataLoadResolve(null);
+                dataLoadPromise = null;
+                dataLoadResolve = null;
+            }
+            
+            throw error;
+        }
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    function init() {
+        if (isInitialized) return;
+        
+        if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+        }
+        
+        if (!window.auth) {
+            initAttempts++;
+            if (initAttempts <= MAX_ATTEMPTS) {
+                console.log(`⏳ Ожидание Firebase Auth... попытка ${initAttempts}/${MAX_ATTEMPTS}`);
+                setTimeout(init, 1000);
+                return;
+            } else {
+                console.error('❌ Firebase Auth не загрузился');
+                isInitialized = true;
+                if (initResolve) {
+                    initResolve(getAuthState());
+                    initPromise = null;
+                    initResolve = null;
+                }
+                return;
+            }
+        }
+
+        unsubscribe = auth.onAuthStateChanged(async (user) => {
+            const wasLoggedIn = !!currentUser;
+            
+            console.log(`🔄 Auth state changed: ${user ? 'вошёл' : 'вышел'}`);
+            
+            const previousUser = currentUser;
+            currentUser = user;
+            
+            if (user) {
+                try {
+                    const isBanned = await checkBanStatus(user);
+                    if (isBanned) return;
+                    
+                    let cachedData = null;
+                    
+                    if (window.Cache && typeof Cache.get === 'function') {
+                        try {
+                            cachedData = Cache.get(`user_${user.uid}`);
+                        } catch (e) {
+                            console.warn('⚠️ Ошибка чтения кэша:', e);
+                        }
+                    }
+                    
+                    if (cachedData) {
+                        console.log(`📦 Данные из кэша: ${cachedData.name}`);
+                        currentUserData = cachedData;
+                        
+                        if (dataLoadResolve) {
+                            dataLoadResolve(currentUserData);
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
+                        
+                        setTimeout(() => loadUserData(user.uid), 1000);
+                    } else {
+                        await loadUserData(user.uid);
+                    }
+                    
+                    startBanCheck(user);
+                    
+                } catch (error) {
+                    if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                        console.warn('⚠️ Внутренняя ошибка Firebase (игнорируем), продолжаем работу');
+                        if (dataLoadResolve) {
+                            dataLoadResolve(currentUserData || { role: 'unknown' });
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
+                    } else {
+                        console.error('❌ Ошибка загрузки данных:', error);
+                        currentUserData = null;
+                        
+                        if (dataLoadResolve) {
+                            dataLoadResolve(null);
+                            dataLoadPromise = null;
+                            dataLoadResolve = null;
+                        }
+                    }
+                }
+            } else {
+                currentUserData = null;
+                stopBanCheck();
+                
+                if (previousUser && window.Cache && typeof Cache.remove === 'function') {
+                    try {
+                        Cache.remove(`user_${previousUser.uid}`);
+                    } catch (e) {
+                        console.warn('⚠️ Ошибка удаления из кэша:', e);
+                    }
+                }
+                
+                dataLoadPromise = null;
+                dataLoadResolve = null;
+            }
+            
+            isInitialized = true;
+            
+            updateStore();
+            notifyListeners();
+            
+            if (initResolve) {
+                initResolve(getAuthState());
+                initPromise = null;
+                initResolve = null;
+            }
+            
+            if (!wasLoggedIn && user && currentUserData) {
+                setTimeout(() => handlePostLogin(), 800);
+            }
+        });
+
+        initTheme();
     }
 
     // ===== ПРОВЕРКА БАНА =====
@@ -185,208 +376,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ЗАГРУЗКА ДАННЫХ =====
-    async function loadUserData(uid) {
-        console.log(`📦 Загрузка данных пользователя ${uid}...`);
-        
-        if (window.Cache && typeof Cache.remove === 'function') {
-            try {
-                Cache.remove(`user_${uid}`);
-            } catch (e) {
-                console.warn('⚠️ Ошибка очистки кэша:', e);
-            }
-        }
-        
-        try {
-            if (!window.db) throw new Error('Firestore не инициализирован');
-            
-            if (window.DataService) {
-                currentUserData = await DataService.getUser(uid);
-            } else {
-                const userDoc = await db.collection('users').doc(uid).get();
-                currentUserData = userDoc.exists ? userDoc.data() : null;
-            }
-            
-            if (!currentUserData) {
-                console.log('📦 Документ не найден, создаём...');
-                currentUserData = {
-                    name: 'Пользователь',
-                    email: currentUser?.email || '',
-                    role: ROLES.CLIENT,
-                    rating: 0,
-                    reviews: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    banned: false,
-                    settings: {
-                        notifications: true,
-                        theme: localStorage.getItem('theme') || 'dark'
-                    }
-                };
-                
-                if (window.DataService) {
-                    await DataService.createUser(uid, currentUserData);
-                } else {
-                    await db.collection('users').doc(uid).set(currentUserData);
-                }
-            }
-            
-            if (window.Cache && typeof Cache.set === 'function') {
-                try {
-                    Cache.set(`user_${uid}`, currentUserData, Cache.TTL?.LONG || 30 * 60 * 1000);
-                } catch (e) {
-                    console.warn('⚠️ Ошибка кэширования:', e);
-                }
-            }
-            
-            console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}, роль: ${currentUserData?.role}`);
-            
-            // ===== ВАЖНО: Резолвим ожидание данных =====
-            if (dataLoadResolve) {
-                dataLoadResolve(currentUserData);
-                dataLoadPromise = null;
-                dataLoadResolve = null;
-            }
-            
-        } catch (error) {
-            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn('⚠️ Внутренняя ошибка Firebase при загрузке (игнорируем)');
-                if (dataLoadResolve) {
-                    dataLoadResolve(currentUserData || { role: 'unknown' });
-                    dataLoadPromise = null;
-                    dataLoadResolve = null;
-                }
-                return;
-            }
-            
-            console.error('❌ Ошибка загрузки данных:', error);
-            currentUserData = null;
-            
-            if (dataLoadResolve) {
-                dataLoadResolve(null);
-                dataLoadPromise = null;
-                dataLoadResolve = null;
-            }
-            
-            throw error;
-        }
-    }
-
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    function init() {
-        if (isInitialized) return;
-        
-        if (unsubscribe) {
-            unsubscribe();
-            unsubscribe = null;
-        }
-        
-        if (!window.auth) {
-            initAttempts++;
-            if (initAttempts <= MAX_ATTEMPTS) {
-                console.log(`⏳ Ожидание Firebase Auth... попытка ${initAttempts}/${MAX_ATTEMPTS}`);
-                setTimeout(init, 1000);
-                return;
-            } else {
-                console.error('❌ Firebase Auth не загрузился');
-                if (window.Utils) Utils.showError('Ошибка авторизации. Обновите страницу.');
-                return;
-            }
-        }
-
-        unsubscribe = auth.onAuthStateChanged(async (user) => {
-            const wasLoggedIn = !!currentUser;
-            
-            console.log(`🔄 Auth state changed: ${user ? 'вошёл' : 'вышел'}`);
-            
-            const previousUser = currentUser;
-            currentUser = user;
-            
-            if (user) {
-                try {
-                    const isBanned = await checkBanStatus(user);
-                    if (isBanned) return;
-                    
-                    let cachedData = null;
-                    
-                    if (window.Cache && typeof Cache.get === 'function') {
-                        try {
-                            cachedData = Cache.get(`user_${user.uid}`);
-                        } catch (e) {
-                            console.warn('⚠️ Ошибка чтения кэша:', e);
-                        }
-                    }
-                    
-                    if (cachedData) {
-                        console.log(`📦 Данные из кэша: ${cachedData.name}`);
-                        currentUserData = cachedData;
-                        
-                        // Резолвим ожидание данных из кэша
-                        if (dataLoadResolve) {
-                            dataLoadResolve(currentUserData);
-                            dataLoadPromise = null;
-                            dataLoadResolve = null;
-                        }
-                        
-                        // Фоновое обновление
-                        setTimeout(() => loadUserData(user.uid), 1000);
-                    } else {
-                        await loadUserData(user.uid);
-                    }
-                    
-                    startBanCheck(user);
-                    
-                } catch (error) {
-                    if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                        console.warn('⚠️ Внутренняя ошибка Firebase (игнорируем), продолжаем работу');
-                        if (dataLoadResolve) {
-                            dataLoadResolve(currentUserData || { role: 'unknown' });
-                            dataLoadPromise = null;
-                            dataLoadResolve = null;
-                        }
-                    } else {
-                        console.error('❌ Ошибка загрузки данных:', error);
-                        currentUserData = null;
-                        
-                        if (dataLoadResolve) {
-                            dataLoadResolve(null);
-                            dataLoadPromise = null;
-                            dataLoadResolve = null;
-                        }
-                    }
-                }
-            } else {
-                currentUserData = null;
-                stopBanCheck();
-                
-                if (previousUser && window.Cache && typeof Cache.remove === 'function') {
-                    try {
-                        Cache.remove(`user_${previousUser.uid}`);
-                    } catch (e) {
-                        console.warn('⚠️ Ошибка удаления из кэша:', e);
-                    }
-                }
-                
-                // Сбрасываем ожидание данных
-                dataLoadPromise = null;
-                dataLoadResolve = null;
-            }
-            
-            // ===== ОБНОВЛЯЕМ СТОР =====
-            updateStore();
-            
-            // Уведомляем слушателей
-            notifyListeners();
-            
-            if (!wasLoggedIn && user && currentUserData) {
-                setTimeout(() => handlePostLogin(), 800);
-            }
-        });
-
-        initTheme();
-        isInitialized = true;
-        console.log('✅ Auth инициализирован');
-    }
-
     function startBanCheck(user) {
         if (banCheckInterval) clearInterval(banCheckInterval);
         
@@ -405,7 +394,45 @@ const Auth = (function() {
         banCheckInProgress = false;
     }
 
-    // ===== ОБНОВЛЕНИЕ СТОРА (С ФЛАГОМ ИНИЦИАЛИЗАЦИИ) =====
+    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА =====
+    async function handlePostLogin(retryCount = 0) {
+        if (retryCount >= 3) {
+            console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
+            return;
+        }
+        
+        if (!currentUser || !window.db || !navigator.onLine || isHandlingBan) {
+            return;
+        }
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
+            
+            const updateData = {
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+            console.log('✅ lastLogin обновлён (merge)');
+            
+        } catch (error) {
+            if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+                console.warn('⚠️ Внутренняя ошибка Firebase SDK (игнорируем)');
+                return;
+            }
+            console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
+            
+            if (error.message?.includes('offline') || 
+                error.code === 'unavailable' || 
+                error.code === 'deadline-exceeded') {
+                
+                console.log(`🔄 Повторная попытка через ${500 * (retryCount + 1)}ms...`);
+                setTimeout(() => handlePostLogin(retryCount + 1), 500 * (retryCount + 1));
+            }
+        }
+    }
+
+    // ===== ОБНОВЛЕНИЕ СТОРА =====
     function updateStore() {
         if (window.AppStore) {
             AppStore.setState({
@@ -417,11 +444,12 @@ const Auth = (function() {
                 isAdmin: isAdmin(),
                 role: getRole(),
                 roleDisplay: getRoleDisplay(),
-                isInitialized: true // ВАЖНО: стор готов!
+                isInitialized: true
             });
         }
     }
 
+    // ===== ГЕТТЕРЫ =====
     function getUser() { return currentUser; }
     function getUserData() { return currentUserData; }
     function isAuthenticated() { return !!currentUser; }
@@ -449,6 +477,81 @@ const Auth = (function() {
             [ROLES.ADMIN]: 'Администратор'
         };
         return names[role] || 'Пользователь';
+    }
+
+    // ===== ПОЛУЧЕНИЕ СОСТОЯНИЯ =====
+    function getAuthState() {
+        return {
+            user: currentUser,
+            userData: currentUserData,
+            isAuthenticated: !!currentUser,
+            isMaster: isMaster(),
+            isClient: isClient(),
+            isAdmin: isAdmin(),
+            role: getRole(),
+            roleDisplay: getRoleDisplay(),
+            dataLoaded: !!currentUserData,
+            isInitialized: isInitialized
+        };
+    }
+
+    // ===== СЛУШАТЕЛИ =====
+    function onAuthChange(callback) {
+        if (typeof callback === 'function') {
+            authListeners.push(callback);
+            
+            if (isInitialized) {
+                callback(getAuthState());
+            }
+            
+            return function unsubscribe() {
+                const index = authListeners.indexOf(callback);
+                if (index > -1) authListeners.splice(index, 1);
+            };
+        }
+        return null;
+    }
+
+    function notifyListeners() {
+        const state = getAuthState();
+        authListeners.forEach(listener => {
+            try { listener(state); } 
+            catch (error) { console.error('❌ Ошибка в listener:', error); }
+        });
+    }
+
+    // ===== ВХОД =====
+    async function login(email, password) {
+        const taskId = window.Loader?.show('Вход в систему...');
+        
+        try {
+            if (!window.auth || !window.db) throw new Error('Firebase не инициализирован');
+            if (!email || !password) throw new Error('Введите email и пароль');
+            
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            
+            const isBanned = await checkBanStatus(userCredential.user);
+            if (isBanned) return { success: false, error: 'Аккаунт заблокирован' };
+            
+            Utils.showSuccess('Добро пожаловать! С уважением, Берестневы🌳🌳');
+            
+            return { success: true };
+            
+        } catch (error) {
+            console.error('❌ Ошибка входа:', error);
+            
+            let errorMessage = 'Ошибка входа';
+            if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
+            else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
+            else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
+            else if (error.code === 'auth/too-many-requests') errorMessage = 'Слишком много попыток. Попробуйте позже';
+            else errorMessage = error.message;
+            
+            Utils.showError(errorMessage);
+            return { success: false, error: errorMessage };
+        } finally {
+            if (taskId) window.Loader?.hide(taskId);
+        }
     }
 
     // ===== РЕГИСТРАЦИЯ =====
@@ -516,40 +619,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ВХОД =====
-    async function login(email, password) {
-        const taskId = window.Loader?.show('Вход в систему...');
-        
-        try {
-            if (!window.auth || !window.db) throw new Error('Firebase не инициализирован');
-            if (!email || !password) throw new Error('Введите email и пароль');
-            
-            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-            
-            const isBanned = await checkBanStatus(userCredential.user);
-            if (isBanned) return { success: false, error: 'Аккаунт заблокирован' };
-            
-            Utils.showSuccess('Добро пожаловать! С уважением, Берестневы🌳🌳');
-            
-            return { success: true };
-            
-        } catch (error) {
-            console.error('❌ Ошибка входа:', error);
-            
-            let errorMessage = 'Ошибка входа';
-            if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
-            else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
-            else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
-            else if (error.code === 'auth/too-many-requests') errorMessage = 'Слишком много попыток. Попробуйте позже';
-            else errorMessage = error.message;
-            
-            Utils.showError(errorMessage);
-            return { success: false, error: errorMessage };
-        } finally {
-            if (taskId) window.Loader?.hide(taskId);
-        }
-    }
-
     // ===== ВЫХОД =====
     async function logout(silent = false) {
         const taskId = !silent ? window.Loader?.show('Выход...') : null;
@@ -589,41 +658,6 @@ const Auth = (function() {
         } finally {
             if (taskId) window.Loader?.hide(taskId);
         }
-    }
-
-    // ===== СЛУШАТЕЛИ =====
-    function onAuthChange(callback) {
-        if (typeof callback === 'function') {
-            authListeners.push(callback);
-            callback(getAuthState());
-            return function unsubscribe() {
-                const index = authListeners.indexOf(callback);
-                if (index > -1) authListeners.splice(index, 1);
-            };
-        }
-        return null;
-    }
-
-    function getAuthState() {
-        return {
-            user: currentUser,
-            userData: currentUserData,
-            isAuthenticated: !!currentUser,
-            isMaster: isMaster(),
-            isClient: isClient(),
-            isAdmin: isAdmin(),
-            role: getRole(),
-            roleDisplay: getRoleDisplay(),
-            dataLoaded: !!currentUserData
-        };
-    }
-
-    function notifyListeners() {
-        const state = getAuthState();
-        authListeners.forEach(listener => {
-            try { listener(state); } 
-            catch (error) { console.error('❌ Ошибка в listener:', error); }
-        });
     }
 
     // ===== ТЕМА =====
@@ -723,7 +757,12 @@ const Auth = (function() {
         currentUserData = null;
         dataLoadPromise = null;
         dataLoadResolve = null;
+        initPromise = null;
+        initResolve = null;
     }
+
+    // Запускаем инициализацию
+    setTimeout(init, 500);
 
     const api = {
         init,
@@ -743,7 +782,8 @@ const Auth = (function() {
         toggleTheme,
         updateProfile,
         cleanup,
-        waitForData,      // ← ВАЖНО: экспортируем метод
+        waitForInit,
+        waitForData,
         ROLES
     };
 
@@ -752,10 +792,5 @@ const Auth = (function() {
     
     return Object.freeze(api);
 })();
-
-// Автоинициализация
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => Auth.init(), 500);
-});
 
 window.Auth = Auth;

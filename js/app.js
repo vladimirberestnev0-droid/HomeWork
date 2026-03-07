@@ -1,5 +1,5 @@
 // ============================================
-// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ЭЛЕГАНТНАЯ ВЕРСИЯ
+// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ИСПРАВЛЕННАЯ ВЕРСИЯ
 // ============================================
 const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
@@ -17,7 +17,6 @@ const App = (function() {
             initServices();
             initComponents();
             
-            // Ждём авторизацию (НОВОЕ)
             await waitForAuth();
             
             await initPage();
@@ -44,7 +43,6 @@ const App = (function() {
         await waitForFirebase();
         if (window.DataService) await window.DataService.ready();
         
-        // ИСПРАВЛЕНО: Правильное ожидание стора без ошибки
         if (window.AppStore) {
             await waitForStore();
         }
@@ -73,10 +71,8 @@ const App = (function() {
         });
     }
 
-    // НОВОЕ: Отдельная функция ожидания стора
     function waitForStore(timeout = 3000) {
         return new Promise(resolve => {
-            // Если уже инициализирован
             if (AppStore.getState().isInitialized) {
                 console.log('✅ Стор уже инициализирован');
                 resolve();
@@ -85,68 +81,45 @@ const App = (function() {
 
             console.log('⏳ Ожидание инициализации стора...');
             
-            // СОЗДАЁМ unsubscribe ДО ПОДПИСКИ
-            let unsubscribe = null;
-            
-            // Подписываемся
-            unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], function handler(state) {
+            let unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], function handler(state) {
                 if (state.isInitialized) {
                     console.log('✅ Стор инициализирован');
-                    if (unsubscribe) {
-                        unsubscribe(); // Отписываемся
-                    }
+                    if (unsubscribe) unsubscribe();
                     resolve();
                 }
             });
 
-            // Таймаут
             setTimeout(() => {
-                if (unsubscribe) {
-                    unsubscribe(); // Отписываемся по таймауту
-                }
+                if (unsubscribe) unsubscribe();
                 console.warn('⚠️ Таймаут ожидания стора');
                 resolve();
             }, timeout);
         });
     }
 
-    // НОВОЕ: Ожидание авторизации
-    function waitForAuth(timeout = 3000) {
-        return new Promise(resolve => {
-            // Если уже есть пользователь
-            if (window.Auth && Auth.getUser()) {
-                console.log('✅ Пользователь уже есть');
-                resolve();
-                return;
-            }
+    async function waitForAuth(timeout = 5000) {
+        if (!window.Auth) {
+            console.warn('⚠️ Auth не найден');
+            return;
+        }
 
-            console.log('⏳ Ожидание авторизации...');
+        try {
+            const state = await Auth.waitForInit(timeout);
             
-            // СОЗДАЁМ unsubscribe ДО ПОДПИСКИ
-            let unsubscribe = null;
-            
-            // Подписываемся
-            if (window.Auth) {
-                unsubscribe = Auth.onAuthChange((state) => {
-                    if (state.isAuthenticated || state.user !== null) {
-                        console.log('✅ Пользователь авторизовался');
-                        if (unsubscribe) {
-                            unsubscribe(); // Отписываемся
-                        }
-                        resolve();
-                    }
-                });
-            }
+            console.log('📦 Auth инициализирован:', {
+                isAuthenticated: state.isAuthenticated,
+                role: state.role,
+                dataLoaded: state.dataLoaded
+            });
 
-            // Таймаут
-            setTimeout(() => {
-                if (unsubscribe) {
-                    unsubscribe(); // Отписываемся по таймауту
-                }
-                console.log('⏳ Таймаут ожидания авторизации');
-                resolve();
-            }, timeout);
-        });
+            if (state.isAuthenticated && !state.dataLoaded) {
+                console.log('⏳ Ожидание данных пользователя...');
+                await Auth.waitForData(timeout);
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Ошибка ожидания Auth:', error);
+        }
     }
 
     async function initPage() {
@@ -155,24 +128,21 @@ const App = (function() {
         const path = window.location.pathname;
         const page = getCurrentPage(path);
         
-        // Публичные страницы
         if (!page.requiresAuth) {
             console.log('🌍 Публичная страница');
             return;
         }
 
-        // Получаем состояние
-        const state = getAuthState();
+        const state = await getAuthStateWithRetry();
         
         console.log('👤 Состояние:', {
             path,
             page: page.name,
             isAuthenticated: state.isAuthenticated,
             role: state.role,
-            user: state.user?.email
+            dataLoaded: state.dataLoaded
         });
 
-        // Проверка авторизации
         if (!state.isAuthenticated) {
             console.log('🚫 Требуется авторизация, редирект');
             saveRedirect();
@@ -180,17 +150,16 @@ const App = (function() {
             return;
         }
 
-        // Ждём данные пользователя
-        if (window.Auth && typeof Auth.waitForData === 'function') {
-            try {
+        if (!state.dataLoaded) {
+            console.log('⏳ Данные ещё не загружены, ждём...');
+            
+            if (window.Auth) {
                 await Auth.waitForData(3000);
-            } catch (error) {
-                console.warn('⚠️ Ошибка загрузки данных:', error);
             }
         }
 
-        // Проверка роли
         const updatedState = getAuthState();
+        
         if (page.allowedRoles && !page.allowedRoles.includes(updatedState.role)) {
             console.log('🚫 Роль не разрешена:', updatedState.role);
             showAccessDenied();
@@ -199,16 +168,30 @@ const App = (function() {
 
         console.log('✅ Доступ разрешён для роли:', updatedState.role);
         
-        // Загружаем данные страницы
         if (window.loadPageData) {
             await window.loadPageData();
         }
     }
 
+    async function getAuthStateWithRetry(maxAttempts = 5) {
+        for (let i = 0; i < maxAttempts; i++) {
+            const state = getAuthState();
+            
+            if (!state.isAuthenticated || state.dataLoaded) {
+                return state;
+            }
+            
+            console.log(`⏳ Попытка ${i + 1}/${maxAttempts} получения данных...`);
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        return getAuthState();
+    }
+
     function getAuthState() {
         return window.AppStore 
             ? AppStore.getState() 
-            : (window.Auth ? Auth.getAuthState() : { isAuthenticated: false });
+            : (window.Auth ? Auth.getAuthState() : { isAuthenticated: false, dataLoaded: false });
     }
 
     function getCurrentPage(path) {
@@ -246,7 +229,6 @@ const App = (function() {
     }
 
     function initGlobalHandlers() {
-        // Перехват ссылок
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[href]');
             if (!link) return;
@@ -261,7 +243,6 @@ const App = (function() {
             window.Loader ? Loader.navigateTo(href) : window.location.href = href;
         });
 
-        // Тема
         document.addEventListener('click', (e) => {
             const themeToggle = e.target.closest('#themeToggle');
             if (!themeToggle) return;
@@ -270,7 +251,6 @@ const App = (function() {
             window.Auth?.toggleTheme?.() || fallbackThemeToggle();
         });
 
-        // Онлайн статус
         window.addEventListener('online', () => {
             window.AppStore?.setState({ isOnline: true });
             window.Utils?.showSuccess('🟢 Соединение восстановлено');

@@ -1,9 +1,10 @@
-/**
- * client.js — логика кабинета клиента (ЭЛЕГАНТНАЯ ВЕРСИЯ)
- * Версия 3.6 с ожиданием загрузки данных и плавной анимацией
- */
+// ============================================
+// ЛОГИКА КАБИНЕТА КЛИЕНТА (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ============================================
 
 (function() {
+    console.log('🚀 Client.js загружен');
+
     // ===== СОСТОЯНИЕ =====
     let currentFilter = 'all';
     let allOrders = [];
@@ -13,16 +14,14 @@
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // ===== ЭЛЕМЕНТЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
     const loadingSkeleton = document.getElementById('loadingSkeleton');
     const clientCabinet = document.getElementById('clientCabinet');
     const loadingText = document.getElementById('loadingText');
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 Client.js загружен');
+        console.log('📄 Страница клиента загружается...');
 
-        // Сразу показываем скелетон
         if (loadingSkeleton) {
             loadingSkeleton.classList.remove('d-none');
         }
@@ -30,28 +29,25 @@
             clientCabinet.classList.add('d-none');
         }
 
-        // Заполняем select категорий (используем глобальный ORDER_CATEGORIES)
         populateCategorySelect();
 
-        // Используем async IIFE для элегантной обработки
         (async () => {
             try {
-                // Ждём первичное состояние
-                const initialState = await new Promise(resolve => {
-                    Auth.onAuthChange(resolve);
-                });
+                if (!window.Auth) {
+                    throw new Error('Auth не загружен');
+                }
 
-                console.log('🔄 Начальное состояние:', initialState);
+                const initState = await Auth.waitForInit(5000);
+                
+                console.log('📦 Auth инициализирован:', initState);
 
-                // ШАГ 1: Проверка авторизации
-                if (!initialState.isAuthenticated) {
+                if (!initState.isAuthenticated) {
                     console.log('🚫 Не авторизован, редирект');
                     sessionStorage.setItem('redirectAfterLogin', window.location.href);
                     window.location.href = '/HomeWork/';
                     return;
                 }
 
-                // ШАГ 2: Ожидание загрузки данных
                 if (loadingText) loadingText.textContent = 'Загружаем данные пользователя...';
                 
                 const userData = await Auth.waitForData(5000);
@@ -60,9 +56,8 @@
                     throw new Error('Не удалось загрузить данные пользователя');
                 }
 
-                console.log('📦 Данные пользователя загружены:', userData);
+                console.log('📦 Данные пользователя:', userData);
 
-                // ШАГ 3: Проверка роли
                 if (userData.role !== USER_ROLE.CLIENT) {
                     console.log('❌ Неправильная роль:', userData.role);
                     Utils.showNotification('❌ Эта страница только для клиентов', 'warning');
@@ -70,12 +65,10 @@
                     return;
                 }
 
-                // ШАГ 4: Загрузка кабинета
                 console.log('✅ Клиент подтверждён, загружаем кабинет');
                 
                 if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
 
-                // Загружаем все данные параллельно
                 await Promise.all([
                     loadClientProfile(),
                     loadClientOrders('all'),
@@ -88,12 +81,10 @@
 
                 checkUrlParams();
 
-                // Плавно показываем контент
                 setTimeout(() => {
                     if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
                     if (clientCabinet) clientCabinet.classList.remove('d-none');
                     
-                    // Добавляем класс для анимации появления
                     document.querySelectorAll('.order-card-premium, .tab-content').forEach(el => {
                         el.classList.add('fade-in');
                     });
@@ -130,7 +121,6 @@
 
         let options = '<option value="">Выберите категорию</option>';
         
-        // Используем глобальный ORDER_CATEGORIES из constants.js
         ORDER_CATEGORIES.forEach(cat => {
             if (cat.id !== 'all') {
                 options += `<option value="${cat.id}">${cat.name}</option>`;
@@ -223,7 +213,7 @@
         }
     }
 
-    // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА =====
+        // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА =====
     async function handleCreateOrder() {
         const category = $('orderCategory')?.value;
         const title = $('orderTitle')?.value?.trim();
@@ -233,7 +223,6 @@
         const urgent = $('orderUrgent')?.checked;
         const photos = Array.from($('orderPhotos')?.files || []);
 
-        // Валидация
         if (!category) {
             Utils.showNotification('Выберите категорию', 'warning');
             return;
@@ -269,7 +258,6 @@
         if (result && result.success) {
             Utils.showSuccess('✅ Заказ создан!');
             
-            // Очищаем форму
             $('orderCategory').value = '';
             $('orderTitle').value = '';
             $('orderDescription').value = '';
@@ -279,7 +267,6 @@
             $('orderPhotos').value = '';
             $('photoPreview').innerHTML = '';
             
-            // Переключаемся на вкладку заказов
             switchTab('orders');
             await loadClientOrders('all');
         } else {
@@ -364,7 +351,6 @@
 
             ordersList.innerHTML = orders.map(order => createOrderCard(order)).join('');
             
-            // Анимация появления
             setTimeout(() => {
                 document.querySelectorAll('#ordersList .order-card').forEach((card, i) => {
                     card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
@@ -506,7 +492,7 @@
         `;
     }
 
-    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
+        // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
     window.showConfirmCompletionModal = function(orderId) {
         currentOrderForReview = orderId;
         
@@ -543,7 +529,6 @@
             `;
         }
         
-        // Добавляем обработчики для звёзд
         document.querySelectorAll('#confirmRatingStars .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
@@ -648,7 +633,6 @@
             `;
         }
         
-        // Добавляем обработчики для звёзд
         document.querySelectorAll('#reviewRatingStars .star').forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.dataset.rating);
@@ -805,7 +789,6 @@
                 </div>
             `}).join('');
             
-            // Обновляем бейдж непрочитанных
             const unreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
             const unreadBadge = document.getElementById('chatsUnread');
             if (unreadBadge) {
@@ -839,7 +822,6 @@
         contents.forEach(content => {
             if (content.id === tabName + 'Tab') {
                 content.classList.remove('d-none');
-                // Анимация появления
                 content.style.animation = 'fadeIn 0.3s ease';
             } else {
                 content.classList.add('d-none');
@@ -859,7 +841,6 @@
 
     // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
-        // Фильтры заказов
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
@@ -868,14 +849,12 @@
             });
         });
 
-        // Табы (заказы/чаты/создать)
         document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.addEventListener('click', function() {
                 switchTab(this.dataset.tab);
             });
         });
 
-        // Выход
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
@@ -884,21 +863,18 @@
             });
         }
 
-        // Тема
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', Auth.toggleTheme);
         }
     }
 
-    // ===== СЛУШАТЕЛЬ СОБЫТИЙ ОТ НАВИГАЦИИ =====
     document.addEventListener('switch-client-tab', (e) => {
         if (e.detail && e.detail.tab) {
             switchTab(e.detail.tab);
         }
     });
 
-    // ===== ЭКСПОРТ =====
     window.switchClientTab = switchTab;
     window.ClientCabinet = {
         switchTab: switchTab,
