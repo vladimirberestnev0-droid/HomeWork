@@ -322,66 +322,61 @@ const Orders = (function() {
         }
     }
 
-   /// ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
-async function getOpenOrders(filters = {}, options = {}) {
-    const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
-    
-    try {
-        console.log(`📦 Запрос #${requestId}...`);
-        
-        // Базовый фильтр - только открытые заказы
-        const dbFilters = { status: ORDER_STATUS.OPEN };
-        
-        // Добавляем категорию ТОЛЬКО если она не 'all'
-        if (filters.category && filters.category !== 'all') {
-            dbFilters.category = filters.category;
-            console.log(`📦 Фильтр по категории: ${filters.category}`);
-        }
-        
-        const result = await DataService.getOrders(
-            dbFilters,
-            {
-                limit: options.limit || 20,
-                lastDoc: options.lastDoc
+    // ===== ПОЛУЧЕНИЕ ОТКРЫТЫХ ЗАКАЗОВ (С АВТОПОВТОРОМ) =====
+    async function getOpenOrders(filters = {}, options = {}, retryCount = 0) {
+        const requestId = `req_${Date.now()}_${Math.random().toString(36)}`;
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 1000;
+
+        try {
+            console.log(`📦 Запрос #${requestId}...`);
+
+            const dbFilters = { status: ORDER_STATUS.OPEN };
+            if (filters.category && filters.category !== 'all') {
+                dbFilters.category = filters.category;
             }
-        );
 
-        let orders = result.items.map(order => ({
-            ...order,
-            status: normalizeStatus(order.status),
-            createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
-        }));
+            const result = await DataService.getOrders(
+                dbFilters,
+                {
+                    limit: options.limit || 20,
+                    lastDoc: options.lastDoc
+                }
+            );
 
-        // Клиентская фильтрация по цене
-        if (filters.minPrice) {
-            orders = orders.filter(o => o.price >= filters.minPrice);
+            let orders = result.items.map(order => ({
+                ...order,
+                status: normalizeStatus(order.status),
+                createdAt: order.createdAt?.toDate?.() || new Date(order.createdAt)
+            }));
+
+            // Фильтрация по цене
+            if (filters.minPrice) orders = orders.filter(o => o.price >= filters.minPrice);
+            if (filters.maxPrice) orders = orders.filter(o => o.price <= filters.maxPrice);
+
+            // Сортировка
+            if (filters.sort === 'price_asc') orders.sort((a, b) => a.price - b.price);
+            else if (filters.sort === 'price_desc') orders.sort((a, b) => b.price - a.price);
+            else orders.sort((a, b) => b.createdAt - a.createdAt);
+
+            console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
+
+            return {
+                orders,
+                lastDoc: result.lastDoc,
+                hasMore: result.size === (options.limit || 20)
+            };
+
+        } catch (error) {
+            if (error.message?.includes('Target ID already exists') && retryCount < MAX_RETRIES) {
+                console.warn(`⚠️ Ошибка кэша Firebase, повтор через ${RETRY_DELAY}ms (попытка ${retryCount + 1}/${MAX_RETRIES})`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+                return getOpenOrders(filters, options, retryCount + 1);
+            }
+            console.error(`❌ Ошибка:`, error.message);
+            throw error;
         }
-        if (filters.maxPrice) {
-            orders = orders.filter(o => o.price <= filters.maxPrice);
-        }
-
-        // Клиентская сортировка
-        if (filters.sort === 'price_asc') {
-            orders.sort((a, b) => a.price - b.price);
-        } else if (filters.sort === 'price_desc') {
-            orders.sort((a, b) => b.price - a.price);
-        } else {
-            orders.sort((a, b) => b.createdAt - a.createdAt);
-        }
-
-        console.log(`📦 Запрос #${requestId}: ${orders.length} заказов`);
-        
-        return {
-            orders,
-            lastDoc: result.lastDoc,
-            hasMore: result.size === (options.limit || 20)
-        };
-        
-    } catch (error) {
-        console.error(`❌ Ошибка:`, error.message);
-        throw error;
     }
-}
 
     // ===== ПОЛУЧЕНИЕ ЗАКАЗОВ КЛИЕНТА =====
     async function getClientOrders(clientId, filter = 'all', options = {}) {
