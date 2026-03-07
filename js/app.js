@@ -1,28 +1,32 @@
 // ============================================
-// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (УЛУЧШЕННЫЙ + ОЖИДАНИЕ ДАННЫХ)
+// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ЭЛЕГАНТНАЯ ВЕРСИЯ
 // ============================================
 const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
 
     let initialized = false;
+    let authCheckResolve = null;
+    const authCheckPromise = new Promise(resolve => { authCheckResolve = resolve; });
 
     async function init() {
         if (initialized) return;
 
         console.log('🚀 Запуск приложения...');
-        
         document.body.classList.add('app-loading');
 
         try {
             await initCore();
             initServices();
             initComponents();
-            await initPage();  // теперь ждём инициализацию стора
+            
+            // Критически важно: ЖДЁМ проверку авторизации
+            await waitForAuth();
+            
+            await initPage();
             initGlobalHandlers();
 
             initialized = true;
             console.log('✅ Приложение готово');
-
             document.body.classList.remove('app-loading');
             
             if (window.Loader) {
@@ -30,40 +34,36 @@ const App = (function() {
             }
 
         } catch (error) {
-            console.error('❌ Ошибка инициализации приложения:', error);
+            console.error('❌ Ошибка инициализации:', error);
             showFatalError('Не удалось загрузить приложение. Обновите страницу.');
         }
     }
 
     async function initCore() {
         console.log('📦 Инициализация ядра...');
-
-        if (!window.CONFIG) {
-            throw new Error('CONFIG не загружен');
-        }
-
+        if (!window.CONFIG) throw new Error('CONFIG не загружен');
+        
         await waitForFirebase();
-
-        if (window.DataService) {
-            console.log('📦 Ожидание DataService...');
-            await window.DataService.ready();
-        }
-
-        if (window.Cache) {
-            console.log('📦 Cache готов');
-        }
-
+        if (window.DataService) await window.DataService.ready();
+        
+        // Ждём начальную инициализацию стора
         if (window.AppStore) {
-            console.log('📦 AppStore готов');
-        }
-
-        if (window.Loader) {
-            console.log('📦 Loader готов');
+            await new Promise(resolve => {
+                if (AppStore.getState().isInitialized) {
+                    resolve();
+                } else {
+                    const unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], () => {
+                        unsubscribe();
+                        resolve();
+                    });
+                    setTimeout(resolve, 3000);
+                }
+            });
         }
     }
 
     function waitForFirebase() {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             if (window.db && window.auth) {
                 resolve();
                 return;
@@ -75,126 +75,105 @@ const App = (function() {
             };
 
             document.addEventListener('firebase-initialized', onFirebaseReady);
-
             setTimeout(() => {
                 document.removeEventListener('firebase-initialized', onFirebaseReady);
-                console.warn('⚠️ Таймаут ожидания Firebase');
+                console.warn('⚠️ Таймаут Firebase');
                 resolve();
             }, 5000);
         });
     }
 
-    function initServices() {
-        console.log('🔧 Инициализация сервисов...');
-        if (window.Auth) {
-            console.log('🔧 Auth готов');
-        }
-    }
-
-    function initComponents() {
-        console.log('🎨 Инициализация компонентов...');
-
-        if (window.ModalManager) {
-            ModalManager.init();
-        }
-
-        if (window.BottomNav) {
-            BottomNav.init();
-        }
-        if (window.DesktopNav) {
-            DesktopNav.init();
-        }
-
-        if (window.Notifications) {
-            Notifications.init();
-        }
-
-        if (window.AuthUI) {
-            AuthUI.init();
-        }
-    }
-
-    // ===== НОВАЯ ФУНКЦИЯ: Ожидание инициализации стора =====
-    function waitForStoreInitialization(timeout = 3000) {
-        return new Promise((resolve) => {
-            // Если стора нет, сразу резолвим
-            if (!window.AppStore) {
+    // ===== ЭЛЕГАНТНОЕ ОЖИДАНИЕ АВТОРИЗАЦИИ =====
+    function waitForAuth(timeout = 3000) {
+        return new Promise(resolve => {
+            // Если уже есть пользователь
+            if (window.Auth && Auth.getUser()) {
+                console.log('✅ Пользователь уже есть');
                 resolve();
                 return;
             }
 
-            // Если уже инициализирован
-            if (AppStore.getState().isInitialized) {
-                resolve();
-                return;
-            }
-
-            console.log('⏳ Ожидание инициализации стора...');
+            console.log('⏳ Ожидание авторизации...');
             
-            // Подписываемся на изменение isInitialized
-            const unsubscribe = AppStore.subscribe('app-init-waiter', ['isInitialized'], (state) => {
-                if (state.isInitialized) {
-                    unsubscribe();
-                    console.log('✅ Стор инициализирован');
+            // Подписываемся на изменения
+            const unsubscribe = window.Auth?.onAuthChange((state) => {
+                if (state.isAuthenticated || state.user !== null) {
+                    console.log('✅ Пользователь авторизовался');
+                    unsubscribe?.();
                     resolve();
                 }
             });
 
             // Таймаут на случай ошибки
             setTimeout(() => {
-                unsubscribe();
-                console.warn('⚠️ Таймаут ожидания стора');
-                resolve(); // Всё равно продолжаем
+                unsubscribe?.();
+                console.log('⏳ Таймаут ожидания авторизации, продолжаем...');
+                resolve();
             }, timeout);
         });
     }
 
+    // ===== ПРОВЕРКА СТРАНИЦЫ =====
     async function initPage() {
         console.log('📄 Инициализация страницы...');
 
-        // Ждём инициализацию стора (ЭЛЕГАНТНОЕ РЕШЕНИЕ)
-        await waitForStoreInitialization();
-
         const path = window.location.pathname;
         const page = getCurrentPage(path);
-
-        if (page.requiresAuth) {
-            // 1. Получаем состояние из стора (теперь оно точное!)
-            const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-            
-            if (!state.isAuthenticated) {
-                console.log('🚫 Не авторизован, редирект на главную');
-                sessionStorage.setItem('redirectAfterLogin', window.location.href);
-                window.location.href = '/HomeWork/';
-                return;
-            }
-
-            // 2. Ждём загрузки данных пользователя (если нужно)
-            if (window.Auth && typeof Auth.waitForData === 'function') {
-                try {
-                    await Auth.waitForData(5000);
-                } catch (error) {
-                    console.warn('⚠️ Ошибка ожидания данных:', error);
-                }
-            }
-
-            // 3. Получаем обновлённое состояние с загруженными данными
-            const updatedState = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-
-            // 4. Проверяем допустимую роль
-            if (page.allowedRoles && !page.allowedRoles.includes(updatedState.role)) {
-                console.log('🚫 Доступ запрещён для роли:', updatedState.role);
-                showAccessDenied();
-                return;
-            }
-            
-            console.log('✅ Доступ разрешён для роли:', updatedState.role);
+        
+        // Публичные страницы доступны всем
+        if (!page.requiresAuth) {
+            console.log('🌍 Публичная страница');
+            return;
         }
 
-        // 5. Вызываем специфичную для страницы функцию загрузки данных (если есть)
+        // Получаем актуальное состояние
+        const state = getAuthState();
+        
+        console.log('👤 Состояние:', {
+            path,
+            page: page.name,
+            isAuthenticated: state.isAuthenticated,
+            role: state.role,
+            user: state.user?.email
+        });
+
+        // Проверка авторизации
+        if (!state.isAuthenticated) {
+            console.log('🚫 Требуется авторизация, редирект');
+            saveRedirect();
+            window.location.href = '/HomeWork/';
+            return;
+        }
+
+        // Ждём данные пользователя
+        if (window.Auth && typeof Auth.waitForData === 'function') {
+            try {
+                await Auth.waitForData(5000);
+            } catch (error) {
+                console.warn('⚠️ Ошибка загрузки данных:', error);
+            }
+        }
+
+        // Проверка роли
+        const updatedState = getAuthState();
+        if (page.allowedRoles && !page.allowedRoles.includes(updatedState.role)) {
+            console.log('🚫 Роль не разрешена:', updatedState.role);
+            showAccessDenied();
+            return;
+        }
+
+        console.log('✅ Доступ разрешён для роли:', updatedState.role);
+        
+        // Загружаем данные страницы
         if (window.loadPageData) {
             await window.loadPageData();
         }
+    }
+
+    function getAuthState() {
+        return window.AppStore 
+            ? AppStore.getState() 
+            : (window.Auth ? Auth.getAuthState() : { isAuthenticated: false });
     }
 
     function getCurrentPage(path) {
@@ -206,19 +185,85 @@ const App = (function() {
             return { name: 'chat', requiresAuth: true, allowedRoles: ['client', 'master'] };
         } else if (path.includes('admin.html')) {
             return { name: 'admin', requiresAuth: true, allowedRoles: ['admin'] };
-        } else {
-            return { name: 'home', requiresAuth: false };
         }
+        return { name: 'home', requiresAuth: false };
+    }
+
+    function saveRedirect() {
+        try {
+            sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        } catch (e) {
+            console.warn('⚠️ Не удалось сохранить redirect');
+        }
+    }
+
+    // ===== ВСПОМОГАТЕЛЬНЫЕ =====
+    function initServices() {
+        console.log('🔧 Сервисы готовы');
+    }
+
+    function initComponents() {
+        console.log('🎨 Компоненты:');
+        window.ModalManager?.init();
+        window.BottomNav?.init();
+        window.DesktopNav?.init();
+        window.Notifications?.init();
+        window.AuthUI?.init();
+    }
+
+    function initGlobalHandlers() {
+        // Перехват ссылок
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            if (href?.startsWith('http') || href?.startsWith('#') || 
+                href?.startsWith('javascript:') || link.hasAttribute('data-no-loader')) {
+                return;
+            }
+
+            e.preventDefault();
+            window.Loader ? Loader.navigateTo(href) : window.location.href = href;
+        });
+
+        // Тема
+        document.addEventListener('click', (e) => {
+            const themeToggle = e.target.closest('#themeToggle');
+            if (!themeToggle) return;
+            
+            e.preventDefault();
+            window.Auth?.toggleTheme?.() || fallbackThemeToggle();
+        });
+
+        // Онлайн статус
+        window.addEventListener('online', () => {
+            window.AppStore?.setState({ isOnline: true });
+            window.Utils?.showSuccess('🟢 Соединение восстановлено');
+        });
+
+        window.addEventListener('offline', () => {
+            window.AppStore?.setState({ isOnline: false });
+            window.Utils?.showWarning('🔴 Нет соединения');
+        });
+    }
+
+    function fallbackThemeToggle() {
+        const isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.querySelectorAll('#themeToggle i').forEach(icon => {
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        });
     }
 
     function showAccessDenied() {
         document.body.innerHTML = `
-            <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--aurora-deep, #0B1E33); display:flex; align-items:center; justify-content:center; z-index:9999;">
+            <div style="position:fixed; top:0; left:0; right:0; bottom:0; background:#0B1E33; display:flex; align-items:center; justify-content:center; z-index:9999;">
                 <div style="text-align:center; padding:20px; max-width:400px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size:64px; color:var(--accent-urgent, #FF8A5C); margin-bottom:20px;"></i>
+                    <i class="fas fa-exclamation-triangle" style="font-size:64px; color:#FF8A5C; margin-bottom:20px;"></i>
                     <h3 style="color:white; font-size:24px; margin-bottom:15px;">Доступ запрещён</h3>
-                    <p style="color:var(--aurora-text-soft, #B0C4D9); margin-bottom:25px;">У вас нет прав для просмотра этой страницы</p>
-                    <a href="/HomeWork/" style="background:var(--aurora-accent, #2CD5C4); color:var(--aurora-deep, #0B1E33); padding:12px 30px; border-radius:60px; text-decoration:none; font-weight:700; display:inline-block;">
+                    <p style="color:#B0C4D9; margin-bottom:25px;">У вас нет прав для просмотра этой страницы</p>
+                    <a href="/HomeWork/" style="background:#2CD5C4; color:#0B1E33; padding:12px 30px; border-radius:60px; text-decoration:none; font-weight:700;">
                         <i class="fas fa-home me-2"></i>На главную
                     </a>
                 </div>
@@ -230,120 +275,23 @@ const App = (function() {
     function showFatalError(message) {
         const errorDiv = document.createElement('div');
         errorDiv.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #DC3545;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            z-index: 99999;
-            font-weight: 600;
+            position: fixed; top: 0; left: 0; right: 0;
+            background: #DC3545; color: white; padding: 15px;
+            text-align: center; z-index: 99999; font-weight: 600;
         `;
         errorDiv.innerHTML = `
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-            <button onclick="location.reload()" style="margin-left:15px; background:white; color:#DC3545; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">
+            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+            <button onclick="location.reload()" style="margin-left:15px; background:white; color:#DC3545; border:none; padding:5px 15px; border-radius:5px;">
                 <i class="fas fa-sync-alt me-2"></i>Обновить
             </button>
         `;
         document.body.prepend(errorDiv);
     }
 
-    // ===== ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ =====
-    function initGlobalHandlers() {
-        // Перехват ссылок для SPA-подобной навигации
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('a[href]');
-            if (!link) return;
-
-            const href = link.getAttribute('href');
-            
-            if (href.startsWith('http') || 
-                href.startsWith('#') || 
-                href.startsWith('javascript:') ||
-                href.startsWith('tel:') ||
-                href.startsWith('mailto:') ||
-                link.hasAttribute('data-no-loader')) {
-                return;
-            }
-
-            e.preventDefault();
-            
-            if (window.Loader) {
-                Loader.navigateTo(href);
-            } else {
-                window.location.href = href;
-            }
-        });
-
-        // ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ ТЕМЫ
-        document.addEventListener('click', (e) => {
-            const themeToggle = e.target.closest('#themeToggle');
-            if (!themeToggle) return;
-            
-            e.preventDefault();
-            
-            if (window.Auth && typeof Auth.toggleTheme === 'function') {
-                Auth.toggleTheme();
-            } else {
-                const isDark = document.body.classList.toggle('dark-theme');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                
-                document.querySelectorAll('#themeToggle i').forEach(icon => {
-                    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-                });
-                
-                document.dispatchEvent(new CustomEvent('theme-changed', { 
-                    detail: { isDark } 
-                }));
-            }
-        });
-
-        // Мониторинг онлайн статуса
-        window.addEventListener('online', () => {
-            if (window.AppStore) {
-                AppStore.setState({ isOnline: true });
-            }
-            if (window.Utils) {
-                Utils.showSuccess('🟢 Соединение восстановлено');
-            }
-        });
-
-        window.addEventListener('offline', () => {
-            if (window.AppStore) {
-                AppStore.setState({ isOnline: false });
-            }
-            if (window.Utils) {
-                Utils.showWarning('🔴 Нет соединения');
-            }
-        });
-
-        // Сохраняем тему при загрузке
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-            document.body.classList.remove('dark-theme');
-            document.querySelectorAll('#themeToggle i').forEach(icon => {
-                icon.className = 'fas fa-moon';
-            });
-        } else if (savedTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-            document.querySelectorAll('#themeToggle i').forEach(icon => {
-                icon.className = 'fas fa-sun';
-            });
-        }
-    }
-
-    const api = {
-        init
-    };
-
+    const api = { init };
     window.__APP_INITIALIZED__ = true;
-
     return Object.freeze(api);
 })();
 
 document.addEventListener('DOMContentLoaded', () => App.init());
-
 window.App = App;

@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (СТАБИЛЬНАЯ ВЕРСИЯ ДЛЯ GITHUB PAGES)
+// СЕРВИС АВТОРИЗАЦИИ (СТАБИЛЬНАЯ ВЕРСИЯ)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -14,6 +14,8 @@ const Auth = (function() {
     let isHandlingBan = false;
     let isInitialized = false;
     let banCheckInProgress = false;
+    
+    // ===== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ОЖИДАНИЯ ДАННЫХ =====
     let dataLoadPromise = null;
     let dataLoadResolve = null;
     
@@ -32,19 +34,30 @@ const Auth = (function() {
 
     // ===== НОВЫЙ МЕТОД: Ожидание загрузки данных =====
     function waitForData(timeout = 5000) {
+        // Если данные уже есть - возвращаем
         if (currentUserData) {
             return Promise.resolve(currentUserData);
         }
         
+        // Если нет пользователя - возвращаем null
+        if (!currentUser) {
+            return Promise.resolve(null);
+        }
+        
+        // Создаём промис если его нет
         if (!dataLoadPromise) {
-            dataLoadPromise = new Promise((resolve, reject) => {
+            console.log('⏳ Ожидание загрузки данных пользователя...');
+            
+            dataLoadPromise = new Promise((resolve) => {
                 dataLoadResolve = resolve;
                 
+                // Таймаут на случай ошибки
                 setTimeout(() => {
-                    if (!currentUserData) {
+                    if (dataLoadResolve) {
+                        console.warn('⚠️ Таймаут ожидания данных');
+                        dataLoadResolve(currentUserData);
                         dataLoadPromise = null;
                         dataLoadResolve = null;
-                        resolve(null);
                     }
                 }, timeout);
             });
@@ -76,7 +89,7 @@ const Auth = (function() {
             
         } catch (error) {
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем)`);
+                console.warn('⚠️ Внутренняя ошибка Firebase SDK (игнорируем)');
                 return;
             }
             console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
@@ -88,16 +101,6 @@ const Auth = (function() {
                 console.log(`🔄 Повторная попытка через ${500 * (retryCount + 1)}ms...`);
                 setTimeout(() => handlePostLogin(retryCount + 1), 500 * (retryCount + 1));
             }
-        }
-    }
-
-    function isSamePath(url) {
-        try {
-            const currentPath = window.location.pathname;
-            const urlPath = new URL(url, window.location.origin).pathname;
-            return currentPath === urlPath;
-        } catch (e) {
-            return false;
         }
     }
 
@@ -184,6 +187,8 @@ const Auth = (function() {
 
     // ===== ЗАГРУЗКА ДАННЫХ =====
     async function loadUserData(uid) {
+        console.log(`📦 Загрузка данных пользователя ${uid}...`);
+        
         if (window.Cache && typeof Cache.remove === 'function') {
             try {
                 Cache.remove(`user_${uid}`);
@@ -233,8 +238,9 @@ const Auth = (function() {
                 }
             }
             
-            console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}`);
+            console.log(`📦 Данные загружены: ${currentUserData?.name || 'Без имени'}, роль: ${currentUserData?.role}`);
             
+            // ===== ВАЖНО: Резолвим ожидание данных =====
             if (dataLoadResolve) {
                 dataLoadResolve(currentUserData);
                 dataLoadPromise = null;
@@ -314,12 +320,14 @@ const Auth = (function() {
                         console.log(`📦 Данные из кэша: ${cachedData.name}`);
                         currentUserData = cachedData;
                         
+                        // Резолвим ожидание данных из кэша
                         if (dataLoadResolve) {
                             dataLoadResolve(currentUserData);
                             dataLoadPromise = null;
                             dataLoadResolve = null;
                         }
                         
+                        // Фоновое обновление
                         setTimeout(() => loadUserData(user.uid), 1000);
                     } else {
                         await loadUserData(user.uid);
@@ -358,12 +366,16 @@ const Auth = (function() {
                     }
                 }
                 
+                // Сбрасываем ожидание данных
                 dataLoadPromise = null;
                 dataLoadResolve = null;
             }
             
-            // ОБНОВЛЯЕМ СТОР И УСТАНАВЛИВАЕМ ФЛАГ ИНИЦИАЛИЗАЦИИ
+            // ===== ОБНОВЛЯЕМ СТОР =====
             updateStore();
+            
+            // Уведомляем слушателей
+            notifyListeners();
             
             if (!wasLoggedIn && user && currentUserData) {
                 setTimeout(() => handlePostLogin(), 800);
@@ -393,7 +405,7 @@ const Auth = (function() {
         banCheckInProgress = false;
     }
 
-    // ===== ОБНОВЛЕНИЕ СТОРА (ИСПРАВЛЕНО) =====
+    // ===== ОБНОВЛЕНИЕ СТОРА (С ФЛАГОМ ИНИЦИАЛИЗАЦИИ) =====
     function updateStore() {
         if (window.AppStore) {
             AppStore.setState({
@@ -404,7 +416,8 @@ const Auth = (function() {
                 isClient: isClient(),
                 isAdmin: isAdmin(),
                 role: getRole(),
-                isInitialized: true // ВАЖНО: стор готов к использованию!
+                roleDisplay: getRoleDisplay(),
+                isInitialized: true // ВАЖНО: стор готов!
             });
         }
     }
@@ -730,16 +743,17 @@ const Auth = (function() {
         toggleTheme,
         updateProfile,
         cleanup,
-        waitForData,
+        waitForData,      // ← ВАЖНО: экспортируем метод
         ROLES
     };
 
     window.__AUTH_INITIALIZED__ = true;
-    console.log('✅ Auth сервис загружен (стабильная версия для GitHub Pages)');
+    console.log('✅ Auth сервис загружен');
     
     return Object.freeze(api);
 })();
 
+// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => Auth.init(), 500);
 });

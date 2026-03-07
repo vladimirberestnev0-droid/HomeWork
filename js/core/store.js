@@ -1,5 +1,5 @@
 // ============================================
-// ГЛОБАЛЬНЫЙ СТОР (ПАТТЕРН НАБЛЮДАТЕЛЬ) - ИСПРАВЛЕНО
+// ГЛОБАЛЬНЫЙ СТОР (ПАТТЕРН НАБЛЮДАТЕЛЬ)
 // ============================================
 const AppStore = (function() {
     if (window.__APP_STORE_INITIALIZED__) return window.AppStore;
@@ -14,15 +14,16 @@ const AppStore = (function() {
         isClient: false,
         isAdmin: false,
         role: null,
+        roleDisplay: 'Пользователь',
         
-        // Флаг готовности стора (НОВЫЙ)
+        // ===== ВАЖНО: Флаг готовности стора =====
         isInitialized: false,
         
         // Настройки
         city: localStorage.getItem('selectedCity') || 'nyagan',
         theme: localStorage.getItem('theme') || 'dark',
         
-        // Фильтры (сохраняем в sessionStorage)
+        // Фильтры
         filters: (() => {
             try {
                 return JSON.parse(sessionStorage.getItem('app_filters')) || {
@@ -200,7 +201,8 @@ const AppStore = (function() {
             isClient: false,
             isAdmin: false,
             role: null,
-            isInitialized: false,
+            roleDisplay: 'Пользователь',
+            isInitialized: false,  // ← Сбрасываем флаг
             city: localStorage.getItem('selectedCity') || 'nyagan',
             theme: localStorage.getItem('theme') || 'dark',
             filters: { category: 'all', sort: 'newest' },
@@ -235,7 +237,7 @@ const AppStore = (function() {
     };
 
     window.__APP_STORE_INITIALIZED__ = true;
-    console.log('✅ AppStore инициализирован (исправленная версия)');
+    console.log('✅ AppStore инициализирован');
     
     return Object.freeze(api);
 })();
