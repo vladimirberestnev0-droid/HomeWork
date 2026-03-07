@@ -1,5 +1,5 @@
 // ============================================
-// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (УЛУЧШЕННЫЙ)
+// ГЛАВНЫЙ ФАЙЛ ПРИЛОЖЕНИЯ - ОРКЕСТРАТОР (УЛУЧШЕННЫЙ + ОЖИДАНИЕ ДАННЫХ)
 // ============================================
 const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
@@ -17,7 +17,7 @@ const App = (function() {
             await initCore();
             initServices();
             initComponents();
-            await initPage();
+            await initPage();  // ← здесь теперь ждём данные
             initGlobalHandlers();
 
             initialized = true;
@@ -121,20 +121,34 @@ const App = (function() {
         const page = getCurrentPage(path);
 
         if (page.requiresAuth) {
+            // 1. Проверяем, авторизован ли пользователь
             const state = window.AppStore ? AppStore.getState() : Auth.getAuthState();
-            
             if (!state.isAuthenticated) {
                 sessionStorage.setItem('redirectAfterLogin', window.location.href);
                 window.location.href = '/HomeWork/';
                 return;
             }
 
-            if (page.allowedRoles && !page.allowedRoles.includes(state.role)) {
+            // 2. Ждём загрузки данных пользователя (роль, имя и т.д.)
+            if (window.Auth && typeof Auth.waitForData === 'function') {
+                try {
+                    await Auth.waitForData(5000); // максимум 5 секунд
+                } catch (error) {
+                    console.warn('⚠️ Ошибка ожидания данных:', error);
+                }
+            }
+
+            // 3. Получаем обновлённое состояние с загруженными данными
+            const updatedState = window.AppStore ? AppStore.getState() : Auth.getAuthState();
+
+            // 4. Проверяем допустимую роль
+            if (page.allowedRoles && !page.allowedRoles.includes(updatedState.role)) {
                 showAccessDenied();
                 return;
             }
         }
 
+        // 5. Вызываем специфичную для страницы функцию загрузки данных (если есть)
         if (window.loadPageData) {
             await window.loadPageData();
         }
