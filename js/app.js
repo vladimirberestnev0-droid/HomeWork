@@ -5,8 +5,6 @@ const App = (function() {
     if (window.__APP_INITIALIZED__) return window.App;
 
     let initialized = false;
-    let authCheckResolve = null;
-    const authCheckPromise = new Promise(resolve => { authCheckResolve = resolve; });
 
     async function init() {
         if (initialized) return;
@@ -19,7 +17,7 @@ const App = (function() {
             initServices();
             initComponents();
             
-            // Критически важно: ЖДЁМ проверку авторизации
+            // Ждём авторизацию (НОВОЕ)
             await waitForAuth();
             
             await initPage();
@@ -46,20 +44,12 @@ const App = (function() {
         await waitForFirebase();
         if (window.DataService) await window.DataService.ready();
         
-        // Ждём начальную инициализацию стора
+        // ИСПРАВЛЕНО: Правильное ожидание стора без ошибки
         if (window.AppStore) {
-            await new Promise(resolve => {
-                if (AppStore.getState().isInitialized) {
-                    resolve();
-                } else {
-                    const unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], () => {
-                        unsubscribe();
-                        resolve();
-                    });
-                    setTimeout(resolve, 3000);
-                }
-            });
+            await waitForStore();
         }
+
+        if (window.Loader) console.log('📦 Loader готов');
     }
 
     function waitForFirebase() {
@@ -83,7 +73,44 @@ const App = (function() {
         });
     }
 
-    // ===== ЭЛЕГАНТНОЕ ОЖИДАНИЕ АВТОРИЗАЦИИ =====
+    // НОВОЕ: Отдельная функция ожидания стора
+    function waitForStore(timeout = 3000) {
+        return new Promise(resolve => {
+            // Если уже инициализирован
+            if (AppStore.getState().isInitialized) {
+                console.log('✅ Стор уже инициализирован');
+                resolve();
+                return;
+            }
+
+            console.log('⏳ Ожидание инициализации стора...');
+            
+            // СОЗДАЁМ unsubscribe ДО ПОДПИСКИ
+            let unsubscribe = null;
+            
+            // Подписываемся
+            unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], function handler(state) {
+                if (state.isInitialized) {
+                    console.log('✅ Стор инициализирован');
+                    if (unsubscribe) {
+                        unsubscribe(); // Отписываемся
+                    }
+                    resolve();
+                }
+            });
+
+            // Таймаут
+            setTimeout(() => {
+                if (unsubscribe) {
+                    unsubscribe(); // Отписываемся по таймауту
+                }
+                console.warn('⚠️ Таймаут ожидания стора');
+                resolve();
+            }, timeout);
+        });
+    }
+
+    // НОВОЕ: Ожидание авторизации
     function waitForAuth(timeout = 3000) {
         return new Promise(resolve => {
             // Если уже есть пользователь
@@ -95,38 +122,46 @@ const App = (function() {
 
             console.log('⏳ Ожидание авторизации...');
             
-            // Подписываемся на изменения
-            const unsubscribe = window.Auth?.onAuthChange((state) => {
-                if (state.isAuthenticated || state.user !== null) {
-                    console.log('✅ Пользователь авторизовался');
-                    unsubscribe?.();
-                    resolve();
-                }
-            });
+            // СОЗДАЁМ unsubscribe ДО ПОДПИСКИ
+            let unsubscribe = null;
+            
+            // Подписываемся
+            if (window.Auth) {
+                unsubscribe = Auth.onAuthChange((state) => {
+                    if (state.isAuthenticated || state.user !== null) {
+                        console.log('✅ Пользователь авторизовался');
+                        if (unsubscribe) {
+                            unsubscribe(); // Отписываемся
+                        }
+                        resolve();
+                    }
+                });
+            }
 
-            // Таймаут на случай ошибки
+            // Таймаут
             setTimeout(() => {
-                unsubscribe?.();
-                console.log('⏳ Таймаут ожидания авторизации, продолжаем...');
+                if (unsubscribe) {
+                    unsubscribe(); // Отписываемся по таймауту
+                }
+                console.log('⏳ Таймаут ожидания авторизации');
                 resolve();
             }, timeout);
         });
     }
 
-    // ===== ПРОВЕРКА СТРАНИЦЫ =====
     async function initPage() {
         console.log('📄 Инициализация страницы...');
 
         const path = window.location.pathname;
         const page = getCurrentPage(path);
         
-        // Публичные страницы доступны всем
+        // Публичные страницы
         if (!page.requiresAuth) {
             console.log('🌍 Публичная страница');
             return;
         }
 
-        // Получаем актуальное состояние
+        // Получаем состояние
         const state = getAuthState();
         
         console.log('👤 Состояние:', {
@@ -148,7 +183,7 @@ const App = (function() {
         // Ждём данные пользователя
         if (window.Auth && typeof Auth.waitForData === 'function') {
             try {
-                await Auth.waitForData(5000);
+                await Auth.waitForData(3000);
             } catch (error) {
                 console.warn('⚠️ Ошибка загрузки данных:', error);
             }
@@ -197,7 +232,6 @@ const App = (function() {
         }
     }
 
-    // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     function initServices() {
         console.log('🔧 Сервисы готовы');
     }
