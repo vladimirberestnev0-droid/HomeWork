@@ -78,7 +78,7 @@
                 } else if (attempts >= maxAttempts) {
                     clearInterval(checkInterval);
                     console.warn('⚠️ Firebase не загрузился, но продолжаем...');
-                    resolve(); // Всё равно продолжаем
+                    resolve();
                 }
             }, 100);
         });
@@ -130,7 +130,6 @@
             dropdown.classList.add('d-none');
             isDropdownOpen = false;
             
-            // Обновляем текст кнопки
             const categoryData = ORDER_CATEGORIES.find(c => c.id === selectedCategory) || ORDER_CATEGORIES[0];
             if (categoryLabel) {
                 categoryLabel.innerHTML = `
@@ -140,7 +139,6 @@
                 `;
             }
             
-            // Сбрасываем пагинацию и загружаем
             lastDoc = null;
             allOrders = [];
             displayedOrders = [];
@@ -458,7 +456,6 @@
             container.insertAdjacentHTML('beforeend', newOrdersHtml);
         }
 
-        // Анимация появления
         setTimeout(() => {
             const newCards = reset 
                 ? container.querySelectorAll('.order-card')
@@ -480,7 +477,6 @@
         }
     }
 
-    // ===== ОБНОВЛЕНИЕ СЧЁТЧИКА ЗАКАЗОВ =====
     function updateOrdersCount() {
         const countEl = $('ordersCount');
         if (countEl) {
@@ -488,7 +484,6 @@
         }
     }
 
-    // ===== ПОКАЗ КНОПКИ "ЗАГРУЗИТЬ ЕЩЁ" =====
     function showLoadMoreButton(container) {
         let loadMoreContainer = document.getElementById('loadMoreContainer');
         
@@ -543,7 +538,6 @@
         }
     }
 
-    // ===== ПУСТОЕ СОСТОЯНИЕ =====
     function showEmptyState(container) {
         container.innerHTML = `
             <div class="text-center p-5 fade-in">
@@ -658,7 +652,6 @@
         const container = $('mastersList');
         if (!container) return;
 
-        // Показываем скелетон
         container.innerHTML = Array(4).fill(0).map(() => `
             <div class="master-card skeleton">
                 <div class="master-avatar skeleton-circle"></div>
@@ -668,7 +661,6 @@
         `).join('');
 
         try {
-            // Сначала пробуем из кэша
             const cachedMasters = Utils.getPersistentCache(MASTERS_CACHE_KEY);
             if (cachedMasters && cachedMasters.length > 0 && !forceRefresh) {
                 console.log('📦 Мастера из кэша');
@@ -676,9 +668,7 @@
                 return;
             }
 
-            // Если нет в кэше или нужно обновить - грузим из Firebase
             if (!navigator.onLine) {
-                // Если офлайн и нет кэша - показываем демо
                 const masters = getDemoMasters();
                 renderMasters(masters);
                 return;
@@ -720,7 +710,6 @@
                 masters = getDemoMasters();
             }
             
-            // Сохраняем в кэш
             Utils.setPersistentCache(MASTERS_CACHE_KEY, masters, MASTERS_CACHE_TTL);
             
             renderMasters(masters);
@@ -728,7 +717,6 @@
         } catch (error) {
             console.error('❌ Ошибка загрузки мастеров:', error);
             
-            // При ошибке показываем демо
             const masters = getDemoMasters();
             renderMasters(masters);
         }
@@ -740,7 +728,6 @@
         
         container.innerHTML = masters.map(master => createMasterCard(master)).join('');
         
-        // Анимация появления
         setTimeout(() => {
             container.querySelectorAll('.master-card').forEach((card, i) => {
                 card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
@@ -749,7 +736,6 @@
         }, 100);
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ МАСТЕРА =====
     function createMasterCard(master) {
         const rating = master.rating || 5;
         const fullStars = Math.floor(rating);
@@ -780,7 +766,6 @@
         `;
     }
 
-    // ===== ОБРАБОТКА КЛИКА ПО МАСТЕРУ =====
     window.handleMasterClick = function(masterId) {
         if (!Auth.isAuthenticated()) {
             AuthUI.showLoginModal();

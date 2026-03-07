@@ -44,7 +44,6 @@ const Auth = (function() {
                     if (!currentUserData) {
                         dataLoadPromise = null;
                         dataLoadResolve = null;
-                        // Не reject, а resolve с null - мягкая обработка
                         resolve(null);
                     }
                 }, timeout);
@@ -54,7 +53,7 @@ const Auth = (function() {
         return dataLoadPromise;
     }
 
-    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА (ИСПРАВЛЕНО) =====
+    // ===== ОБРАБОТКА ПОСТ-ЛОГИНА =====
     async function handlePostLogin(retryCount = 0) {
         if (retryCount >= 3) {
             console.log('⚠️ Не удалось обновить lastLogin после 3 попыток');
@@ -68,26 +67,18 @@ const Auth = (function() {
         try {
             await new Promise(resolve => setTimeout(resolve, 800 * (retryCount + 1)));
             
-            // НЕ включаем сеть принудительно - это вызывает ошибки
-            // if (firebase.firestore) {
-            //     await firebase.firestore().enableNetwork().catch(() => {});
-            // }
-            
             const updateData = {
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             };
             
             await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
-            
             console.log('✅ lastLogin обновлён (merge)');
             
         } catch (error) {
-            // Игнорируем специфичную внутреннюю ошибку Firebase
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
-                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем) - это НЕ проблема приложения`);
+                console.warn(`⚠️ Внутренняя ошибка Firebase SDK (игнорируем)`);
                 return;
             }
-            
             console.warn(`⚠️ Ошибка обновления lastLogin (попытка ${retryCount + 1}):`, error.message);
             
             if (error.message?.includes('offline') || 
@@ -110,7 +101,6 @@ const Auth = (function() {
         }
     }
 
-    // Очистка sessionStorage при выходе
     function clearSessionStorage() {
         const keysToRemove = [
             'respond_order',
@@ -135,6 +125,12 @@ const Auth = (function() {
 
     // ===== ПРОВЕРКА БАНА (С ЗАЩИТОЙ ОТ ОШИБОК) =====
     async function checkBanStatus(user) {
+        // Добавляем проверку онлайн
+        if (!navigator.onLine) {
+            console.log('📴 Офлайн, пропускаем проверку бана');
+            return false;
+        }
+
         if (banCheckInProgress) {
             console.log('⏳ Проверка бана уже выполняется, пропускаем');
             return false;
@@ -248,7 +244,6 @@ const Auth = (function() {
             }
             
         } catch (error) {
-            // Игнорируем внутренние ошибки Firebase
             if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
                 console.warn('⚠️ Внутренняя ошибка Firebase при загрузке (игнорируем)');
                 if (dataLoadResolve) {
@@ -335,7 +330,6 @@ const Auth = (function() {
                     startBanCheck(user);
                     
                 } catch (error) {
-                    // Даже при ошибке пытаемся продолжить
                     if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
                         console.warn('⚠️ Внутренняя ошибка Firebase (игнорируем), продолжаем работу');
                         if (dataLoadResolve) {
@@ -401,7 +395,6 @@ const Auth = (function() {
         banCheckInProgress = false;
     }
 
-    // ===== ОБНОВЛЕНИЕ STORE =====
     function updateStore() {
         if (window.AppStore) {
             AppStore.setState({
@@ -416,7 +409,6 @@ const Auth = (function() {
         }
     }
 
-    // ===== ГЕТТЕРЫ =====
     function getUser() { return currentUser; }
     function getUserData() { return currentUserData; }
     function isAuthenticated() { return !!currentUser; }
@@ -748,7 +740,6 @@ const Auth = (function() {
     return Object.freeze(api);
 })();
 
-// Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => Auth.init(), 500);
 });

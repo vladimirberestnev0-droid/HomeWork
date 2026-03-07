@@ -1,23 +1,17 @@
 /**
- * firebase.js - Инициализация Firebase (ФИНАЛЬНАЯ ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
+ * firebase.js - Инициализация Firebase (СТАБИЛЬНАЯ ВЕРСИЯ ДЛЯ GITHUB PAGES)
  * - Инициализируется только один раз за сессию
- * - Не сбрасывает кэш при переходах между страницами
- * - Адаптируется под окружение (телефон / GitHub Pages)
+ * - Не дёргает enableNetwork/disableNetwork, чтобы избежать внутренних ошибок
  */
 
 (function() {
-    // ===== ГЛОБАЛЬНЫЙ ФЛАГ (ЗАЩИТА ОТ ПОВТОРНОЙ ИНИЦИАЛИЗАЦИИ) =====
     if (window._firebaseInitialized) {
         console.log('✅ Firebase уже был инициализирован ранее');
-        
-        // Убеждаемся, что глобальные ссылки существуют (на случай, если скрипт загрузился раньше)
         if (!window.db && firebase && firebase.apps.length) {
             window.db = firebase.firestore();
             window.auth = firebase.auth();
             window.storage = firebase.storage();
         }
-        
-        // Всё равно диспатчим событие для тех, кто его ждёт
         document.dispatchEvent(new CustomEvent('firebase-initialized', { 
             detail: { success: true, cached: true }
         }));
@@ -29,18 +23,15 @@
     const CONFIG_TIMEOUT = 5000;
     let firebaseReady = false;
 
-    // ===== ОПРЕДЕЛЕНИЕ ОКРУЖЕНИЯ =====
     function getEnvironment() {
         const hostname = window.location.hostname;
         const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
         const isGitHubPages = hostname.includes('github.io');
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
         return {
             isLocal,
             isGitHubPages,
             isMobile,
-            // На телефоне и НЕ на GitHub Pages - включаем полный кэш
             useFullCache: isMobile && !isGitHubPages
         };
     }
@@ -48,7 +39,6 @@
     const env = getEnvironment();
     console.log('📱 Окружение:', env);
 
-    // ===== ОЖИДАНИЕ CONFIG =====
     if (typeof CONFIG === 'undefined') {
         waitForConfig().then(initFirebase).catch(handleConfigError);
         return;
@@ -76,7 +66,6 @@
         }));
     }
 
-    // ===== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ =====
     async function initFirebase() {
         try {
             if (typeof firebase === 'undefined') {
@@ -85,7 +74,6 @@
 
             console.log('🔥 Firebase SDK', firebase.SDK_VERSION);
 
-            // Инициализация приложения (только если ещё не инициализировано)
             if (!firebase.apps.length) {
                 firebase.initializeApp(CONFIG.firebase);
                 console.log('✅ Приложение инициализировано');
@@ -93,14 +81,12 @@
                 console.log('ℹ️ Приложение уже было инициализировано');
             }
 
-            // Глобальные ссылки
             window.db = firebase.firestore();
             window.auth = firebase.auth();
             window.storage = firebase.storage();
 
-            // ===== НАСТРОЙКИ FIRESTORE (ТОЛЬКО ОДИН РАЗ) =====
+            // Настройки Firestore (только один раз)
             try {
-                // Проверяем, были ли уже применены настройки
                 if (!window._firestoreSettingsApplied) {
                     const settings = {
                         ignoreUndefinedProperties: true,
@@ -108,18 +94,16 @@
                         experimentalAutoDetectLongPolling: false
                     };
 
-                    // Выбираем размер кэша в зависимости от окружения
                     if (env.useFullCache) {
                         settings.cacheSizeBytes = firebase.firestore.CACHE_SIZE_UNLIMITED;
                         console.log('📱 Режим: телефон (полный кэш)');
                     } else {
-                        settings.cacheSizeBytes = 1048576; // 1MB - минимум
+                        settings.cacheSizeBytes = 1048576; // 1MB
                         console.log('💻 Режим: GitHub Pages/localhost (минимальный кэш)');
                     }
 
                     await window.db.settings(settings);
                     window._firestoreSettingsApplied = true;
-                    
                     console.log(`✅ Firestore настроен (кэш: ${settings.cacheSizeBytes === firebase.firestore.CACHE_SIZE_UNLIMITED ? 'безлимитный' : '1MB'})`);
                 } else {
                     console.log('ℹ️ Настройки Firestore уже были применены ранее');
@@ -128,7 +112,7 @@
                 console.warn('⚠️ Ошибка настроек Firestore:', settingsError.message);
             }
 
-            // Auth persistence - всегда LOCAL
+            // Auth persistence
             try {
                 await window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 console.log('✅ Auth persistence включён');
@@ -136,37 +120,29 @@
                 console.warn('⚠️ Ошибка auth persistence:', err.message);
             }
 
-            // Включаем сеть
-            try {
-                await firebase.firestore().enableNetwork();
-                console.log('🌐 Сеть включена');
-            } catch (networkError) {
-                console.warn('⚠️ Ошибка включения сети:', networkError.message);
-            }
+            // НЕ включаем сеть принудительно — это вызывает внутренние ошибки Firebase на GitHub Pages
+            // Сеть уже должна быть активна по умолчанию.
 
-            // Успех
             window._firebaseInitialized = true;
             firebaseReady = true;
-            
+
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
                 detail: { success: true, env: env }
             }));
-            
+
             console.log('✅ Firebase полностью готов');
 
         } catch (error) {
             console.error('❌ Критическая ошибка Firebase:', error.message);
-            
             window._firebaseInitialized = true;
             firebaseReady = false;
-            
             document.dispatchEvent(new CustomEvent('firebase-initialized', { 
                 detail: { success: false, error: error.message }
             }));
         }
     }
 
-    // ===== ОБРАБОТЧИКИ СЕТИ =====
+    // Обработчики сети (оставляем, они не вредят)
     window.addEventListener('online', () => {
         if (firebaseReady && firebase.firestore) {
             firebase.firestore().enableNetwork()
@@ -183,11 +159,10 @@
         }
     });
 
-    // ===== ХЕЛПЕРЫ =====
     window.FirebaseHelpers = {
         isOnline: () => navigator.onLine,
         isInitialized: () => firebaseReady,
         getEnvironment: () => env
     };
 
-})(); 
+})();
