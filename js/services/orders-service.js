@@ -130,6 +130,9 @@ const Orders = (function() {
                     case 'confirmCompletion':
                         result = await confirmCompletion(action.orderId, action.review, true);
                         break;
+                    case 'cancelOrder':
+                        result = await cancelOrder(action.orderId, action.reason, true);
+                        break;
                 }
                 
                 if (result && result.success) {
@@ -361,6 +364,21 @@ const Orders = (function() {
             };
 
             const result = await DataService.createOrder(order);
+            
+            // ===== НОВОЕ: Уведомляем мастеров =====
+            try {
+                if (window.PushService) {
+                    await PushService.notifyMastersAboutNewOrder({
+                        id: result.id,
+                        title: orderData.title,
+                        category: orderData.category,
+                        price: orderData.price
+                    });
+                }
+                console.log('📬 Уведомления мастерам отправлены');
+            } catch (notifyError) {
+                console.error('Ошибка при отправке уведомлений:', notifyError);
+            }
             
             if (window.Cache) {
                 Cache.clear('open_orders');
@@ -623,6 +641,26 @@ const Orders = (function() {
                 comment
             );
 
+            // ===== НОВОЕ: СОЗДАЕМ УВЕДОМЛЕНИЕ ДЛЯ КЛИЕНТА =====
+            try {
+                await db.collection('notifications').add({
+                    userId: order.clientId,
+                    type: 'new_response',
+                    title: '🔔 Новый отклик',
+                    body: `Мастер ${userData.name || 'Мастер'} откликнулся на ваш заказ "${order.title || 'Заказ'}"`,
+                    data: { 
+                        orderId: orderId,
+                        masterId: user.uid,
+                        price: price,
+                        chatId: `chat_${orderId}_${user.uid}`
+                    },
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (notifyError) {
+                console.error('Ошибка создания уведомления:', notifyError);
+            }
+
             if (window.Cache) {
                 Cache.clear('open_orders');
                 Cache.remove(`master_responses_${user.uid}`);
@@ -683,6 +721,25 @@ const Orders = (function() {
                 selectedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
+            // ===== НОВОЕ: УВЕДОМЛЕНИЕ ВЫБРАННОМУ МАСТЕРУ =====
+            try {
+                await db.collection('notifications').add({
+                    userId: masterId,
+                    type: 'master_selected',
+                    title: '✅ Вас выбрали!',
+                    body: `Клиент выбрал вас для заказа "${order.title || 'Заказ'}"`,
+                    data: { 
+                        orderId: orderId,
+                        clientId: user.uid,
+                        price: price
+                    },
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (notifyError) {
+                console.error('Ошибка создания уведомления:', notifyError);
+            }
+
             // ===== НОВОЕ: Обновляем статусы всех чатов по этому заказу =====
             try {
                 // Получаем все чаты по этому заказу
@@ -723,11 +780,24 @@ const Orders = (function() {
                             type: 'system',
                             read: false
                         });
+
+                        // Уведомление отклонённым мастерам
+                        const otherMasterId = chat.participants.find(id => id !== user.uid);
+                        if (otherMasterId && otherMasterId !== masterId) {
+                            await db.collection('notifications').add({
+                                userId: otherMasterId,
+                                type: 'order_cancelled',
+                                title: '❌ Выбран другой мастер',
+                                body: `Клиент выбрал другого мастера для заказа "${order.title || 'Заказ'}"`,
+                                data: { orderId: orderId },
+                                read: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
                     }
                 }
             } catch (chatError) {
                 console.error('Ошибка при обновлении чатов:', chatError);
-                // Не прерываем выполнение, если не удалось обновить чаты
             }
 
             if (window.Cache) {
@@ -807,6 +877,17 @@ const Orders = (function() {
                     lastMessage: '🔔 Ожидает подтверждения завершения',
                     lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
                     [`unreadCount.${order.clientId}`]: firebase.firestore.FieldValue.increment(1)
+                });
+
+                // Уведомление клиенту
+                await db.collection('notifications').add({
+                    userId: order.clientId,
+                    type: 'awaiting_confirmation',
+                    title: '🔔 Ожидает подтверждения',
+                    body: `Мастер завершил работу. Подтвердите выполнение заказа.`,
+                    data: { orderId: orderId, chatId: chatId },
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (chatError) {
                 console.error('Ошибка уведомления в чате:', chatError);
@@ -893,6 +974,17 @@ const Orders = (function() {
                     lastMessage: '✅ Заказ выполнен. Чат закрыт.',
                     lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // Уведомление мастеру
+                await db.collection('notifications').add({
+                    userId: order.selectedMasterId,
+                    type: 'order_completed',
+                    title: '✅ Заказ выполнен!',
+                    body: `Клиент подтвердил выполнение заказа. Спасибо за работу!`,
+                    data: { orderId: orderId, chatId: chatId },
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
             } catch (chatError) {
                 console.error('Ошибка блокировки чата:', chatError);
             }
@@ -907,6 +999,111 @@ const Orders = (function() {
         } catch (error) {
             console.error('❌ Ошибка подтверждения завершения:', error);
             Utils.showError(error.message || 'Ошибка');
+            return { success: false, error: error.message };
+        } finally {
+            if (taskId) window.Loader?.hide(taskId);
+        }
+    }
+
+    // ===== ОТМЕНА ЗАКАЗА (КЛИЕНТ) - НОВЫЙ МЕТОД =====
+    async function cancelOrder(orderId, reason = '', skipOffline = false) {
+        const taskId = window.Loader?.show('Отмена заказа...');
+
+        try {
+            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
+
+            if (!skipOffline && !navigator.onLine) {
+                addToOfflineQueue({
+                    type: 'cancelOrder',
+                    orderId,
+                    reason
+                });
+                Utils.showWarning('Отмена будет выполнена при подключении к интернету');
+                return { success: true, queued: true };
+            }
+
+            const user = getUserSafe();
+            if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
+
+            const order = await getOrderById(orderId);
+            if (!order) throw new Error('Заказ не найден');
+
+            // Проверка прав
+            if (order.clientId !== user.uid) {
+                throw new Error('Вы не можете отменить этот заказ');
+            }
+
+            // Проверка статуса
+            const allowedStatuses = [ORDER_STATUS.OPEN];
+            if (!allowedStatuses.includes(order.status)) {
+                throw new Error('Можно отменить только открытые заказы');
+            }
+
+            // Обновляем статус заказа
+            await DataService.updateOrder(orderId, {
+                status: ORDER_STATUS.CANCELLED,
+                cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
+                cancelReason: reason?.trim() || '',
+                cancelledBy: 'client'
+            });
+
+            // Уведомляем мастеров, которые откликнулись
+            if (order.responses && order.responses.length > 0) {
+                for (const response of order.responses) {
+                    try {
+                        const chatId = `chat_${orderId}_${response.masterId}`;
+                        
+                        // Проверяем, существует ли чат
+                        const chat = await DataService.getChat(chatId);
+                        if (!chat) continue;
+
+                        // Отправляем системное сообщение об отмене
+                        await DataService.sendMessage(chatId, {
+                            senderId: 'system',
+                            senderName: 'Система',
+                            text: `❌ Заказ отменён клиентом. ${reason ? `Причина: ${reason}` : ''}`,
+                            type: 'system',
+                            read: false
+                        });
+
+                        // Обновляем статус чата
+                        await DataService.updateChat(chatId, {
+                            status: 'cancelled',
+                            lastMessage: '❌ Заказ отменён',
+                            lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            [`unreadCount.${response.masterId}`]: firebase.firestore.FieldValue.increment(1)
+                        });
+
+                        // Создаём уведомление для мастера
+                        await db.collection('notifications').add({
+                            userId: response.masterId,
+                            type: 'order_cancelled',
+                            title: '❌ Заказ отменён',
+                            body: `Клиент отменил заказ "${order.title || 'Заказ'}"`,
+                            data: { orderId, chatId },
+                            read: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                    } catch (chatError) {
+                        console.error('Ошибка при уведомлении мастера:', chatError);
+                    }
+                }
+            }
+
+            // Инвалидируем кэш
+            if (window.Cache) {
+                Cache.clear('open_orders');
+                Cache.remove(`order_${orderId}`);
+                Cache.remove(`client_orders_${user.uid}`);
+            }
+
+            Utils.showSuccess('✅ Заказ отменён');
+            return { success: true };
+
+        } catch (error) {
+            console.error('❌ Ошибка отмены заказа:', error);
+            Utils.showError(error.message || 'Ошибка отмены заказа');
             return { success: false, error: error.message };
         } finally {
             if (taskId) window.Loader?.hide(taskId);
@@ -1078,6 +1275,7 @@ const Orders = (function() {
         selectMaster,
         initiateCompletion,
         confirmCompletion,
+        cancelOrder,                // НОВЫЙ МЕТОД
         getMasterStats,
         getOrderById,
         subscribeToOrders,
@@ -1088,7 +1286,7 @@ const Orders = (function() {
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (с чатами при отклике)');
+    console.log('✅ Orders сервис загружен (с отменой заказов)');
     
     return Object.freeze(api);
 })();

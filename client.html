@@ -51,23 +51,30 @@
 
     <div class="app-wrapper">
         <!-- ШАПКА PREMIUM -->
-        <div class="header-premium">
-            <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
-                <span class="logo-premium-text">СВОЙ86</span>
-                <span class="logo-premium-small">МОИ ЗАКАЗЫ</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <button class="city-button-premium" onclick="window.location.href='/HomeWork/'">
-                    <i class="fas fa-arrow-left"></i> На главную
-                </button>
-                <button class="btn btn-sm" id="logoutBtn" style="background: rgba(220,53,69,0.2); border: 1px solid rgba(220,53,69,0.3); color: #dc3545;">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
+    <div class="header-premium">
+    <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
+        <span class="logo-premium-text">СВОЙ86</span>
+        <span class="logo-premium-small">МОИ ЗАКАЗЫ</span>
         </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="city-button-premium" onclick="window.location.href='/HomeWork/'">
+             <i class="fas fa-arrow-left"></i> На главную
+            </button>
+        
+            <!-- КНОПКА УВЕДОМЛЕНИЙ (НОВАЯ) -->
+            <button class="notifications-bell" id="notificationsBell" title="Уведомления">
+                <i class="fas fa-bell"></i>
+                <span class="badge hidden" id="notificationsBadge">0</span>
+            </button>
+        
+            <button class="btn btn-sm" id="logoutBtn" style="background: rgba(220,53,69,0.2); border: 1px solid rgba(220,53,69,0.3); color: #dc3545;">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+            <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
 
         <!-- БЛОК АВТОРИЗАЦИИ -->
         <div id="authBlockContainer" class="mb-3"></div>
@@ -299,11 +306,13 @@
     <script src="/HomeWork/js/services/upload-service.js"></script>
     <script src="/HomeWork/js/services/orders-service.js"></script>
     <script src="/HomeWork/js/services/chat-service.js"></script>
+    <script src="/HomeWork/js/services/push-service.js"></script> 
     
     <!-- 3. COMPONENTS -->
     <script src="/HomeWork/js/components/auth-ui.js"></script>
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     <script src="/HomeWork/js/components/notifications.js"></script>
+    <script src="/HomeWork/js/components/notifications-center.js"></script>
     
     <!-- 4. PAGE (ВСЕГДА ПОСЛЕДНИМ) -->
     <script src="/HomeWork/js/pages/client.js"></script>
@@ -335,5 +344,53 @@
         });
     });
     </script>
+
+    <!-- МОДАЛКА ОТМЕНЫ ЗАКАЗА -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-cancel">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Отмена заказа
+                </h5>
+                <button type="button" class="modal-close" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="cancel-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Если на заказ уже есть отклики, мастера получат уведомление об отмене.</span>
+                </div>
+                
+                <p class="mb-3 fw-bold">Вы уверены, что хотите отменить заказ?</p>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="cancelReason">
+                        Причина отмены <small class="text-muted">(необязательно)</small>
+                    </label>
+                    <textarea class="form-control" id="cancelReason" rows="3" 
+                              placeholder="Напишите, почему отменяете заказ..."></textarea>
+                </div>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="cancelConfirm">
+                    <label class="form-check-label" for="cancelConfirm">
+                        Я понимаю, что действие нельзя отменить
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-chevron-left me-2"></i>Вернуться
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn" disabled>
+                    <i class="fas fa-times me-2"></i>Отменить заказ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

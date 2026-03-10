@@ -9,6 +9,7 @@
     let currentFilter = 'all';
     let allOrders = [];
     let currentOrderForReview = null;
+    let currentOrderForCancel = null;  // НОВАЯ ПЕРЕМЕННАЯ
     let currentRating = 0;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
@@ -111,6 +112,7 @@
 
         initEventListeners();
         initReviewModal();
+        initCancelModal();      // НОВАЯ ФУНКЦИЯ
         initCreateOrderForm();
     });
 
@@ -179,6 +181,66 @@
         }
     }
 
+    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТМЕНЫ (НОВАЯ) =====
+    function initCancelModal() {
+        const cancelConfirmCheck = document.getElementById('cancelConfirm');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        
+        if (cancelConfirmCheck && confirmCancelBtn) {
+            cancelConfirmCheck.addEventListener('change', function() {
+                confirmCancelBtn.disabled = !this.checked;
+            });
+            
+            confirmCancelBtn.addEventListener('click', confirmCancel);
+        }
+        
+        const modal = document.getElementById('cancelOrderModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.getElementById('cancelReason').value = '';
+                document.getElementById('cancelConfirm').checked = false;
+                document.getElementById('confirmCancelBtn').disabled = true;
+                currentOrderForCancel = null;
+            });
+        }
+    }
+
+    // ===== ПОКАЗ МОДАЛКИ ОТМЕНЫ (НОВАЯ) =====
+    window.showCancelModal = function(orderId) {
+        currentOrderForCancel = orderId;
+        
+        const modalEl = document.getElementById('cancelOrderModal');
+        if (!modalEl) return;
+        
+        // Сбрасываем форму
+        document.getElementById('cancelReason').value = '';
+        document.getElementById('cancelConfirm').checked = false;
+        document.getElementById('confirmCancelBtn').disabled = true;
+        
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    };
+
+    // ===== ПОДТВЕРЖДЕНИЕ ОТМЕНЫ (НОВАЯ) =====
+    async function confirmCancel() {
+        if (!currentOrderForCancel) return;
+        
+        const reason = document.getElementById('cancelReason')?.value || '';
+        
+        const result = await Orders.cancelOrder(currentOrderForCancel, reason);
+        
+        if (result && result.success) {
+            const modalEl = document.getElementById('cancelOrderModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            Utils.showSuccess('✅ Заказ отменён');
+            await loadClientOrders(currentFilter);
+        } else {
+            Utils.showError(result?.error || '❌ Ошибка при отмене');
+        }
+    }
+
     // ===== ИНИЦИАЛИЗАЦИЯ ФОРМЫ СОЗДАНИЯ ЗАКАЗА =====
     function initCreateOrderForm() {
         const photoInput = $('orderPhotos');
@@ -213,7 +275,7 @@
         }
     }
 
-        // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА =====
+    // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА =====
     async function handleCreateOrder() {
         const category = $('orderCategory')?.value;
         const title = $('orderTitle')?.value?.trim();
@@ -364,13 +426,14 @@
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА (ОБНОВЛЕНО) =====
     function createOrderCard(order) {
         const statusConfig = {
             'open': { class: 'bg-primary', text: '🔵 Активен', icon: 'fa-clock' },
             'in_progress': { class: 'bg-warning text-dark', text: '🟠 В работе', icon: 'fa-spinner fa-spin' },
             'awaiting_confirmation': { class: 'bg-info text-dark', text: '🟡 Ожидает подтверждения', icon: 'fa-hourglass-half' },
-            'completed': { class: 'bg-success', text: '✅ Завершён', icon: 'fa-check-circle' }
+            'completed': { class: 'bg-success', text: '✅ Завершён', icon: 'fa-check-circle' },
+            'cancelled': { class: 'bg-secondary', text: '❌ Отменён', icon: 'fa-times-circle' }
         };
 
         const status = statusConfig[order.status] || statusConfig.open;
@@ -378,6 +441,7 @@
         const hasMaster = !!order.selectedMasterId;
         const needsConfirmation = order.status === 'awaiting_confirmation';
         const canReview = order.status === 'completed' && !order.clientReview;
+        const canCancel = order.status === 'open';  // Только открытые можно отменить
 
         return `
             <div class="order-card mb-3" data-order-id="${order.id}">
@@ -429,6 +493,12 @@
                             `<button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${order.selectedMasterId}')">
                                 <i class="fas fa-star me-1"></i>Отзыв
                             </button>` : ''}
+                        
+                        ${canCancel ? `
+                            <button class="btn btn-sm btn-cancel-order" onclick="event.stopPropagation(); showCancelModal('${order.id}')">
+                                <i class="fas fa-times me-1"></i>Отменить
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
                 
@@ -445,6 +515,13 @@
                             <div class="me-2">${'★'.repeat(order.clientReview.rating)}${'☆'.repeat(5 - order.clientReview.rating)}</div>
                             <span class="text-secondary">${Utils.escapeHtml(order.clientReview.text || '')}</span>
                         </div>
+                    </div>
+                ` : ''}
+                
+                ${order.status === 'cancelled' && order.cancelReason ? `
+                    <div class="mt-3 p-3 bg-dark rounded">
+                        <small class="text-secondary">Причина отмены:</small>
+                        <p class="mb-0 text-secondary">${Utils.escapeHtml(order.cancelReason)}</p>
                     </div>
                 ` : ''}
             </div>
@@ -492,7 +569,7 @@
         `;
     }
 
-        // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
+    // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
     window.showConfirmCompletionModal = function(orderId) {
         currentOrderForReview = orderId;
         
@@ -839,7 +916,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (ОБНОВЛЕНО) =====
     function initEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -866,6 +943,25 @@
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', Auth.toggleTheme);
+        }
+
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ УВЕДОМЛЕНИЙ
+        const notificationsBell = document.getElementById('notificationsBell');
+        if (notificationsBell) {
+            notificationsBell.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!Auth.isAuthenticated()) {
+                    AuthUI.showLoginModal();
+                    Utils.showInfo('Войдите, чтобы увидеть уведомления');
+                    return;
+                }
+                
+                if (window.NotificationsCenter) {
+                    window.NotificationsCenter.toggle();
+                }
+            });
         }
     }
 

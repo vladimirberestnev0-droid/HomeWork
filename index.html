@@ -60,24 +60,30 @@
         </div>
     </div>
 
-    <div class="app-wrapper">
-        <!-- ШАПКА PREMIUM -->
-        <div class="header-premium">
-            <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
-                <span class="logo-premium-text">СВОЙ86</span>
-                <span class="logo-premium-small">МАСТЕР</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <button class="city-button-premium" id="citySelector">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span id="selectedCity">Нягань</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
+    <!-- ШАПКА PREMIUM -->
+    <div class="header-premium">
+        <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
+            <span class="logo-premium-text">СВОЙ86</span>
+            <span class="logo-premium-small">МАСТЕР</span>
         </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="city-button-premium" id="citySelector">
+             <i class="fas fa-map-marker-alt"></i>
+                <span id="selectedCity">Нягань</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        
+            <!-- КНОПКА УВЕДОМЛЕНИЙ -->
+            <button class="notifications-bell" id="notificationsBell" title="Уведомления">
+                <i class="fas fa-bell"></i>
+                <span class="badge hidden" id="notificationsBadge">0</span>
+            </button>
+        
+            <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
 
         <!-- ПОИСК PREMIUM -->
         <div class="search-premium">
@@ -303,6 +309,7 @@
     <script src="/HomeWork/js/services/orders-service.js"></script>
     <script src="/HomeWork/js/services/chat-service.js"></script>
     <script src="/HomeWork/js/services/moderation.js"></script>
+    <script src="/HomeWork/js/services/push-service.js"></script>
     
     <!-- 3. COMPONENTS -->
     <script src="/HomeWork/js/components/list-renderer.js"></script>
@@ -312,6 +319,7 @@
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     <script src="/HomeWork/js/components/desktop-nav.js"></script>
     <script src="/HomeWork/js/components/notifications.js"></script>
+    <script src="/HomeWork/js/components/notifications-center.js"></script>
     
     <!-- 4. APP (ГЛАВНЫЙ) -->
     <script src="/HomeWork/js/app.js"></script>

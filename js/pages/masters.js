@@ -11,6 +11,7 @@
     let currentClientId = null;
     let currentClientName = '';
     let currentRating = 0;
+    let currentNotificationOrder = null;  // НОВАЯ ПЕРЕМЕННАЯ
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
@@ -78,7 +79,8 @@
                 await Promise.all([
                     loadMasterProfile(),
                     loadMasterResponses('all'),
-                    loadChats()
+                    loadChats(),
+                    checkNewOrders()  // НОВАЯ ФУНКЦИЯ
                 ]);
 
                 if (window.BottomNav) {
@@ -122,6 +124,44 @@
             loadOrderForResponse(respondOrderId);
         }
     });
+
+    // ===== ПРОВЕРКА НОВЫХ ЗАКАЗОВ (НОВАЯ ФУНКЦИЯ) =====
+    async function checkNewOrders() {
+        try {
+            const userData = Auth.getUserData();
+            if (!userData?.categories) return;
+            
+            const user = Auth.getUser();
+            if (!user) return;
+
+            // Проверяем, есть ли непрочитанные уведомления о новых заказах
+            const notifications = await db.collection('notifications')
+                .where('userId', '==', user.uid)
+                .where('type', '==', 'new_order')
+                .where('read', '==', false)
+                .orderBy('createdAt', 'desc')
+                .limit(5)
+                .get();
+            
+            if (!notifications.empty) {
+                // Показываем индикатор на иконке
+                const bell = document.getElementById('notificationsBell');
+                if (bell) {
+                    const badge = bell.querySelector('.badge');
+                    if (badge) {
+                        badge.textContent = notifications.size;
+                        badge.classList.remove('hidden');
+                    }
+                }
+                
+                // Можно показать toast с первым уведомлением
+                const firstNotif = notifications.docs[0].data();
+                Utils.showInfo(`🔔 ${firstNotif.body || 'Новый заказ в вашей категории'}`);
+            }
+        } catch (error) {
+            console.error('Ошибка проверки новых заказов:', error);
+        }
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
     function initReviewModal() {
@@ -237,6 +277,8 @@
                 filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION);
             } else if (filter === 'completed') {
                 filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.COMPLETED);
+            } else if (filter === 'cancelled') {
+                filtered = responses.filter(r => r.status === Orders.ORDER_STATUS.CANCELLED);
             }
 
             if (filtered.length === 0) {
@@ -257,7 +299,7 @@
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА (ОБНОВЛЕНО) =====
     function createResponseCard(item) {
         const order = item.order || {};
         const response = item.response || {};
@@ -266,11 +308,13 @@
             'open': { class: 'bg-warning text-dark', text: '⏳ Ожидает', icon: 'fa-clock' },
             'in_progress': { class: 'bg-primary', text: '🔨 В работе', icon: 'fa-spinner fa-spin' },
             'awaiting_confirmation': { class: 'bg-info text-dark', text: '🟡 Ждёт подтверждения', icon: 'fa-hourglass-half' },
-            'completed': { class: 'bg-success', text: '✅ Выполнен', icon: 'fa-check-circle' }
+            'completed': { class: 'bg-success', text: '✅ Выполнен', icon: 'fa-check-circle' },
+            'cancelled': { class: 'bg-secondary', text: '❌ Отменён', icon: 'fa-times-circle' }
         };
 
         const status = statusConfig[item.status] || statusConfig.open;
         const canComplete = item.status === Orders.ORDER_STATUS.IN_PROGRESS;
+        const isCancelled = item.status === Orders.ORDER_STATUS.CANCELLED;
 
         return `
             <div class="order-card mb-3">
@@ -337,6 +381,15 @@
                         <span class="btn btn-sm btn-outline-success" disabled>
                             <i class="fas fa-check me-1"></i>Завершён
                         </span>
+                    ` : ''}
+
+                    ${isCancelled ? `
+                        <span class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="fas fa-times me-1"></i>Отменён
+                        </span>
+                        ${order.cancelReason ? `
+                            <small class="text-secondary w-100 mt-1">Причина: ${Utils.escapeHtml(order.cancelReason)}</small>
+                        ` : ''}
                     ` : ''}
                 </div>
 
@@ -601,7 +654,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (ОБНОВЛЕНО) =====
     function initEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -628,6 +681,25 @@
         const themeToggle = document.getElementById('themeToggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', Auth.toggleTheme);
+        }
+
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ УВЕДОМЛЕНИЙ
+        const notificationsBell = document.getElementById('notificationsBell');
+        if (notificationsBell) {
+            notificationsBell.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!Auth.isAuthenticated()) {
+                    AuthUI.showLoginModal();
+                    Utils.showInfo('Войдите, чтобы увидеть уведомления');
+                    return;
+                }
+                
+                if (window.NotificationsCenter) {
+                    window.NotificationsCenter.toggle();
+                }
+            });
         }
     }
 

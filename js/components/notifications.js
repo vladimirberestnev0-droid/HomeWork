@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ УВЕДОМЛЕНИЙ
+// КОМПОНЕНТ УВЕДОМЛЕНИЙ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 
 const Notifications = (function() {
@@ -217,6 +217,14 @@ const Notifications = (function() {
                 window.focus();
                 if (options.data?.url) {
                     window.location.href = options.data.url;
+                } else if (options.data?.chatId) {
+                    window.location.href = `/HomeWork/chat.html?chatId=${options.data.chatId}`;
+                } else if (options.data?.orderId) {
+                    if (Auth.isMaster()) {
+                        window.location.href = `/HomeWork/masters.html?order=${options.data.orderId}`;
+                    } else {
+                        window.location.href = `/HomeWork/client.html?order=${options.data.orderId}`;
+                    }
                 }
                 this.close();
             };
@@ -273,7 +281,9 @@ const Notifications = (function() {
         showBrowserNotification,
         getCurrentCount,
         refresh,
-        cleanup
+        cleanup,
+        updateBadge,      // экспортируем для внешнего использования (из центра уведомлений)
+        updateTabBadges
     };
 
     window.__NOTIFICATIONS_INITIALIZED__ = true;

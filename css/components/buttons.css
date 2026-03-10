@@ -404,6 +404,73 @@
 }
 
 /* ============================================
+   КНОПКА ОТМЕНЫ ЗАКАЗА (НОВАЯ)
+   ============================================ */
+
+.btn-cancel-order {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-cancel-order::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+    z-index: 0;
+}
+
+.btn-cancel-order:hover::before {
+    width: 150px;
+    height: 150px;
+}
+
+.btn-cancel-order:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+.btn-cancel-order:active {
+    transform: scale(0.95);
+}
+
+.btn-cancel-order i {
+    font-size: 0.9rem;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-cancel-order span {
+    position: relative;
+    z-index: 1;
+}
+
+/* Кнопка отмены в карточке заказа */
+.order-card .btn-cancel-order {
+    margin-left: auto;
+}
+
+/* ============================================
    АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ
    ============================================ */
 
@@ -421,6 +488,15 @@
     .btn-lg {
         padding: 14px 28px;
         font-size: 1.1rem;
+    }
+    
+    .btn-cancel-order {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-cancel-order i {
+        font-size: 0.8rem;
     }
 }
 
@@ -474,6 +550,11 @@
         padding: 6px 12px;
         font-size: 0.8rem;
     }
+    
+    .btn-cancel-order {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
 }
 
 @media (max-width: 360px) {
@@ -510,5 +591,10 @@
     
     .geo-tag i {
         font-size: 0.75rem;
+    }
+    
+    .btn-cancel-order {
+        padding: 4px 8px;
+        font-size: 0.65rem;
     }
 }

@@ -142,6 +142,7 @@ const Auth = (function() {
                     reviews: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     banned: false,
+                    fcmTokens: [], // Добавляем поле для токенов
                     settings: {
                         notifications: true,
                         theme: localStorage.getItem('theme') || 'dark'
@@ -579,6 +580,7 @@ const Auth = (function() {
                 reviews: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 banned: false,
+                fcmTokens: [], // Добавляем поле для токенов
                 settings: {
                     notifications: true,
                     theme: localStorage.getItem('theme') || 'dark'
@@ -619,12 +621,17 @@ const Auth = (function() {
         }
     }
 
-    // ===== ВЫХОД =====
+    // ===== ВЫХОД (ОБНОВЛЕНО - удаляем токены) =====
     async function logout(silent = false) {
         const taskId = !silent ? window.Loader?.show('Выход...') : null;
         
         try {
             if (!window.auth) throw new Error('Firebase не инициализирован');
+            
+            // Удаляем push-токен
+            if (window.PushService) {
+                await PushService.deleteToken();
+            }
             
             stopBanCheck();
             isHandlingBan = false;

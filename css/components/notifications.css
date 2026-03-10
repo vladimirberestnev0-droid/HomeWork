@@ -246,7 +246,74 @@
 }
 
 /* ============================================
-   ЦЕНТР УВЕДОМЛЕНИЙ
+   ИКОНКА УВЕДОМЛЕНИЙ В ШАПКЕ (НОВАЯ)
+   ============================================ */
+
+.notifications-bell {
+    position: relative;
+    background: rgba(26, 44, 62, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(44, 213, 196, 0.3);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.notifications-bell:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px var(--accent);
+}
+
+.notifications-bell i {
+    font-size: 1.2rem;
+    transition: all var(--transition-fast);
+}
+
+.notifications-bell:hover i {
+    transform: scale(1.1);
+}
+
+.notifications-bell .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+    animation: badgePop 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.notifications-bell .badge.hidden {
+    display: none !important;
+}
+
+@keyframes badgePop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* ============================================
+   ЦЕНТР УВЕДОМЛЕНИЙ (НОВЫЙ)
    ============================================ */
 
 .notifications-center {
@@ -258,30 +325,64 @@
     height: 100vh;
     background: var(--bg-white);
     z-index: 10001;
-    transition: right 0.3s ease;
+    transition: right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: var(--shadow-xl);
     display: flex;
     flex-direction: column;
+    border-left: 1px solid var(--border);
 }
 
 .notifications-center.open {
     right: 0;
 }
 
+.notifications-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 .notifications-header {
-    padding: 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    background: linear-gradient(135deg, var(--accent-light), var(--bg-white));
 }
 
 .notifications-header h3 {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.notifications-header .close-btn {
+.notifications-header h3 i {
+    color: var(--accent);
+    filter: drop-shadow(0 0 5px var(--accent));
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.header-actions button {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -289,11 +390,19 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-soft);
+    border: none;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
-.notifications-header .close-btn:hover {
+.header-actions button:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    transform: rotate(10deg);
+}
+
+.header-actions .close-btn:hover {
     background: var(--danger-light);
     color: var(--danger);
     transform: rotate(90deg);
@@ -318,23 +427,36 @@
     border-radius: 2px;
 }
 
-/* Элемент уведомления в центре */
+/* Элемент уведомления */
 .notification-item {
     display: flex;
-    gap: 12px;
+    gap: 16px;
     padding: 16px;
     border-radius: var(--radius-md);
     background: var(--bg-soft);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     cursor: pointer;
     transition: all var(--transition-fast);
     position: relative;
     border: 1px solid transparent;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .notification-item:hover {
+    transform: translateX(4px) scale(1.02);
     border-color: var(--accent);
-    transform: translateX(4px);
+    box-shadow: var(--shadow-glow);
 }
 
 .notification-item.unread {
@@ -342,60 +464,217 @@
     border-left: 3px solid var(--accent);
 }
 
-.notification-item.unread::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-}
-
 .notification-item .notification-icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.2rem;
+    flex-shrink: 0;
 }
 
-.notification-item .notification-content {
+/* Типы иконок уведомлений */
+.notification-icon.new_order {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.notification-icon.new_response {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.notification-icon.master_selected {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.notification-icon.order_completed {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.notification-icon.order_cancelled {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.notification-icon.new_message {
+    background: rgba(44, 213, 196, 0.2);
+    color: var(--accent);
+}
+
+.notification-icon.system {
+    background: var(--bg-soft);
+    color: var(--text-muted);
+}
+
+.notification-content {
     flex: 1;
 }
 
-.notification-item .notification-title {
+.notification-title {
+    font-weight: 700;
+    color: var(--text-primary);
     font-size: 1rem;
     margin-bottom: 4px;
 }
 
-.notification-item .notification-message {
+.notification-message {
+    color: var(--text-secondary);
     font-size: 0.85rem;
+    line-height: 1.4;
     margin-bottom: 4px;
 }
 
-.notification-item .notification-time {
+.notification-time {
     font-size: 0.7rem;
     color: var(--text-muted);
 }
 
-/* Кнопка "Очистить все" */
+.unread-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* Пустое состояние */
+.empty-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-notifications i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--border);
+    opacity: 0.5;
+}
+
+.empty-notifications h5 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.empty-notifications p {
+    color: var(--text-muted);
+}
+
+/* Футер уведомлений */
+.notifications-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-soft);
+}
+
 .clear-all-btn {
     width: 100%;
     padding: 12px;
-    background: var(--bg-soft);
+    background: var(--bg-white);
     border: 1px dashed var(--border);
     border-radius: var(--radius-md);
     color: var(--text-muted);
     cursor: pointer;
     transition: all var(--transition-fast);
-    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .clear-all-btn:hover {
     border-color: var(--danger);
     color: var(--danger);
     background: var(--danger-light);
+    transform: translateY(-2px);
+}
+
+.clear-all-btn:active {
+    transform: scale(0.98);
+}
+
+/* ============================================
+   МОДАЛКА ОТМЕНЫ (НОВАЯ)
+   ============================================ */
+
+.modal-cancel .modal-header {
+    background: linear-gradient(135deg, var(--danger-light), var(--bg-white));
+    border-bottom: 1px solid var(--danger);
+}
+
+.modal-cancel .modal-title i {
+    color: var(--danger);
+    animation: pulse 2s infinite;
+}
+
+.modal-cancel .modal-footer {
+    border-top: 1px solid var(--danger-light);
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Поле причины отмены */
+#cancelReason {
+    resize: vertical;
+    min-height: 80px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+}
+
+#cancelReason:focus {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-light);
+    outline: none;
+    background: var(--bg-white);
+}
+
+#cancelReason::placeholder {
+    color: var(--text-muted);
+}
+
+/* Предупреждение в модалке */
+.cancel-warning {
+    background: var(--warning-light);
+    border: 1px solid var(--warning);
+    color: var(--warning);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.cancel-warning i {
+    font-size: 1.2rem;
+}
+
+/* Чекбокс подтверждения */
+#cancelConfirm {
+    accent-color: var(--danger);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+#cancelConfirm:checked {
+    background-color: var(--danger);
 }
 
 /* ============================================
@@ -447,6 +726,33 @@
     }
 }
 
+@keyframes badgePop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 /* ============================================
    АДАПТАЦИЯ
    ============================================ */
@@ -462,6 +768,15 @@
         top: 10px;
         right: 10px;
     }
+    
+    .notifications-bell {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .notifications-bell i {
+        font-size: 1.3rem;
+    }
 }
 
 @media (max-width: 768px) {
@@ -473,6 +788,15 @@
     
     .notifications-center {
         max-width: 100%;
+    }
+    
+    .notifications-bell {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .notifications-bell i {
+        font-size: 1.1rem;
     }
 }
 
@@ -516,12 +840,53 @@
     
     .notification-item {
         padding: 12px;
+        gap: 12px;
     }
     
     .notification-item .notification-icon {
         width: 36px;
         height: 36px;
         font-size: 1rem;
+    }
+    
+    .notification-title {
+        font-size: 0.95rem;
+    }
+    
+    .notification-message {
+        font-size: 0.8rem;
+    }
+    
+    .notifications-header {
+        padding: 16px 20px;
+    }
+    
+    .notifications-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .header-actions button {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .notifications-footer {
+        padding: 12px 20px;
+    }
+    
+    .notifications-bell {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .notifications-bell i {
+        font-size: 1rem;
+    }
+    
+    .notifications-bell .badge {
+        min-width: 16px;
+        height: 16px;
+        font-size: 0.55rem;
     }
 }
 
@@ -538,5 +903,33 @@
     
     .notification-close {
         font-size: 16px;
+    }
+    
+    .notifications-bell {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .notifications-bell i {
+        font-size: 0.9rem;
+    }
+    
+    .notifications-bell .badge {
+        min-width: 14px;
+        height: 14px;
+        font-size: 0.5rem;
+        top: -4px;
+        right: -4px;
+    }
+    
+    .notification-item {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .notification-item .notification-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
     }
 }

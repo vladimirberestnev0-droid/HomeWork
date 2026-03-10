@@ -83,7 +83,7 @@ const App = (function() {
             
             let unsubscribe = AppStore.subscribe('core-init', ['isInitialized'], function handler(state) {
                 if (state.isInitialized) {
-                    console.log('✅ Стор инициализирован');
+                    console.log('✅ Стор инизирован');
                     if (unsubscribe) unsubscribe();
                     resolve();
                 }
@@ -225,6 +225,7 @@ const App = (function() {
         window.BottomNav?.init();
         window.DesktopNav?.init();
         window.Notifications?.init();
+        window.NotificationsCenter?.init();  // ИНИЦИАЛИЗАЦИЯ ЦЕНТРА УВЕДОМЛЕНИЙ
         window.AuthUI?.init();
     }
 
@@ -254,11 +255,25 @@ const App = (function() {
         window.addEventListener('online', () => {
             window.AppStore?.setState({ isOnline: true });
             window.Utils?.showSuccess('🟢 Соединение восстановлено');
+            // Обрабатываем офлайн-очередь
+            if (window.Orders) {
+                window.Orders.processOfflineQueue();
+            }
         });
 
         window.addEventListener('offline', () => {
             window.AppStore?.setState({ isOnline: false });
             window.Utils?.showWarning('🔴 Нет соединения');
+        });
+
+        // Добавить обработку видимости страницы
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && Auth.isAuthenticated()) {
+                // Обновляем непрочитанные при возвращении на вкладку
+                if (window.Notifications) {
+                    window.Notifications.refresh();
+                }
+            }
         });
     }
 
