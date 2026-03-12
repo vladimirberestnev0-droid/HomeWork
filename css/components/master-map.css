@@ -1,0 +1,175 @@
+/* ============================================
+   /HomeWork/css/components/master-map.css
+   Стили для карты в кабинете мастера
+   ============================================ */
+
+.map-section {
+    animation: slideDown 0.3s ease;
+    margin-bottom: 20px;
+}
+
+/* Селектор радиуса */
+.radius-selector {
+    display: flex;
+    gap: 8px;
+    background: rgba(26, 44, 62, 0.6);
+    padding: 4px;
+    border-radius: 40px;
+    border: 1px solid rgba(44, 213, 196, 0.2);
+}
+
+.radius-btn {
+    padding: 6px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 30px;
+    color: var(--aurora-text-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.radius-btn:hover {
+    color: white;
+    background: rgba(44, 213, 196, 0.1);
+}
+
+.radius-btn.active {
+    background: var(--aurora-accent);
+    color: var(--aurora-deep);
+}
+
+/* Баллун заказа */
+.map-order-balloon {
+    padding: 15px;
+    min-width: 250px;
+    font-family: 'Inter', sans-serif;
+}
+
+.balloon-category {
+    font-size: 0.85rem;
+    color: var(--aurora-text-muted);
+    margin-bottom: 5px;
+}
+
+.balloon-category i {
+    margin-right: 5px;
+    color: var(--aurora-accent);
+}
+
+.balloon-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--aurora-deep);
+    margin-bottom: 8px;
+}
+
+.balloon-price {
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.balloon-address {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.balloon-address i {
+    margin-right: 5px;
+    color: var(--aurora-accent);
+}
+
+.balloon-distance {
+    font-size: 0.9rem;
+    color: #00A86B;
+    margin-bottom: 12px;
+}
+
+.balloon-distance i {
+    margin-right: 5px;
+}
+
+.balloon-respond-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--aurora-accent);
+    color: var(--aurora-deep);
+    border: none;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.balloon-respond-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(44, 213, 196, 0.3);
+}
+
+/* Легенда карты */
+.map-legend {
+    padding: 10px;
+    background: rgba(26, 44, 62, 0.4);
+    border-radius: 30px;
+    border: 1px solid rgba(44, 213, 196, 0.1);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.legend-item i {
+    font-size: 0.7rem;
+}
+
+/* Статистика карты */
+.map-stats > div {
+    background: rgba(26, 44, 62, 0.4);
+    border-radius: 16px;
+    padding: 12px 24px;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .radius-selector {
+        flex-wrap: wrap;
+        background: transparent;
+        justify-content: center;
+    }
+    
+    .radius-btn {
+        background: rgba(26, 44, 62, 0.6);
+    }
+    
+    .map-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .map-stats > div {
+        width: 100%;
+    }
+    
+    .map-legend {
+        flex-wrap: wrap;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

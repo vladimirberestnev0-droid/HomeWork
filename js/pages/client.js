@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА КАБИНЕТА КЛИЕНТА (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ЛОГИКА КАБИНЕТА КЛИЕНТА (ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 
 (function() {
@@ -9,7 +9,7 @@
     let currentFilter = 'all';
     let allOrders = [];
     let currentOrderForReview = null;
-    let currentOrderForCancel = null;  // НОВАЯ ПЕРЕМЕННАЯ
+    let currentOrderForCancel = null;
     let currentRating = 0;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
@@ -112,7 +112,7 @@
 
         initEventListeners();
         initReviewModal();
-        initCancelModal();      // НОВАЯ ФУНКЦИЯ
+        initCancelModal();
         initCreateOrderForm();
     });
 
@@ -181,7 +181,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТМЕНЫ (НОВАЯ) =====
+    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТМЕНЫ =====
     function initCancelModal() {
         const cancelConfirmCheck = document.getElementById('cancelConfirm');
         const confirmCancelBtn = document.getElementById('confirmCancelBtn');
@@ -205,14 +205,13 @@
         }
     }
 
-    // ===== ПОКАЗ МОДАЛКИ ОТМЕНЫ (НОВАЯ) =====
+    // ===== ПОКАЗ МОДАЛКИ ОТМЕНЫ =====
     window.showCancelModal = function(orderId) {
         currentOrderForCancel = orderId;
         
         const modalEl = document.getElementById('cancelOrderModal');
         if (!modalEl) return;
         
-        // Сбрасываем форму
         document.getElementById('cancelReason').value = '';
         document.getElementById('cancelConfirm').checked = false;
         document.getElementById('confirmCancelBtn').disabled = true;
@@ -221,7 +220,7 @@
         modal.show();
     };
 
-    // ===== ПОДТВЕРЖДЕНИЕ ОТМЕНЫ (НОВАЯ) =====
+    // ===== ПОДТВЕРЖДЕНИЕ ОТМЕНЫ =====
     async function confirmCancel() {
         if (!currentOrderForCancel) return;
         
@@ -269,13 +268,31 @@
             });
         }
 
+        // ===== ИНИЦИАЛИЗАЦИЯ ПОДСКАЗОК АДРЕСОВ =====
+        if (window.AddressSuggest && document.getElementById('orderAddress')) {
+            AddressSuggest.init('orderAddress', {
+                city: 'Нягань',
+                minChars: 2,
+                delay: 300,
+                onSelect: (suggestion) => {
+                    console.log('✅ Выбран адрес:', suggestion.full);
+                    const latInput = document.getElementById('orderLat');
+                    const lngInput = document.getElementById('orderLng');
+                    if (latInput && lngInput) {
+                        latInput.value = suggestion.coordinates.lat;
+                        lngInput.value = suggestion.coordinates.lng;
+                    }
+                }
+            });
+        }
+
         const submitBtn = $('createOrderSubmit');
         if (submitBtn) {
             submitBtn.addEventListener('click', handleCreateOrder);
         }
     }
 
-    // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА =====
+    // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА (С КООРДИНАТАМИ) =====
     async function handleCreateOrder() {
         const category = $('orderCategory')?.value;
         const title = $('orderTitle')?.value?.trim();
@@ -285,6 +302,7 @@
         const urgent = $('orderUrgent')?.checked;
         const photos = Array.from($('orderPhotos')?.files || []);
 
+        // Валидация
         if (!category) {
             Utils.showNotification('Выберите категорию', 'warning');
             return;
@@ -305,6 +323,11 @@
             return;
         }
 
+        // Получаем координаты из скрытых полей
+        const lat = parseFloat($('orderLat')?.value);
+        const lng = parseFloat($('orderLng')?.value);
+
+        // Создаём объект заказа с координатами
         const orderData = {
             category,
             title,
@@ -312,7 +335,9 @@
             price,
             address,
             urgent: urgent || false,
-            photos: photos
+            photos: photos,
+            // 👇 КООРДИНАТЫ ИЗ ПОДСКАЗОК ЯНДЕКСА
+            coordinates: (lat && lng) ? { lat, lng } : null
         };
 
         const result = await Orders.create(orderData);
@@ -320,6 +345,7 @@
         if (result && result.success) {
             Utils.showSuccess('✅ Заказ создан!');
             
+            // Очищаем форму
             $('orderCategory').value = '';
             $('orderTitle').value = '';
             $('orderDescription').value = '';
@@ -328,6 +354,10 @@
             $('orderUrgent').checked = false;
             $('orderPhotos').value = '';
             $('photoPreview').innerHTML = '';
+            
+            // Очищаем скрытые поля с координатами
+            if ($('orderLat')) $('orderLat').value = '';
+            if ($('orderLng')) $('orderLng').value = '';
             
             switchTab('orders');
             await loadClientOrders('all');
@@ -426,7 +456,7 @@
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА (ОБНОВЛЕНО) =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
     function createOrderCard(order) {
         const statusConfig = {
             'open': { class: 'bg-primary', text: '🔵 Активен', icon: 'fa-clock' },
@@ -441,7 +471,7 @@
         const hasMaster = !!order.selectedMasterId;
         const needsConfirmation = order.status === 'awaiting_confirmation';
         const canReview = order.status === 'completed' && !order.clientReview;
-        const canCancel = order.status === 'open';  // Только открытые можно отменить
+        const canCancel = order.status === 'open';
 
         return `
             <div class="order-card mb-3" data-order-id="${order.id}">
@@ -916,7 +946,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (ОБНОВЛЕНО) =====
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -945,7 +975,6 @@
             themeToggle.addEventListener('click', Auth.toggleTheme);
         }
 
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ УВЕДОМЛЕНИЙ
         const notificationsBell = document.getElementById('notificationsBell');
         if (notificationsBell) {
             notificationsBell.addEventListener('click', (e) => {

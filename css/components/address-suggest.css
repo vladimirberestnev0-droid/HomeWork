@@ -1,0 +1,101 @@
+/* ============================================
+   /HomeWork/css/components/address-suggest.css
+   Стили для подсказок адресов (Яндекс)
+   ============================================ */
+
+.address-suggest-container {
+    position: absolute;
+    z-index: 10000;
+    background: var(--aurora-deep);
+    border: 1px solid rgba(44, 213, 196, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    backdrop-filter: blur(10px);
+    width: 100%;
+    animation: suggestFadeIn 0.2s ease;
+}
+
+.address-suggest-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(44, 213, 196, 0.1);
+    transition: all 0.2s ease;
+}
+
+.address-suggest-item:last-child {
+    border-bottom: none;
+}
+
+.address-suggest-item:hover,
+.address-suggest-item.selected {
+    background: rgba(44, 213, 196, 0.1);
+}
+
+.address-suggest-item .suggest-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-weight: 500;
+}
+
+.address-suggest-item .suggest-main i {
+    color: var(--aurora-accent);
+    width: 20px;
+}
+
+.address-suggest-item .suggest-district {
+    margin-left: 30px;
+    font-size: 0.85rem;
+    color: var(--aurora-text-soft);
+}
+
+.address-suggest-item .suggest-district i {
+    color: var(--aurora-accent);
+    font-size: 0.8rem;
+    margin-right: 5px;
+}
+
+.address-suggest-item .suggest-full {
+    margin-left: 30px;
+    font-size: 0.8rem;
+    color: var(--aurora-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Поле ввода адреса */
+.address-input-wrapper {
+    position: relative;
+}
+
+.address-input-wrapper i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora-accent);
+    font-size: 1.1rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.address-input {
+    padding-left: 45px !important;
+}
+
+/* Анимация */
+@keyframes suggestFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

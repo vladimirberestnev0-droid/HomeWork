@@ -13,10 +13,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- ГЛАВНЫЙ CSS ФАЙЛ -->
+    <!-- CSS (ВСЁ ЧЕРЕЗ КОМПОНЕНТЫ) -->
     <link rel="stylesheet" href="/HomeWork/css/main.css">
-    <!-- ПРЕМИУМ-ТЕМА AURORA -->
     <link rel="stylesheet" href="/HomeWork/css/theme/theme-aurora.css">
+    <!-- address-suggest.css и master-map.css подключаются через main.css -->
 </head>
 <body>
     <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
@@ -50,7 +50,7 @@
     </div>
 
     <div class="app-wrapper">
-        <!-- ШАПКА PREMIUM -->
+        <!-- ШАПКА -->
         <div class="header-premium">
             <div class="logo-premium" onclick="window.location.href='/HomeWork/'">
                 <span class="logo-premium-text">СВОЙ86</span>
@@ -60,17 +60,21 @@
                 <button class="city-button-premium" onclick="window.location.href='/HomeWork/'">
                     <i class="fas fa-arrow-left"></i> На главную
                 </button>
-            
-                <!-- ===== КНОПКА УВЕДОМЛЕНИЙ (ДОБАВЛЕНА) ===== -->
+                
+                <!-- УВЕДОМЛЕНИЯ -->
                 <button class="notifications-bell" id="notificationsBell" title="Уведомления">
                     <i class="fas fa-bell"></i>
                     <span class="badge hidden" id="notificationsBadge">0</span>
                 </button>
-            
-                <button class="btn btn-sm" id="logoutBtn" style="background: rgba(220,53,69,0.2); border: 1px solid rgba(220,53,69,0.3); color: #dc3545;">
+                
+                <!-- ВЫХОД -->
+                <button class="btn btn-sm" id="logoutBtn" 
+                        style="background: rgba(220,53,69,0.2); border: 1px solid rgba(220,53,69,0.3); color: #dc3545;">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
-                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle" title="Сменить тему">
+                
+                <!-- ТЕМА -->
+                <button class="theme-toggle btn btn-sm btn-outline-secondary rounded-pill" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
@@ -79,7 +83,7 @@
         <!-- БЛОК АВТОРИЗАЦИИ -->
         <div id="authBlockContainer" class="mb-3"></div>
 
-        <!-- ===== СКЕЛЕТОН ЗАГРУЗКИ ===== -->
+        <!-- СКЕЛЕТОН ЗАГРУЗКИ -->
         <div id="loadingSkeleton" class="loading-skeleton">
             <div class="text-center p-5">
                 <div class="spinner-glow"></div>
@@ -87,9 +91,9 @@
             </div>
         </div>
 
-        <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div id="clientCabinet" class="d-none">
-            <!-- ПРОФИЛЬ PREMIUM -->
+            <!-- ПРОФИЛЬ -->
             <div class="order-card-premium p-4 mb-4">
                 <div class="d-flex align-items-center gap-3">
                     <div class="master-avatar-premium" style="width: 80px; height: 80px;">
@@ -121,7 +125,7 @@
                 </div>
             </div>
 
-            <!-- ТАБЫ PREMIUM -->
+            <!-- ТАБЫ -->
             <div class="filters-premium mb-4">
                 <button class="filter-chip-premium active" data-tab="orders">
                     <i class="fas fa-clipboard-list me-1"></i>Мои заказы
@@ -151,14 +155,15 @@
                 <div id="chatsList" class="orders-list"></div>
             </div>
 
-            <!-- СОЗДАНИЕ ЗАКАЗА PREMIUM -->
+            <!-- СОЗДАНИЕ ЗАКАЗА (С ПОДСКАЗКАМИ АДРЕСОВ) -->
             <div id="newTab" class="tab-content d-none">
                 <div class="order-card-premium p-4">
                     <h5 class="mb-4" style="color: white;">Создать новый заказ</h5>
                     
                     <div class="mb-3">
                         <label class="form-label" style="color: var(--aurora-text-soft);">Категория</label>
-                        <select class="form-control" id="orderCategory" style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
+                        <select class="form-control" id="orderCategory" 
+                                style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
                             <option value="">Выберите категорию</option>
                         </select>
                     </div>
@@ -188,13 +193,19 @@
                         <small style="color: var(--aurora-text-muted);">от 500 до 1 000 000 ₽</small>
                     </div>
                     
+                    <!-- АДРЕС С ПОДСКАЗКАМИ -->
                     <div class="mb-3">
                         <label class="form-label" style="color: var(--aurora-text-soft);">Адрес</label>
-                        <input type="text" class="form-control" id="orderAddress" 
-                               placeholder="ул. Ленина, д. 10, кв. 5" maxlength="200"
-                               style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
+                        <div class="address-input-wrapper">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" class="form-control address-input" id="orderAddress" 
+                                   placeholder="ул. Ленина, д. 10" maxlength="200"
+                                   style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;">
+                        </div>
+                        <small style="color: var(--aurora-text-muted);">Начните вводить адрес - появятся подсказки</small>
                     </div>
                     
+                    <!-- ФОТО -->
                     <div class="mb-4">
                         <label class="form-label" style="color: var(--aurora-text-soft);">Фотографии (до 5 шт)</label>
                         <div class="file-input-wrapper">
@@ -208,6 +219,7 @@
                         <div id="photoPreview" class="d-flex gap-2 mt-2 flex-wrap"></div>
                     </div>
                     
+                    <!-- СРОЧНО -->
                     <div class="mb-4 form-check">
                         <input type="checkbox" class="form-check-input" id="orderUrgent">
                         <label class="form-check-label" for="orderUrgent" style="color: var(--aurora-text-soft);">
@@ -216,6 +228,7 @@
                         </label>
                     </div>
                     
+                    <!-- КНОПКА -->
                     <button class="btn w-100" id="createOrderSubmit" 
                             style="background: var(--aurora-accent); color: var(--aurora-deep); font-weight: 700; padding: 15px;">
                         <i class="fas fa-paper-plane me-2"></i>Создать заказ
@@ -308,7 +321,8 @@
                             Причина отмены <small class="text-muted">(необязательно)</small>
                         </label>
                         <textarea class="form-control" id="cancelReason" rows="3" 
-                                  placeholder="Напишите, почему отменяете заказ..."></textarea>
+                                  placeholder="Напишите, почему отменяете заказ..."
+                                  style="background: rgba(26,44,62,0.6); border-color: rgba(44,213,196,0.3); color: white;"></textarea>
                     </div>
                     
                     <div class="form-check mb-2">
@@ -330,7 +344,10 @@
         </div>
     </div>
 
-    <!-- Скрипты -->
+    <!-- Яндекс Карты API (для геокодера) -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=260b5fef-7967-4934-96b2-835de92edc19&lang=ru_RU" type="text/javascript"></script>
+
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -348,7 +365,7 @@
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
     <script src="/HomeWork/js/core/loader.js"></script>
     
-    <!-- 2. SERVICES (СТРОГО В ЭТОМ ПОРЯДКЕ) -->
+    <!-- 2. SERVICES -->
     <script src="/HomeWork/js/services/data-service.js"></script>
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/upload-service.js"></script>
@@ -361,8 +378,9 @@
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     <script src="/HomeWork/js/components/notifications.js"></script>
     <script src="/HomeWork/js/components/notifications-center.js"></script>
+    <script src="/HomeWork/js/components/address-suggest.js"></script> <!-- ПОДСКАЗКИ АДРЕСОВ -->
     
-    <!-- 4. PAGE (ВСЕГДА ПОСЛЕДНИМ) -->
+    <!-- 4. PAGE -->
     <script src="/HomeWork/js/pages/client.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -391,5 +409,7 @@
         });
     });
     </script>
+    <input type="hidden" id="orderLat" value="">
+<input type="hidden" id="orderLng" value="">
 </body>
 </html>

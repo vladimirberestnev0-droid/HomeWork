@@ -674,6 +674,78 @@
         }
     });
 
+    // ===== ФУНКЦИИ ДЛЯ КАРТЫ =====
+
+    // Показать/скрыть карту
+    function toggleMap(show) {
+        const mapSection = document.getElementById('mapSection');
+        if (!mapSection) return;
+    
+        if (show) {
+            mapSection.style.display = 'block';
+            initMap();
+        } else {
+            mapSection.style.display = 'none';
+            if (window.MasterMap) {
+                 MasterMap.destroy();
+            }
+         }
+    }
+
+    // Инициализация карты
+    async function initMap() {
+        // Проверяем, загружен ли API Яндекс.Карт
+        if (!window.ymaps) {
+         await loadYandexMapsAPI();
+        }
+
+        // Инициализируем карту
+        const success = await MasterMap.init('masterMap');
+    
+        if (success) {
+            // Загружаем заказы
+            await MasterMap.loadOrders(3);
+
+            // Настраиваем обработчики радиуса
+            document.querySelectorAll('.radius-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                 const radius = parseInt(this.dataset.radius);
+                    document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    MasterMap.setRadius(radius);
+                });
+            });
+        }
+    }
+
+        // Загрузка API Яндекс.Карт
+        function loadYandexMapsAPI() {
+        return new Promise((resolve) => {
+         const script = document.createElement('script');
+            script.src = `https://api-maps.yandex.ru/2.1/?apikey=${YANDEX_MAPS_API_KEY}&lang=ru_RU`;
+            script.onload = resolve;
+            document.head.appendChild(script);
+        });
+    }
+
+        // Обновляем существующую функцию loadMasterResponses
+        const originalLoadMasterResponses = loadMasterResponses;
+    loadMasterResponses = async function(filter = 'all') {
+    await originalLoadMasterResponses(filter);
+    
+        // Показываем карту только на вкладке "responses"
+    toggleMap(filter === 'all' || filter === 'pending');
+};
+
+// Обновляем функцию switchTab
+const originalSwitchTab = switchTab;
+switchTab = function(tabName) {
+    originalSwitchTab(tabName);
+    
+    // Показываем карту только в табе "responses"
+    toggleMap(tabName === 'responses');
+};
+
     // ===== ЭКСПОРТ =====
     window.switchMasterTab = switchTab;
     window.MasterCabinet = {

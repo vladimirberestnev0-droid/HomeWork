@@ -1,5 +1,5 @@
 // ============================================
-// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ (ИСПРАВЛЕНО - убраны дубли)
+// КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ (ПОЛНАЯ ВЕРСИЯ)
 // ============================================
 
 const CONFIG = (function() {
@@ -15,6 +15,7 @@ const CONFIG = (function() {
         return '/';
     })();
     
+    // ===== FIREBASE КОНФИГ =====
     const firebase = {
         apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
         authDomain: "homework-6a562.firebaseapp.com",
@@ -24,22 +25,26 @@ const CONFIG = (function() {
         appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
     };
 
-    // ===== ИСПРАВЛЕНО: убраны дублирующиеся URL =====
+    // ===== ЯНДЕКС КАРТЫ (НОВЫЙ КЛЮЧ) =====
+    const YANDEX_MAPS_API_KEY = "260b5fef-7967-4934-96b2-835de92edc19"; // Вставь свой ключ
+
+    // ===== URL ПРИЛОЖЕНИЯ =====
     const urls = {
         home: BASE_PATH,
         client: BASE_PATH + 'client.html',
         master: BASE_PATH + 'masters.html',
         chat: BASE_PATH + 'chat.html',
         admin: BASE_PATH + 'admin.html',
+        masterProfile: BASE_PATH + 'master-profile.html',
+        masterEdit: BASE_PATH + 'master-edit.html',
         
-        // Для редиректов (с параметрами)
         login: BASE_PATH + '?auth=login',
         register: BASE_PATH + '?auth=register',
         
-        // API маршруты
         api: isLocal ? 'http://localhost:3000/api/' : '/api/'
     };
 
+    // ===== НАСТРОЙКИ ПРИЛОЖЕНИЯ =====
     const app = {
         name: 'СВОЙ МАСТЕР 86',
         shortName: 'СВОЙ86',
@@ -93,6 +98,7 @@ const CONFIG = (function() {
         defaultCityName: 'Нягань'
     };
 
+    // ===== РЕГИОН =====
     const region = {
         code: '86',
         name: 'ХМАО',
@@ -106,6 +112,7 @@ const CONFIG = (function() {
         ]
     };
 
+    // ===== РАЗРАБОТКА =====
     const dev = {
         enabled: isLocal,
         logLevel: isLocal ? 'debug' : 'error',
@@ -117,6 +124,7 @@ const CONFIG = (function() {
         } : null
     };
 
+    // ===== ПУБЛИЧНОЕ API =====
     const config = {
         firebase,
         app,
@@ -124,6 +132,7 @@ const CONFIG = (function() {
         dev,
         isLocal,
         mode: isLocal ? 'development' : 'production',
+        YANDEX_MAPS_API_KEY, // ← НОВЫЙ КЛЮЧ
         
         getUrl: (key, params = {}) => {
             let url = app.urls[key] || app.urls.home;
@@ -182,3 +191,4 @@ const CONFIG = (function() {
 })();
 
 window.CONFIG = CONFIG;
+window.YANDEX_MAPS_API_KEY = CONFIG.YANDEX_MAPS_API_KEY; // ← Глобальный доступ
