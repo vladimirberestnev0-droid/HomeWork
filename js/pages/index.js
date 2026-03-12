@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ЭЛЕГАНТНАЯ ВЕРСИЯ)
+// ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 // ============================================
 
 (function() {
@@ -21,25 +21,22 @@
     
     // Константы для кэша
     const MASTERS_CACHE_KEY = 'home_masters';
-    const MASTERS_CACHE_TTL = 10 * 60 * 1000; // 10 минут
+    const MASTERS_CACHE_TTL = 10 * 60 * 1000;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // ===== ЭЛЕГАНТНАЯ ИНИЦИАЛИЗАЦИЯ =====
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', async () => {
         console.log('🚀 Главная загружается...');
         
         document.body.classList.remove('loaded');
         
-        // Ждём Firebase (но не ломаемся, если он тормозит)
         await waitForFirebaseGracefully();
         
-        // Рендерим интерфейс
         renderCategoryFilters();
         renderCityFilter();
         
-        // Загружаем данные параллельно
         await Promise.allSettled([
             loadOrders(true),
             loadMasters()
@@ -47,13 +44,11 @@
         
         document.body.classList.add('loaded');
         
-        // Инициализируем всё остальное
         initEventListeners();
         checkUrlParams();
         restorePaginationState();
         initRespondModal();
         
-        // Адаптивность
         window.addEventListener('resize', Utils.debounce(() => {
             renderCategoryFilters();
         }, 200));
@@ -766,6 +761,7 @@
         `;
     }
 
+    // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ КЛИКА ПО МАСТЕРУ =====
     window.handleMasterClick = function(masterId) {
         if (!Auth.isAuthenticated()) {
             AuthUI.showLoginModal();
@@ -773,10 +769,11 @@
             return;
         }
         
+        // Перенаправляем на публичный профиль мастера
         if (window.Loader) {
-            Loader.navigateTo(`/HomeWork/master.html?id=${masterId}`, 'Загружаем профиль...');
+            Loader.navigateTo(`/HomeWork/master-profile.html?id=${masterId}`, 'Загружаем профиль...');
         } else {
-            window.location.href = `/HomeWork/master.html?id=${masterId}`;
+            window.location.href = `/HomeWork/master-profile.html?id=${masterId}`;
         }
     };
 

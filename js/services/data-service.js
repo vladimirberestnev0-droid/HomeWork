@@ -1,5 +1,5 @@
 // ============================================
-// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// АБСТРАКТНЫЙ СЛОЙ ДАННЫХ (РАСШИРЕННАЯ ВЕРСИЯ)
 // ============================================
 const DataService = (function() {
     if (window.__DATA_SERVICE_INITIALIZED__) return window.DataService;
@@ -10,9 +10,9 @@ const DataService = (function() {
     let initPromise = null;
     const callQueue = [];
     
-    // ===== НОВОЕ: Отслеживание активных запросов =====
+    // Отслеживание активных запросов
     const activeQueries = new Map();
-    const queryCounter = new Map(); // Для подсчёта одинаковых запросов
+    const queryCounter = new Map();
 
     // Универсальная обертка для всех методов
     function createMethod(fn) {
@@ -21,13 +21,11 @@ const DataService = (function() {
                 return fn.apply(this, args);
             }
             
-            // Если не инициализированы - ставим в очередь
             return new Promise((resolve, reject) => {
                 callQueue.push({
                     fn: () => fn.apply(this, args).then(resolve).catch(reject)
                 });
                 
-                // Запускаем инициализацию, если ещё не запущена
                 if (!initPromise) {
                     initPromise = ensureInit();
                 }
@@ -39,7 +37,6 @@ const DataService = (function() {
     async function ensureInit() {
         console.log('📦 DataService: ожидание Firebase...');
         
-        // Ждем Firebase
         const maxAttempts = 20;
         for (let i = 0; i < maxAttempts; i++) {
             if (window.db && window.storage) {
@@ -49,7 +46,6 @@ const DataService = (function() {
                 
                 console.log('✅ DataService готов');
                 
-                // Выполняем все накопившиеся вызовы
                 while (callQueue.length > 0) {
                     const queued = callQueue.shift();
                     try {
@@ -68,19 +64,16 @@ const DataService = (function() {
         return false;
     }
 
-    // ===== НОВОЕ: Управление активными запросами =====
+    // Управление активными запросами
     function trackQuery(queryKey, queryPromise) {
-        // Если такой запрос уже есть - увеличиваем счётчик
         if (activeQueries.has(queryKey)) {
             const count = queryCounter.get(queryKey) || 1;
             queryCounter.set(queryKey, count + 1);
-            console.log(`🔄 Запрос ${queryKey} выполняется (${count + 1} раз)`);
         } else {
             activeQueries.set(queryKey, queryPromise);
             queryCounter.set(queryKey, 1);
         }
         
-        // Очищаем после завершения
         queryPromise.finally(() => {
             setTimeout(() => {
                 const count = queryCounter.get(queryKey) || 1;
@@ -96,9 +89,28 @@ const DataService = (function() {
         return queryPromise;
     }
 
+    // Очистка кэша запросов
+    function invalidateCollectionQueries(collection) {
+        const keysToDelete = [];
+        
+        activeQueries.forEach((_, key) => {
+            if (key.includes(collection)) {
+                keysToDelete.push(key);
+            }
+        });
+        
+        keysToDelete.forEach(key => {
+            activeQueries.delete(key);
+            queryCounter.delete(key);
+        });
+        
+        if (keysToDelete.length > 0) {
+            console.log(`🧹 Очищено ${keysToDelete.length} запросов для ${collection}`);
+        }
+    }
+
     // ===== ОБЩИЕ МЕТОДЫ =====
     const getCollection = createMethod(async function(collection, constraints = [], options = {}) {
-        // Генерируем уникальный ключ для этого запроса
         const queryKey = JSON.stringify({ 
             collection, 
             constraints, 
@@ -106,13 +118,11 @@ const DataService = (function() {
             lastDoc: options.lastDoc?.id || null 
         });
         
-        // Если запрос уже выполняется - возвращаем его
         if (activeQueries.has(queryKey)) {
             console.log(`📦 Используем уже выполняющийся запрос для ${collection}`);
             return activeQueries.get(queryKey);
         }
         
-        // Создаём новый запрос
         const queryPromise = (async () => {
             let query = db.collection(collection);
             
@@ -156,7 +166,6 @@ const DataService = (function() {
             };
         })();
         
-        // Отслеживаем запрос
         return trackQuery(queryKey, queryPromise);
     });
 
@@ -172,7 +181,6 @@ const DataService = (function() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Инвалидируем кэши запросов для этой коллекции
         invalidateCollectionQueries(collection);
         
         return { id: docRef.id, ...data };
@@ -184,7 +192,6 @@ const DataService = (function() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Инвалидируем кэши запросов для этой коллекции
         invalidateCollectionQueries(collection);
         
         return { id, ...data };
@@ -192,32 +199,9 @@ const DataService = (function() {
 
     const deleteDocument = createMethod(async function(collection, id) {
         await db.collection(collection).doc(id).delete();
-        
-        // Инвалидируем кэши запросов для этой коллекции
         invalidateCollectionQueries(collection);
-        
         return true;
     });
-
-    // ===== НОВОЕ: Очистка кэша запросов =====
-    function invalidateCollectionQueries(collection) {
-        const keysToDelete = [];
-        
-        activeQueries.forEach((_, key) => {
-            if (key.includes(collection)) {
-                keysToDelete.push(key);
-            }
-        });
-        
-        keysToDelete.forEach(key => {
-            activeQueries.delete(key);
-            queryCounter.delete(key);
-        });
-        
-        if (keysToDelete.length > 0) {
-            console.log(`🧹 Очищено ${keysToDelete.length} запросов для ${collection}`);
-        }
-    }
 
     const runTransaction = createMethod(async function(callback) {
         return await db.runTransaction(callback);
@@ -227,7 +211,7 @@ const DataService = (function() {
         return db.batch();
     });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
+    // ===== МЕТОДЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =====
     const getUser = createMethod(async function(userId) {
         return getDocument('users', userId);
     });
@@ -239,7 +223,9 @@ const DataService = (function() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             banned: false,
             rating: 0,
-            reviews: 0
+            reviews: 0,
+            portfolio: [],
+            fcmTokens: []
         });
         
         invalidateCollectionQueries('users');
@@ -275,7 +261,7 @@ const DataService = (function() {
         });
     });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЗАКАЗОВ =====
+    // ===== МЕТОДЫ ДЛЯ ЗАКАЗОВ =====
     const getOrders = createMethod(async function(filters = {}, options = {}) {
         const constraints = [];
         
@@ -329,7 +315,7 @@ const DataService = (function() {
         return result;
     });
 
-    // ===== СПЕЦИАЛИЗИРОВАННЫЕ МЕТОДЫ ДЛЯ ЧАТОВ =====
+    // ===== МЕТОДЫ ДЛЯ ЧАТОВ =====
     const getChat = createMethod(async function(chatId) {
         return getDocument('chats', chatId);
     });
@@ -398,7 +384,6 @@ const DataService = (function() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Обновляем lastMessageAt в чате
         await db.collection('chats').doc(chatId).update({
             lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -408,7 +393,102 @@ const DataService = (function() {
         return { id: docRef.id, ...messageData };
     });
 
-    // ===== РАБОТА С ФАЙЛАМИ =====
+    // ===== НОВЫЕ МЕТОДЫ ДЛЯ ОТЗЫВОВ =====
+    const getReviews = createMethod(async function(masterId, options = {}) {
+        let query = db.collection('reviews')
+            .where('masterId', '==', masterId)
+            .where('hidden', '==', false)
+            .orderBy('createdAt', 'desc');
+        
+        if (options.filter === 'with-photo') {
+            query = query.where('photos', '!=', []);
+        } else if (options.filter && options.filter !== 'all') {
+            query = query.where('rating', '==', parseInt(options.filter));
+        }
+        
+        if (options.limit) {
+            query = query.limit(options.limit);
+        }
+        
+        if (options.startAfter) {
+            query = query.startAfter(options.startAfter);
+        }
+        
+        const snapshot = await query.get();
+        
+        return {
+            items: snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate?.() || new Date()
+            })),
+            lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+            hasMore: snapshot.docs.length === (options.limit || 10)
+        };
+    });
+
+    const createReview = createMethod(async function(reviewData) {
+        const review = {
+            ...reviewData,
+            complaints: 0,
+            hidden: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        const docRef = await db.collection('reviews').add(review);
+        
+        // Обновляем рейтинг мастера
+        await updateMasterRating(reviewData.masterId);
+        
+        // Инвалидируем кэш
+        invalidateCollectionQueries('reviews');
+        
+        return { id: docRef.id, ...review };
+    });
+
+    const updateMasterRating = createMethod(async function(masterId) {
+        const reviews = await db.collection('reviews')
+            .where('masterId', '==', masterId)
+            .where('hidden', '==', false)
+            .get();
+        
+        if (reviews.empty) {
+            await db.collection('users').doc(masterId).update({
+                rating: 0,
+                reviews: 0
+            });
+            return;
+        }
+        
+        let totalRating = 0;
+        reviews.forEach(doc => totalRating += doc.data().rating);
+        
+        const averageRating = totalRating / reviews.size;
+        
+        await db.collection('users').doc(masterId).update({
+            rating: averageRating,
+            reviews: reviews.size
+        });
+        
+        invalidateCollectionQueries('users');
+    });
+
+    const addMasterResponse = createMethod(async function(reviewId, responseText) {
+        const response = {
+            text: responseText,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('reviews').doc(reviewId).update({
+            response: response
+        });
+        
+        invalidateCollectionQueries('reviews');
+        
+        return response;
+    });
+
+    // ===== МЕТОДЫ ДЛЯ ФАЙЛОВ =====
     const uploadFile = createMethod(async function(file, path, onProgress = null) {
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const storageRef = storage.ref(`${path}/${fileName}`);
@@ -540,6 +620,12 @@ const DataService = (function() {
         getMessages,
         sendMessage,
         
+        // Отзывы (НОВЫЕ)
+        getReviews,
+        createReview,
+        updateMasterRating,
+        addMasterResponse,
+        
         // Файлы
         uploadFile,
         deleteFile,
@@ -552,8 +638,6 @@ const DataService = (function() {
         // Вспомогательные
         isReady: () => isInitialized,
         ready: () => initPromise,
-        
-        // НОВОЕ: Очистка активных запросов
         clearActiveQueries: () => {
             activeQueries.clear();
             queryCounter.clear();
@@ -562,7 +646,7 @@ const DataService = (function() {
     };
 
     window.__DATA_SERVICE_INITIALIZED__ = true;
-    console.log('✅ DataService загружен (исправленная версия)');
+    console.log('✅ DataService загружен (расширенная версия с отзывами)');
     
     return Object.freeze(api);
 })();

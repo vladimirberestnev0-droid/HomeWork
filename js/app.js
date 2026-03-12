@@ -204,7 +204,13 @@ const App = (function() {
         } else if (path.includes('admin.html')) {
             return { name: 'admin', requiresAuth: true, allowedRoles: ['admin'] };
         }
-        return { name: 'home', requiresAuth: false };
+          else if (path.includes('master-profile.html')) {
+            return { name: 'master-profile', requiresAuth: false }; // Публичный профиль
+        }
+          else if (path.includes('master-edit.html')) {
+            return { name: 'master-edit', requiresAuth: true, allowedRoles: ['master'] }; // Только мастер
+        }
+            return { name: 'home', requiresAuth: false };
     }
 
     function saveRedirect() {

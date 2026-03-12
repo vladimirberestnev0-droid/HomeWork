@@ -31,3 +31,4 @@
 
 /* Тёмная тема */
 @import url('theme/dark.css');
+@import url('./components/profile.css');
