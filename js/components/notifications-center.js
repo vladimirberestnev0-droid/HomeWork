@@ -171,7 +171,6 @@ const NotificationsCenter = (function() {
             }, (error) => {
                 console.error('❌ Ошибка подписки на уведомления:', error);
                 
-                // Если ошибка из-за индекса, показываем сообщение
                 if (error.message?.includes('requires an index')) {
                     renderIndexError(error.message);
                 } else {
@@ -205,11 +204,9 @@ const NotificationsCenter = (function() {
         const color = TYPE_COLORS[notif.type] || '#2CD5C4';
         const timeAgo = Utils?.getTimeAgo ? Utils.getTimeAgo(notif.createdAt) : '';
         
-        // Экранируем данные для безопасности
         const safeTitle = Utils?.escapeHtml ? Utils.escapeHtml(notif.title || 'Уведомление') : (notif.title || 'Уведомление');
         const safeBody = Utils?.escapeHtml ? Utils.escapeHtml(notif.body || '') : (notif.body || '');
         
-        // Сериализуем data для передачи
         const dataAttr = Utils?.escapeAttr ? Utils.escapeAttr(JSON.stringify(notif.data || {})) : '{}';
 
         return `
@@ -259,7 +256,6 @@ const NotificationsCenter = (function() {
     function renderIndexError(errorMessage) {
         if (!listEl) return;
         
-        // Извлекаем ссылку на создание индекса
         const urlMatch = errorMessage.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
         const indexUrl = urlMatch ? urlMatch[0] : '#';
         
@@ -275,7 +271,7 @@ const NotificationsCenter = (function() {
         `;
     }
 
-    // ===== ОБРАБОТЧИК КЛИКА (ИСПРАВЛЕНО) =====
+    // ===== ОБРАБОТЧИК КЛИКА (ТЕПЕРЬ ВНУТРИ API) =====
     function handleNotificationClick(element) {
         if (!element) return;
         
@@ -288,13 +284,8 @@ const NotificationsCenter = (function() {
             console.warn('⚠️ Ошибка парсинга данных уведомления');
         }
 
-        // Отмечаем как прочитанное
         markAsRead(id);
-
-        // Обрабатываем переход
         handleNotificationNavigation(data);
-
-        // Закрываем центр
         close();
     }
 
@@ -302,7 +293,6 @@ const NotificationsCenter = (function() {
     function handleNotificationNavigation(data) {
         if (!data) return;
 
-        // Обработка разных типов переходов
         if (data.orderId) {
             const user = Auth?.getUser();
             if (Auth?.isMaster()) {
@@ -321,19 +311,16 @@ const NotificationsCenter = (function() {
     function updateGlobalBadge() {
         const unreadCount = notifications.filter(n => !n.read).length;
         
-        // Обновляем глобальный бейдж
         if (window.Notifications) {
             window.Notifications.updateBadge(unreadCount);
         }
 
-        // Обновляем бейдж на иконке центра
         const bellIcon = document.querySelector('.notifications-bell .badge');
         if (bellIcon) {
             if (unreadCount > 0) {
                 bellIcon.textContent = unreadCount > 99 ? '99+' : unreadCount;
                 bellIcon.classList.remove('hidden');
                 
-                // Добавляем анимацию
                 bellIcon.style.animation = 'none';
                 bellIcon.offsetHeight;
                 bellIcon.style.animation = 'notificationPulse 2s infinite';
@@ -342,7 +329,6 @@ const NotificationsCenter = (function() {
             }
         }
 
-        // Диспатчим событие
         document.dispatchEvent(new CustomEvent('unread-changed', { 
             detail: { count: unreadCount }
         }));
@@ -381,7 +367,6 @@ const NotificationsCenter = (function() {
             await db.collection('notifications').doc(notificationId).update({
                 read: true
             });
-            // Подписка обновит UI автоматически
         } catch (error) {
             console.error('❌ Ошибка при отметке прочитанного:', error);
         }
@@ -431,7 +416,6 @@ const NotificationsCenter = (function() {
         }
     }
 
-    // ===== ПОЛУЧИТЬ КОЛИЧЕСТВО НЕПРОЧИТАННЫХ =====
     function getUnreadCount() {
         return notifications.filter(n => !n.read).length;
     }
@@ -446,12 +430,12 @@ const NotificationsCenter = (function() {
         markAllAsRead,
         clearAll,
         getUnreadCount,
-        handleNotificationClick  // <-- ВАЖНО: экспортируем метод
+        handleNotificationClick,  // ← ВАЖНО: метод добавлен сюда!
+        handleNotificationNavigation // ← Тоже добавим для полноты
     };
 
-    // Глобальная ссылка для обработчиков событий
+    // Глобальная ссылка
     window.NotificationsCenter = api;
-
     window.__NOTIFICATIONS_CENTER_INITIALIZED__ = true;
     
     // Автоинициализация
@@ -459,9 +443,8 @@ const NotificationsCenter = (function() {
         setTimeout(() => api.init(), 1500);
     });
 
-    console.log('✅ NotificationsCenter загружен (исправленная версия)');
+    console.log('✅ NotificationsCenter загружен (элегантная версия)');
     return Object.freeze(api);
 })();
 
-// Глобальный доступ
 window.NotificationsCenter = NotificationsCenter;
