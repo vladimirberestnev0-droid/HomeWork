@@ -1,11 +1,41 @@
 /* ============================================
    /HomeWork/css/components/master-map.css
-   Стили для карты в кабинете мастера
    ============================================ */
 
+/* Карта в кабинете мастера */
 .map-section {
     animation: slideDown 0.3s ease;
     margin-bottom: 20px;
+}
+
+.map-card {
+    background: rgba(26, 44, 62, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(44, 213, 196, 0.1);
+    border-radius: 24px;
+    padding: 20px;
+}
+
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.map-header h4 {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.map-header h4 i {
+    color: var(--aurora-accent);
 }
 
 /* Селектор радиуса */
@@ -19,7 +49,7 @@
 }
 
 .radius-btn {
-    padding: 6px 16px;
+    padding: 8px 20px;
     background: transparent;
     border: none;
     border-radius: 30px;
@@ -40,6 +70,73 @@
     color: var(--aurora-deep);
 }
 
+/* Контейнер карты */
+.map-container {
+    width: 100%;
+    height: 350px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(44, 213, 196, 0.2);
+    background: #1a2c3e;
+}
+
+/* Статистика карты */
+.map-stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+    margin: 20px 0 15px;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+    background: rgba(11, 30, 51, 0.6);
+    border-radius: 16px;
+    padding: 12px;
+    border: 1px solid rgba(44, 213, 196, 0.1);
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--aurora-accent);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--aurora-text-muted);
+}
+
+/* Легенда карты */
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    padding: 10px;
+    background: rgba(11, 30, 51, 0.4);
+    border-radius: 40px;
+    border: 1px solid rgba(44, 213, 196, 0.1);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.legend-item i {
+    font-size: 0.7rem;
+}
+
+.price-low i { color: #00A86B; }
+.price-medium i { color: #2CD5C4; }
+.price-high i { color: #FFB020; }
+.price-vip i { color: #DC3545; }
+
 /* Баллун заказа */
 .map-order-balloon {
     padding: 15px;
@@ -49,7 +146,7 @@
 
 .balloon-category {
     font-size: 0.85rem;
-    color: var(--aurora-text-muted);
+    color: #666;
     margin-bottom: 5px;
 }
 
@@ -61,7 +158,7 @@
 .balloon-title {
     font-weight: 600;
     font-size: 1.1rem;
-    color: var(--aurora-deep);
+    color: #333;
     margin-bottom: 8px;
 }
 
@@ -109,44 +206,16 @@
     box-shadow: 0 5px 15px rgba(44, 213, 196, 0.3);
 }
 
-/* Легенда карты */
-.map-legend {
-    padding: 10px;
-    background: rgba(26, 44, 62, 0.4);
-    border-radius: 30px;
-    border: 1px solid rgba(44, 213, 196, 0.1);
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-}
-
-.legend-item i {
-    font-size: 0.7rem;
-}
-
-/* Статистика карты */
-.map-stats > div {
-    background: rgba(26, 44, 62, 0.4);
-    border-radius: 16px;
-    padding: 12px 24px;
-    min-width: 120px;
-    text-align: center;
-}
-
 /* Адаптивность */
 @media (max-width: 768px) {
-    .radius-selector {
-        flex-wrap: wrap;
-        background: transparent;
-        justify-content: center;
+    .map-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
     
-    .radius-btn {
-        background: rgba(26, 44, 62, 0.6);
+    .radius-selector {
+        width: 100%;
+        justify-content: center;
     }
     
     .map-stats {
@@ -154,12 +223,8 @@
         gap: 10px;
     }
     
-    .map-stats > div {
-        width: 100%;
-    }
-    
     .map-legend {
-        flex-wrap: wrap;
+        gap: 10px;
     }
 }
 

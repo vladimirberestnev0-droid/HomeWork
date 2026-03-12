@@ -1,26 +1,30 @@
 /* ============================================
-   ОСНОВНОЙ ФАЙЛ СТИЛЕЙ
+   /HomeWork/css/main.css
    ============================================ */
 
-/* Переменные (обязательно первыми) */
-@import url('core/variables.css');
-@import url('core/base.css');
-@import url('core/utils.css');
-@import url('components/buttons.css');
-@import url('components/cards.css');
-@import url('components/chat.css');
-@import url('components/dropdown.css');
-@import url('components/filters.css');
-@import url('components/forms.css');
-@import url('components/loaders.css');
-@import url('components/masters.css');
-@import url('components/modals.css');
-@import url('components/notifications.css');
-@import url('components/desktop-nav.css');
-@import url('responsive/desktop-fixes.css');
-@import url('responsive/mobile-fixes.css');
-@import url('responsive/mobile-utilities.css');
-@import url('theme/dark.css');
-@import url('./components/profile.css');
-@import url('./components/address-suggest.css');
-@import url('./components/master-map.css');
+/* Core */
+@import url('./core/variables.css');
+@import url('./core/base.css');
+@import url('./core/utils.css');
+
+/* Components */
+@import url('./components/buttons.css');
+@import url('./components/cards.css');
+@import url('./components/chat.css');
+@import url('./components/desktop-nav.css');
+@import url('./components/dropdown.css');
+@import url('./components/filters.css');
+@import url('./components/forms.css');
+@import url('./components/loaders.css');
+@import url('./components/modals.css');
+@import url('./components/notifications.css');
+@import url('./components/profile.css');        /* ← ДОЛЖЕН БЫТЬ! */
+@import url('./components/master-map.css');     /* ← ДОЛЖЕН БЫТЬ! */
+@import url('./components/address-suggest.css');/* ← ДОЛЖЕН БЫТЬ! */
+
+/* Theme */
+@import url('./theme/theme-aurora.css');
+
+/* Responsive */
+@import url('./responsive/desktop-fixes.css');
+@import url('./responsive/mobile-fixes.css');
