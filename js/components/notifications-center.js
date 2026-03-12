@@ -1,10 +1,11 @@
 // ============================================
-// ЦЕНТР УВЕДОМЛЕНИЙ (ИСТОРИЯ УВЕДОМЛЕНИЙ) - УЛУЧШЕННАЯ ВЕРСИЯ
+// ЦЕНТР УВЕДОМЛЕНИЙ (ИСПРАВЛЕННАЯ ЭЛЕГАНТНАЯ ВЕРСИЯ)
 // ============================================
 
 const NotificationsCenter = (function() {
     if (window.__NOTIFICATIONS_CENTER_INITIALIZED__) return window.NotificationsCenter;
 
+    // ===== ПРИВАТНЫЕ ПЕРЕМЕННЫЕ =====
     let isOpen = false;
     let unsubscribe = null;
     let currentUserId = null;
@@ -45,6 +46,7 @@ const NotificationsCenter = (function() {
         'error': '#DC3545'
     };
 
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
         if (document.getElementById('notificationsCenter')) return;
 
@@ -53,6 +55,7 @@ const NotificationsCenter = (function() {
         console.log('✅ NotificationsCenter инициализирован');
     }
 
+    // ===== СОЗДАНИЕ HTML =====
     function createCenterHTML() {
         // Создаём оверлей
         overlayEl = document.createElement('div');
@@ -97,18 +100,30 @@ const NotificationsCenter = (function() {
         listEl = document.getElementById('notificationsList');
     }
 
+    // ===== НАСТРОЙКА СЛУШАТЕЛЕЙ =====
     function setupListeners() {
         // Закрытие по оверлею
-        overlayEl.addEventListener('click', close);
+        if (overlayEl) {
+            overlayEl.addEventListener('click', close);
+        }
 
         // Кнопка закрытия
-        document.getElementById('closeNotificationsBtn')?.addEventListener('click', close);
+        const closeBtn = document.getElementById('closeNotificationsBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', close);
+        }
 
         // Отметить всё как прочитанное
-        document.getElementById('markAllReadBtn')?.addEventListener('click', markAllAsRead);
+        const markAllBtn = document.getElementById('markAllReadBtn');
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', markAllAsRead);
+        }
 
         // Очистить всё
-        document.getElementById('clearAllNotifications')?.addEventListener('click', clearAll);
+        const clearAllBtn = document.getElementById('clearAllNotifications');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', clearAll);
+        }
 
         // Подписка на авторизацию
         if (window.Auth) {
@@ -122,14 +137,15 @@ const NotificationsCenter = (function() {
             });
         }
 
-        // Слушаем новые push-уведомления для обновления списка
+        // Слушаем новые push-уведомления
         document.addEventListener('push-received', () => {
             if (currentUserId) {
-                // Просто обновим подписку, она сама всё перезагрузит
+                // Подписка обновит данные автоматически
             }
         });
     }
 
+    // ===== ПОДПИСКА НА УВЕДОМЛЕНИЯ =====
     function subscribeToNotifications(userId) {
         unsubscribeFromNotifications();
         currentUserId = userId;
@@ -154,7 +170,13 @@ const NotificationsCenter = (function() {
                 updateGlobalBadge();
             }, (error) => {
                 console.error('❌ Ошибка подписки на уведомления:', error);
-                renderError();
+                
+                // Если ошибка из-за индекса, показываем сообщение
+                if (error.message?.includes('requires an index')) {
+                    renderIndexError(error.message);
+                } else {
+                    renderError();
+                }
             });
     }
 
@@ -166,6 +188,7 @@ const NotificationsCenter = (function() {
         currentUserId = null;
     }
 
+    // ===== ОТОБРАЖЕНИЕ =====
     function render() {
         if (!listEl) return;
 
@@ -175,7 +198,6 @@ const NotificationsCenter = (function() {
         }
 
         listEl.innerHTML = notifications.map(notif => createNotificationItem(notif)).join('');
-        attachNotificationListeners();
     }
 
     function createNotificationItem(notif) {
@@ -187,7 +209,7 @@ const NotificationsCenter = (function() {
         const safeTitle = Utils?.escapeHtml ? Utils.escapeHtml(notif.title || 'Уведомление') : (notif.title || 'Уведомление');
         const safeBody = Utils?.escapeHtml ? Utils.escapeHtml(notif.body || '') : (notif.body || '');
         
-        // Сериализуем data для передачи в onclick
+        // Сериализуем data для передачи
         const dataAttr = Utils?.escapeAttr ? Utils.escapeAttr(JSON.stringify(notif.data || {})) : '{}';
 
         return `
@@ -195,7 +217,7 @@ const NotificationsCenter = (function() {
                  data-id="${notif.id}"
                  data-type="${notif.type || 'info'}"
                  data-data='${dataAttr}'
-                 onclick="NotificationsCenter.handleNotificationClick(this)">
+                 onclick="window.NotificationsCenter && window.NotificationsCenter.handleNotificationClick(this)">
                 <div class="notification-icon" style="background: ${color}20; color: ${color};">
                     <i class="fas ${icon}"></i>
                 </div>
@@ -207,10 +229,6 @@ const NotificationsCenter = (function() {
                 ${!notif.read ? '<span class="unread-dot"></span>' : ''}
             </div>
         `;
-    }
-
-    function attachNotificationListeners() {
-        // Дополнительные слушатели, если нужны
     }
 
     function renderEmpty() {
@@ -238,17 +256,36 @@ const NotificationsCenter = (function() {
         `;
     }
 
-    /**
-     * Обработчик клика по уведомлению (элегантный)
-     */
-    window.NotificationsCenter.handleNotificationClick = function(element) {
+    function renderIndexError(errorMessage) {
+        if (!listEl) return;
+        
+        // Извлекаем ссылку на создание индекса
+        const urlMatch = errorMessage.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
+        const indexUrl = urlMatch ? urlMatch[0] : '#';
+        
+        listEl.innerHTML = `
+            <div class="empty-notifications">
+                <i class="fas fa-database fa-4x mb-3" style="color: #FFB400;"></i>
+                <h5>Требуется настройка</h5>
+                <p class="text-muted">Для работы уведомлений нужно создать индекс в Firebase</p>
+                <a href="${indexUrl}" target="_blank" class="btn btn-primary mt-3">
+                    <i class="fas fa-external-link-alt me-2"></i>Создать индекс
+                </a>
+            </div>
+        `;
+    }
+
+    // ===== ОБРАБОТЧИК КЛИКА (ИСПРАВЛЕНО) =====
+    function handleNotificationClick(element) {
+        if (!element) return;
+        
         const id = element.dataset.id;
         let data = {};
         
         try {
             data = JSON.parse(element.dataset.data || '{}');
         } catch (e) {
-            console.warn('Ошибка парсинга данных уведомления');
+            console.warn('⚠️ Ошибка парсинга данных уведомления');
         }
 
         // Отмечаем как прочитанное
@@ -259,8 +296,9 @@ const NotificationsCenter = (function() {
 
         // Закрываем центр
         close();
-    };
+    }
 
+    // ===== НАВИГАЦИЯ ПО УВЕДОМЛЕНИЮ =====
     function handleNotificationNavigation(data) {
         if (!data) return;
 
@@ -279,6 +317,7 @@ const NotificationsCenter = (function() {
         }
     }
 
+    // ===== ОБНОВЛЕНИЕ БЕЙДЖА =====
     function updateGlobalBadge() {
         const unreadCount = notifications.filter(n => !n.read).length;
         
@@ -293,17 +332,23 @@ const NotificationsCenter = (function() {
             if (unreadCount > 0) {
                 bellIcon.textContent = unreadCount > 99 ? '99+' : unreadCount;
                 bellIcon.classList.remove('hidden');
+                
+                // Добавляем анимацию
+                bellIcon.style.animation = 'none';
+                bellIcon.offsetHeight;
+                bellIcon.style.animation = 'notificationPulse 2s infinite';
             } else {
                 bellIcon.classList.add('hidden');
             }
         }
 
-        // Диспатчим событие для обновления других компонентов
+        // Диспатчим событие
         document.dispatchEvent(new CustomEvent('unread-changed', { 
             detail: { count: unreadCount }
         }));
     }
 
+    // ===== ОТКРЫТЬ/ЗАКРЫТЬ =====
     function open() {
         if (!currentUserId) {
             Utils?.showInfo?.('Войдите, чтобы увидеть уведомления');
@@ -311,15 +356,15 @@ const NotificationsCenter = (function() {
         }
 
         isOpen = true;
-        centerEl.classList.add('open');
-        overlayEl.style.display = 'block';
+        if (centerEl) centerEl.classList.add('open');
+        if (overlayEl) overlayEl.style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 
     function close() {
         isOpen = false;
-        centerEl.classList.remove('open');
-        overlayEl.style.display = 'none';
+        if (centerEl) centerEl.classList.remove('open');
+        if (overlayEl) overlayEl.style.display = 'none';
         document.body.style.overflow = '';
     }
 
@@ -328,7 +373,10 @@ const NotificationsCenter = (function() {
         else open();
     }
 
+    // ===== ОТМЕТИТЬ КАК ПРОЧИТАННОЕ =====
     async function markAsRead(notificationId) {
+        if (!notificationId || !window.db) return;
+        
         try {
             await db.collection('notifications').doc(notificationId).update({
                 read: true
@@ -383,10 +431,12 @@ const NotificationsCenter = (function() {
         }
     }
 
+    // ===== ПОЛУЧИТЬ КОЛИЧЕСТВО НЕПРОЧИТАННЫХ =====
     function getUnreadCount() {
         return notifications.filter(n => !n.read).length;
     }
 
+    // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
         open,
@@ -395,16 +445,23 @@ const NotificationsCenter = (function() {
         markAsRead,
         markAllAsRead,
         clearAll,
-        getUnreadCount
+        getUnreadCount,
+        handleNotificationClick  // <-- ВАЖНО: экспортируем метод
     };
 
+    // Глобальная ссылка для обработчиков событий
+    window.NotificationsCenter = api;
+
     window.__NOTIFICATIONS_CENTER_INITIALIZED__ = true;
+    
+    // Автоинициализация
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => api.init(), 1500);
+    });
+
+    console.log('✅ NotificationsCenter загружен (исправленная версия)');
     return Object.freeze(api);
 })();
 
-// Автоинициализация
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => NotificationsCenter.init(), 1500);
-});
-
+// Глобальный доступ
 window.NotificationsCenter = NotificationsCenter;
