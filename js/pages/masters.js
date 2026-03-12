@@ -1,9 +1,10 @@
-/**
- * masters.js — логика кабинета мастера (ЭЛЕГАНТНАЯ ВЕРСИЯ)
- * Версия 3.5 с ожиданием загрузки данных
- */
+// ============================================
+// ЛОГИКА КАБИНЕТА МАСТЕРА (ПОЛНАЯ ВЕРСИЯ)
+// ============================================
 
 (function() {
+    console.log('🚀 Masters.js загружен');
+
     // ===== СОСТОЯНИЕ =====
     let currentFilter = 'all';
     let allResponses = [];
@@ -11,95 +12,70 @@
     let currentClientId = null;
     let currentClientName = '';
     let currentRating = 0;
-    let currentNotificationOrder = null;  // НОВАЯ ПЕРЕМЕННАЯ
 
     // ===== DOM ЭЛЕМЕНТЫ =====
     const $ = (id) => document.getElementById(id);
 
-    // ===== ЭЛЕМЕНТЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
     const loadingSkeleton = document.getElementById('loadingSkeleton');
     const masterCabinet = document.getElementById('masterCabinet');
     const loadingText = document.getElementById('loadingText');
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 Masters.js загружен');
+        console.log('📄 Страница мастера загружается...');
 
-        // Сразу показываем скелетон
-        if (loadingSkeleton) {
-            loadingSkeleton.classList.remove('d-none');
-        }
-        if (masterCabinet) {
-            masterCabinet.classList.add('d-none');
-        }
+        if (loadingSkeleton) loadingSkeleton.classList.remove('d-none');
+        if (masterCabinet) masterCabinet.classList.add('d-none');
 
-        // Используем async функцию для элегантной обработки
         (async () => {
             try {
-                // Ждём первичное состояние
                 const initialState = await new Promise(resolve => {
                     Auth.onAuthChange(resolve);
                 });
 
-                console.log('🔄 Начальное состояние:', initialState);
-
-                // ШАГ 1: Проверка авторизации
                 if (!initialState.isAuthenticated) {
-                    console.log('🚫 Не авторизован, редирект');
                     sessionStorage.setItem('redirectAfterLogin', window.location.href);
                     window.location.href = '/HomeWork/';
                     return;
                 }
 
-                // ШАГ 2: Ожидание загрузки данных (элегантно!)
                 if (loadingText) loadingText.textContent = 'Загружаем данные пользователя...';
                 
                 const userData = await Auth.waitForData(5000);
                 
-                if (!userData) {
-                    throw new Error('Не удалось загрузить данные пользователя');
-                }
+                if (!userData) throw new Error('Не удалось загрузить данные пользователя');
 
-                console.log('📦 Данные пользователя загружены:', userData);
-
-                // ШАГ 3: Проверка роли
                 if (userData.role !== 'master') {
-                    console.log('❌ Неправильная роль:', userData.role);
                     Utils.showNotification('❌ Эта страница только для мастеров', 'warning');
                     setTimeout(() => window.location.href = '/HomeWork/', 1500);
                     return;
                 }
 
-                // ШАГ 4: Загрузка кабинета
-                console.log('✅ Мастер подтверждён, загружаем кабинет');
-                
                 if (loadingText) loadingText.textContent = 'Загружаем ваш кабинет...';
 
-                // Загружаем все данные параллельно
                 await Promise.all([
                     loadMasterProfile(),
                     loadMasterResponses('all'),
-                    loadChats(),
-                    checkNewOrders()  // НОВАЯ ФУНКЦИЯ
+                    loadChats()
                 ]);
 
-                if (window.BottomNav) {
-                    BottomNav.highlightActive();
-                }
+                if (window.BottomNav) BottomNav.highlightActive();
 
                 checkUrlParams();
 
-                // Плавно показываем контент
                 setTimeout(() => {
                     if (loadingSkeleton) loadingSkeleton.classList.add('d-none');
                     if (masterCabinet) masterCabinet.classList.remove('d-none');
+                    
+                    document.querySelectorAll('.order-card, .chat-card').forEach(el => {
+                        el.classList.add('fade-in-up');
+                    });
                 }, 300);
 
             } catch (error) {
                 console.error('❌ Критическая ошибка:', error);
                 Utils.showError('Не удалось загрузить кабинет. Обновите страницу.');
                 
-                // Показываем кнопку обновления
                 if (loadingSkeleton) {
                     loadingSkeleton.innerHTML = `
                         <div class="text-center p-5">
@@ -120,48 +96,8 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const respondOrderId = urlParams.get('respond');
-        if (respondOrderId) {
-            loadOrderForResponse(respondOrderId);
-        }
+        if (respondOrderId) loadOrderForResponse(respondOrderId);
     });
-
-    // ===== ПРОВЕРКА НОВЫХ ЗАКАЗОВ (НОВАЯ ФУНКЦИЯ) =====
-    async function checkNewOrders() {
-        try {
-            const userData = Auth.getUserData();
-            if (!userData?.categories) return;
-            
-            const user = Auth.getUser();
-            if (!user) return;
-
-            // Проверяем, есть ли непрочитанные уведомления о новых заказах
-            const notifications = await db.collection('notifications')
-                .where('userId', '==', user.uid)
-                .where('type', '==', 'new_order')
-                .where('read', '==', false)
-                .orderBy('createdAt', 'desc')
-                .limit(5)
-                .get();
-            
-            if (!notifications.empty) {
-                // Показываем индикатор на иконке
-                const bell = document.getElementById('notificationsBell');
-                if (bell) {
-                    const badge = bell.querySelector('.badge');
-                    if (badge) {
-                        badge.textContent = notifications.size;
-                        badge.classList.remove('hidden');
-                    }
-                }
-                
-                // Можно показать toast с первым уведомлением
-                const firstNotif = notifications.docs[0].data();
-                Utils.showInfo(`🔔 ${firstNotif.body || 'Новый заказ в вашей категории'}`);
-            }
-        } catch (error) {
-            console.error('Ошибка проверки новых заказов:', error);
-        }
-    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
     function initReviewModal() {
@@ -197,9 +133,7 @@
         const tabParam = urlParams.get('tab');
 
         if (tabParam === 'chats') {
-            setTimeout(() => {
-                switchTab('chats');
-            }, 500);
+            setTimeout(() => switchTab('chats'), 500);
         }
     }
 
@@ -236,7 +170,6 @@
                 ratingDisplayEl.innerHTML = `${stars} ${(userData.rating || 0).toFixed(1)}`;
             }
 
-            // Обновляем статистику в табе статистики
             const statTotal = $('statTotal');
             const statAccepted = $('statAccepted');
             const statAwaiting = $('statAwaiting');
@@ -286,20 +219,30 @@
                     <div class="text-center p-5">
                         <i class="fas fa-inbox fa-3x mb-3" style="color: var(--border);"></i>
                         <h5>Нет откликов</h5>
-                        <a href="${CONFIG?.getUrl('home', { focus: 'search' }) || '/?focus=search'}" class="btn btn-primary mt-3">Найти заказы</a>
+                        <a href="${CONFIG?.getUrl('home', { focus: 'search' }) || '/?focus=search'}" class="btn btn-primary mt-3">
+                            <i class="fas fa-search me-2"></i>Найти заказы
+                        </a>
                     </div>
                 `;
                 return;
             }
 
             responsesList.innerHTML = filtered.map(item => createResponseCard(item)).join('');
+            
+            setTimeout(() => {
+                document.querySelectorAll('#responsesList .order-card').forEach((card, i) => {
+                    card.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s forwards`;
+                    card.style.opacity = '0';
+                });
+            }, 100);
+            
         } catch (error) {
             console.error('❌ Ошибка загрузки откликов:', error);
             responsesList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА (ОБНОВЛЕНО) =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА =====
     function createResponseCard(item) {
         const order = item.order || {};
         const response = item.response || {};
@@ -315,9 +258,39 @@
         const status = statusConfig[item.status] || statusConfig.open;
         const canComplete = item.status === Orders.ORDER_STATUS.IN_PROGRESS;
         const isCancelled = item.status === Orders.ORDER_STATUS.CANCELLED;
+        const isTakenByOther = item.status === Orders.ORDER_STATUS.IN_PROGRESS && 
+                               order.selectedMasterId && 
+                               order.selectedMasterId !== Auth.getUser()?.uid;
+
+        if (isTakenByOther) {
+            return `
+                <div class="order-card order-taken mb-3">
+                    <div class="order-header">
+                        <h5 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
+                        <span class="order-price">${Utils.formatMoney(response.price || order.price)}</span>
+                    </div>
+                    
+                    <div class="alert alert-warning d-flex align-items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Этот заказ уже взят другим мастером</span>
+                    </div>
+                    
+                    <div class="order-meta">
+                        <span><i class="fas fa-tag me-1"></i>${order.category || 'Без категории'}</span>
+                        <span><i class="fas fa-map-marker-alt me-1"></i>${Utils.escapeHtml(order.address || '')}</span>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-lock me-1"></i>Недоступен
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
 
         return `
-            <div class="order-card mb-3">
+            <div class="order-card mb-3 ${isCancelled ? 'order-cancelled' : ''}">
                 <div class="order-header">
                     <h5 class="order-title">${Utils.escapeHtml(order.title || 'Заказ')}</h5>
                     <span class="order-price">${Utils.formatMoney(response.price || order.price)}</span>
@@ -326,15 +299,16 @@
                 <p class="order-description">${Utils.truncate(Utils.escapeHtml(order.description || ''), 100)}</p>
 
                 ${order.photos?.length ? `
-                    <div class="d-flex gap-2 mb-3">
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
                         ${order.photos.slice(0, 3).map(url =>
-                            `<img src="${url}" class="order-photo-thumb" onclick="window.open('${url}')">`
+                            `<img src="${url}" class="order-photo-thumb" onclick="event.stopPropagation(); window.open('${url}')" loading="lazy">`
                         ).join('')}
+                        ${order.photos.length > 3 ? `<span class="text-secondary">+${order.photos.length-3}</span>` : ''}
                     </div>
                 ` : ''}
 
                 <div class="order-meta">
-                    <span><i class="fas fa-tag me-1"></i>${order.category || 'Без категории'}</span>
+                    <span><i class="fas fa-tag me-1"></i>${Utils.getCategoryName(order.category)}</span>
                     <span><i class="fas fa-map-marker-alt me-1"></i>${Utils.escapeHtml(order.address || '')}</span>
                     <span><i class="fas fa-user me-1"></i>${Utils.escapeHtml(order.clientName || 'Клиент')}</span>
                 </div>
@@ -367,7 +341,7 @@
 
                     ${item.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION ? `
                         <button class="btn btn-sm btn-outline-warning" disabled>
-                            <i class="fas fa-hourglass-half me-1"></i>Ожидает подтверждения клиента
+                            <i class="fas fa-hourglass-half me-1"></i>Ожидает подтверждения
                         </button>
                         <button class="btn btn-sm btn-primary" onclick="openChat('${item.orderId}', '${order.clientId}')">
                             <i class="fas fa-comment me-1"></i>Чат
@@ -415,45 +389,30 @@
         }
 
         const chatId = `chat_${orderId}_${user.uid}`;
-        console.log('📤 Открываем чат:', { orderId, clientId, chatId });
-
         const loaderId = Loader?.show('Проверка чата...');
 
         try {
             const chat = await Chat.getChat(chatId);
-
             if (!chat) {
                 Utils.showError('Чат ещё не создан. Попробуйте позже.');
                 return;
             }
 
             sessionStorage.setItem('currentChat', JSON.stringify({
-                chatId,
-                orderId,
-                partnerId: clientId
+                chatId, orderId, partnerId: clientId
             }));
 
-            if (window.CONFIG) {
-                const chatUrl = CONFIG.getUrl('chat', { chatId });
-                console.log('📤 URL чата:', chatUrl);
+            const chatUrl = window.CONFIG 
+                ? CONFIG.getUrl('chat', { chatId })
+                : `/HomeWork/chat.html?chatId=${chatId}`;
 
-                if (window.Loader) {
-                    Loader.navigateTo(chatUrl, 'Открываем чат...');
-                } else {
-                    window.location.href = chatUrl;
-                }
+            if (window.Loader) {
+                Loader.navigateTo(chatUrl, 'Открываем чат...');
             } else {
-                const chatUrl = `/HomeWork/chat.html?chatId=${chatId}`;
-                console.log('📤 URL чата (fallback):', chatUrl);
-
-                if (window.Loader) {
-                    Loader.navigateTo(chatUrl, 'Открываем чат...');
-                } else {
-                    window.location.href = chatUrl;
-                }
+                window.location.href = chatUrl;
             }
         } catch (error) {
-            console.error('Ошибка при открытии чата:', error);
+            console.error('❌ Ошибка при открытии чата:', error);
             Utils.showError('Не удалось открыть чат');
         } finally {
             Loader?.hide(loaderId);
@@ -482,7 +441,7 @@
         }
     };
 
-    // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ И ЗАВЕРШЕНИЕ =====
+    // ===== ОТПРАВКА ОТЗЫВА О КЛИЕНТЕ =====
     async function submitClientReview() {
         if (!currentRating) {
             Utils.showNotification('Поставьте оценку клиенту', 'warning');
@@ -518,7 +477,7 @@
                 showRespondModal(orderId, order.title, order.category, order.price);
             }
         } catch (error) {
-            console.error('Ошибка загрузки заказа:', error);
+            console.error('❌ Ошибка загрузки заказа:', error);
         }
     }
 
@@ -597,14 +556,16 @@
                     <div class="text-center p-5">
                         <i class="fas fa-comments fa-3x mb-3" style="color: var(--border);"></i>
                         <h5>Нет активных чатов</h5>
-                        <p class="text-secondary">Чаты появятся после выбора вас клиентом</p>
+                        <p class="text-secondary">Чаты появятся после откликов на заказы</p>
                     </div>
                 `;
                 return;
             }
 
-            chatsList.innerHTML = chats.map(chat => `
-                <div class="chat-card" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/chat.html?chatId=' + chat.id}'">
+            chatsList.innerHTML = chats.map(chat => {
+                const isRejected = chat.status === 'rejected';
+                return `
+                <div class="chat-card ${isRejected ? 'rejected' : ''}" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/HomeWork/chat.html?chatId=' + chat.id}'">
                     <div class="chat-avatar">
                         <i class="fas fa-user"></i>
                     </div>
@@ -615,9 +576,21 @@
                     <div class="chat-meta text-end">
                         <div class="chat-time small text-secondary">${Utils.formatDate(chat.lastMessageAt)}</div>
                         ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
+                        ${isRejected ? '<small class="text-secondary d-block">Занято</small>' : ''}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
+
+            const unreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+            const unreadBadge = document.getElementById('chatsUnread');
+            if (unreadBadge) {
+                if (unreadCount > 0) {
+                    unreadBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    unreadBadge.classList.remove('d-none');
+                } else {
+                    unreadBadge.classList.add('d-none');
+                }
+            }
 
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
@@ -628,24 +601,16 @@
     // ===== ПЕРЕКЛЮЧЕНИЕ ТАБОВ =====
     function switchTab(tabName) {
         document.querySelectorAll('[data-tab]').forEach(btn => {
-            if (btn.dataset.tab === tabName) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (btn.dataset.tab === tabName) btn.classList.add('active');
+            else btn.classList.remove('active');
         });
 
         document.querySelectorAll('.tab-content').forEach(content => {
-            if (content.id === tabName + 'Tab') {
-                content.classList.remove('d-none');
-            } else {
-                content.classList.add('d-none');
-            }
+            if (content.id === tabName + 'Tab') content.classList.remove('d-none');
+            else content.classList.add('d-none');
         });
 
-        if (tabName === 'chats') {
-            loadChats();
-        }
+        if (tabName === 'chats') loadChats();
 
         if (window.CONFIG) {
             const url = new URL(window.location);
@@ -654,7 +619,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (ОБНОВЛЕНО) =====
+    // ===== ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ =====
     function initEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -683,7 +648,6 @@
             themeToggle.addEventListener('click', Auth.toggleTheme);
         }
 
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ УВЕДОМЛЕНИЙ
         const notificationsBell = document.getElementById('notificationsBell');
         if (notificationsBell) {
             notificationsBell.addEventListener('click', (e) => {
@@ -703,7 +667,7 @@
         }
     }
 
-    // ===== СЛУШАТЕЛЬ СОБЫТИЙ ОТ НАВИГАЦИИ =====
+    // ===== СЛУШАТЕЛЬ СОБЫТИЙ =====
     document.addEventListener('switch-master-tab', (e) => {
         if (e.detail && e.detail.tab) {
             switchTab(e.detail.tab);

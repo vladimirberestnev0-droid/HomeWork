@@ -536,3 +536,300 @@
         gap: 10px;
     }
 }
+
+/* ============================================
+   /HomeWork/css/components/masters.css
+   Стили для кабинета мастера и карточек заказов
+   ============================================ */
+
+/* Карточка заказа (базовая) */
+.order-card {
+    background: rgba(26, 44, 62, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(44, 213, 196, 0.1);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--aurora-accent);
+    box-shadow: 0 10px 30px rgba(44, 213, 196, 0.2);
+}
+
+/* ===== СТИЛИ ДЛЯ ЗАНЯТЫХ ЗАКАЗОВ (НОВЫЕ) ===== */
+.order-card.order-taken {
+    opacity: 0.8;
+    background: rgba(255, 180, 0, 0.03);
+    border-left: 4px solid #FFB400;
+    position: relative;
+}
+
+.order-card.order-taken::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(255, 180, 0, 0.02),
+        rgba(255, 180, 0, 0.02) 10px,
+        rgba(255, 180, 0, 0.04) 10px,
+        rgba(255, 180, 0, 0.04) 20px
+    );
+    pointer-events: none;
+    border-radius: 24px;
+    z-index: 0;
+}
+
+.order-card.order-taken > * {
+    position: relative;
+    z-index: 1;
+}
+
+.order-card.order-taken .alert-warning {
+    background: rgba(255, 180, 0, 0.15);
+    border: 1px solid rgba(255, 180, 0, 0.3);
+    color: #FFB400;
+    border-radius: 12px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    margin: 10px 0;
+}
+
+/* Отменённые заказы */
+.order-card.order-cancelled {
+    opacity: 0.6;
+    background: rgba(220, 53, 69, 0.03);
+    border-left: 4px solid #dc3545;
+}
+
+.order-card.order-cancelled::before {
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(220, 53, 69, 0.02),
+        rgba(220, 53, 69, 0.02) 10px,
+        rgba(220, 53, 69, 0.04) 10px,
+        rgba(220, 53, 69, 0.04) 20px
+    );
+}
+
+/* Шапка заказа */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.order-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    flex: 1;
+}
+
+.order-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--aurora-accent);
+    white-space: nowrap;
+    margin-left: 15px;
+}
+
+.order-description {
+    color: var(--aurora-text-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+/* Мета-информация */
+.order-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    color: var(--aurora-text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+}
+
+.order-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.order-meta i {
+    color: var(--aurora-accent);
+    opacity: 0.7;
+}
+
+/* Фото заказа */
+.order-photo-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.order-photo-thumb:hover {
+    border-color: var(--aurora-accent);
+    transform: scale(1.05);
+}
+
+/* Статус-бейдж */
+.order-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes notificationPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Бейдж уведомлений с пульсацией */
+.notifications-bell .badge:not(.hidden) {
+    animation: notificationPulse 2s infinite;
+}
+
+/* ===== ЧАТ КАРТОЧКИ ===== */
+.chat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(26, 44, 62, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(44, 213, 196, 0.1);
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chat-card:hover {
+    border-color: var(--aurora-accent);
+    transform: translateX(5px);
+}
+
+.chat-card.rejected {
+    opacity: 0.6;
+    background: rgba(108, 117, 125, 0.05);
+}
+
+.chat-card.rejected .chat-name {
+    color: #6c757d;
+    text-decoration: line-through;
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    background: linear-gradient(145deg, var(--aurora-accent), #20b2aa);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--aurora-deep);
+    font-size: 1.3rem;
+}
+
+.chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-name {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-last-message {
+    font-size: 0.85rem;
+    color: var(--aurora-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-meta {
+    text-align: right;
+}
+
+.chat-unread {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--aurora-accent);
+    color: var(--aurora-deep);
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+    .order-card {
+        padding: 15px;
+    }
+    
+    .order-title {
+        font-size: 1rem;
+    }
+    
+    .order-price {
+        font-size: 1.1rem;
+    }
+    
+    .order-meta {
+        gap: 10px;
+        font-size: 0.8rem;
+    }
+    
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        font-size: 1rem;
+    }
+}

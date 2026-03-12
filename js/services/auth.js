@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// СЕРВИС АВТОРИЗАЦИИ (ДОБАВЛЕН PUSH)
 // ============================================
 const Auth = (function() {
     if (window.__AUTH_INITIALIZED__) return window.Auth;
@@ -142,7 +142,7 @@ const Auth = (function() {
                     reviews: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     banned: false,
-                    fcmTokens: [], // Добавляем поле для токенов
+                    fcmTokens: [],
                     settings: {
                         notifications: true,
                         theme: localStorage.getItem('theme') || 'dark'
@@ -263,6 +263,16 @@ const Auth = (function() {
                     }
                     
                     startBanCheck(user);
+                    
+                    // ===== ВАЖНО: Инициализируем Push-уведомления после входа =====
+                    if (window.PushService) {
+                        // Небольшая задержка, чтобы всё точно прогрузилось
+                        setTimeout(() => {
+                            PushService.init().catch(err => 
+                                console.warn('⚠️ PushService init warning:', err)
+                            );
+                        }, 1500);
+                    }
                     
                 } catch (error) {
                     if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
@@ -580,7 +590,7 @@ const Auth = (function() {
                 reviews: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 banned: false,
-                fcmTokens: [], // Добавляем поле для токенов
+                fcmTokens: [],
                 settings: {
                     notifications: true,
                     theme: localStorage.getItem('theme') || 'dark'
@@ -621,7 +631,7 @@ const Auth = (function() {
         }
     }
 
-    // ===== ВЫХОД (ОБНОВЛЕНО - удаляем токены) =====
+    // ===== ВЫХОД =====
     async function logout(silent = false) {
         const taskId = !silent ? window.Loader?.show('Выход...') : null;
         
