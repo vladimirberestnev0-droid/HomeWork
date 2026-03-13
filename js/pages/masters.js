@@ -99,33 +99,78 @@
         if (respondOrderId) loadOrderForResponse(respondOrderId);
     });
 
-    // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА =====
+    
+        // ===== ИНИЦИАЛИЗАЦИЯ МОДАЛКИ ОТЗЫВА (ИСПРАВЛЕННАЯ) =====
     function initReviewModal() {
-        document.querySelectorAll('#clientRatingStars .star').forEach(star => {
-            star.addEventListener('click', function() {
-                const rating = parseInt(this.dataset.rating);
-                currentRating = rating;
-
-                document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
-                    if (i < rating) s.classList.add('active');
-                    else s.classList.remove('active');
-                });
+        console.log('🔄 Инициализация модалки отзывов...');
+    
+        // Функция обновления звёзд
+        function updateStars(rating) {
+            document.querySelectorAll('#clientRatingStars .star').forEach((star, index) => {
+                if (index < rating) {
+                 star.innerHTML = '★';
+                    star.classList.add('active');
+                    star.style.color = 'gold';
+                    star.style.textShadow = '0 0 10px gold';
+                } else {
+                    star.innerHTML = '☆';
+                    star.classList.remove('active');
+                    star.style.color = 'gray';
+                    star.style.textShadow = 'none';
+                }
+            });
+    }
+    
+    // Навешиваем обработчики на звёзды
+    const stars = document.querySelectorAll('#clientRatingStars .star');
+    console.log(`⭐ Найдено звёзд: ${stars.length}`);
+    
+    stars.forEach(star => {
+        star.style.cursor = 'pointer';
+        star.style.fontSize = '2rem';
+        star.style.transition = 'all 0.2s ease';
+        
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            console.log(`👆 Выбрана оценка: ${rating}`);
+            currentRating = rating;
+            updateStars(rating);
+        });
+        
+        star.addEventListener('mouseenter', function() {
+            const hoverRating = parseInt(this.dataset.rating);
+            document.querySelectorAll('#clientRatingStars .star').forEach((s, i) => {
+                s.innerHTML = i < hoverRating ? '★' : '☆';
             });
         });
+        
+        star.addEventListener('mouseleave', function() {
+            updateStars(currentRating);
+        });
+    });
 
-        $('submitClientReview')?.addEventListener('click', submitClientReview);
-
-        const modal = document.getElementById('reviewClientModal');
-        if (modal) {
-            modal.addEventListener('hidden.bs.modal', function() {
-                $('reviewClientText').value = '';
-                document.querySelectorAll('#clientRatingStars .star').forEach(s => s.classList.remove('active'));
-                currentRating = 0;
-                currentOrderId = null;
-                currentClientId = null;
-            });
-        }
+    // Обработчик кнопки отправки
+    const submitBtn = document.getElementById('submitClientReview');
+    if (submitBtn) {
+        // Убираем старый обработчик, если был
+        const newBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+        
+        newBtn.addEventListener('click', submitClientReview);
     }
+
+    // Очистка при закрытии модалки
+    const modal = document.getElementById('reviewClientModal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.getElementById('reviewClientText').value = '';
+            currentRating = 0;
+            updateStars(0);
+            currentOrderId = null;
+            currentClientId = null;
+        });
+    }
+}
 
     // ===== ПРОВЕРКА ПАРАМЕТРОВ URL =====
     function checkUrlParams() {
