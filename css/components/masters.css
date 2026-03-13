@@ -1006,59 +1006,92 @@
 }
 
 /* ============================================
-   ЭЛЕГАНТНАЯ ШАПКА МАСТЕРА
+   ЭЛЕГАНТНАЯ ШАПКА МАСТЕРА - ПОЛНАЯ ВЕРСИЯ
    ============================================ */
 
-.master-header {
+/* Основной контейнер шапки - переопределяем стили header-premium */
+.header-premium.master-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 8px 16px;
     background: rgba(26, 44, 62, 0.8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-radius: 40px;
+    border-radius: 60px;
     margin-bottom: 24px;
     border: 1px solid rgba(44, 213, 196, 0.2);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    min-height: 64px;
 }
 
+/* Контейнер для всех кнопок справа */
 .master-header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 0;
+    padding: 0;
 }
 
-.master-header-btn {
+/* Базовый стиль для всех кнопок в шапке */
+.master-header-actions .master-header-btn {
     width: 44px;
     height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(26, 44, 62, 0.6);
+    background: rgba(26, 44, 62, 0.8);
     border: 1px solid rgba(44, 213, 196, 0.2);
     color: var(--aurora-text-soft);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
     position: relative;
     overflow: hidden;
 }
 
-.master-header-btn i {
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
+/* Эффект свечения при наведении */
+.master-header-actions .master-header-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(44, 213, 196, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+    z-index: 0;
 }
 
-.master-header-btn .btn-text {
-    display: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    white-space: nowrap;
+.master-header-actions .master-header-btn:hover::before {
+    width: 100px;
+    height: 100px;
 }
 
-/* Специально для кнопки редактирования - она больше */
-.edit-profile-btn {
+.master-header-actions .master-header-btn i {
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+.master-header-actions .master-header-btn:hover {
+    border-color: var(--aurora-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(44, 213, 196, 0.3);
+}
+
+.master-header-actions .master-header-btn:hover i {
+    color: var(--aurora-accent);
+}
+
+/* ===== КНОПКА РЕДАКТИРОВАНИЯ (ОСОБАЯ) ===== */
+.master-header-actions .edit-profile-btn {
     width: auto;
     padding: 0 20px;
     border-radius: 40px;
@@ -1067,81 +1100,164 @@
     border-color: rgba(44, 213, 196, 0.3);
 }
 
-.edit-profile-btn i {
+.master-header-actions .edit-profile-btn i {
     font-size: 1rem;
+    margin-right: 4px;
 }
 
-.edit-profile-btn .btn-text {
+.master-header-actions .edit-profile-btn .btn-text {
     display: inline-block;
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--aurora-accent);
+    position: relative;
+    z-index: 1;
 }
 
-/* Hover эффекты */
-.master-header-btn:hover {
-    border-color: var(--aurora-accent);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(44, 213, 196, 0.3);
-}
-
-.master-header-btn:hover i {
-    color: var(--aurora-accent);
-}
-
-.edit-profile-btn:hover {
+.master-header-actions .edit-profile-btn:hover {
     background: var(--aurora-accent);
 }
 
-.edit-profile-btn:hover i,
-.edit-profile-btn:hover .btn-text {
+.master-header-actions .edit-profile-btn:hover i,
+.master-header-actions .edit-profile-btn:hover .btn-text {
     color: var(--aurora-deep);
 }
 
-/* Кнопка выхода */
-.logout-btn:hover {
-    border-color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+/* ===== КНОПКА УВЕДОМЛЕНИЙ (С БЕЙДЖЕМ) ===== */
+.master-header-actions .notifications-btn {
+    position: relative;
 }
 
-.logout-btn:hover i {
+.master-header-actions .notifications-btn .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(135deg, var(--accent-urgent), #ff6b4a);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 8px rgba(255, 138, 92, 0.4);
+    animation: badgePop 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.2);
+    z-index: 2;
+}
+
+.master-header-actions .notifications-btn .badge.hidden {
+    display: none;
+}
+
+/* ===== КНОПКА ВЫХОДА (КРАСНАЯ) ===== */
+.master-header-actions .logout-btn:hover {
+    border-color: #dc3545;
+}
+
+.master-header-actions .logout-btn:hover i {
     color: #dc3545;
 }
 
-/* Адаптивность */
+.master-header-actions .logout-btn:hover::before {
+    background: rgba(220, 53, 69, 0.2);
+}
+
+/* ===== КНОПКА ТЕМЫ ===== */
+.master-header-actions .theme-btn:hover i {
+    transform: rotate(30deg);
+}
+
+/* ===== АНИМАЦИЯ ДЛЯ БЕЙДЖА ===== */
+@keyframes badgePop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* ===== АДАПТИВНОСТЬ ДЛЯ ПЛАНШЕТОВ ===== */
 @media (max-width: 768px) {
-    .master-header {
-        padding: 8px 12px;
+    .header-premium.master-header {
+        padding: 6px 12px;
+        min-height: 60px;
     }
     
-    .master-header-btn {
+    .master-header-actions {
+        gap: 6px;
+    }
+    
+    .master-header-actions .master-header-btn {
         width: 40px;
         height: 40px;
+        font-size: 1rem;
     }
     
-    .edit-profile-btn {
+    .master-header-actions .edit-profile-btn {
         width: 40px;
         padding: 0;
     }
     
-    .edit-profile-btn .btn-text {
+    .master-header-actions .edit-profile-btn .btn-text {
         display: none;
     }
     
-    .edit-profile-btn i {
+    .master-header-actions .edit-profile-btn i {
         font-size: 1.2rem;
+        margin-right: 0;
     }
 }
 
+/* ===== АДАПТИВНОСТЬ ДЛЯ ТЕЛЕФОНОВ ===== */
 @media (max-width: 480px) {
+    .header-premium.master-header {
+        padding: 4px 10px;
+    }
+    
     .master-header-actions {
         gap: 4px;
     }
     
-    .master-header-btn {
+    .master-header-actions .master-header-btn {
         width: 36px;
         height: 36px;
     }
     
-    .master-header-btn i {
-        font-size: 1rem;
+    .master-header-actions .master-header-btn i {
+        font-size: 0.9rem;
+    }
+    
+    .master-header-actions .notifications-btn .badge {
+        min-width: 16px;
+        height: 16px;
+        font-size: 0.55rem;
+        top: -4px;
+        right: -4px;
+    }
+}
+
+/* ===== АДАПТИВНОСТЬ ДЛЯ МАЛЕНЬКИХ ТЕЛЕФОНОВ ===== */
+@media (max-width: 360px) {
+    .header-premium.master-header {
+        padding: 4px 8px;
+    }
+    
+    .master-header-actions .master-header-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .master-header-actions .master-header-btn i {
+        font-size: 0.8rem;
+    }
+    
+    .logo-premium-text {
+        font-size: 1.4rem;
+    }
+    
+    .logo-premium-small {
+        font-size: 0.7rem;
     }
 }
