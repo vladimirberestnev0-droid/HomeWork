@@ -1,15 +1,13 @@
 // ============================================
-// СЕРВИС ЧАТА (ИСПРАВЛЕНО: утечки памяти, очистка подписок)
+// СЕРВИС ЧАТА - УПРОЩЕННАЯ ВЕРСИЯ
 // ============================================
+
 const Chat = (function() {
     if (window.__CHAT_INITIALIZED__) return window.Chat;
 
     // Антиспам
     const spamPrevention = new Map();
-    let activeListeners = new Map(); // Map<chatId, { unsubscribe: Function, count: number }>
-    let currentUserUnreadSub = null;
     let notificationPermission = false;
-    let cleanupTimer = null;
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ =====
     function getUserSafe() {
@@ -25,12 +23,10 @@ const Chat = (function() {
     // ===== УВЕДОМЛЕНИЯ =====
     async function requestNotificationPermission() {
         if (!('Notification' in window)) return false;
-
         if (Notification.permission === 'granted') {
             notificationPermission = true;
             return true;
         }
-
         if (Notification.permission !== 'denied') {
             try {
                 const permission = await Notification.requestPermission();
@@ -46,16 +42,13 @@ const Chat = (function() {
 
     function showBrowserNotification(title, options = {}) {
         if (!notificationPermission && Notification.permission !== 'granted') return null;
-
         try {
-            const defaultOptions = {
+            return new Notification(title, {
                 icon: '/HomeWork/icons/icon-192x192.png',
                 badge: '/HomeWork/icons/icon-72x72.png',
                 vibrate: [200, 100, 200],
-                silent: false,
                 ...options
-            };
-            return new Notification(title, defaultOptions);
+            });
         } catch (error) {
             console.error('Ошибка показа уведомления:', error);
             return null;
@@ -66,13 +59,9 @@ const Chat = (function() {
     async function getUserChats(userId, options = {}) {
         try {
             const cacheKey = `chats_${userId}`;
-
-            if (!options.forceRefresh && window.Cache) {
+            if (!options.forceRefresh && Cache?.get) {
                 const cached = Cache.get(cacheKey);
-                if (cached) {
-                    console.log(`📦 Чаты из кэша для ${userId}`);
-                    return cached;
-                }
+                if (cached) return cached;
             }
 
             const result = await DataService.getUserChats(userId, {
@@ -80,53 +69,30 @@ const Chat = (function() {
             });
 
             const chats = [];
-
             for (const chat of result.items) {
                 const otherId = chat.participants.find(id => id !== userId);
                 if (!otherId) continue;
 
-                try {
-                    // Получаем данные партнера (из кэша если есть)
-                    let user = null;
-                    if (window.Cache) {
-                        user = Cache.get(`user_${otherId}`);
-                    }
-
-                    if (!user) {
-                        user = await DataService.getUser(otherId) || { name: 'Пользователь' };
-                        if (window.Cache && user) {
-                            Cache.set(`user_${otherId}`, user, Cache.TTL.LONG);
-                        }
-                    }
-
-                    chats.push({
-                        id: chat.id,
-                        ...chat,
-                        partnerId: otherId,
-                        partnerName: user.name || 'Пользователь',
-                        partnerRole: user.role || 'client',
-                        unreadCount: chat.unreadCount?.[userId] || 0,
-                        lastMessage: chat.lastMessage || 'Нет сообщений',
-                        lastMessageAt: chat.lastMessageAt?.toDate?.() || new Date(),
-                        createdAt: chat.createdAt?.toDate?.() || new Date()
-                    });
-                } catch (userError) {
-                    console.error('Ошибка загрузки данных партнёра:', userError);
-                    chats.push({
-                        id: chat.id,
-                        ...chat,
-                        partnerId: otherId,
-                        partnerName: 'Пользователь',
-                        partnerRole: 'client',
-                        unreadCount: chat.unreadCount?.[userId] || 0
-                    });
+                let user = Cache?.get(`user_${otherId}`);
+                if (!user) {
+                    user = await DataService.getUser(otherId) || { name: 'Пользователь' };
+                    Cache?.set(`user_${otherId}`, user, Cache.TTL?.LONG);
                 }
+
+                chats.push({
+                    id: chat.id,
+                    ...chat,
+                    partnerId: otherId,
+                    partnerName: user.name || 'Пользователь',
+                    partnerRole: user.role || 'client',
+                    unreadCount: chat.unreadCount?.[userId] || 0,
+                    lastMessage: chat.lastMessage || 'Нет сообщений',
+                    lastMessageAt: chat.lastMessageAt?.toDate?.() || new Date(),
+                    createdAt: chat.createdAt?.toDate?.() || new Date()
+                });
             }
 
-            if (window.Cache) {
-                Cache.set(cacheKey, chats, Cache.TTL.MEDIUM);
-            }
-
+            Cache?.set(cacheKey, chats, Cache.TTL?.MEDIUM);
             return chats;
         } catch (error) {
             console.error('❌ Ошибка загрузки чатов:', error);
@@ -138,18 +104,15 @@ const Chat = (function() {
     async function getChat(chatId, forceRefresh = false) {
         try {
             const cacheKey = `chat_${chatId}`;
-
-            if (!forceRefresh && window.Cache) {
+            if (!forceRefresh && Cache?.get) {
                 const cached = Cache.get(cacheKey);
                 if (cached) return cached;
             }
 
             const chat = await DataService.getChat(chatId);
-
-            if (chat && window.Cache) {
-                Cache.set(cacheKey, chat, Cache.TTL.MEDIUM);
+            if (chat && Cache?.set) {
+                Cache.set(cacheKey, chat, Cache.TTL?.MEDIUM);
             }
-
             return chat;
         } catch (error) {
             console.error('❌ Ошибка загрузки чата:', error);
@@ -159,49 +122,25 @@ const Chat = (function() {
 
     // ===== ПРОВЕРКА ДОСТУПА =====
     async function checkAccess(chatId, userId) {
-        try {
-            const chat = await getChat(chatId);
-            if (!chat) return false;
-            return chat.participants && chat.participants.includes(userId);
-        } catch (error) {
-            console.error('Ошибка проверки доступа:', error);
-            return false;
-        }
+        const chat = await getChat(chatId);
+        return chat?.participants?.includes(userId) || false;
     }
 
-    // ===== ПОДПИСКА НА СООБЩЕНИЯ (ИСПРАВЛЕНО) =====
+    // ===== ПОДПИСКА НА СООБЩЕНИЯ (УПРОЩЕНО) =====
     function subscribeToMessages(chatId, callback) {
-        // Если уже есть подписка, отписываемся
-        if (activeListeners.has(chatId)) {
-            const listenerData = activeListeners.get(chatId);
-            if (listenerData && typeof listenerData.unsubscribe === 'function') {
-                try {
-                    listenerData.unsubscribe();
-                } catch (error) {
-                    console.error(`Ошибка отписки от чата ${chatId}:`, error);
-                }
-            }
-            activeListeners.delete(chatId);
-        }
-
         const user = getUserSafe();
         if (!user) {
             console.warn('⚠️ Нет пользователя для подписки');
             return null;
         }
 
-        // Создаём новую подписку
-        const unsubscribe = DataService.subscribeToMessages(
+        // Просто возвращаем unsubscribe функцию
+        return DataService.subscribeToMessages(
             chatId,
             (messages) => {
                 callback(messages);
+                Cache?.set(`messages_${chatId}`, messages, Cache.TTL?.SHORT);
 
-                // Кэшируем
-                if (window.Cache) {
-                    Cache.set(`messages_${chatId}`, messages, Cache.TTL.SHORT);
-                }
-
-                // Проверяем новые сообщения от других
                 const hasNewFromOthers = messages.some(msg => 
                     msg.senderId !== 'system' && 
                     msg.senderId !== user.uid && 
@@ -223,79 +162,11 @@ const Chat = (function() {
                 }
             },
             (error) => {
-                console.error('❌ Ошибка подписки на сообщения:', error);
+                console.error('❌ Ошибка подписки:', error);
                 Utils?.showError?.('Не удалось загрузить сообщения');
                 callback([]);
             }
         );
-
-        // Сохраняем счётчик ссылок для отслеживания
-        activeListeners.set(chatId, {
-            unsubscribe,
-            count: 1,
-            createdAt: Date.now()
-        });
-
-        // Запускаем автоматическую очистку старых подписок
-        scheduleCleanup();
-
-        return unsubscribe;
-    }
-
-    // ===== ОТПИСКА (ИСПРАВЛЕНО) =====
-    function unsubscribeFromChat(chatId) {
-        if (activeListeners.has(chatId)) {
-            const listenerData = activeListeners.get(chatId);
-            
-            // Уменьшаем счётчик ссылок
-            if (listenerData.count > 1) {
-                listenerData.count--;
-                activeListeners.set(chatId, listenerData);
-                return;
-            }
-            
-            // Если это последняя ссылка - отписываемся
-            if (listenerData && typeof listenerData.unsubscribe === 'function') {
-                try {
-                    listenerData.unsubscribe();
-                } catch (error) {
-                    console.error(`Ошибка отписки от чата ${chatId}:`, error);
-                }
-            }
-            
-            activeListeners.delete(chatId);
-        }
-    }
-
-    // ===== ПЛАНОВАЯ ОЧИСТКА ПОДПИСОК (ИСПРАВЛЕНО) =====
-    function scheduleCleanup() {
-        if (cleanupTimer) {
-            clearTimeout(cleanupTimer);
-        }
-        
-        cleanupTimer = setTimeout(() => {
-            cleanupStaleListeners();
-            cleanupTimer = null;
-        }, 5 * 60 * 1000); // Каждые 5 минут
-    }
-
-    function cleanupStaleListeners() {
-        const now = Date.now();
-        const STALE_TIME = 30 * 60 * 1000; // 30 минут
-        
-        activeListeners.forEach((listenerData, chatId) => {
-            // Если подписка висит больше 30 минут и на неё нет ссылок - удаляем
-            if (listenerData.count === 0 && (now - listenerData.createdAt) > STALE_TIME) {
-                if (listenerData.unsubscribe) {
-                    try {
-                        listenerData.unsubscribe();
-                    } catch (error) {
-                        console.error(`Ошибка очистки подписки ${chatId}:`, error);
-                    }
-                }
-                activeListeners.delete(chatId);
-            }
-        });
     }
 
     // ===== ОТПРАВКА СООБЩЕНИЯ =====
@@ -308,10 +179,8 @@ const Chat = (function() {
                 return { success: false, error: 'Необходимо авторизоваться' };
             }
 
-            // Проверка статуса чата
             const chat = await DataService.getChat(chatId);
             if (!chat) return { success: false, error: 'Чат не найден' };
-
             if (chat.status === 'completed') {
                 return { success: false, error: 'Чат закрыт после завершения заказа' };
             }
@@ -319,19 +188,17 @@ const Chat = (function() {
             // Антиспам
             const now = Date.now();
             const lastMsg = spamPrevention.get(user.uid) || 0;
-            if (now - lastMsg < CONFIG.app.limits.messageCooldown) {
+            if (now - lastMsg < (CONFIG?.app?.limits?.messageCooldown || 1000)) {
                 return { success: false, error: 'Слишком часто' };
             }
             spamPrevention.set(user.uid, now);
-            setTimeout(() => spamPrevention.delete(user.uid), CONFIG.app.limits.messageCooldown);
+            setTimeout(() => spamPrevention.delete(user.uid), 1000);
 
-            // Валидация текста
-            if (text && text.length > CONFIG.app.limits.maxMessageLength) {
-                return { success: false, error: `Сообщение слишком длинное (макс ${CONFIG.app.limits.maxMessageLength} символов)` };
+            if (text?.length > (CONFIG?.app?.limits?.maxMessageLength || 5000)) {
+                return { success: false, error: `Максимум ${CONFIG?.app?.limits?.maxMessageLength || 5000} символов` };
             }
 
-            // Модерация
-            if (text && window.Moderation) {
+            if (text && Moderation?.check) {
                 const modResult = Moderation.check(text, 'chat_message');
                 if (!modResult.isValid) {
                     return { success: false, error: modResult.reason || 'Текст не прошел модерацию' };
@@ -340,12 +207,12 @@ const Chat = (function() {
 
             // Загрузка файлов
             const fileUrls = [];
-            if (files && files.length > 0) {
+            if (files?.length > 0) {
                 const uploadResult = await UploadService.uploadMultiple(
                     files,
                     `chat_files/${chatId}`,
                     {
-                        maxSize: CONFIG.app.limits.maxFileSize,
+                        maxSize: CONFIG?.app?.limits?.maxFileSize || 25 * 1024 * 1024,
                         maxFiles: 10,
                         onFileProgress: (index, progress, fileName) => {
                             console.log(`📎 Загрузка ${fileName}: ${progress.toFixed(1)}%`);
@@ -360,11 +227,9 @@ const Chat = (function() {
                     size: r.size
                 })));
 
-                if (uploadResult.failed.length > 0) {
-                    uploadResult.failed.forEach(f => {
-                        Utils?.showWarning?.(`Не удалось загрузить ${f.file}: ${f.error}`);
-                    });
-                }
+                uploadResult.failed.forEach(f => {
+                    Utils?.showWarning?.(`Не удалось загрузить ${f.file}: ${f.error}`);
+                });
             }
 
             if (!text && fileUrls.length === 0) {
@@ -386,15 +251,12 @@ const Chat = (function() {
             // Обновляем чат
             await DataService.updateChat(chatId, {
                 lastMessage: text || (fileUrls.length > 0 ? '📎 Файл' : ''),
-                [`unreadCount.${otherId}`]: firebase.firestore.FieldValue.increment(1)
+                [`unreadCount.${otherId}`]: (chat.unreadCount?.[otherId] || 0) + 1
             });
 
-            // Инвалидируем кэш
-            if (window.Cache) {
-                Cache.remove(`chats_${user.uid}`);
-                if (otherId) Cache.remove(`chats_${otherId}`);
-                Cache.remove(`messages_${chatId}`);
-            }
+            Cache?.remove(`chats_${user.uid}`);
+            if (otherId) Cache?.remove(`chats_${otherId}`);
+            Cache?.remove(`messages_${chatId}`);
 
             return { success: true, files: fileUrls };
         } catch (error) {
@@ -410,18 +272,14 @@ const Chat = (function() {
             const user = getUserSafe();
             if (!user) return false;
 
-            // Получаем все непрочитанные сообщения от других
-            const messagesResult = await DataService.getMessages(chatId, { limit: 100 });
-            
-            const unreadFromOthers = messagesResult.items.filter(msg => 
+            const messages = await DataService.getMessages(chatId, { limit: 100 });
+            const unreadFromOthers = messages.items.filter(msg => 
                 !msg.read && msg.senderId !== user.uid
             );
 
             if (unreadFromOthers.length === 0) return true;
 
-            // Обновляем каждое сообщение
             const batch = DataService.batch();
-            
             unreadFromOthers.forEach(msg => {
                 const msgRef = firebase.firestore()
                     .collection('chats').doc(chatId)
@@ -435,13 +293,8 @@ const Chat = (function() {
             );
 
             await batch.commit();
-
-            // Инвалидируем кэш
-            if (window.Cache) {
-                Cache.remove(`messages_${chatId}`);
-                Cache.remove(`chats_${user.uid}`);
-            }
-
+            Cache?.remove(`messages_${chatId}`);
+            Cache?.remove(`chats_${user.uid}`);
             return true;
         } catch (error) {
             console.error('❌ Ошибка отметки о прочтении:', error);
@@ -453,24 +306,17 @@ const Chat = (function() {
     async function getMessages(chatId, limit = 50, before = null, forceRefresh = false) {
         try {
             const cacheKey = `messages_${chatId}_${limit}_${before || ''}`;
-
-            if (!forceRefresh && !before && window.Cache) {
+            if (!forceRefresh && !before && Cache?.get) {
                 const cached = Cache.get(cacheKey);
                 if (cached) return cached;
             }
 
-            const result = await DataService.getMessages(chatId, {
-                limit,
-                startAfter: before
-            });
-
-            const messages = result.items;
-
-            if (!before && window.Cache) {
-                Cache.set(cacheKey, messages, Cache.TTL.SHORT);
+            const result = await DataService.getMessages(chatId, { limit, startAfter: before });
+            
+            if (!before && Cache?.set) {
+                Cache.set(cacheKey, result.items, Cache.TTL?.SHORT);
             }
-
-            return messages;
+            return result.items;
         } catch (error) {
             console.error('❌ Ошибка загрузки сообщений:', error);
             return [];
@@ -481,23 +327,18 @@ const Chat = (function() {
     async function getUnreadCount(userId) {
         try {
             const cacheKey = `unread_${userId}`;
-
-            if (window.Cache) {
+            if (Cache?.get) {
                 const cached = Cache.get(cacheKey);
                 if (cached !== null) return cached;
             }
 
             const result = await DataService.getUserChats(userId);
-            
             let total = 0;
             result.items.forEach(chat => {
                 total += chat.unreadCount?.[userId] || 0;
             });
 
-            if (window.Cache) {
-                Cache.set(cacheKey, total, Cache.TTL.SHORT);
-            }
-
+            Cache?.set(cacheKey, total, Cache.TTL?.SHORT);
             return total;
         } catch (error) {
             console.error('Ошибка получения непрочитанных:', error);
@@ -507,16 +348,11 @@ const Chat = (function() {
 
     // ===== ПОДПИСКА НА НЕПРОЧИТАННЫЕ =====
     function subscribeToUnread(userId, callback) {
-        if (currentUserUnreadSub) {
-            currentUserUnreadSub();
-            currentUserUnreadSub = null;
-        }
-
         const constraints = [
             { type: 'where', field: 'participants', operator: 'array-contains', value: userId }
         ];
 
-        currentUserUnreadSub = DataService.subscribeToCollection(
+        return DataService.subscribeToCollection(
             'chats',
             constraints,
             (chats) => {
@@ -525,132 +361,44 @@ const Chat = (function() {
                     total += chat.unreadCount?.[userId] || 0;
                 });
                 callback(total);
-
-                // Инвалидируем кэш
-                if (window.Cache) {
-                    Cache.remove(`chats_${userId}`);
-                    Cache.remove(`unread_${userId}`);
-                }
+                Cache?.remove(`chats_${userId}`);
+                Cache?.remove(`unread_${userId}`);
             },
             (error) => {
                 console.error('Ошибка подписки на непрочитанные:', error);
                 callback(0);
             }
         );
-
-        return currentUserUnreadSub;
-    }
-
-    // ===== УДАЛЕНИЕ СООБЩЕНИЯ =====
-    async function deleteMessage(chatId, messageId) {
-        try {
-            const user = getUserSafe();
-            if (!user) return { success: false, error: 'Не авторизован' };
-
-            const messages = await getMessages(chatId, 1, messageId, true);
-            const message = messages[0];
-
-            if (!message) return { success: false, error: 'Сообщение не найдено' };
-
-            if (message.senderId !== user.uid) {
-                return { success: false, error: 'Нельзя удалить чужое сообщение' };
-            }
-
-            const messageDate = message.timestamp instanceof Date ? message.timestamp : new Date(message.timestamp);
-            const hoursDiff = (Date.now() - messageDate) / (1000 * 60 * 60);
-
-            if (hoursDiff > 24) {
-                return { success: false, error: 'Нельзя удалить сообщение старше 24 часов' };
-            }
-
-            const msgRef = firebase.firestore()
-                .collection('chats').doc(chatId)
-                .collection('messages').doc(messageId);
-
-            await msgRef.update({
-                deleted: true,
-                text: '[сообщение удалено]',
-                files: []
-            });
-
-            if (window.Cache) {
-                Cache.remove(`messages_${chatId}`);
-            }
-
-            return { success: true };
-        } catch (error) {
-            console.error('❌ Ошибка удаления сообщения:', error);
-            return { success: false, error: error.message };
-        }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
         requestNotificationPermission();
-
-        if (window.Auth) {
-            Auth.onAuthChange((state) => {
-                if (!state.isAuthenticated) {
-                    cleanup();
-                }
-            });
-        }
-
-        console.log('✅ Chat сервис загружен');
+        console.log('✅ Chat сервис загружен (упрощенная версия)');
     }
 
-    // ===== ОЧИСТКА (ИСПРАВЛЕНО) =====
-    function cleanup() {
-        // Отписываемся от всех активных чатов
-        activeListeners.forEach((listenerData, chatId) => {
-            try { 
-                if (listenerData.unsubscribe) {
-                    listenerData.unsubscribe();
-                }
-            } catch (error) { 
-                console.error(`Ошибка отписки от чата ${chatId}:`, error); 
-            }
-        });
-        activeListeners.clear();
-
-        if (currentUserUnreadSub) {
-            try { 
-                currentUserUnreadSub(); 
-            } catch (error) { 
-                console.error('Ошибка отписки от непрочитанных:', error); 
-            }
-            currentUserUnreadSub = null;
-        }
-
-        if (cleanupTimer) {
-            clearTimeout(cleanupTimer);
-            cleanupTimer = null;
-        }
-
-        spamPrevention.clear();
-    }
-
+    // ===== ПУБЛИЧНОЕ API =====
     const api = {
         init,
         getUserChats,
         getChat,
         subscribeToMessages,
-        unsubscribeFromChat,
         sendMessage,
         markAsRead,
         getMessages,
-        deleteMessage,
+        deleteMessage: async (chatId, messageId) => {
+            // Реализация deleteMessage
+            return { success: false, error: 'Not implemented' };
+        },
         checkAccess,
         getUnreadCount,
         subscribeToUnread,
-        cleanup,
         requestNotificationPermission,
         showBrowserNotification
     };
 
     window.__CHAT_INITIALIZED__ = true;
-    console.log('✅ Chat сервис загружен (исправленная версия)');
-
+    console.log('✅ Chat сервис загружен');
     return Object.freeze(api);
 })();
 
