@@ -588,7 +588,10 @@ const Auth = (function() {
                 categories: userData.role === ROLES.MASTER ? (userData.categories || '') : '',
                 rating: 0,
                 reviews: 0,
+                ordersCount: 0,
+                activeOrders: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastOrderAt: null,
                 banned: false,
                 fcmTokens: [],
                 settings: {

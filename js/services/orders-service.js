@@ -273,43 +273,51 @@ const Orders = (function() {
             const city = Utils.extractCity(orderData.address);
 
             const order = {
+            category: orderData.category,
+            title: orderData.title.trim(),
+            description: orderData.description?.trim() || '',
+            price: parseInt(orderData.price),
+            address: orderData.address.trim(),
+            city: city,
+            photos: photoUrls,
+            clientId: user.uid,
+            clientName: userData.name || 'Клиент',
+            clientPhone: userData.phone || '',
+            clientRating: userData.rating || 0,
+            status: ORDER_STATUS.OPEN,
+            responses: [],
+            views: 0,
+            urgent: orderData.urgent || false
+        };
+
+        const result = await DataService.createOrder(order);
+        
+        // ===== ВАЖНО: ОБНОВЛЯЕМ СЧЕТЧИКИ КЛИЕНТА =====
+        await db.collection('users').doc(user.uid).update({
+            ordersCount: firebase.firestore.FieldValue.increment(1),  // увеличиваем на 1
+            activeOrders: firebase.firestore.FieldValue.increment(1), // увеличиваем на 1
+            lastOrderAt: firebase.firestore.FieldValue.serverTimestamp() // время последнего
+        });
+        
+        // Уведомляем мастеров
+        if (window.PushService) {
+            PushService.notifyMastersAboutNewOrder({
+                id: result.id,
+                title: orderData.title,
                 category: orderData.category,
-                title: orderData.title.trim(),
-                description: orderData.description?.trim() || '',
-                price: parseInt(orderData.price),
-                address: orderData.address.trim(),
-                city: city,
-                photos: photoUrls,
-                clientId: user.uid,
-                clientName: userData.name || 'Клиент',
-                clientPhone: userData.phone || '',
-                clientRating: userData.rating || 0,
-                status: ORDER_STATUS.OPEN,
-                responses: [],
-                views: 0,
-                urgent: orderData.urgent || false
-            };
+                price: orderData.price
+            }).catch(err => console.warn('⚠️ Ошибка уведомлений:', err));
+        }
+        
+        if (window.Cache) {
+            Cache.clear('open_orders');
+            Cache.remove(`client_orders_${user.uid}`);
+        }
 
-            const result = await DataService.createOrder(order);
-            
-            // Уведомляем мастеров
-            if (window.PushService) {
-                PushService.notifyMastersAboutNewOrder({
-                    id: result.id,
-                    title: orderData.title,
-                    category: orderData.category,
-                    price: orderData.price
-                }).catch(err => console.warn('⚠️ Ошибка уведомлений:', err));
-            }
-            
-            if (window.Cache) {
-                Cache.clear('open_orders');
-                Cache.remove(`client_orders_${user.uid}`);
-            }
-
-            Utils.showSuccess('✅ Заказ создан!');
-            return { success: true, orderId: result.id };
-        } catch (error) {
+        Utils.showSuccess('✅ Заказ создан!');
+        return { success: true, orderId: result.id };
+        
+    } catch (error) {
             console.error('❌ Ошибка создания заказа:', error);
             Utils.showError(error.message || 'Ошибка создания заказа');
             return { success: false, error: error.message };
@@ -805,95 +813,116 @@ const Orders = (function() {
     }
 
     // ===== ПОДТВЕРЖДЕНИЕ ЗАВЕРШЕНИЯ (КЛИЕНТ) =====
-    async function confirmCompletion(orderId, clientReview = null, skipOffline = false) {
-        const taskId = window.Loader?.show('Подтверждение завершения...');
+async function confirmCompletion(orderId, clientReview = null, skipOffline = false) {
+    const taskId = window.Loader?.show('Подтверждение завершения...');
 
-        try {
-            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
+    try {
+        // Проверка авторизации
+        if (!checkAuth()) {
+            return { success: false, error: 'Необходимо авторизоваться' };
+        }
 
-            if (!skipOffline && !navigator.onLine) {
-                addToOfflineQueue({ type: 'confirmCompletion', orderId, review: clientReview });
-                Utils.showWarning('Подтверждение будет отправлено при подключении');
-                return { success: true, queued: true };
-            }
+        // Офлайн-режим
+        if (!skipOffline && !navigator.onLine) {
+            addToOfflineQueue({ type: 'confirmCompletion', orderId, review: clientReview });
+            Utils.showWarning('Подтверждение будет отправлено при подключении');
+            return { success: true, queued: true };
+        }
 
-            const user = getUserSafe();
-            if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
+        const user = getUserSafe();
+        if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
 
-            const order = await DataService.getOrder(orderId);
-            if (!order) throw new Error('Заказ не найден');
+        // Получаем заказ
+        const order = await DataService.getOrder(orderId);
+        if (!order) throw new Error('Заказ не найден');
 
-            if (order.clientId !== user.uid) {
-                throw new Error('Только клиент может подтвердить завершение');
-            }
+        // Проверка прав
+        if (order.clientId !== user.uid) {
+            throw new Error('Только клиент может подтвердить завершение');
+        }
 
-            if (normalizeStatus(order.status) !== ORDER_STATUS.AWAITING_CONFIRMATION) {
-                throw new Error('Заказ не ожидает подтверждения');
-            }
+        // Проверка статуса
+        if (normalizeStatus(order.status) !== ORDER_STATUS.AWAITING_CONFIRMATION) {
+            throw new Error('Заказ не ожидает подтверждения');
+        }
 
-            const updateData = {
-                status: ORDER_STATUS.COMPLETED,
-                completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        // ===== 1. ГОТОВИМ ДАННЫЕ ДЛЯ ОБНОВЛЕНИЯ =====
+        const updateData = {
+            status: ORDER_STATUS.COMPLETED,
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // ===== 2. ОБРАБАТЫВАЕМ ОТЗЫВ КЛИЕНТА =====
+        if (clientReview?.rating) {
+            updateData.clientReview = {
+                rating: clientReview.rating,
+                text: clientReview.text?.trim() || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            if (clientReview && clientReview.rating) {
-                updateData.clientReview = {
-                    rating: clientReview.rating,
-                    text: clientReview.text?.trim() || '',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+            // Обновляем рейтинг мастера (если есть отзыв)
+            const master = await DataService.getUser(order.selectedMasterId).catch(() => null);
+            if (master) {
+                const currentRating = master.rating || 0;
+                const currentReviews = master.reviews || 0;
+                const newRating = ((currentRating * currentReviews) + clientReview.rating) / (currentReviews + 1);
 
-                // Обновляем рейтинг мастера
-                const master = await DataService.getUser(order.selectedMasterId);
-                if (master) {
-                    const currentRating = master.rating || 0;
-                    const currentReviews = master.reviews || 0;
-                    const newRating = ((currentRating * currentReviews) + clientReview.rating) / (currentReviews + 1);
-
-                    await DataService.updateUser(order.selectedMasterId, {
-                        rating: newRating,
-                        reviews: currentReviews + 1
-                    });
-                }
+                await DataService.updateUser(order.selectedMasterId, {
+                    rating: newRating,
+                    reviews: currentReviews + 1
+                }).catch(err => console.warn('⚠️ Ошибка обновления рейтинга мастера:', err));
             }
+        }
 
-            await DataService.updateOrder(orderId, updateData);
+        // ===== 3. ОБНОВЛЯЕМ ЗАКАЗ =====
+        await DataService.updateOrder(orderId, updateData);
 
-            // Обновляем чат
-            const chatId = `chat_${orderId}_${order.selectedMasterId}`;
-            await DataService.updateChat(chatId, {
-                status: 'completed',
-                lastMessage: '✅ Заказ выполнен. Чат закрыт.',
-                lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        // ===== 4. ⭐ УМЕНЬШАЕМ activeOrders КЛИЕНТА (ВОТ ЭТО ДОБАВИЛ!) =====
+        await db.collection('users').doc(order.clientId).update({
+            activeOrders: firebase.firestore.FieldValue.increment(-1) // Уменьшаем на 1
+        }).catch(err => console.warn('⚠️ Ошибка обновления activeOrders:', err));
 
-            // Уведомление мастеру
-            await db.collection('notifications').add({
-                userId: order.selectedMasterId,
-                type: 'order_completed',
-                title: '✅ Заказ выполнен!',
-                body: `Клиент подтвердил выполнение заказа. Спасибо за работу!`,
-                data: { orderId, chatId },
-                read: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        // ===== 5. ОБНОВЛЯЕМ ЧАТ =====
+        const chatId = `chat_${orderId}_${order.selectedMasterId}`;
+        await DataService.updateChat(chatId, {
+            status: 'completed',
+            lastMessage: '✅ Заказ выполнен. Чат закрыт.',
+            lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.warn('⚠️ Ошибка обновления чата:', err));
 
-            if (window.Cache) {
+        // ===== 6. УВЕДОМЛЕНИЕ МАСТЕРУ =====
+        await db.collection('notifications').add({
+            userId: order.selectedMasterId,
+            type: 'order_completed',
+            title: '✅ Заказ выполнен!',
+            body: `Клиент подтвердил выполнение заказа. Спасибо за работу!`,
+            data: { orderId, chatId },
+            read: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.warn('⚠️ Ошибка создания уведомления:', err));
+
+        // ===== 7. ОЧИЩАЕМ КЭШ =====
+        if (window.Cache) {
+            try {
                 Cache.remove(`client_orders_${user.uid}`);
                 Cache.remove(`master_responses_${order.selectedMasterId}`);
                 Cache.remove(`order_${orderId}`);
+            } catch (err) {
+                console.warn('⚠️ Ошибка очистки кэша:', err);
             }
-
-            Utils.showSuccess('✅ Заказ выполнен!');
-            return { success: true };
-        } catch (error) {
-            console.error('❌ Ошибка:', error);
-            Utils.showError(error.message || 'Ошибка');
-            return { success: false, error: error.message };
-        } finally {
-            if (taskId) window.Loader?.hide(taskId);
         }
+
+        Utils.showSuccess('✅ Заказ выполнен!');
+        return { success: true };
+        
+    } catch (error) {
+        console.error('❌ Ошибка:', error);
+        Utils.showError(error.message || 'Ошибка');
+        return { success: false, error: error.message };
+    } finally {
+        if (taskId) window.Loader?.hide(taskId);
     }
+}
 
     // ===== ОТМЕНА ЗАКАЗА =====
     async function cancelOrder(orderId, reason = '', skipOffline = false) {
