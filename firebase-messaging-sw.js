@@ -1,5 +1,5 @@
 // ============================================
-// Service Worker для PWA - ЭЛЕГАНТНАЯ АРХИТЕКТУРА
+// Service Worker для PWA - ЭЛЕГАНТНАЯ АРХИТЕКТУРА (ИСПРАВЛЕНО)
 // Совместимость: GitHub Pages + Firebase
 // ============================================
 
@@ -162,7 +162,7 @@ function handlePushEvent(event) {
 }
 
 // ============================================
-// УСТАНОВКА
+// УСТАНОВКА - ИСПРАВЛЕННАЯ ВЕРСИЯ (БЕЗ ОШИБОК)
 // ============================================
 self.addEventListener('install', (event) => {
     console.log('🔄 Service Worker: installing...');
@@ -171,19 +171,42 @@ self.addEventListener('install', (event) => {
         (async () => {
             const cache = await caches.open(CACHE_NAME);
             
-            // Кэшируем основные ресурсы
-            await cache.addAll(CONFIG.cache.core);
+            // ЭЛЕГАНТНАЯ ФУНКЦИЯ: кэширует файлы с защитой от ошибок
+            const safeCacheAddAll = async (fileList, category) => {
+                if (!fileList || fileList.length === 0) return;
+                
+                console.log(`📦 Кэширование ${category} (${fileList.length} файлов)...`);
+                
+                // Пытаемся кэшировать все сразу
+                try {
+                    await cache.addAll(fileList);
+                    console.log(`✅ ${category}: все файлы закэшированы`);
+                    return;
+                } catch (error) {
+                    console.log(`⚠️ ${category}: массовое кэширование не удалось, пробуем по одному...`);
+                    
+                    // Если не получилось - кэшируем по одному
+                    let successCount = 0;
+                    for (const file of fileList) {
+                        try {
+                            await cache.add(file);
+                            successCount++;
+                        } catch (e) {
+                            console.log(`  ⚠️ Не удалось кэшировать ${file}: ${e.message}`);
+                        }
+                    }
+                    
+                    console.log(`📊 ${category}: закэшировано ${successCount} из ${fileList.length} файлов`);
+                }
+            };
             
-            // Пытаемся закэшировать CSS и JS (но не критично)
-            try {
-                await cache.addAll(CONFIG.cache.css);
-                await cache.addAll(CONFIG.cache.js);
-            } catch (error) {
-                console.log('⚠️ Non-critical cache error:', error.message);
-            }
+            // Кэшируем всё по очереди с безопасной функцией
+            await safeCacheAddAll(CONFIG.cache.core, 'core');
+            await safeCacheAddAll(CONFIG.cache.css, 'css');
+            await safeCacheAddAll(CONFIG.cache.js, 'js');
             
             await self.skipWaiting();
-            console.log('✅ Service Worker installed');
+            console.log('✅ Service Worker installed successfully');
         })()
     );
 });
@@ -238,7 +261,7 @@ self.addEventListener('fetch', (event) => {
                 // Пробуем получить из кэша
                 const cachedResponse = await cache.match(event.request);
                 
-                // Параллельно обновляем кэш
+                // Параллельно обновляем кэш (но не для иконок при офлайн)
                 const fetchPromise = fetch(event.request.clone())
                     .then(networkResponse => {
                         if (networkResponse && networkResponse.status === 200) {
@@ -255,6 +278,12 @@ self.addEventListener('fetch', (event) => {
                 if (event.request.mode === 'navigate') {
                     return caches.match(BASE_PATH + 'offline.html');
                 }
+                
+                // Для иконок и статики возвращаем заглушку
+                if (event.request.url.includes('/icons/')) {
+                    return new Response(null, { status: 204 });
+                }
+                
                 return new Response('Offline', { status: 503 });
             }
         })
@@ -348,6 +377,6 @@ self.addEventListener('sync', (event) => {
     }
 });
 
-console.log('🎉 Service Worker загружен (элегантная архитектура)');
+console.log('🎉 Service Worker загружен (элегантная архитектура, исправлено)');
 console.log(`📦 Режим: ${IS_GITHUB_PAGES ? 'GitHub Pages' : 'Production'}`);
 console.log(`🔥 Firebase: ${firebaseAvailable ? 'доступен' : 'в режиме fallback'}`);
