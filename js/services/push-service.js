@@ -14,6 +14,7 @@ const PushService = (function() {
     // Константы
     const VAPID_KEY = 'BKeLz4hFmUOzOZyJX3vLQzB6wX9xY8vU7tS6rQ5pN4mL3kI2jH1gF0eD9cB8aA7z';
     const TOKEN_UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000; // Обновляем раз в неделю
+    const SERVER_KEY = 'BLuGczKPH_SqYk_zb_t4YsAEh1mScTH9EDuysAhPefy6Lzs5Qnja4sOmPzbiCP4SQSpBABU0Zw7_T6h34Vq864E';
 
     /**
      * Инициализация сервиса
@@ -297,10 +298,54 @@ const PushService = (function() {
         }
     }
 
-    // ===== НОВЫЕ ФУНКЦИИ ДЛЯ ПРЯМОЙ ОТПРАВКИ =====
+    // ===== ОСНОВНЫЕ ФУНКЦИИ ДЛЯ ОТПРАВКИ =====
 
     /**
-     * ПРЯМАЯ ОТПРАВКА: уведомления конкретному пользователю
+     * Прямая отправка push-уведомления на один токен
+     */
+    async function sendDirectPush(token, title, body, data = {}) {
+        const message = {
+            notification: {
+                title: title,
+                body: body,
+                icon: '/HomeWork/icons/icon-192x192.png',
+                click_action: window.location.origin + '/HomeWork/'
+            },
+            data: {
+                ...data,
+                timestamp: Date.now().toString()
+            },
+            to: token,
+            priority: 'high'
+        };
+
+        try {
+            const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'key=' + SERVER_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(message)
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                console.log('✅ Push отправлен:', result);
+                return { success: true, result };
+            } else {
+                console.error('❌ Ошибка FCM:', result);
+                return { success: false, error: result };
+            }
+        } catch (error) {
+            console.error('❌ Ошибка отправки:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Отправка уведомления пользователю (на все его устройства)
      */
     async function sendPushToUser(userId, title, body, data = {}) {
         try {
@@ -324,19 +369,22 @@ const PushService = (function() {
             // Сохраняем уведомление в БД
             await saveNotification(userId, title, body, data);
 
-            const SERVER_KEY = 'BLuGczKPH_SqYk_zb_t4YsAEh1mScTH9EDuysAhPefy6Lzs5Qnja4sOmPzbiCP4SQSpBABU0Zw7_T6h34Vq864E';
-
             console.log(`📬 Отправка push на ${tokens.length} устройств...`);
-            
-            // Здесь будет отправка через сервер
-            // Пока просто логируем
-            console.log('📝 Для отправки push нужен Server Key из Firebase Console');
+
+            // Отправляем на все токены
+            const results = await Promise.allSettled(
+                tokens.map(token => sendDirectPush(token, title, body, data))
+            );
+
+            const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+            console.log(`✅ Успешно отправлено: ${successCount}/${tokens.length}`);
 
             return { 
                 success: true, 
                 saved: true,
-                tokensCount: tokens.length,
-                message: 'Уведомление сохранено. Для отправки push настрой Server Key'
+                sent: successCount,
+                total: tokens.length,
+                results: results.map(r => r.status === 'fulfilled' ? r.value : r.reason)
             };
 
         } catch (error) {
@@ -363,6 +411,8 @@ const PushService = (function() {
         console.log(`📝 Уведомление сохранено: ${docRef.id}`);
         return docRef.id;
     }
+
+    // ===== СПЕЦИАЛИЗИРОВАННЫЕ ФУНКЦИИ =====
 
     /**
      * Уведомление о новом отклике
@@ -422,7 +472,6 @@ const PushService = (function() {
      * Уведомление о завершении заказа
      */
     async function notifyOrderCompleted(userId, orderTitle, orderId, chatId, isClient) {
-        const role = isClient ? 'мастер' : 'клиент';
         return sendPushToUser(
             userId,
             '✅ Заказ выполнен!',
@@ -503,6 +552,8 @@ const PushService = (function() {
         }
     }
 
+    // ===== ТЕСТОВЫЕ ФУНКЦИИ =====
+
     /**
      * Тестовая функция
      */
@@ -522,15 +573,29 @@ const PushService = (function() {
             });
         }
 
-        // Сохраняем тестовое уведомление
-        await saveNotification(
+        // Отправляем тестовое уведомление самому себе
+        const result = await sendPushToUser(
             user.uid,
             '🔔 Тестовое уведомление',
             'Проверка работы сервиса',
             { type: 'test' }
         );
 
-        console.log('✅ Тест завершён');
+        console.log('✅ Тест завершён:', result);
+        return result;
+    }
+
+    /**
+     * Проверка статуса
+     */
+    function getStatus() {
+        return {
+            isInitialized,
+            hasToken: !!currentToken,
+            permission: Notification.permission,
+            isSupported: isSupported(),
+            token: currentToken ? currentToken.substring(0, 20) + '...' : null
+        };
     }
 
     /**
@@ -560,6 +625,7 @@ const PushService = (function() {
         getCurrentToken: () => currentToken,
         isSupported,
         isInitialized: () => isInitialized,
+        getStatus,
         cleanup,
         
         // Уведомления
@@ -568,6 +634,7 @@ const PushService = (function() {
         
         // Прямая отправка
         sendPushToUser,
+        sendDirectPush,
         notifyNewResponse,
         notifyMasterSelected,
         notifyNewMessage,
