@@ -1,5 +1,5 @@
 // ============================================
-// СЕРВИС ЗАКАЗОВ - ИДЕАЛЬНАЯ АРХИТЕКТУРА
+// СЕРВИС ЗАКАЗОВ - ИДЕАЛЬНАЯ АРХИТЕКТУРА С PUSH-УВЕДОМЛЕНИЯМИ
 // ============================================
 
 const Orders = (function() {
@@ -126,6 +126,9 @@ const Orders = (function() {
                         break;
                     case 'cancelOrder':
                         result = await cancelOrder(action.orderId, action.reason, true);
+                        break;
+                    case 'updateOrder':
+                        result = await updateOrder(action.orderId, action.data, true);
                         break;
                 }
                 
@@ -288,19 +291,20 @@ const Orders = (function() {
                 status: ORDER_STATUS.OPEN,
                 responses: [],
                 views: 0,
-                urgent: orderData.urgent || false
+                urgent: orderData.urgent || false,
+                coordinates: orderData.coordinates || null,
+                createdAt: new Date().toISOString()
             };
 
             const result = await DataService.createOrder(order);
             
-            // ===== ВСЁ ЧЕРЕЗ DATASERVICE =====
             await DataService.updateUser(user.uid, {
                 ordersCount: (userData.ordersCount || 0) + 1,
                 activeOrders: (userData.activeOrders || 0) + 1,
                 lastOrderAt: new Date().toISOString()
             });
             
-            // Уведомляем мастеров
+            // Уведомляем мастеров через PushService
             if (window.PushService) {
                 PushService.notifyMastersAboutNewOrder({
                     id: result.id,
@@ -565,7 +569,7 @@ const Orders = (function() {
                 userData.name || 'Мастер', price, comment
             );
 
-            // ===== ЧЕРЕЗ DATASERVICE =====
+            // Сохраняем уведомление в Firestore
             await DataService.createNotification({
                 userId: order.clientId,
                 type: 'new_response',
@@ -578,6 +582,17 @@ const Orders = (function() {
                     chatId: `chat_${orderId}_${user.uid}`
                 }
             });
+
+            // Отправляем push-уведомление через PushService
+            if (window.PushService) {
+                PushService.notifyNewResponse(
+                    order.clientId,
+                    order.title || 'Заказ',
+                    userData.name || 'Мастер',
+                    orderId,
+                    `chat_${orderId}_${user.uid}`
+                ).catch(err => console.warn('⚠️ Ошибка push:', err));
+            }
 
             if (window.Cache) {
                 Cache.clear('open_orders');
@@ -643,6 +658,17 @@ const Orders = (function() {
                 data: { orderId, clientId: user.uid, price }
             });
 
+            // 2.1 Отправляем push выбранному мастеру
+            if (window.PushService) {
+                PushService.notifyMasterSelected(
+                    masterId,
+                    order.title || 'Заказ',
+                    userData?.name || 'Клиент',
+                    orderId,
+                    `chat_${orderId}_${masterId}`
+                ).catch(err => console.warn('⚠️ Ошибка push:', err));
+            }
+
             // 3. Обрабатываем все чаты
             const allChatsResult = await DataService.getCollection('chats', [
                 { type: 'where', field: 'orderId', operator: '==', value: orderId }
@@ -692,6 +718,16 @@ const Orders = (function() {
                             body: `Заказ "${order.title || 'Заказ'}" уже взят другим мастером`,
                             data: { orderId }
                         });
+                        
+                        // Отправляем push отклонённым мастерам
+                        if (window.PushService) {
+                            PushService.notifyOrderCancelled(
+                                otherMasterId,
+                                order.title || 'Заказ',
+                                orderId,
+                                'Заказ уже взят другим мастером'
+                            ).catch(err => console.warn('⚠️ Ошибка push:', err));
+                        }
                     }
                 }
             }
@@ -722,102 +758,98 @@ const Orders = (function() {
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНИЯ (МАСТЕР) - ИСПРАВЛЕНО =====
-async function initiateCompletion(orderId, clientReview = null, skipOffline = false) {
-    const taskId = window.Loader?.show('Завершение заказа...');
+    // ===== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНИЯ (МАСТЕР) =====
+    async function initiateCompletion(orderId, clientReview = null, skipOffline = false) {
+        const taskId = window.Loader?.show('Завершение заказа...');
 
-    try {
-        if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
-
-        if (!skipOffline && !navigator.onLine) {
-            addToOfflineQueue({ type: 'initiateCompletion', orderId, review: clientReview });
-            Utils.showWarning('Запрос на завершение будет отправлен при подключении');
-            return { success: true, queued: true };
-        }
-
-        const user = getUserSafe();
-        if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
-
-        const order = await DataService.getOrder(orderId);
-        if (!order) throw new Error('Заказ не найден');
-
-        if (order.selectedMasterId !== user.uid) {
-            throw new Error('Только назначенный мастер может завершить заказ');
-        }
-
-        if (normalizeStatus(order.status) !== ORDER_STATUS.IN_PROGRESS) {
-            throw new Error('Заказ не в работе');
-        }
-
-        const updateData = {
-            status: ORDER_STATUS.AWAITING_CONFIRMATION,
-            masterCompletedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        if (clientReview && clientReview.rating) {
-            updateData.masterReview = {
-                rating: clientReview.rating,
-                text: clientReview.text?.trim() || '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-        }
-
-        // ===== 1. ОБНОВЛЯЕМ ЗАКАЗ =====
-        await DataService.updateOrder(orderId, updateData);
-
-        // ===== 2. ПРОВЕРЯЕМ И ОБНОВЛЯЕМ ЧАТ (ЕСЛИ ЕСТЬ) =====
         try {
-            const chatId = `chat_${orderId}_${order.selectedMasterId}`;
-            const chat = await DataService.getChat(chatId);
-            
-            if (chat) {
-                // Чат существует - обновляем
-                await DataService.updateChat(chatId, {
-                    lastMessage: '🔔 Ожидает подтверждения',
-                    lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    [`unreadCount.${order.clientId}`]: firebase.firestore.FieldValue.increment(1)
-                });
+            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
 
-                await DataService.sendMessage(chatId, {
-                    senderId: 'system',
-                    senderName: 'Система',
-                    text: '🔔 Мастер отметил заказ как выполненный. Пожалуйста, подтвердите завершение.',
-                    type: 'system',
-                    read: false
-                });
-            } else {
-                console.log('ℹ️ Чат не найден, пропускаем обновление чата');
+            if (!skipOffline && !navigator.onLine) {
+                addToOfflineQueue({ type: 'initiateCompletion', orderId, review: clientReview });
+                Utils.showWarning('Запрос на завершение будет отправлен при подключении');
+                return { success: true, queued: true };
             }
-        } catch (chatError) {
-            // Игнорируем ошибки чата - главное, что заказ обновился!
-            console.log('ℹ️ Ошибка обновления чата (не критично):', chatError.message);
+
+            const user = getUserSafe();
+            if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
+
+            const order = await DataService.getOrder(orderId);
+            if (!order) throw new Error('Заказ не найден');
+
+            if (order.selectedMasterId !== user.uid) {
+                throw new Error('Только назначенный мастер может завершить заказ');
+            }
+
+            if (normalizeStatus(order.status) !== ORDER_STATUS.IN_PROGRESS) {
+                throw new Error('Заказ не в работе');
+            }
+
+            const updateData = {
+                status: ORDER_STATUS.AWAITING_CONFIRMATION,
+                masterCompletedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (clientReview && clientReview.rating) {
+                updateData.masterReview = {
+                    rating: clientReview.rating,
+                    text: clientReview.text?.trim() || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+            }
+
+            // 1. ОБНОВЛЯЕМ ЗАКАЗ
+            await DataService.updateOrder(orderId, updateData);
+
+            // 2. ПРОВЕРЯЕМ И ОБНОВЛЯЕМ ЧАТ (ЕСЛИ ЕСТЬ)
+            try {
+                const chatId = `chat_${orderId}_${order.selectedMasterId}`;
+                const chat = await DataService.getChat(chatId);
+                
+                if (chat) {
+                    await DataService.updateChat(chatId, {
+                        lastMessage: '🔔 Ожидает подтверждения',
+                        lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        [`unreadCount.${order.clientId}`]: firebase.firestore.FieldValue.increment(1)
+                    });
+
+                    await DataService.sendMessage(chatId, {
+                        senderId: 'system',
+                        senderName: 'Система',
+                        text: '🔔 Мастер отметил заказ как выполненный. Пожалуйста, подтвердите завершение.',
+                        type: 'system',
+                        read: false
+                    });
+                }
+            } catch (chatError) {
+                console.log('ℹ️ Ошибка обновления чата (не критично):', chatError.message);
+            }
+
+            // 3. УВЕДОМЛЕНИЕ КЛИЕНТУ
+            await DataService.createNotification({
+                userId: order.clientId,
+                type: 'awaiting_confirmation',
+                title: '🔔 Ожидает подтверждения',
+                body: `Мастер завершил работу. Подтвердите выполнение заказа.`,
+                data: { orderId, chatId: `chat_${orderId}_${order.selectedMasterId}` }
+            });
+
+            if (window.Cache) {
+                Cache.remove(`master_responses_${user.uid}`);
+                Cache.remove(`order_${orderId}`);
+            }
+
+            Utils.showSuccess('✅ Запрос на завершение отправлен');
+            return { success: true, requiresConfirmation: true };
+            
+        } catch (error) {
+            console.error('❌ Ошибка:', error);
+            Utils.showError(error.message || 'Ошибка');
+            return { success: false, error: error.message };
+        } finally {
+            if (taskId) window.Loader?.hide(taskId);
         }
-
-        // ===== 3. УВЕДОМЛЕНИЕ КЛИЕНТУ (обязательно!) =====
-        await DataService.createNotification({
-            userId: order.clientId,
-            type: 'awaiting_confirmation',
-            title: '🔔 Ожидает подтверждения',
-            body: `Мастер завершил работу. Подтвердите выполнение заказа.`,
-            data: { orderId, chatId: `chat_${orderId}_${order.selectedMasterId}` }
-        });
-
-        if (window.Cache) {
-            Cache.remove(`master_responses_${user.uid}`);
-            Cache.remove(`order_${orderId}`);
-        }
-
-        Utils.showSuccess('✅ Запрос на завершение отправлен');
-        return { success: true, requiresConfirmation: true };
-        
-    } catch (error) {
-        console.error('❌ Ошибка:', error);
-        Utils.showError(error.message || 'Ошибка');
-        return { success: false, error: error.message };
-    } finally {
-        if (taskId) window.Loader?.hide(taskId);
     }
-}
 
     // ===== ПОДТВЕРЖДЕНИЕ ЗАВЕРШЕНИЯ (КЛИЕНТ) =====
     async function confirmCompletion(orderId, clientReview = null, skipOffline = false) {
@@ -901,6 +933,17 @@ async function initiateCompletion(orderId, clientReview = null, skipOffline = fa
                 body: `Клиент подтвердил выполнение заказа. Спасибо за работу!`,
                 data: { orderId, chatId }
             });
+
+            // Отправляем push мастеру
+            if (window.PushService) {
+                PushService.notifyOrderCompleted(
+                    order.selectedMasterId,
+                    order.title || 'Заказ',
+                    orderId,
+                    chatId,
+                    false
+                ).catch(err => console.warn('⚠️ Ошибка push:', err));
+            }
 
             if (window.Cache) {
                 Cache.remove(`client_orders_${user.uid}`);
@@ -990,6 +1033,16 @@ async function initiateCompletion(orderId, clientReview = null, skipOffline = fa
                         body: `Клиент отменил заказ "${order.title || 'Заказ'}"`,
                         data: { orderId, chatId }
                     });
+
+                    // Отправляем push мастерам
+                    if (window.PushService) {
+                        PushService.notifyOrderCancelled(
+                            response.masterId,
+                            order.title || 'Заказ',
+                            orderId,
+                            reason
+                        ).catch(err => console.warn('⚠️ Ошибка push:', err));
+                    }
                 }
             }
 
@@ -1005,6 +1058,100 @@ async function initiateCompletion(orderId, clientReview = null, skipOffline = fa
         } catch (error) {
             console.error('❌ Ошибка отмены заказа:', error);
             Utils.showError(error.message || 'Ошибка отмены заказа');
+            return { success: false, error: error.message };
+        } finally {
+            if (taskId) window.Loader?.hide(taskId);
+        }
+    }
+
+    // ===== ОБНОВЛЕНИЕ ЗАКАЗА (НОВОЕ - Пункт 16) =====
+    async function updateOrder(orderId, updateData, skipOffline = false) {
+        const taskId = window.Loader?.show('Обновление заказа...');
+
+        try {
+            if (!checkAuth()) return { success: false, error: 'Необходимо авторизоваться' };
+
+            if (!skipOffline && !navigator.onLine) {
+                addToOfflineQueue({ type: 'updateOrder', orderId, data: updateData });
+                Utils.showWarning('Изменения будут сохранены при подключении к интернету');
+                return { success: true, queued: true };
+            }
+
+            const user = getUserSafe();
+            if (!user) return { success: false, error: 'Ошибка получения данных пользователя' };
+
+            if (!Auth.isClient()) {
+                return { success: false, error: 'Только клиенты могут редактировать заказы' };
+            }
+
+            const order = await DataService.getOrder(orderId);
+            if (!order) throw new Error('Заказ не найден');
+
+            // Проверка: только свой заказ и только OPEN
+            if (order.clientId !== user.uid) {
+                throw new Error('Вы не можете редактировать этот заказ');
+            }
+
+            if (normalizeStatus(order.status) !== ORDER_STATUS.OPEN) {
+                throw new Error('Можно редактировать только открытые заказы');
+            }
+
+            // Валидация
+            if (updateData.title !== undefined && updateData.title.length < 5) {
+                return { success: false, error: 'Название должно быть не менее 5 символов' };
+            }
+
+            if (updateData.price !== undefined && !Utils.validatePrice(updateData.price)) {
+                return { success: false, error: 'Цена должна быть от 500 до 1 000 000 ₽' };
+            }
+
+            if (updateData.category !== undefined && (!updateData.category || updateData.category === 'all')) {
+                return { success: false, error: 'Выберите категорию' };
+            }
+
+            if (updateData.address !== undefined && !updateData.address) {
+                return { success: false, error: 'Укажите адрес' };
+            }
+
+            // Модерация
+            if (updateData.title && window.Moderation) {
+                const modResult = Moderation.check(updateData.title, 'order_title');
+                if (!modResult.isValid) {
+                    return { success: false, error: modResult.reason || 'Название не прошло модерацию' };
+                }
+            }
+
+            // Подготовка данных для обновления
+            const dataToUpdate = {};
+            
+            if (updateData.title !== undefined) dataToUpdate.title = updateData.title.trim();
+            if (updateData.description !== undefined) dataToUpdate.description = updateData.description?.trim() || '';
+            if (updateData.price !== undefined) dataToUpdate.price = parseInt(updateData.price);
+            if (updateData.category !== undefined) dataToUpdate.category = updateData.category;
+            if (updateData.address !== undefined) {
+                dataToUpdate.address = updateData.address.trim();
+                dataToUpdate.city = Utils.extractCity(updateData.address);
+            }
+            if (updateData.urgent !== undefined) dataToUpdate.urgent = updateData.urgent;
+            if (updateData.coordinates !== undefined) dataToUpdate.coordinates = updateData.coordinates;
+            
+            dataToUpdate.updatedAt = new Date().toISOString();
+
+            await DataService.updateOrder(orderId, dataToUpdate);
+
+            // Инвалидируем кэш
+            if (window.Cache) {
+                Cache.remove(`order_${orderId}`);
+                Cache.remove(`client_orders_${user.uid}`);
+                Cache.clear('open_orders');
+            }
+
+            Utils.showSuccess('✅ Заказ обновлён');
+            return { success: true, orderId };
+
+        } catch (error) {
+            console.error('❌ Ошибка обновления заказа:', error);
+            Utils.showError(error.message || 'Ошибка обновления заказа');
             return { success: false, error: error.message };
         } finally {
             if (taskId) window.Loader?.hide(taskId);
@@ -1173,6 +1320,7 @@ async function initiateCompletion(orderId, clientReview = null, skipOffline = fa
         initiateCompletion,
         confirmCompletion,
         cancelOrder,
+        updateOrder,           // НОВЫЙ МЕТОД (Пункт 16)
         getMasterStats,
         getOrderById,
         subscribeToOrders,
@@ -1183,7 +1331,7 @@ async function initiateCompletion(orderId, clientReview = null, skipOffline = fa
     };
 
     window.__ORDERS_INITIALIZED__ = true;
-    console.log('✅ Orders сервис загружен (эталонная версия)');
+    console.log('✅ Orders сервис загружен (с поддержкой push и редактирования)');
     
     return Object.freeze(api);
 })();

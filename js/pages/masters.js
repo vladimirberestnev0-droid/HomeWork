@@ -1,5 +1,5 @@
 // ============================================
-// КАБИНЕТ МАСТЕРА - ЭЛЕГАНТНАЯ ВЕРСИЯ
+// КАБИНЕТ МАСТЕРА - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 // ============================================
 
 const MasterCabinet = (function() {
@@ -28,7 +28,8 @@ const MasterCabinet = (function() {
         reviewClientText: document.getElementById('reviewClientText'),
         submitClientReview: document.getElementById('submitClientReview'),
         clientRatingStars: document.getElementById('clientRatingStars'),
-        mapSection: document.getElementById('mapSection')
+        mapSection: document.getElementById('mapSection'),
+        masterMap: document.getElementById('masterMap')
     };
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -82,7 +83,7 @@ const MasterCabinet = (function() {
         return userData;
     }
 
-    // ===== ЗАГРУЗКА НАЧАЛЬНЫХ ДАННЫХ =====
+    // ===== ЗАГРУЗКА НАЧАЛЬНЫХ ДАННЫХ (ИСПРАВЛЕНО - Пункт 2) =====
     async function loadInitialData() {
         setLoadingText('Загружаем ваш кабинет...');
         
@@ -91,6 +92,12 @@ const MasterCabinet = (function() {
             loadMasterResponses('all'),
             loadChats()
         ]);
+        
+        // Карта грузится сразу, без условий! (Пункт 2)
+        if (DOM.mapSection) {
+            DOM.mapSection.style.display = 'block';
+            setTimeout(() => initMap(), 100); // Небольшая задержка для плавности
+        }
         
         if (window.BottomNav) BottomNav.highlightActive();
     }
@@ -162,15 +169,14 @@ const MasterCabinet = (function() {
         }
     }
 
-    // ===== ФИЛЬТРАЦИЯ ОТКЛИКОВ =====
+    // ===== ФИЛЬТРАЦИЯ ОТКЛИКОВ (ИСПРАВЛЕНО - Пункт 7) =====
     function filterResponses(responses, filter) {
         const filters = {
-            'pending': r => r.status === Orders.ORDER_STATUS.OPEN,
-            'accepted': r => r.status === Orders.ORDER_STATUS.IN_PROGRESS,
-            'awaiting': r => r.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION,
-            'completed': r => r.status === Orders.ORDER_STATUS.COMPLETED,
-            'cancelled': r => r.status === Orders.ORDER_STATUS.CANCELLED,
-            'all': () => true
+            'accepted': r => r.status === Orders.ORDER_STATUS.IN_PROGRESS, // В работе
+            'pending': r => r.status === Orders.ORDER_STATUS.OPEN, // Ожидают
+            'awaiting': r => r.status === Orders.ORDER_STATUS.AWAITING_CONFIRMATION, // Ждут
+            'completed': r => r.status === Orders.ORDER_STATUS.COMPLETED, // Завершённые
+            'all': () => true // Все
         };
         
         return responses.filter(filters[filter] || filters.all);
@@ -328,7 +334,7 @@ const MasterCabinet = (function() {
         `;
     }
 
-    // ===== ЗАГРУЗКА ЧАТОВ =====
+    // ===== ЗАГРУЗКА ЧАТОВ (ОБНОВЛЕНО - Пункт 1) =====
     async function loadChats() {
         if (!DOM.chatsList) return;
 
@@ -352,22 +358,46 @@ const MasterCabinet = (function() {
         }
     }
 
-    // ===== ОТРИСОВКА ЧАТОВ =====
+    // ===== ОТРИСОВКА ЧАТОВ (ОБНОВЛЕНО - Пункты 1, 18) =====
     function renderChats(chats) {
-        DOM.chatsList.innerHTML = chats.map(chat => `
-            <div class="chat-card ${chat.status === 'rejected' ? 'rejected' : ''}" 
-                 onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/HomeWork/chat.html?chatId=' + chat.id}'">
-                <div class="chat-avatar"><i class="fas fa-user"></i></div>
-                <div class="chat-info">
-                    <div class="chat-name">${Utils.escapeHtml(chat.partnerName)}</div>
-                    <div class="chat-last-message">${Utils.truncate(chat.lastMessage || 'Нет сообщений', 40)}</div>
+        DOM.chatsList.innerHTML = chats.map(chat => {
+            // Добавляем информацию о заказе (Пункт 1)
+            const orderInfo = chat.orderTitle ? `
+                <div class="chat-order-info">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span class="chat-order-title">${Utils.escapeHtml(chat.orderTitle)}</span>
+                    ${chat.orderPrice ? `<span class="chat-order-price">${Utils.formatMoney(chat.orderPrice)}</span>` : ''}
                 </div>
-                <div class="chat-meta text-end">
-                    <div class="chat-time small text-secondary">${Utils.formatDate(chat.lastMessageAt)}</div>
-                    ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
+            ` : '';
+            
+            // Кнопка удаления чата (Пункт 18)
+            const deleteButton = `
+                <button class="chat-delete-btn" onclick="event.stopPropagation(); MasterCabinet.deleteChat('${chat.id}')" title="Удалить чат">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            
+            return `
+                <div class="chat-card ${chat.status === 'rejected' ? 'rejected' : ''}" 
+                     onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/HomeWork/chat.html?chatId=' + chat.id}'">
+                    <div class="chat-avatar">
+                        <i class="fas ${chat.partnerRole === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name">${Utils.escapeHtml(chat.partnerName)}</div>
+                        ${orderInfo}
+                        <div class="chat-last-message">${Utils.truncate(chat.lastMessage || 'Нет сообщений', 40)}</div>
+                    </div>
+                    <div class="chat-meta">
+                        <div class="chat-time small text-secondary">${Utils.formatDate(chat.lastMessageAt)}</div>
+                        <div class="chat-actions">
+                            ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
+                            ${deleteButton}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     // ===== ОБНОВЛЕНИЕ БЕЙДЖА ЧАТОВ =====
@@ -377,6 +407,23 @@ const MasterCabinet = (function() {
         if (badge) {
             badge.classList.toggle('d-none', unreadCount === 0);
             badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        }
+    }
+
+    // ===== ФУНКЦИЯ УДАЛЕНИЯ ЧАТА (НОВАЯ - Пункт 18) =====
+    async function deleteChat(chatId) {
+        if (!confirm('Удалить чат? Это действие нельзя отменить.')) return;
+        
+        const user = Auth.getUser();
+        if (!user) return;
+        
+        const result = await Chat.deleteChatForUser(chatId, user.uid);
+        
+        if (result.success) {
+            Utils.showSuccess('✅ Чат удалён');
+            await loadChats(); // Перезагружаем список чатов
+        } else {
+            Utils.showError('❌ Ошибка при удалении');
         }
     }
 
@@ -605,7 +652,7 @@ const MasterCabinet = (function() {
         }
     }
 
-    // ===== НАСТРОЙКА ОБРАБОТЧИКОВ =====
+    // ===== НАСТРОЙКА ОБРАБОТЧИКОВ (ИСПРАВЛЕНО - Пункт 6) =====
     function setupEventListeners() {
         document.querySelectorAll('[data-filter]').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -638,34 +685,30 @@ const MasterCabinet = (function() {
             
             window.NotificationsCenter?.toggle();
         });
-    }
+
+        // ИСПРАВЛЕНО: Редактирование профиля (Пункт 6)
         document.getElementById('editProfileBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-    
-            const user = Auth.getUser();
-        if (!user) {
-            AuthUI.showLoginModal();
-            Utils.showInfo('Войдите, чтобы редактировать профиль');
-            return;
-        }
-    
-        // Переходим на страницу редактирования
-        const editUrl = CONFIG?.getUrl('masterEdit', { id: user.uid }) || `/HomeWork/master-edit.html?id=${user.uid}`;
-    
-        if (window.Loader) {
-            Loader.navigateTo(editUrl, 'Загружаем редактор...');
-        } else {
-            window.location.href = editUrl;
-        }
-    });
 
-        // Кнопка настроек (если есть)
-            document.getElementById('profileSettingsBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-        // Можно объединить с editProfileBtn или сделать отдельную логику
-            document.getElementById('editProfileBtn')?.click();
-    });
+            const user = Auth.getUser();
+            if (!user) {
+                AuthUI.showLoginModal();
+                Utils.showInfo('Войдите, чтобы редактировать профиль');
+                return;
+            }
+
+            // Переходим на страницу редактирования с ID мастера
+            const editUrl = `/HomeWork/master-edit.html?id=${user.uid}`;
+
+            if (window.Loader) {
+                Loader.navigateTo(editUrl, 'Загружаем редактор...');
+            } else {
+                window.location.href = editUrl;
+            }
+        });
+    }
+
     // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
     function setText(elementId, text) {
         const el = document.getElementById(elementId);
@@ -782,7 +825,8 @@ const MasterCabinet = (function() {
         filterResponses: loadMasterResponses,
         showCompleteModal,
         openChat,
-        loadChats
+        loadChats,
+        deleteChat      // НОВЫЙ МЕТОД (Пункт 18)
     };
 
     window.__MASTER_CABINET_INITIALIZED__ = true;
@@ -790,7 +834,7 @@ const MasterCabinet = (function() {
     // Автозапуск
     document.addEventListener('DOMContentLoaded', () => init());
 
-    console.log('✅ MasterCabinet загружен (элегантная версия)');
+    console.log('✅ MasterCabinet загружен (полная исправленная версия)');
     return Object.freeze(api);
 })();
 

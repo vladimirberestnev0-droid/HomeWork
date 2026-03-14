@@ -1,6 +1,8 @@
 // ============================================
-// КОМПОНЕНТ ИНТЕРФЕЙСА АВТОРИЗАЦИИ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// КОМПОНЕНТ ИНТЕРФЕЙСА АВТОРИЗАЦИИ - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// Пункты 3, 4, 12
 // ============================================
+
 const AuthUI = (function() {
     if (window.__AUTH_UI_INITIALIZED__) return window.AuthUI;
 
@@ -16,7 +18,6 @@ const AuthUI = (function() {
             renderAuthBlock();
         });
 
-        // Слушаем изменение размера экрана
         window.addEventListener('resize', Utils.debounce(() => {
             renderAuthBlock();
         }, 200));
@@ -49,20 +50,12 @@ const AuthUI = (function() {
     function showLoginModal() {
         if (window.ModalManager) {
             ModalManager.show('auth', 'login');
-        } else {
-            if (window.AuthUI && AuthUI.showLoginModal) {
-                AuthUI.showLoginModal();
-            }
         }
     }
 
     function showRegisterModal() {
         if (window.ModalManager) {
             ModalManager.show('auth', 'register');
-        } else {
-            if (window.AuthUI && AuthUI.showRegisterModal) {
-                AuthUI.showRegisterModal();
-            }
         }
     }
 
@@ -71,65 +64,32 @@ const AuthUI = (function() {
         if (!container) return;
 
         const state = Auth.getAuthState();
-        const isDesktop = window.innerWidth >= 992;
-
-        // НА ДЕСКТОПЕ ДЛЯ ГОСТЯ НЕ ПОКАЗЫВАЕМ БЛОК (ТАМ ЕСТЬ КНОПКА ВХОДА)
-        if (isDesktop && !state.isAuthenticated) {
+        
+        // НИКОГДА не показываем блок авторизованным пользователям
+        if (state.isAuthenticated) {
             container.innerHTML = ''; // Пусто!
             return;
         }
 
-        if (state.isAuthenticated && state.userData) {
-            const isMaster = state.isMaster;
-            const userName = state.userData.name || 'Пользователь';
-            const userEmail = state.user?.email || '';
-
-            container.innerHTML = `
-                <div class="card p-2 p-sm-3 auth-block">
-                    <div class="d-flex align-items-center gap-2 gap-sm-3">
-                        <div class="avatar-circle" style="width: 44px; height: 44px; min-width: 44px;">
-                            <i class="fas ${isMaster ? 'fa-user-tie' : 'fa-user'}" style="font-size: 1.3rem;"></i>
-                        </div>
-                        <div class="flex-grow-1" style="min-width: 0;">
-                            <h6 class="mb-0 fw-bold">${Utils.escapeHtml(userName)}</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge ${isMaster ? 'bg-accent' : 'bg-secondary'}">${Utils.escapeHtml(state.roleDisplay)}</span>
-                                <small class="text-secondary text-truncate">${Utils.escapeHtml(userEmail)}</small>
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger rounded-pill" data-action="logout" 
-                                style="padding: 8px 14px;" title="Выйти">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span class="d-none d-sm-inline ms-1">Выйти</span>
+        // Только для гостей показываем блок входа
+        container.innerHTML = `
+            <div class="auth-block card p-3" style="background: rgba(26,44,62,0.8); backdrop-filter: blur(10px); border: 1px solid rgba(44,213,196,0.2); border-radius: 24px; margin-bottom: 20px;">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-user-circle fa-2x" style="color: var(--aurora-accent);"></i>
+                        <span style="color: var(--aurora-text-soft);">Войдите в личный кабинет</span>
+                    </div>
+                    <div class="auth-buttons d-flex gap-2 w-100 w-sm-auto">
+                        <button class="btn btn-outline-secondary btn-sm flex-grow-1 rounded-pill" data-action="login" style="border-color: var(--aurora-accent); color: var(--aurora-accent);">
+                            <i class="fas fa-sign-in-alt me-1"></i><span>Вход</span>
+                        </button>
+                        <button class="btn btn-primary btn-sm flex-grow-1 rounded-pill" data-action="register" style="background: var(--aurora-accent); color: var(--aurora-deep); border: none;">
+                            <i class="fas fa-user-plus me-1"></i><span>Регистрация</span>
                         </button>
                     </div>
                 </div>
-            `;
-        } else {
-            // НА МОБИЛКАХ ПОКАЗЫВАЕМ ГОСТЮ
-            container.innerHTML = `
-                <div class="card p-3 auth-block">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-user-circle fa-2x" style="color: var(--accent);"></i>
-                            <span class="text-secondary">Войдите в личный кабинет</span>
-                        </div>
-                        <div class="auth-buttons d-flex gap-2 w-100 w-sm-auto">
-                            <button class="btn btn-outline-secondary btn-sm flex-grow-1 rounded-pill" 
-                                    data-action="login">
-                                <i class="fas fa-sign-in-alt me-1"></i>
-                                <span>Вход</span>
-                            </button>
-                            <button class="btn btn-primary btn-sm flex-grow-1 rounded-pill" 
-                                    data-action="register">
-                                <i class="fas fa-user-plus me-1"></i>
-                                <span>Регистрация</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
+            </div>
+        `;
     }
 
     const api = {

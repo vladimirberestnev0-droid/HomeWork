@@ -1,5 +1,5 @@
 // ============================================
-// КОМПОНЕНТ УВЕДОМЛЕНИЙ (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// КОМПОНЕНТ УВЕДОМЛЕНИЙ - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 // ============================================
 
 const Notifications = (function() {
@@ -14,6 +14,7 @@ const Notifications = (function() {
     let currentCount = 0;
     let isInitialized = false;
     let notificationPermission = false;
+    let notificationSound = null;
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     function init() {
@@ -22,9 +23,27 @@ const Notifications = (function() {
         createBadge();
         setupListeners();
         requestPermission();
+        initSound();
         
         isInitialized = true;
         console.log('✅ Notifications компонент загружен');
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ ЗВУКА =====
+    function initSound() {
+        try {
+            notificationSound = new Audio('/HomeWork/sounds/notification.mp3');
+            notificationSound.volume = 0.3;
+        } catch (e) {
+            console.log('ℹ️ Звук уведомлений не доступен');
+        }
+    }
+
+    // ===== ВОСПРОИЗВЕДЕНИЕ ЗВУКА =====
+    function playSound() {
+        if (notificationSound && Notification.permission === 'granted') {
+            notificationSound.play().catch(() => {});
+        }
     }
 
     // ===== СОЗДАНИЕ БЕЙДЖА =====
@@ -60,7 +79,22 @@ const Notifications = (function() {
                     body: `${message.senderName || 'Пользователь'}: ${message.text || '📎 Файл'}`,
                     data: { chatId }
                 });
+                playSound();
             }
+        });
+
+        // Слушаем push-уведомления (Пункт 21)
+        document.addEventListener('push-received', (e) => {
+            const payload = e.detail?.payload;
+            if (!payload) return;
+            
+            console.log('📬 Получено push-уведомление:', payload);
+            
+            // Обновляем счётчик
+            refresh();
+            
+            // Воспроизводим звук
+            playSound();
         });
     }
 
@@ -70,10 +104,16 @@ const Notifications = (function() {
         
         if (window.Chat && Chat.subscribeToUnread) {
             unsubscribe = Chat.subscribeToUnread(userId, (count) => {
+                const oldCount = currentCount;
                 currentCount = count;
                 updateBadge(count);
                 updateTitle(count);
                 updateTabBadges(count);
+                
+                // Если появились новые - звук
+                if (count > oldCount) {
+                    playSound();
+                }
                 
                 // Триггерим событие
                 document.dispatchEvent(new CustomEvent('unread-changed', { 
@@ -105,6 +145,10 @@ const Notifications = (function() {
                     updateBadge(count);
                     updateTitle(count);
                     updateTabBadges(count);
+                    
+                    if (count > lastCount) {
+                        playSound();
+                    }
                 }
             }
         }, 10000); // каждые 10 секунд
@@ -208,6 +252,7 @@ const Notifications = (function() {
                 badge: '/HomeWork/icons/icon-72x72.png',
                 vibrate: [200, 100, 200],
                 silent: false,
+                requireInteraction: true,
                 ...options
             };
             
@@ -282,7 +327,7 @@ const Notifications = (function() {
         getCurrentCount,
         refresh,
         cleanup,
-        updateBadge,      // экспортируем для внешнего использования (из центра уведомлений)
+        updateBadge,
         updateTabBadges
     };
 
@@ -293,11 +338,9 @@ const Notifications = (function() {
 
 // Автоинициализация
 document.addEventListener('DOMContentLoaded', () => {
-    // Ждём загрузки основных сервисов
     setTimeout(() => {
         Notifications.init();
     }, 1500);
 });
 
-// Глобальный доступ
 window.Notifications = Notifications;

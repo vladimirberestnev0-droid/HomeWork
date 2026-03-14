@@ -19,37 +19,7 @@
     <link rel="stylesheet" href="/HomeWork/css/theme/theme-aurora.css">
 </head>
 <body>
-    <!-- ДЕСКТОПНАЯ НАВИГАЦИЯ -->
-    <div class="desktop-nav">
-        <div class="desktop-nav-container">
-            <a href="/HomeWork/" class="desktop-nav-item" id="desktopNavHome">
-                <i class="fas fa-home"></i>
-                <span>Главная</span>
-            </a>
-            <a href="/HomeWork/orders.html" class="desktop-nav-item" id="desktopNavOrders">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Заказы</span>
-            </a>
-            <a href="/HomeWork/masters.html" class="desktop-nav-item" id="desktopNavMasters">
-                <i class="fas fa-user-tie"></i>
-                <span>Мастера</span>
-            </a>
-            <a href="#" class="desktop-nav-item requires-auth visible active" id="desktopNavChats">
-                <i class="fas fa-comments"></i>
-                <span>Чаты</span>
-            </a>
-            <button class="desktop-nav-item create-btn" id="desktopCreateBtn">
-                <i class="fas fa-plus-circle"></i>
-                <span>Создать заказ</span>
-            </button>
-            <button class="desktop-nav-item auth-btn" id="desktopAuthBtn">
-                <i class="fas fa-user-circle"></i>
-                <span>Загрузка...</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- ===== СКЕЛЕТОН ЗАГРУЗКИ (НОВЫЙ) ===== -->
+    <!-- ===== СКЕЛЕТОН ЗАГРУЗКИ ===== -->
     <div id="loadingSkeleton" class="loading-skeleton" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-main); z-index: 10000; display: flex; align-items: center; justify-content: center;">
         <div class="text-center p-5">
             <div class="spinner-glow"></div>
@@ -57,96 +27,115 @@
         </div>
     </div>
 
-    <!-- ===== ОСНОВНОЙ КОНТЕНТ ЧАТА (ИЗНАЧАЛЬНО СКРЫТ) ===== -->
+    <!-- ===== ОСНОВНОЙ КОНТЕНТ ЧАТА (ИСПРАВЛЕННАЯ СТРУКТУРА) ===== -->
     <div class="chat-container" id="chatContainer" style="display: none;">
-        <!-- Шапка чата PREMIUM -->
-        <div class="chat-header" style="background: rgba(26,44,62,0.8); backdrop-filter: blur(10px);">
-            <a href="javascript:history.back()" class="chat-back-btn">
+        
+        <!-- ВЕРХНИЙ ТАЧБОРД (всегда приклеен к верху) -->
+        <div class="chat-header">
+            <button class="chat-back-btn" onclick="window.history.back()">
                 <i class="fas fa-arrow-left"></i>
-            </a>
-            <div class="chat-user-info">
-                <div class="chat-user-avatar" style="background: linear-gradient(145deg, var(--aurora-accent), #20b2aa);">
+            </button>
+            
+            <div class="chat-user-info" id="chatUserInfo">
+                <div class="chat-user-avatar">
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="chat-user-text">
                     <div class="chat-user-name">
-                        <span id="chatPartnerName" style="color: white;">Загрузка...</span>
-                        <span class="chat-order-ref" id="chatOrderRef"></span>
+                        <span id="chatPartnerName">Загрузка...</span>
                     </div>
                     <div class="chat-user-status">
                         <span class="status-dot" id="userStatus"></span>
-                        <span id="chatPartnerRole" style="color: var(--aurora-text-soft);">Загрузка...</span>
+                        <span id="chatPartnerRole">Загрузка...</span>
                     </div>
                 </div>
             </div>
+            
             <div class="chat-header-actions">
                 <button class="chat-header-btn" id="chatMenuBtn" title="Меню">
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
             </div>
+            
+            <!-- ВЫПАДАЮЩЕЕ МЕНЮ (Пункт 20) -->
+            <div class="chat-menu-dropdown d-none" id="chatMenuDropdown">
+                <div class="chat-menu-content">
+                    <!-- Для клиента: выбрать мастера -->
+                    <button class="chat-menu-item" id="selectMasterMenuItem" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Выбрать мастера</span>
+                    </button>
+                    
+                    <!-- Для мастера: отказаться от заказа -->
+                    <button class="chat-menu-item" id="cancelOrderMenuItem" style="display: none;">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Отказаться от заказа</span>
+                    </button>
+                    
+                    <!-- Для всех: пожаловаться -->
+                    <button class="chat-menu-item" id="complaintMenuItem">
+                        <i class="fas fa-flag"></i>
+                        <span>Пожаловаться</span>
+                    </button>
+                    
+                    <!-- Для всех: заблокировать -->
+                    <button class="chat-menu-item" id="blockUserMenuItem">
+                        <i class="fas fa-ban"></i>
+                        <span>Заблокировать пользователя</span>
+                    </button>
+                    
+                    <div class="chat-menu-divider"></div>
+                    
+                    <button class="chat-menu-item danger" id="closeMenuBtn">
+                        <i class="fas fa-times"></i>
+                        <span>Закрыть</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Закреплённый заказ -->
-        <div id="pinnedOrder" class="p-3 border-bottom d-none" style="background: rgba(44,213,196,0.1); border-color: rgba(44,213,196,0.2) !important;">
-            <small style="color: var(--aurora-text-soft);">
-                <i class="fas fa-clipboard-list me-1" style="color: var(--aurora-accent);"></i>
-                <span id="pinnedTitle"></span> · <span id="pinnedPrice"></span> ₽
-            </small>
+        <!-- ИНФОРМАЦИЯ О ЗАКАЗЕ (Пункт 17) -->
+        <div id="orderInfo" class="order-info-panel d-none">
+            <div class="order-info-content">
+                <i class="fas fa-clipboard-list"></i>
+                <div class="order-info-text">
+                    <div class="order-info-title" id="chatOrderTitle">Загрузка...</div>
+                    <div class="order-info-price" id="chatOrderPrice">0 ₽</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Сообщения -->
-        <div id="messagesArea" class="messages-area" style="background: rgba(11,30,51,0.6);"></div>
+        <!-- ОБЛАСТЬ СООБЩЕНИЙ (скроллится) -->
+        <div id="messagesArea" class="messages-area"></div>
 
-        <!-- Индикатор печатает... -->
+        <!-- ИНДИКАТОР ПЕЧАТАЕТ... -->
         <div id="typingIndicator" class="typing-indicator d-none">
             <span></span>
             <span></span>
             <span></span>
         </div>
 
-        <!-- Поле ввода PREMIUM -->
-        <div class="chat-footer" style="background: rgba(26,44,62,0.8); backdrop-filter: blur(10px); border-top-color: rgba(44,213,196,0.2);">
+        <!-- НИЖНИЙ ТАЧБОРД (всегда приклеен к низу) -->
+        <div class="chat-footer">
             <input type="file" id="fileInput" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx,.txt">
             <button class="chat-attach-btn" id="attachButton" title="Прикрепить файл">
                 <i class="fas fa-paperclip"></i>
             </button>
+            
             <div class="chat-input-wrapper">
-                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение..." style="background: rgba(11,30,51,0.6); border-color: rgba(44,213,196,0.2); color: white;">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение...">
             </div>
-            <button class="chat-send-btn" id="sendButton" title="Отправить" style="background: var(--aurora-accent); color: var(--aurora-deep);">
+            
+            <button class="chat-send-btn" id="sendButton" title="Отправить">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
 
-        <!-- Превью файлов -->
+        <!-- ПРЕВЬЮ ФАЙЛОВ -->
         <div id="filePreview" class="file-preview-container d-none"></div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
-    <div class="bottom-nav">
-        <button class="nav-item" data-page="home">
-            <span class="nav-icon"><i class="fas fa-home"></i></span>
-            <span class="nav-label">Главная</span>
-        </button>
-        <button class="nav-item" data-page="search">
-            <span class="nav-icon"><i class="fas fa-search"></i></span>
-            <span class="nav-label">Поиск</span>
-        </button>
-        <button class="nav-item" data-page="favorites">
-            <span class="nav-icon"><i class="fas fa-heart"></i></span>
-            <span class="nav-label">Избранное</span>
-        </button>
-        <button class="nav-item" data-page="orders">
-            <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
-            <span class="nav-label">Заказы</span>
-        </button>
-        <button class="nav-item active" data-page="profile">
-            <span class="nav-icon"><i class="fas fa-user"></i></span>
-            <span class="nav-label">Профиль</span>
-        </button>
-    </div>
-
-    <!-- Скрипты -->
+    <!-- Скрипты (те же, что и были) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -164,17 +153,18 @@
     <script src="/HomeWork/js/core/redirect-protection.js"></script>
     <script src="/HomeWork/js/core/loader.js"></script>
     
-    <!-- 2. SERVICES (СТРОГО В ЭТОМ ПОРЯДКЕ) -->
+    <!-- 2. SERVICES -->
     <script src="/HomeWork/js/services/data-service.js"></script>
     <script src="/HomeWork/js/services/auth.js"></script>
     <script src="/HomeWork/js/services/upload-service.js"></script>
     <script src="/HomeWork/js/services/orders-service.js"></script>
     <script src="/HomeWork/js/services/chat-service.js"></script>
+    <script src="/HomeWork/js/services/push-service.js"></script>
     
     <!-- 3. COMPONENTS -->
     <script src="/HomeWork/js/components/bottom-nav.js"></script>
     
-    <!-- 4. PAGE (ВСЕГДА ПОСЛЕДНИМ) -->
+    <!-- 4. PAGE -->
     <script src="/HomeWork/js/pages/chat.js"></script>
 </body>
 </html>

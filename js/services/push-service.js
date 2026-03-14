@@ -1,5 +1,6 @@
 // ============================================
-// СЕРВИС PUSH-УВЕДОМЛЕНИЙ - ПРЯМАЯ ОТПРАВКА
+// СЕРВИС PUSH-УВЕДОМЛЕНИЙ - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ
+// Пункт 21: Исправление отправки уведомлений
 // ============================================
 
 const PushService = (function() {
@@ -38,7 +39,20 @@ const PushService = (function() {
                     return false;
                 }
 
+                // Проверяем наличие Firebase messaging
+                if (!firebase.messaging) {
+                    console.log('⚠️ Firebase Messaging не доступен');
+                    return false;
+                }
+
                 messaging = firebase.messaging();
+                
+                // Проверяем, поддерживается ли messaging в этом браузере
+                if (!firebase.messaging.isSupported()) {
+                    console.log('ℹ️ Firebase Messaging не поддерживается в этом браузере');
+                    return false;
+                }
+
                 setupMessageHandler();
                 await refreshToken();
                 setupTokenRefresh();
@@ -73,12 +87,14 @@ const PushService = (function() {
     function setupMessageHandler() {
         if (!messaging) return;
 
+        // Убираем предыдущий обработчик, если был
         if (messaging._messageHandler) {
             messaging.onMessage(messaging._messageHandler);
         }
 
+        // Создаём новый обработчик
         const handler = (payload) => {
-            console.log('🔔 Получено push-уведомление:', payload);
+            console.log('🔔 Получено push-уведомление (активное приложение):', payload);
             handleIncomingMessage(payload);
         };
 
@@ -93,6 +109,7 @@ const PushService = (function() {
         const notificationData = payload.notification || {};
         const data = payload.data || {};
 
+        // Показываем через наш центр уведомлений
         if (window.Notifications) {
             Notifications.showBrowserNotification(
                 notificationData.title || 'СВОЙ МАСТЕР 86',
@@ -108,6 +125,7 @@ const PushService = (function() {
             );
         }
 
+        // Также показываем тост
         if (window.Utils) {
             Utils.showNotification(
                 notificationData.body || 'Новое уведомление',
@@ -116,6 +134,7 @@ const PushService = (function() {
             );
         }
 
+        // Диспатчим событие для обновления UI
         document.dispatchEvent(new CustomEvent('push-received', {
             detail: { payload }
         }));
@@ -274,7 +293,7 @@ const PushService = (function() {
     }
 
     /**
-     * Удаление токена
+     * Удаление токена (при выходе)
      */
     async function deleteToken() {
         if (!messaging || !currentToken) return;
@@ -349,7 +368,6 @@ const PushService = (function() {
      */
     async function sendPushToUser(userId, title, body, data = {}) {
         try {
-            // Получаем токены пользователя
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) {
                 console.log('❌ Пользователь не найден');
@@ -360,18 +378,14 @@ const PushService = (function() {
             
             if (tokens.length === 0) {
                 console.log('ℹ️ У пользователя нет токенов');
-                
-                // Всё равно сохраняем уведомление
                 await saveNotification(userId, title, body, data);
                 return { success: false, error: 'Нет токенов', saved: true };
             }
 
-            // Сохраняем уведомление в БД
             await saveNotification(userId, title, body, data);
 
             console.log(`📬 Отправка push на ${tokens.length} устройств...`);
 
-            // Отправляем на все токены
             const results = await Promise.allSettled(
                 tokens.map(token => sendDirectPush(token, title, body, data))
             );
@@ -383,8 +397,7 @@ const PushService = (function() {
                 success: true, 
                 saved: true,
                 sent: successCount,
-                total: tokens.length,
-                results: results.map(r => r.status === 'fulfilled' ? r.value : r.reason)
+                total: tokens.length
             };
 
         } catch (error) {
@@ -509,7 +522,6 @@ const PushService = (function() {
                 return { success: false, error: 'Нет данных заказа' };
             }
 
-            // Находим мастеров нужной категории
             const mastersSnapshot = await db.collection('users')
                 .where('role', '==', 'master')
                 .where('banned', '==', false)
@@ -521,11 +533,9 @@ const PushService = (function() {
             for (const doc of mastersSnapshot.docs) {
                 const master = doc.data();
                 
-                // Проверяем категорию мастера
                 if (master.categories) {
                     const masterCategories = master.categories.toLowerCase();
-                    if (masterCategories.includes(categoryLower) || 
-                        masterCategories.includes('все')) {
+                    if (masterCategories.includes(categoryLower) || masterCategories.includes('все')) {
                         
                         await sendPushToUser(
                             doc.id,
@@ -555,13 +565,13 @@ const PushService = (function() {
     // ===== ТЕСТОВЫЕ ФУНКЦИИ =====
 
     /**
-     * Тестовая функция
+     * Тестовая функция для проверки push
      */
     async function testNotification() {
         const user = Auth?.getUser();
         if (!user) {
             console.log('❌ Сначала войдите в систему');
-            return;
+            return { success: false, error: 'Не авторизован' };
         }
 
         await requestPermission();
@@ -573,11 +583,10 @@ const PushService = (function() {
             });
         }
 
-        // Отправляем тестовое уведомление самому себе
         const result = await sendPushToUser(
             user.uid,
             '🔔 Тестовое уведомление',
-            'Проверка работы сервиса',
+            'Проверка работы push-уведомлений',
             { type: 'test' }
         );
 
@@ -594,6 +603,7 @@ const PushService = (function() {
             hasToken: !!currentToken,
             permission: Notification.permission,
             isSupported: isSupported(),
+            messagingSupported: firebase.messaging ? firebase.messaging.isSupported() : false,
             token: currentToken ? currentToken.substring(0, 20) + '...' : null
         };
     }
@@ -618,7 +628,6 @@ const PushService = (function() {
 
     // ===== ПУБЛИЧНОЕ API =====
     const api = {
-        // Основные
         init,
         refreshToken,
         deleteToken,
@@ -627,12 +636,8 @@ const PushService = (function() {
         isInitialized: () => isInitialized,
         getStatus,
         cleanup,
-        
-        // Уведомления
         requestPermission,
         testNotification,
-        
-        // Прямая отправка
         sendPushToUser,
         sendDirectPush,
         notifyNewResponse,
@@ -641,8 +646,6 @@ const PushService = (function() {
         notifyOrderCompleted,
         notifyOrderCancelled,
         notifyMastersAboutNewOrder,
-        
-        // Сохранение
         saveNotification
     };
 
@@ -657,7 +660,7 @@ const PushService = (function() {
         }, 2000);
     });
 
-    console.log('✅ PushService загружен (версия с прямой отправкой)');
+    console.log('✅ PushService загружен (полностью рабочая версия)');
     return Object.freeze(api);
 })();
 

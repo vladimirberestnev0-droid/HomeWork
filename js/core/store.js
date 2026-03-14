@@ -1,6 +1,8 @@
 // ============================================
-// ГЛОБАЛЬНЫЙ СТОР (ПАТТЕРН НАБЛЮДАТЕЛЬ)
+// ГЛОБАЛЬНЫЙ СТОР (ПАТТЕРН НАБЛЮДАТЕЛЬ) - ИСПРАВЛЕНО
+// Пункт 8: Визуальные баги из-за частых обновлений
 // ============================================
+
 const AppStore = (function() {
     if (window.__APP_STORE_INITIALIZED__) return window.AppStore;
 
@@ -55,6 +57,7 @@ const AppStore = (function() {
     // Очередь уведомлений для батчинга
     let notifyQueue = [];
     let notifyScheduled = false;
+    let notifyTimer = null;
 
     // Вспомогательная функция для получения вложенного значения по пути
     function getNestedValue(obj, path) {
@@ -87,22 +90,27 @@ const AppStore = (function() {
             sessionStorage.setItem('app_filters', JSON.stringify(state.filters));
         }
         
-        // Планируем уведомления
+        // Планируем уведомления с задержкой для предотвращения визуальных багов
         scheduleNotify(oldState);
     }
 
-    // Планирование уведомлений с батчингом
+    // Планирование уведомлений с батчингом и задержкой (ИСПРАВЛЕНО)
     function scheduleNotify(oldState) {
         notifyQueue.push(oldState);
         
         if (!notifyScheduled) {
             notifyScheduled = true;
-            // Используем microtask или setTimeout для батчинга
-            Promise.resolve().then(() => {
+            
+            // Очищаем предыдущий таймер
+            if (notifyTimer) {
+                clearTimeout(notifyTimer);
+            }
+            
+            // Устанавливаем задержку для батчинга обновлений (Пункт 8)
+            notifyTimer = setTimeout(() => {
                 processNotifyQueue();
-            }).catch(() => {
-                setTimeout(processNotifyQueue, 0);
-            });
+                notifyTimer = null;
+            }, 50); // Небольшая задержка для сглаживания частых обновлений
         }
     }
 
@@ -139,7 +147,10 @@ const AppStore = (function() {
             
             if (shouldUpdate) {
                 try {
-                    callback(state);
+                    // Используем requestAnimationFrame для синхронизации с отрисовкой
+                    requestAnimationFrame(() => {
+                        callback(state);
+                    });
                     // Обновляем версию для этого подписчика
                     config[2] = state._version;
                 } catch (error) {
@@ -161,12 +172,14 @@ const AppStore = (function() {
         
         subscribers.set(componentId, [paths, callback, state._version]);
         
-        // Сразу вызываем с текущим состоянием
-        try {
-            callback(state);
-        } catch (error) {
-            console.error(`❌ Ошибка в начальном вызове подписчика ${componentId}:`, error);
-        }
+        // Сразу вызываем с текущим состоянием (с небольшой задержкой)
+        setTimeout(() => {
+            try {
+                callback(state);
+            } catch (error) {
+                console.error(`❌ Ошибка в начальном вызове подписчика ${componentId}:`, error);
+            }
+        }, 10);
         
         // Возвращаем функцию отписки
         return () => {
@@ -202,7 +215,7 @@ const AppStore = (function() {
             isAdmin: false,
             role: null,
             roleDisplay: 'Пользователь',
-            isInitialized: false,  // ← Сбрасываем флаг
+            isInitialized: false,
             city: localStorage.getItem('selectedCity') || 'nyagan',
             theme: localStorage.getItem('theme') || 'dark',
             filters: { category: 'all', sort: 'newest' },
@@ -213,8 +226,10 @@ const AppStore = (function() {
             _version: state._version + 1
         };
         
-        // Уведомляем всех подписчиков
-        notifySubscribers(oldState);
+        // Уведомляем всех подписчиков с задержкой
+        setTimeout(() => {
+            notifySubscribers(oldState);
+        }, 50);
     }
 
     // Пакетное обновление нескольких полей
@@ -237,7 +252,7 @@ const AppStore = (function() {
     };
 
     window.__APP_STORE_INITIALIZED__ = true;
-    console.log('✅ AppStore инициализирован');
+    console.log('✅ AppStore инициализирован (с оптимизацией визуальных багов)');
     
     return Object.freeze(api);
 })();

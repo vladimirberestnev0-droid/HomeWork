@@ -598,3 +598,100 @@
         font-size: 0.65rem;
     }
 }
+
+/* ============================================
+   КНОПКИ - ИСПРАВЛЕНО: обрезанное сияние
+   Пункт 13
+   ============================================ */
+
+.filter-chip-premium,
+.tab-btn {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.filter-chip-premium::before,
+.tab-btn::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, 
+        rgba(44, 213, 196, 0.5), 
+        rgba(100, 150, 255, 0.3), 
+        rgba(200, 120, 255, 0.2));
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.filter-chip-premium:hover::before,
+.tab-btn:hover::before,
+.filter-chip-premium.active::before,
+.tab-btn.active::before {
+    opacity: 1;
+}
+
+.filter-chip-premium.active,
+.tab-btn.active {
+    background: var(--aurora-accent);
+    color: var(--aurora-deep);
+    border: 2px solid transparent;
+    position: relative;
+    z-index: 2;
+}
+
+.filter-chip-premium.active i,
+.tab-btn.active i {
+    color: var(--aurora-deep);
+}
+
+/* Убираем возможные перекрытия */
+.filter-chip-premium.active::after,
+.tab-btn.active::after {
+    display: none;
+}
+
+/* Для кнопок в кабинете клиента */
+.client-tab-btn {
+    position: relative;
+    overflow: visible; /* Меняем с hidden на visible */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.client-tab-btn::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: var(--aurora-gradient);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.client-tab-btn:hover::before,
+.client-tab-btn.active::before {
+    opacity: 1;
+}
+
+/* Исправление для границ */
+.btn,
+.filter-chip,
+.nav-item {
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}

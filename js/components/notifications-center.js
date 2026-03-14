@@ -1,5 +1,5 @@
 // ============================================
-// ЦЕНТР УВЕДОМЛЕНИЙ (ИСПРАВЛЕННАЯ ЭЛЕГАНТНАЯ ВЕРСИЯ)
+// ЦЕНТР УВЕДОМЛЕНИЙ - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 // ============================================
 
 const NotificationsCenter = (function() {
@@ -24,11 +24,13 @@ const NotificationsCenter = (function() {
         'order_completed': 'fa-check-double',
         'order_cancelled': 'fa-times-circle',
         'new_message': 'fa-comment',
+        'awaiting_confirmation': 'fa-hourglass-half',
         'system': 'fa-bell',
         'info': 'fa-info-circle',
         'success': 'fa-check-circle',
         'warning': 'fa-exclamation-triangle',
-        'error': 'fa-exclamation-circle'
+        'error': 'fa-exclamation-circle',
+        'test': 'fa-flask'
     };
 
     // Цвета для разных типов
@@ -39,11 +41,13 @@ const NotificationsCenter = (function() {
         'order_completed': '#00A86B',
         'order_cancelled': '#DC3545',
         'new_message': '#17a2b8',
+        'awaiting_confirmation': '#FFB020',
         'system': '#6c757d',
         'info': '#17a2b8',
         'success': '#00A86B',
         'warning': '#FFB020',
-        'error': '#DC3545'
+        'error': '#DC3545',
+        'test': '#2CD5C4'
     };
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -137,11 +141,16 @@ const NotificationsCenter = (function() {
             });
         }
 
-        // Слушаем новые push-уведомления
+        // Слушаем новые push-уведомления (Пункт 21)
         document.addEventListener('push-received', () => {
             if (currentUserId) {
                 // Подписка обновит данные автоматически
             }
+        });
+
+        // Слушаем обновление непрочитанных
+        document.addEventListener('unread-changed', (e) => {
+            // Можем обновить иконку, если нужно
         });
     }
 
@@ -187,7 +196,7 @@ const NotificationsCenter = (function() {
         currentUserId = null;
     }
 
-    // ===== ОТОБРАЖЕНИЕ =====
+    // ===== ОТОБРАЖЕНИЕ (ОБНОВЛЕНО - анимация) =====
     function render() {
         if (!listEl) return;
 
@@ -196,7 +205,11 @@ const NotificationsCenter = (function() {
             return;
         }
 
-        listEl.innerHTML = notifications.map(notif => createNotificationItem(notif)).join('');
+        listEl.innerHTML = notifications.map((notif, index) => {
+            const item = createNotificationItem(notif);
+            // Добавляем задержку для анимации
+            return `<div style="animation: slideInRight 0.3s ease ${index * 0.05}s both;">${item}</div>`;
+        }).join('');
     }
 
     function createNotificationItem(notif) {
@@ -271,7 +284,7 @@ const NotificationsCenter = (function() {
         `;
     }
 
-    // ===== ОБРАБОТЧИК КЛИКА (ТЕПЕРЬ ВНУТРИ API) =====
+    // ===== ОБРАБОТЧИК КЛИКА =====
     function handleNotificationClick(element) {
         if (!element) return;
         
@@ -307,18 +320,24 @@ const NotificationsCenter = (function() {
         }
     }
 
-    // ===== ОБНОВЛЕНИЕ БЕЙДЖА =====
+    // ===== ОБНОВЛЕНИЕ БЕЙДЖА (ОБНОВЛЕНО - Пункт 21) =====
     function updateGlobalBadge() {
-        const unreadCount = notifications.filter(n => !n.read).length;
+        const oldUnreadCount = parseInt(document.querySelector('.notifications-bell .badge')?.textContent || '0');
+        const newUnreadCount = notifications.filter(n => !n.read).length;
         
         if (window.Notifications) {
-            window.Notifications.updateBadge(unreadCount);
+            window.Notifications.updateBadge(newUnreadCount);
+        }
+
+        // Если появились новые непрочитанные - можно добавить звук
+        if (newUnreadCount > oldUnreadCount && window.Notifications && window.Notifications.playSound) {
+            window.Notifications.playSound();
         }
 
         const bellIcon = document.querySelector('.notifications-bell .badge');
         if (bellIcon) {
-            if (unreadCount > 0) {
-                bellIcon.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            if (newUnreadCount > 0) {
+                bellIcon.textContent = newUnreadCount > 99 ? '99+' : newUnreadCount;
                 bellIcon.classList.remove('hidden');
                 
                 bellIcon.style.animation = 'none';
@@ -330,7 +349,7 @@ const NotificationsCenter = (function() {
         }
 
         document.dispatchEvent(new CustomEvent('unread-changed', { 
-            detail: { count: unreadCount }
+            detail: { count: newUnreadCount }
         }));
     }
 
@@ -430,8 +449,8 @@ const NotificationsCenter = (function() {
         markAllAsRead,
         clearAll,
         getUnreadCount,
-        handleNotificationClick,  // ← ВАЖНО: метод добавлен сюда!
-        handleNotificationNavigation // ← Тоже добавим для полноты
+        handleNotificationClick,
+        handleNotificationNavigation
     };
 
     // Глобальная ссылка
@@ -443,7 +462,7 @@ const NotificationsCenter = (function() {
         setTimeout(() => api.init(), 1500);
     });
 
-    console.log('✅ NotificationsCenter загружен (элегантная версия)');
+    console.log('✅ NotificationsCenter загружен (полная версия)');
     return Object.freeze(api);
 })();
 

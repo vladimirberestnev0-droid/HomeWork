@@ -1,5 +1,5 @@
 // ============================================
-// ЛОГИКА КАБИНЕТА КЛИЕНТА (ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ЛОГИКА КАБИНЕТА КЛИЕНТА - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 // ============================================
 
 (function() {
@@ -10,6 +10,7 @@
     let allOrders = [];
     let currentOrderForReview = null;
     let currentOrderForCancel = null;
+    let currentOrderForEdit = null;
     let currentRating = 0;
 
     // ===== DOM ЭЛЕМЕНТЫ =====
@@ -286,10 +287,140 @@
             });
         }
 
+        // Инициализация карты для выбора адреса (Пункт 14)
+        initOrderMap();
+
+        // Кнопка показа/скрытия карты (Пункт 14)
+        const toggleMapBtn = document.getElementById('toggleMapBtn');
+        if (toggleMapBtn) {
+            toggleMapBtn.addEventListener('click', function() {
+                const mapContainer = document.getElementById('orderMapContainer');
+                if (mapContainer) {
+                    if (mapContainer.style.display === 'none') {
+                        mapContainer.style.display = 'block';
+                        this.innerHTML = '<i class="fas fa-times me-2"></i>Скрыть карту';
+                        
+                        // Инициализируем карту, если ещё не
+                        if (!window.orderMapInitialized) {
+                            initOrderMap();
+                        }
+                    } else {
+                        mapContainer.style.display = 'none';
+                        this.innerHTML = '<i class="fas fa-map-marked-alt me-2"></i>Выбрать на карте';
+                    }
+                }
+            });
+        }
+
         const submitBtn = $('createOrderSubmit');
         if (submitBtn) {
             submitBtn.addEventListener('click', handleCreateOrder);
         }
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ КАРТЫ ДЛЯ ЗАКАЗА (НОВОЕ - Пункт 14) =====
+    function initOrderMap() {
+        if (window.orderMapInitialized) return;
+        if (!window.ymaps) {
+            if (window.ymapsReady) {
+                window.ymapsReady.then(() => createOrderMap());
+            } else {
+                window.ymapsReady = new Promise(resolve => {
+                    const checkYmaps = () => {
+                        if (window.ymaps) {
+                            resolve();
+                        } else {
+                            setTimeout(checkYmaps, 100);
+                        }
+                    };
+                    checkYmaps();
+                });
+                window.ymapsReady.then(() => createOrderMap());
+            }
+            return;
+        }
+        createOrderMap();
+    }
+
+    function createOrderMap() {
+        const mapContainer = document.getElementById('orderMap');
+        if (!mapContainer) return;
+        
+        window.ymaps.ready(() => {
+            try {
+                const defaultCenter = [62.1406, 65.3936];
+                
+                const map = new window.ymaps.Map('orderMap', {
+                    center: defaultCenter,
+                    zoom: 12,
+                    controls: ['zoomControl', 'geolocationControl']
+                });
+                
+                let placemark = null;
+                
+                const currentLat = parseFloat(document.getElementById('orderLat')?.value);
+                const currentLng = parseFloat(document.getElementById('orderLng')?.value);
+                
+                if (currentLat && currentLng && !isNaN(currentLat) && !isNaN(currentLng)) {
+                    placemark = new window.ymaps.Placemark([currentLat, currentLng], {}, {
+                        preset: 'islands#blueCircleIcon',
+                        iconColor: '#2CD5C4',
+                        draggable: true
+                    });
+                    map.geoObjects.add(placemark);
+                    map.setCenter([currentLat, currentLng], 15);
+                }
+                
+                map.events.add('click', (e) => {
+                    const coords = e.get('coords');
+                    
+                    if (placemark) {
+                        map.geoObjects.remove(placemark);
+                    }
+                    
+                    placemark = new window.ymaps.Placemark(coords, {}, {
+                        preset: 'islands#blueCircleIcon',
+                        iconColor: '#2CD5C4',
+                        draggable: true
+                    });
+                    
+                    map.geoObjects.add(placemark);
+                    
+                    document.getElementById('orderLat').value = coords[0];
+                    document.getElementById('orderLng').value = coords[1];
+                    
+                    window.ymaps.geocode(coords).then((res) => {
+                        const firstGeoObject = res.geoObjects.get(0);
+                        if (firstGeoObject) {
+                            const address = firstGeoObject.getAddressLine();
+                            document.getElementById('orderAddress').value = address;
+                        }
+                    });
+                });
+                
+                if (placemark) {
+                    placemark.events.add('dragend', () => {
+                        const coords = placemark.geometry.getCoordinates();
+                        document.getElementById('orderLat').value = coords[0];
+                        document.getElementById('orderLng').value = coords[1];
+                        
+                        window.ymaps.geocode(coords).then((res) => {
+                            const firstGeoObject = res.geoObjects.get(0);
+                            if (firstGeoObject) {
+                                const address = firstGeoObject.getAddressLine();
+                                document.getElementById('orderAddress').value = address;
+                            }
+                        });
+                    });
+                }
+                
+                window.orderMapInitialized = true;
+                console.log('✅ Карта для заказа инициализирована');
+                
+            } catch (error) {
+                console.error('❌ Ошибка создания карты:', error);
+            }
+        });
     }
 
     // ===== ОБРАБОТКА СОЗДАНИЯ ЗАКАЗА (С КООРДИНАТАМИ) =====
@@ -327,7 +458,6 @@
         const lat = parseFloat($('orderLat')?.value);
         const lng = parseFloat($('orderLng')?.value);
 
-        // Создаём объект заказа с координатами
         const orderData = {
             category,
             title,
@@ -336,7 +466,6 @@
             address,
             urgent: urgent || false,
             photos: photos,
-            // 👇 КООРДИНАТЫ ИЗ ПОДСКАЗОК ЯНДЕКСА
             coordinates: (lat && lng) ? { lat, lng } : null
         };
 
@@ -345,7 +474,6 @@
         if (result && result.success) {
             Utils.showSuccess('✅ Заказ создан!');
             
-            // Очищаем форму
             $('orderCategory').value = '';
             $('orderTitle').value = '';
             $('orderDescription').value = '';
@@ -355,7 +483,6 @@
             $('orderPhotos').value = '';
             $('photoPreview').innerHTML = '';
             
-            // Очищаем скрытые поля с координатами
             if ($('orderLat')) $('orderLat').value = '';
             if ($('orderLng')) $('orderLng').value = '';
             
@@ -456,7 +583,7 @@
         }
     }
 
-    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА =====
+    // ===== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА (ОБНОВЛЕНО - Пункт 16) =====
     function createOrderCard(order) {
         const statusConfig = {
             'open': { class: 'bg-primary', text: '🔵 Активен', icon: 'fa-clock' },
@@ -472,6 +599,7 @@
         const needsConfirmation = order.status === 'awaiting_confirmation';
         const canReview = order.status === 'completed' && !order.clientReview;
         const canCancel = order.status === 'open';
+        const canEdit = order.status === 'open'; // Пункт 16
 
         return `
             <div class="order-card mb-3" data-order-id="${order.id}">
@@ -523,6 +651,12 @@
                             `<button class="btn btn-sm btn-warning" onclick="openReviewModal('${order.id}', '${order.selectedMasterId}')">
                                 <i class="fas fa-star me-1"></i>Отзыв
                             </button>` : ''}
+                        
+                        ${canEdit ? `
+                            <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); ClientCabinet.editOrder('${order.id}')">
+                                <i class="fas fa-pencil-alt me-1"></i>Редактировать
+                            </button>
+                        ` : ''}
                         
                         ${canCancel ? `
                             <button class="btn btn-sm btn-cancel-order" onclick="event.stopPropagation(); showCancelModal('${order.id}')">
@@ -597,6 +731,32 @@
                 </div>
             </div>
         `;
+    }
+
+    // ===== РЕДАКТИРОВАНИЕ ЗАКАЗА (НОВОЕ - Пункт 16) =====
+    async function editOrder(orderId) {
+        const order = allOrders.find(o => o.id === orderId);
+        if (!order) return;
+        
+        currentOrderForEdit = order;
+        
+        // Здесь можно открыть модалку редактирования
+        // Пока упрощённо - показываем промпт для изменения цены
+        const newPrice = prompt('Введите новую цену:', order.price);
+        if (!newPrice) return;
+        
+        const price = parseInt(newPrice);
+        if (isNaN(price) || price < 500 || price > 1000000) {
+            Utils.showError('Цена должна быть от 500 до 1 000 000 ₽');
+            return;
+        }
+        
+        const result = await Orders.updateOrder(orderId, { price });
+        
+        if (result.success) {
+            Utils.showSuccess('✅ Цена обновлена');
+            await loadClientOrders(currentFilter);
+        }
     }
 
     // ===== ПОКАЗ МОДАЛКИ ПОДТВЕРЖДЕНИЯ ЗАВЕРШЕНИЯ =====
@@ -853,7 +1013,7 @@
         }
     };
 
-    // ===== ЗАГРУЗКА ЧАТОВ =====
+    // ===== ЗАГРУЗКА ЧАТОВ (ОБНОВЛЕНО - Пункты 17, 18) =====
     async function loadChats() {
         const chatsList = document.getElementById('chatsList');
         if (!chatsList) return;
@@ -875,41 +1035,83 @@
                 return;
             }
 
-            chatsList.innerHTML = chats.map(chat => {
-                const partnerName = chat.partnerName || 'Пользователь';
-                const lastMessage = chat.lastMessage || 'Нет сообщений';
-                const lastMessageAt = chat.lastMessageAt ? Utils.formatDate(chat.lastMessageAt) : '';
-                
-                return `
+            renderChats(chats);
+            
+        } catch (error) {
+            console.error('❌ Ошибка загрузки чатов:', error);
+            chatsList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
+        }
+    }
+
+    // ===== ОТРИСОВКА ЧАТОВ (ОБНОВЛЕНО - Пункты 17, 18) =====
+    function renderChats(chats) {
+        const chatsList = document.getElementById('chatsList');
+        if (!chatsList) return;
+        
+        chatsList.innerHTML = chats.map(chat => {
+            // Информация о заказе (Пункт 17)
+            const orderInfo = chat.orderTitle ? `
+                <div class="chat-order-info">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span class="chat-order-title">${Utils.escapeHtml(chat.orderTitle)}</span>
+                    ${chat.orderPrice ? `<span class="chat-order-price">${Utils.formatMoney(chat.orderPrice)}</span>` : ''}
+                </div>
+            ` : '';
+            
+            // Кнопка удаления чата (Пункт 18)
+            const deleteButton = `
+                <button class="chat-delete-btn" onclick="event.stopPropagation(); ClientCabinet.deleteChat('${chat.id}')" title="Удалить чат">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            
+            return `
                 <div class="chat-card" onclick="window.location.href='${CONFIG?.getUrl('chat', { chatId: chat.id }) || '/HomeWork/chat.html?chatId=' + chat.id}'">
                     <div class="chat-avatar">
                         <i class="fas ${chat.partnerRole === 'master' ? 'fa-user-tie' : 'fa-user'}"></i>
                     </div>
                     <div class="chat-info">
-                        <div class="chat-name">${Utils.escapeHtml(partnerName)}</div>
-                        <div class="chat-last-message">${Utils.truncate(Utils.escapeHtml(lastMessage), 40)}</div>
+                        <div class="chat-name">${Utils.escapeHtml(chat.partnerName)}</div>
+                        ${orderInfo}
+                        <div class="chat-last-message">${Utils.truncate(chat.lastMessage || 'Нет сообщений', 40)}</div>
                     </div>
-                    <div class="chat-meta text-end">
-                        <div class="chat-time small text-secondary">${lastMessageAt}</div>
-                        ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
+                    <div class="chat-meta">
+                        <div class="chat-time small text-secondary">${Utils.formatDate(chat.lastMessageAt)}</div>
+                        <div class="chat-actions">
+                            ${chat.unreadCount > 0 ? `<span class="chat-unread">${chat.unreadCount}</span>` : ''}
+                            ${deleteButton}
+                        </div>
                     </div>
                 </div>
-            `}).join('');
-            
-            const unreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
-            const unreadBadge = document.getElementById('chatsUnread');
-            if (unreadBadge) {
-                if (unreadCount > 0) {
-                    unreadBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                    unreadBadge.classList.remove('d-none');
-                } else {
-                    unreadBadge.classList.add('d-none');
-                }
+            `;
+        }).join('');
+        
+        const unreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+        const unreadBadge = document.getElementById('chatsUnread');
+        if (unreadBadge) {
+            if (unreadCount > 0) {
+                unreadBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                unreadBadge.classList.remove('d-none');
+            } else {
+                unreadBadge.classList.add('d-none');
             }
-            
-        } catch (error) {
-            console.error('❌ Ошибка загрузки чатов:', error);
-            chatsList.innerHTML = '<div class="text-center p-5 text-danger">Ошибка загрузки</div>';
+        }
+    }
+
+    // ===== УДАЛЕНИЕ ЧАТА (НОВОЕ - Пункт 18) =====
+    async function deleteChat(chatId) {
+        if (!confirm('Удалить чат? Это действие нельзя отменить.')) return;
+        
+        const user = Auth.getUser();
+        if (!user) return;
+        
+        const result = await Chat.deleteChatForUser(chatId, user.uid);
+        
+        if (result.success) {
+            Utils.showSuccess('✅ Чат удалён');
+            await loadChats(); // Перезагружаем список чатов
+        } else {
+            Utils.showError('❌ Ошибка при удалении');
         }
     }
 
@@ -1004,6 +1206,8 @@
     window.ClientCabinet = {
         switchTab: switchTab,
         filterOrders: loadClientOrders,
-        loadChats: loadChats
+        loadChats: loadChats,
+        editOrder: editOrder,      // НОВЫЙ МЕТОД (Пункт 16)
+        deleteChat: deleteChat     // НОВЫЙ МЕТОД (Пункт 18)
     };
 })();
